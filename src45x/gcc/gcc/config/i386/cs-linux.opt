@@ -1,0 +1,11 @@
+; Additional options for Sourcery G++.
+
+mrh73
+Target Undocumented
+
+mrhel3
+Target Undocumented
+
+msgxx-glibc
+Target
+Use included version of GLIBC

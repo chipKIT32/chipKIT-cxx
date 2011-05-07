@@ -1,0 +1,36 @@
+# Wind River GNU/Linux Configuration.
+# Copyright (C) 2006, 2007, 2008
+# Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+# 
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+MULTILIB_OPTIONS = muclibc
+MULTILIB_OPTIONS += tarm926ej-s/tthumb2-v7-a/tthumb2-v7-a-neon
+MULTILIB_OPTIONS += mfloat-abi=softfp
+MULTILIB_DIRNAMES = uclibc
+MULTILIB_DIRNAMES += tarm926ej-s thumb2-v7-a thumb2-v7-a-neon
+MULTILIB_DIRNAMES += softfp
+
+MULTILIB_EXCEPTIONS += *thumb2*/*mfloat-abi=softfp*
+
+MULTILIB_ALIASES = tthumb2-v7-a-neon=tthumb2-v7-a-neon/mfloat-abi?softfp
+MULTILIB_ALIASES += muclibc/tthumb2-v7-a-neon=muclibc/tthumb2-v7-a-neon/mfloat-abi?softfp
+MULTILIB_OSDIRNAMES =
+
+# These files must be built for each multilib.
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o
+

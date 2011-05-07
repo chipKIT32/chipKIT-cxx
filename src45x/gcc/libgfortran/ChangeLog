@@ -1,0 +1,226 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-07-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-07-12  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* config/fpu-387.h [__sun__ && __svr4__] Include <signal.h>,
+	<ucontext.h>.
+	(sigill_caught): New.
+	(sigill_hdlr): New function
+	(has_sse) [__sun__ && __svr4__]: Check if SSE instruction causes
+	SIGILL.
+
+2010-04-14  Release Manager
+
+	* GCC 4.5.0 released.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+
+2010-04-01  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/43605
+	* io/intrinsics.c (gf_ftell): New function, seek to correct offset.
+        (ftell): Call gf_ftell.
+	(FTELL_SUB): Likewise.
+
+2010-04-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	* io/transfer.c : Update copyright.
+	* io/unix.c : ditto
+	* io/read.c : ditto
+	* io/io.h : ditto
+	* io/unix.h : ditto
+	* io/inquire.c : ditto
+	* io/format.c : ditto
+	* io/list_read.c : ditto
+	* runtime/error.c : ditto
+	* libgfortran.h : ditto
+	* intrinsics/date_and_time.c: ditto
+	* intrinsics/args.c : ditto
+
+2010-04-01  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/43605
+	* io/intrinsics.c (ftell): Reset fbuf, correct offset.
+	(FTELL_SUB): Likewise.
+
+2010-03-29  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43265
+	* io/transfer.c (next_record_r): Only call hit_eof for specific
+	conditions when an EOF is encountered.
+
+2010-03-29  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/43551
+	* io/unix.c (buf_write): Set physical_offset after lseek.
+
+2010-03-25  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43517
+	* io/read.c (read_x): Return if seen EOR condition.
+
+2010-03-21  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/43409
+	* io/io.h: Fix type of size in st_parameter_inquire structure.
+
+2010-03-20  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/43409
+	* io/unix.h: Add prototype for new function to return file size.
+	* io/unix.c (file_size): New function.
+	* io/inquire.c (inquire_via_unit): Use new function.
+	(inquire_via_filename): Use new function.
+
+2010-03-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* io/transfer.c (read_sf_internal): Remove stray function declaration
+	used during debugging.
+
+2010-03-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43265
+	* io/io.h: Delete prototype for read_sf, making it static.
+	* io/read.c (read_x): Modify to call hit_eof if PAD="no".
+	* io/transfer.c (read_sf_internal): New static function extracted from
+	read_sf for use on internal units only. Handle empty string case.
+	(read_sf): New factoring of this function, make it static.  Add special
+	conditions for EOF based on ADVANCE="no", PAD="no", and whether any
+	bytes have been previously read from the record.
+	(read_block_form): Modify to call read_sf or read_sf_internal.
+	(next_record_r): Add a done flag similar to next_record_w. Call hit_eof
+	if internal array unit next record returns finished, meaning an EOF was
+	found and not done, ie not the last record expected.  For external
+	units call hit_eof if item_count is 1 or there are no pending spaces.
+	(next_record): Update call to next_record_r.
+
+2010-03-12  Kai Tietz  <kai.tietz@onevision.com>
+
+	PR/42950
+	* io/format.c (parse_format_list): Add to ERROR, WARNING,
+	SILENT enumerators NOTIFICATION_ prefix.
+	* runtime/error.c (notification_std): Likewise.
+	* libgfortran.h (notification): Likewise.
+	(GFC_LARGEST_BUF): Check for HAVE_GFC_INTEGER_16.
+
+2010-03-11  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/43228
+	* io/list_read.c (nml_parse_qualifier): Disable expanded_read
+	for array sections.
+
+2010-03-10  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43320
+	* io/transfer.c (next_record_r): Add hit_eof based on item_count
+	condition.
+
+2010-03-09  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43265
+	* io/read.c: Include fbuf.h and unix.h to enable lower level I/O for
+	read_x. (read_x): Replace the use of read_sf with equivalent lower level
+	I/O, eliminating unneeded code and handling EOF and EOR conditions.
+	* io/io.h: Revise prototype for read_sf.
+	* io/transfer.c (read_sf): Delete no_error parameter and all uses of it.
+	(read_block_form): Likewise.
+	(next_record_r): Delete wrong code call to hit_eof.
+
+2010-03-08  Kai TIetz  <kai.tietz@onevision.com>
+
+	PR/42950
+	* libgfortran.h (_POSIX): Define if __MINGW32__ is defined.
+	(gfc_printf): Define to gnu_printf for __MINGW32__ case,
+	otherwise to __printf__.
+	(gfc_strtof,gfc_strtod,gfc_strtold): Define for mingw case
+	to POSIX compatible converter functions.
+	(runtime_error): Use instead gfc_printf as formatter
+	attribute name.
+	(runtime_error_at): Likewise.
+	(runtime_warning_at): Likewise.
+	(st_printf): Likewise.
+	* intrinsics/date_and_time.c (localtime_r): Undefine
+	possible defined macro.
+	(gmtime_r): Likewise.
+	* io/read.c (convert_real): Use gfc_strtof, gfc_strtod,
+	and gfc_strtold.
+
+2010-02-24  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/43155
+	* io/transfer.c (require_type): Subtract one from item_count for output
+	of error message.  Add comment before formatted_transfer function
+	explaining why the item_count is off by one.
+
+2010-02-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* io/write_float.def (WRITE_FLOAT): Use __builtin_signbit.
+
+2010-02-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* io/list_read.c (list_formatted_read_scalar): Remove duplicate code.
+
+2010-02-09  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/42996
+	* intrinsics/args.c (get_command_argument_i4): Always return
+	commandline-argument length for length parameter.
+
+2010-02-06  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/42742
+	* io/format.c (reset_fnode_counters): Use the correct pointer to the
+	head of the fnode list. (parse_format): Remove previous hack that set
+	limit on size of format string for caching.
+
+2010-02-06  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran
+	* io/transfer.c (read_sf): Handle EOR and EOF conditions for
+	ADVANCE="no" with PAD="yes" or PAD="no".
+
+2010-02-03  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/42901
+	* io/list_read.c (nml_get_obj_data): Add new qualifier flag, clean up
+	code, and adjust logic to set namelist info pointer correctly for array
+	qualifiers of derived type components.
+
+2010-01-15  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/42742
+	* io/format.c (parse_format): Set limit on size of format strings that
+	will be cached.
+
+2010-01-05  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure: Regenerate.
+
+2010-01-03  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/42420
+	* io/unix.c: Defines for MINGW stat and fstat.
+	(gfstat_t): New typedef.
+	(id_from_fd): Use gfstat_t instead of struct stat.
+	(fd_to_stream): Likewise.
+	(compare_file_filename): Likewise.
+	(find_file): Likewise.
+	(file_exists): Likewise.
+	(inquire_sequential): Likewise.
+	(inquire_direct): Likewise.
+	(inquire_formatted): Likewise.
+
+
+Copyright (C) 2010 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

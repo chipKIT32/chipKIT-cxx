@@ -1,0 +1,8 @@
+# Add -D__USE_MINGW_ACCESS to enable the built compiler to work on Windows
+# Vista (see PR33281 for details).
+# Because we wrap access in libiberty/cygpath.c, we do not want to use
+# the MinGW wrappers for access.
+BOOT_CFLAGS += -Wno-pedantic-ms-format
+# CFLAGS += -D__USE_MINGW_ACCESS
+# Increase stack limit to same as Linux default.
+LDFLAGS += -Wl,--stack,8388608

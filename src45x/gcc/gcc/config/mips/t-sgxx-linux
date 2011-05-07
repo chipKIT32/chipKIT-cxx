@@ -1,0 +1,13 @@
+MULTILIB_OPTIONS = muclibc mmicromips/march=mips2/march=mips32 msoft-float EL/EB
+MULTILIB_DIRNAMES = uclibc micromips mips2 mips32 soft-float el eb
+MULTILIB_MATCHES := EL=mel EB=meb \
+  march?mips2=mips2 march?mips2=mips3 march?mips2=mips4 \
+  $(foreach cpu,mips3 mips4 r6000 r4000 vr4100 vr4111 vr4120 vr4130 vr4300 \
+                r4400 r4600 orion r4650 loongson2e loongson2f r8000 r10000 \
+                r12000 r14000 r16000 vr5000 vr5400 vr5500 rm7000 \
+                rm9000,march?mips2=march?$(cpu)) \
+  march?mips32=mips32 march?mips32=mips64 \
+  $(foreach cpu,4kc 4km 4kp 4ksc mips64 5kc 5kf 20kc sb1 sb1a sr71000 \
+                xlr,march?mips32=march?$(cpu))
+MULTILIB_EXCEPTIONS = *muclibc*/*mmicromips* *muclibc*/*march?mips2* *muclibc*/*march?mips32*
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o 

@@ -1,0 +1,64 @@
+# Wind River GNU/Linux Configuration.
+# Copyright (C) 2006, 2007
+# Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+# 
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Build big-endian and little-endian support libraries.
+MULTILIB_OPTIONS = muclibc mel mhard-float march=octeon/march=octeon2/march=vr5500/march=xlp mabi=n32/mabi=64
+MULTILIB_DIRNAMES = uclibc mel hard-float octeon octeon2 vr5500 xlp n32 64
+MULTILIB_EXCEPTIONS = *muclibc*/*mhard-float*
+MULTILIB_EXCEPTIONS += *muclibc*/*mabi=n32*
+MULTILIB_EXCEPTIONS += *muclibc*/*mabi=64*
+MULTILIB_EXCEPTIONS += *muclibc*/*march=vr5500*
+MULTILIB_EXCEPTIONS += *mel*/*march=vr5500*
+MULTILIB_EXCEPTIONS += march=vr5500*
+MULTILIB_EXCEPTIONS += mhard-float/march=vr5500/*
+MULTILIB_EXCEPTIONS += *muclibc*/*march=xlp*
+MULTILIB_EXCEPTIONS += *mel*/*march=xlp*
+MULTILIB_EXCEPTIONS += march=xlp*
+MULTILIB_EXCEPTIONS += mhard-float/march=xlp/mabi=n32
+MULTILIB_EXCEPTIONS += */march=octeon* */march=octeon2*
+MULTILIB_EXCEPTIONS += march=octeon march=octeon/mabi=32
+MULTILIB_EXCEPTIONS += march=octeon2 march=octeon2/mabi=32
+MULTILIB_EXCEPTIONS += mel/mabi=n32 mel/mabi=64
+MULTILIB_EXCEPTIONS += mabi=n32
+# These files must be built for each multilib.
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o
+
+# See comment in wrs-linux.h on STARTFILE_PREFIX_SPEC for how the real
+# directories used in the sysroots are determined.  These directories
+# are specified so that (a) they are distinct and (b) removing the
+# components that form part of the sysroot suffix leaves the real
+# directory within the sysroot.
+MULTILIB_OSDIRNAMES = mel/mhard-float/mabi.n32=../lib32/mel/hard-float
+MULTILIB_OSDIRNAMES += mel/mhard-float/mabi.64=../lib64/mel/hard-float
+MULTILIB_OSDIRNAMES += mhard-float/mabi.n32=../lib32/hard-float
+MULTILIB_OSDIRNAMES += mhard-float/mabi.64=../lib64/hard-float
+MULTILIB_OSDIRNAMES += mel/mhard-float=!mel/hard-float
+MULTILIB_OSDIRNAMES += mhard-float/march.vr5500=!hard-float/vr5500
+MULTILIB_OSDIRNAMES += mhard-float/march.xlp=!hard-float/xlp
+MULTILIB_OSDIRNAMES += mhard-float/march.xlp/mabi.64=../lib64/hard-float/xlp
+MULTILIB_OSDIRNAMES += mhard-float=!hard-float
+MULTILIB_OSDIRNAMES += mabi.64=../lib64
+MULTILIB_OSDIRNAMES += march.octeon/mabi.n32=../lib32/octeon
+MULTILIB_OSDIRNAMES += march.octeon/mabi.64=../lib64/octeon
+MULTILIB_OSDIRNAMES += march.octeon2/mabi.n32=../lib32/octeon2
+MULTILIB_OSDIRNAMES += march.octeon2/mabi.64=../lib64/octeon2
+MULTILIB_OSDIRNAMES += muclibc/mel=!uclibc/mel
+MULTILIB_OSDIRNAMES += muclibc=!uclibc
+

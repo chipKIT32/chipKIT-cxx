@@ -1,0 +1,458 @@
+<!-- This file contains a series of release note fragments processed
+     by gnu-notes.  To add a note to it, use "gnu-notes -a
+     $release_config gcc".  The TARGET line should contain a
+     list of shell glob patterns for target names to which the note is
+     relevant; it may be removed if it is relevant to all targets.
+ -->
+
+      <!-- UUID: 63434f9d-a4eb-479d-9d21-b2be752955b2 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>New <option>-fstrict-volatile-bitfields</option></title>
+        <para>
+          The compiler has a new
+	  option, <option>-fstrict-volatile-bitfields</option>, which
+	  forces access to a volatile structure member using the width
+	  that conforms to its type.
+	  <phrase target-arch="arm">
+	    This option is enabled by default to conform to the ARM EABI.
+	  </phrase>
+	  <phrase target-arch="sh">
+	    This option is enabled by default.
+	  </phrase>
+	  Refer to the GCC manual for details. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 167a3570-f070-4914-9601-7ae124ae9a4f -->
+      <!-- TARGET: arm* sh* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>GCC fix for duplicated symbols</title>
+        <para>
+          A GCC optimizer bug that caused multiple definitions of
+	  local symbols has been fixed.  Code affected by the bug
+	  was rejected by the assembler.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 922808b9-03d1-413d-baca-a60f27143c62 -->
+      <!-- TARGET: arm*-* -->
+      <!-- SORT: gcc -->
+      <formalpara features="armfloat">
+        <title>NEON narrowing-move instructions</title>
+        <para>
+	  The compiler now supports narrowing-move instructions
+	  when auto-vectorizing for NEON.  Loops accessing arrays of
+	  <type>char</type> or <type>short</type> values are now more
+	  likely to be vectorized.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 80a6a0e6-e3e9-4083-8d1c-a8efe7d8a081 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Internal compiler error fixes</title>
+        <para>
+          A bug has been fixed that caused the compiler to crash
+          on code containing a <literal>typedef</literal> alias
+          for <type>__builtin_va_list</type> with option
+	  <option>-femit-struct-debug-baseonly</option>.
+	  <phrase target-os="linux">
+	    This bug affected compiling the Linux kernel.
+          </phrase>
+	  A second bug has been fixed that caused a crash
+	  when compiling code using C99 variable-length arrays.
+	  <phrase features="armfloat">
+	    Additionally, a compiler crash on code using
+	    64-bit integer multiplications with NEON vectorization enabled
+	    has also been fixed.
+          </phrase>
+	</para>
+      </formalpara>
+
+      <!-- UUID: 17641acd-1d54-4527-ae71-faf3f6901b67 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara features="armfloat">
+        <title>NEON code generation fix</title>
+        <para>
+          A GCC bug has been fixed that resulted in an assembler error
+          <literal>VFP/Neon double precision register expected</literal>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 508ca936-f2b4-47f8-b098-f48e9928793c -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Static data size improvement at <option>-Os</option></title>
+        <para>
+	  When optimizing for size, the compiler no longer implicitly
+	  adds padding bytes to align static and local arrays on
+	  word boundaries.
+	  This fixes static data size regressions introduced since GCC 4.4.
+	  The additional alignment is still used when optimizing for speed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 2a8b3219-a739-4b5d-b236-f818a52945e3 -->
+      <!-- TARGET: powerpc* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Code generation improvements</title>
+        <para>
+          The compiler now generates better code for masks combined with
+          a comparison against zero in certain cases.  Additionally, it
+          now uses conditional moves rather than branches in more
+          situations.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ac7b0ca8-1a71-49ac-ac0b-241c56ddf6d6 -->
+      <!-- TARGET: arm-*-linux-gnueabi -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Improved thread-local storage access</title>
+        <para>
+	  &csl_prod; now implements the TLS Descriptor access model,
+	  which provides faster access to thread-local storage from
+	  shared libraries and position-independent executables.
+	  This GCC option, which is enabled by default,
+	  additionally requires support from the dynamic loader.
+	  Code built with older versions of &csl_sgxx; continues to
+	  work with the included loader. 
+	  For more information, refer to
+          <xref linkend="sec-dynamic-loader-version"/>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 9f4a7d18-cc0a-4c01-92e3-8b7ce8aafc77 -->
+      <!-- TARGET: arm*-* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+	 <title>Improved support for atomic memory builtins</title>
+	 <para>
+	   The compiler support for built-in atomic memory access
+	   operations on ARMv7 targets has been improved.
+	   These builtins are documented in the GCC manual.
+	 </para>
+      </formalpara>
+
+      <!-- UUID: c0ee11e0-1e7d-470c-8898-0f2e20d45e77 -->
+      <!-- TARGET: *-linux* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>C++ locale support</title>
+        <para>
+          The C++ standard library now includes locale support.
+	  <phrase components="uclibc">This feature is not enabled for
+	  uClibc multilibs.</phrase>
+        </para>
+      </formalpara>
+
+      <!-- UUID: 946f6701-7327-475d-9bd4-9b4db4bea92d -->
+      <!-- TARGET: sh*-linux* -->
+      <!-- SORT: important -->
+      <formalpara components="no-license">
+        <title>SH4AL-DSP libraries removed</title>
+        <para>
+          &csl_prod; for &csl_target_name; no longer includes library support
+	  for SH4AL-DSP. This change has been made at the request of Renesas.
+	  Libraries for SH4AL-DSP processors are still provided as part of
+	  &csl_sgxx; Personal, Standard, and Professional editions.
+	  Please contact &csl_sales; for information about &csl_sgxx; subscriptions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ea548816-df68-4f4a-ae82-86c42c4318b0 -->
+      <!-- TARGET: arm*-* -->
+      <formalpara features="armfloat">
+	<title>New <option>-Wdouble-promotion</option> warning
+	option</title>
+	<para>
+	  The compiler has a new
+	  option, <option>-Wdouble-promotion</option>, which enables
+	  warnings about implicit promotions of <type>float</type>
+	  values to <type>double</type>.  This option is useful when
+	  compiling code for processors (such as ARM Cortex-M4) that
+	  have hardware support for single-precision floating-point
+	  arithmetic only, where unintentional use of double precision
+	  results in dramatically slower code.
+       </para>
+      </formalpara>
+
+      <!-- UUID: 75289df2-28c7-42fb-9ddb-8d5b0647d1b3 -->
+      <!-- TARGET: arm*-* -->
+      <formalpara>
+        <title>Thumb-2 internal compiler error fix</title>
+        <para>
+	  A bug has been fixed that caused the compiler to crash
+	  when compiling Thumb-2 code using 64-bit integer arithmetic.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 015c1a3f-8985-4381-b11c-310fcf89411e -->
+      <!-- TARGET: * -->
+      <formalpara>
+        <title>GCC fix for reference to undefined label</title>
+        <para>
+          A bug in the optimizer that caused GCC to emit references
+	  to undefined labels has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0f3700ca-1913-4040-9b1a-753156389244 -->
+      <!-- TARGET: * -->
+      <formalpara>
+	<title>Alignment attributes</title>
+	<para>
+	  A bug has been fixed that caused the compiler to ignore
+	  alignment attributes of C++ static member variables where
+	  the attribute was present on the definition, but not the
+	  declaration.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 31cbcc99-2e09-4a42-b523-b4309e980ee4 -->
+      <!-- TARGET: sparc* -->
+      <formalpara>
+        <title>Argument passing fix</title>
+        <para>
+          A compiler bug has been fixed that resulted in incorrect
+          code for some functions defined with both <type>long
+          double</type> and variadic (<literal>...</literal>)
+          parameters.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f6703562-33b9-4e67-be53-8c37bf88cc43 -->
+      <!-- TARGET: arm*-symbian* -->
+      <formalpara>
+        <title>C++ runtime symbol visibility</title>
+        <para>
+	  A bug has been fixed that caused some symbols in the C++ runtime
+	  library (<filename>libsupc++.a</filename>) to have incorrect
+	  visibility attributes.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7c5f5227-d2d5-4be0-9995-cccee9f2acea -->
+      <!-- TARGET: * -->
+      <formalpara>
+        <title>Compiler optimization improvements</title>
+        <para>
+          The compiler has been enhanced with a number of optimization
+	  improvements, including:
+	  <itemizedlist>
+	    <listitem>  <!-- issue7257 -->
+	      More efficient assignment for structures containing bitfields.
+	    </listitem>
+	    <listitem>  <!-- PR 42556 -->
+	      Better code for initializing C++ arrays with explicit
+	      element initializers.
+	    </listitem>
+	    <listitem>  <!-- PR 39874/28685 -->
+	      Improved logic for eliminating/combining redundant comparisons in
+	      code with nested conditionals.
+	    </listitem>
+	    <listitem>  <!-- PR 42505 -->
+	      Better selection of loop variables, resulting in fewer
+	      temporaries and more efficient register usage.
+	    </listitem>
+	    <listitem target-arch="arm">  <!-- PR42495/40956/42574 -->
+	      More optimization of references to globals in
+	      position-independent code.
+	    </listitem>
+	    <listitem target-arch="arm">  <!-- PR41514/40603/40657/42835/42172 -->
+	      Various Thumb code generation improvements.
+	    </listitem>
+            <listitem> <!-- issue9120 -->
+              Better code when constant addresses are used as arguments to
+              inline assembly statements.
+            </listitem>
+	    <listitem>
+	      Better code for copying small constant strings.
+	    </listitem>
+	    <listitem target-arch="arm">  <!-- issue9019 -->
+	      Improved tuning for Cortex-M4 processors.
+	    </listitem>
+	    <listitem target-arch="arm">  <!-- issue9018 -->
+	      Cortex-A9 specific tuning for VFP and NEON instructions.
+	    </listitem>
+	    <listitem target-arch="arm">  <!-- issue9018 -->
+	      Use of more NEON features.
+	    </listitem>
+	  </itemizedlist>
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0e9787db-107b-4a17-8596-d6ffc29a7bf9 -->
+      <!-- TARGET: mips* -->
+      <formalpara>
+        <title>MIPS 34Kn support</title>
+        <para>
+          &csl_sgxx; now includes support for MIPS 34Kn
+          processors.  To compile for these processors,
+          use <option>-march=34kn</option>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 9e4383ac-5b9f-43d0-be20-d63ad3206310 -->
+      <!-- TARGET: arm* -->
+      <formalpara>
+        <title>Preprocessor symbols for floating-point calling convention</title>
+        <para>
+          Built-in preprocessor symbols <symbol>__ARM_PCS</symbol> and
+          <symbol>__ARM_PCS_VFP</symbol> are now defined to indicate
+          the current floating-point calling convention.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0031e565-47c2-4197-afe3-874e99d288ed -->
+      <!-- TARGET: powerpc-* -->
+      <formalpara>
+        <title>Support for AppliedMicro Titan (APM83xxx) cores</title>
+        <para>
+	  &csl_sgxx; has been enhanced to emit code optimized for AppliedMicro
+	  Titan (APM83xxx) cores, selectable with
+	  GCC's <option>-mcpu=titan</option> command-line option.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 22aeee08-e164-4261-8aed-2406b7a39293 -->
+      <!-- TARGET: arm* -->
+      <formalpara>
+        <title><code>naked</code> attribute semantics</title>
+        <para>
+          The <code>naked</code> function attribute now also implies the
+	  <code>noinline</code> and <code>noclone</code> attributes.
+	  This fixes bugs resulting from invalid optimizations of functions
+	  with this attribute.
+        </para>
+      </formalpara>
+
+      <!-- UUID: e8d073a0-532e-4ba6-9c36-34c8bdcd5875 -->
+      <!-- TARGET: * -->
+      <formalpara>
+	<title>Optimizer improvements</title>
+	<para>
+	  When optimizing for speed, the compiler now uses improved
+	  heuristics to limit certain types of optimizations that may
+	  adversely affect both code size and speed.  This change also
+	  makes it possible to produce better code when optimizing for
+	  space rather than speed.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 0ebe4b85-c372-48e2-88b4-cdbd59e42ea8 -->
+      <!-- TARGET: mips-linux* -->
+      <formalpara>
+        <title>Default setting for MIPS16 interlinking</title>
+        <para>
+	  MIPS16 interlinking is now disabled by default except
+	  when compiling for microMIPS.  Interlinking carries
+	  a performance penalty and is only required for microMIPS
+	  targets.
+        </para>
+      </formalpara>
+
+
+      <!-- UUID: 53047f5e-f430-449d-a50f-c05f77bfb8d7 -->
+      <!-- TARGET: mips* -->
+      <formalpara>
+        <title>microMIPS and MIPS16 diagnostic</title>
+        <para>
+          The compiler now reports an error 
+	  if the options <option>-mmicromips</option> and
+	  <option>-mips16</option> are both specified.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 3a5ee09e-73df-43d9-9c9c-f9f52c500219 -->
+      <!-- TARGET: arm* -->
+      <formalpara>
+        <title>Stack corruption bug fix</title>
+        <para>
+          A bug in GCC has been fixed that caused stack corruption
+	  in functions with the <code>interrupt</code> attribute.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 6a676d73-6ae8-43b5-815f-ab5b04079f42 -->
+      <!-- TARGET: arm* -->
+      <formalpara>
+        <title>GCC bug fix for push multiple instruction generation</title>
+        <para>
+          A bug has been fixed that caused GCC to generate incorrect
+	  push multiple instructions, causing an assembler warning
+	  <literal>register range not in ascending order</literal>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f760b0ab-41cf-41d7-a2e0-6f6eadebf855 -->
+      <!-- TARGET: arm* -->
+      <formalpara>
+        <title>C++ array initializer optimization</title>
+        <para>
+          The compiler now generates better code for some
+	  non-constant array initializations in C++.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 55a6abc5-0cae-4d63-8654-ee125c5d9212 -->
+      <!-- TARGET: mips* -->
+	<formalpara>
+	  <title>Support for MIPS 1004K cores</title>
+	  <para>
+	    &csl_sgxx; now includes basic compiler and assembler support
+	    for MIPS 1004K cores.
+	    Use the <option>-march=1004kc</option> (integer cores),
+	    <option>-march=1004kf2_1</option> (half-speed FPU),
+	    <option>-march=1004kf1_1</option> (full-speed FPU), or
+	    <option>-march=1004kf</option> (alias for <option>1004kf2_1</option>)
+	    command-line options.
+          </para>
+	</formalpara>
+
+      <!-- UUID: b717d668-393f-4984-ae23-052eb6102560 -->
+      <!-- TARGET: mips*-sde* -->
+      <formalpara>
+        <title>Optimized software floating-point routines</title>
+        <para>
+	  The software floating-point emulation routines used by GCC when
+	  linking with <option>-msoft-float</option> have been updated.
+	  The new routines provide significant speed increases.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 019c2e8b-716a-484c-b6d6-a49ea7eb7211 -->
+      <!-- TARGET: arm-none-eabi arm-none-linux-gnueabi arm-none-symbianelf arm-uclinuxeabi -->
+      <formalpara>
+        <title>Precision improvement with vectorization enabled</title>
+        <para>
+          The GCC auto-vectorizer no longer uses
+          NEON floating-point instructions unless the
+          <option>-funsafe-math-optimizations</option> option (implied
+          by <option>-ffast-math</option>) is specified.  This is because
+          NEON hardware does not fully support the IEEE 754 standard for
+          floating-point arithmetic.  In particular, very small quantities
+          may be flushed to zero.
+        </para>
+      </formalpara>
+
+      <!-- UUID: bc6ac949-ad0e-4a9e-886f-568cdaf888f8 -->
+      <!-- TARGET: * -->
+      <formalpara>
+        <title>GCC version 4.5.1</title>
+        <para>
+	  &csl_prod; for &csl_target_name; is now based on GCC version 4.5.1.
+	  For more information about changes from GCC version 4.4 that was
+	  included in previous releases, see
+	  <uri>http://gcc.gnu.org/gcc-4.5/changes.html</uri>.
+        </para>
+      </formalpara>
+
+<!-- Release notes end here.  -->

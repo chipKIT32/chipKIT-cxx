@@ -1,0 +1,31 @@
+# Override newlib settings in t-mchp and set up for building
+# against SDE header files and libraries.
+
+# Default location for system headers, e.g. $(exec_prefix)/pic32/include
+# XXX this should now be found correctly via the TOOL_INCLUDE_DIR setting
+#CROSS_SYSTEM_HEADER_DIR = $(build_tooldir)/include
+
+# Location to search for local system header files when building multilibs etc
+CROSS_SYSTEM_HEADER_DIR = $(objdir)/../$(target_noncanonical)/include
+
+# Remove stdarg.h and stddef.h from USER_H.
+USER_H = $(srcdir)/ginclude/float.h \
+         $(srcdir)/ginclude/iso646.h \
+         $(srcdir)/ginclude/stdbool.h \
+         $(srcdir)/ginclude/varargs.h \
+         $(EXTRA_HEADERS)
+
+# Don't run fixinclude
+STMP_FIXINC = stmp-pic32fixinc
+stmp-pic32fixinc: gsyslimits.h
+	rm -rf include; mkdir include
+	chmod a+rx include
+	rm -f include/syslimits.h
+	cp $(srcdir)/gsyslimits.h include/syslimits.h
+	chmod a+r include/syslimits.h
+	$(STAMP) stmp-pic32fixinc
+
+# Don't build FPBIT and DPBIT; we'll be using the SDE soft-float library.
+FPBIT =
+DPBIT =
+

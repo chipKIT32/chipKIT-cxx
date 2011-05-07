@@ -1,0 +1,4 @@
+# Compile crtbeginS.o and crtendS.o with pic.
+CRTSTUFF_T_CFLAGS_S = $(CRTSTUFF_T_CFLAGS) -fPIC
+
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o crtbeginS.o crtendS.o crtbeginT.o $(OPT_EXTRA_PARTS)

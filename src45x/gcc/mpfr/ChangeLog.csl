@@ -1,0 +1,13 @@
+2009-11-01  Andrew Jenner  <andrew@codesourcery.com>
+
+	Backport from GMP:
+	* mpfr-longlong.h: Add C versions of umul_ppmm to be used with GCC 4.4.
+	Update license to LGPL 3.
+	* COPYING: Update to GPL 3.
+	* COPYING.LIB: Update to LGPL 3.
+
+^L
+Local Variables:
+mode: change-log
+change-log-default-name: "ChangeLog.csl"
+End:

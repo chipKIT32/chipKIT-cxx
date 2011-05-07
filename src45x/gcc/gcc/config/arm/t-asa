@@ -1,0 +1,45 @@
+# Overrides for ASA
+
+# Here is the expected output from xgcc -print-multi-lib.
+#
+# .;@fno-omit-frame-pointer@mapcs-frame
+# armv4t;@march=armv4t@fno-omit-frame-pointer@mapcs-frame
+# armv6;@march=armv6@fno-omit-frame-pointer@mapcs-frame
+# armv7a;@march=armv7-a@fno-omit-frame-pointer@mapcs-frame
+# armv6f;@march=armv6@mfloat-abi=softfp@fno-omit-frame-pointer@mapcs-frame
+# armv7af;@march=armv7-a@mfpu=neon@mfloat-abi=softfp@fno-omit-frame-pointer@mapcs-frame
+# thumb2;@mthumb@march=armv7-a@fno-omit-frame-pointer@mapcs-frame
+# thumb2f;@mthumb@march=armv7-a@mfpu=neon@mfloat-abi=softfp@fno-omit-frame-pointer@mapcs-frame
+
+MULTILIB_OPTIONS = mthumb march=armv4t/march=armv6/march=armv7-a mfpu=neon mfloat-abi=softfp
+MULTILIB_DIRNAMES = thumb v4t v6 v7a neon softfp
+MULTILIB_MATCHES =
+
+MULTILIB_EXTRA_OPTS = fno-omit-frame-pointer mapcs-frame
+
+MULTILIB_EXCEPTIONS  = mthumb
+MULTILIB_EXCEPTIONS += mfpu=neon*
+MULTILIB_EXCEPTIONS += mfloat-abi=softfp
+MULTILIB_EXCEPTIONS += *march=armv4t*/*mfpu=neon*
+MULTILIB_EXCEPTIONS += *march=armv4t*/*mfloat-abi=softfp*
+MULTILIB_EXCEPTIONS += march=armv6/*mfpu=neon*
+MULTILIB_EXCEPTIONS += mthumb/mfpu=neon
+MULTILIB_EXCEPTIONS += mthumb/mfloat-abi=softfp
+MULTILIB_EXCEPTIONS += mthumb/mfpu=neon*
+MULTILIB_EXCEPTIONS += mthumb/march=armv6/mfpu=neon*
+
+MULTILIB_OSDIRNAMES  = march.armv4t=!armv4t
+MULTILIB_OSDIRNAMES += march.armv6=!armv6
+MULTILIB_OSDIRNAMES += march.armv6/mfloat-abi.softfp=!armv6f
+MULTILIB_OSDIRNAMES += march.armv7-a=!armv7a
+MULTILIB_OSDIRNAMES += march.armv7-a/mfpu.neon/mfloat-abi.softfp=!armv7af
+MULTILIB_OSDIRNAMES += mthumb/march.armv7-a=!thumb2
+MULTILIB_OSDIRNAMES += mthumb/march.armv7-a/mfpu.neon/mfloat-abi.softfp=!thumb2f
+
+MULTILIB_ALIASES  = march?armv4t=mthumb/march?armv4t
+MULTILIB_ALIASES += march?armv6=mthumb/march?armv6
+MULTILIB_ALIASES += march?armv6/mfloat-abi?softfp=mthumb/march?armv6/mfloat-abi?softfp
+MULTILIB_ALIASES += march?armv7-a/mfpu?neon/mfloat-abi?softfp=march?armv7-a/mfpu?neon
+MULTILIB_ALIASES += march?armv7-a/mfpu?neon/mfloat-abi?softfp=march?armv7-a/mfloat-abi?softfp
+MULTILIB_ALIASES += mthumb/march?armv7-a/mfpu?neon/mfloat-abi?softfp=mthumb/march?armv7-a/mfpu?neon
+MULTILIB_ALIASES += mthumb/march?armv7-a/mfpu?neon/mfloat-abi?softfp=mthumb/march?armv7-a/mfloat-abi?softfp

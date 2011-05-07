@@ -1,0 +1,17 @@
+# For svr4 we build crtbegin.o and crtend.o which serve to add begin and
+# end labels to the .ctors and .dtors section when we link using gcc.
+
+EXTRA_PARTS=crtbegin.o crtend.o crti.o crtn.o
+
+#
+# Also build crti.o and ctrn.o to provide _init/_fini.
+# The x68 Solaris implementation works here.
+#
+
+$(T)crti.o: $(srcdir)/config/i386/sol2-ci.asm $(GCC_PASSES)
+	sed -e '/^!/d' <$(srcdir)/config/i386/sol2-ci.asm >crti.s
+	$(GCC_FOR_TARGET) -c -o $(T)crti.o crti.s
+$(T)crtn.o: $(srcdir)/config/i386/sol2-cn.asm $(GCC_PASSES)
+	sed -e '/^!/d' <$(srcdir)/config/i386/sol2-cn.asm >crtn.s
+	$(GCC_FOR_TARGET) -c -o $(T)crtn.o crtn.s
+

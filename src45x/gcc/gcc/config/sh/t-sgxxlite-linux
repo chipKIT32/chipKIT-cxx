@@ -1,0 +1,3 @@
+MULTILIB_OPTIONS += muclibc
+MULTILIB_OSDIRNAMES += muclibc=!uclibc m4al/muclibc=!m4al/uclibc mb/muclibc=!mb/uclibc
+MULTILIB_EXCEPTIONS += mb/m4al/muclibc

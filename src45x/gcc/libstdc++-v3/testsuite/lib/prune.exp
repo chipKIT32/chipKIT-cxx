@@ -1,0 +1,52 @@
+#   Copyright (C) 1997, 1999, 2000, 2001, 2004, 2009
+#   Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Prune messages from g++ that aren't useful.
+
+proc prune_g++_output { text } {
+
+    # Cygwin warns about -ffunction-sections
+    regsub -all "(^|\n)\[^\n\]*: -ffunction-sections may affect debugging on some targets\[^\n\]*" $text "" text
+
+    # Remove parts of warnings that refer to location of previous
+    # definitions, etc as these confuse dejagnu
+    regsub -all "(^|\n)\[^\n\]*: In function \[^\n\]*" $text "" text
+
+    # Ignore errata warning from IA64 assembler.
+    regsub -all "(^|\n)\[^\n\]*: Additional NOP may be necessary to workaround Itanium processor A/B step errata" $text "" text
+    regsub -all "(^|\n)\[^\n*\]*: Assembler messages:\[^\n\]*" $text "" text
+
+    if { [ishost "sparc*-*-solaris2*"] } {
+	# When testing a compiler built for SPARC Solaris 2.9 (or earlier)
+	# on a host running Solaris 2.10 (or later), we get this warning 
+	# from the static linker when building with g++:
+	#
+	#   libm.so.1, needed by .../libstdc++.so may conflict with
+	#   libm.so
+	#
+	# The warning is issued because libstdc++ is linked against
+	# libm.so.1 (from the Solaris 2.9 sysroot), whereas Solaris 2.10
+	# provides both libm.so.2 and libm.so.1.  On Solaris 2.10, libc.so
+	# depends on libm.so.2, so all programs pull in libm.so.2.
+	#
+	# Pulling both libraries must in fact be harmless, as, otherwise,
+	# programs built for Solaris 2.9 would break on Solaris 2.10.
+	regsub -all "(^|\n)\[^\n\]*: warning: libm.so.1, needed by \[^\n\]*, may conflict with libm.so.2" $text "" text
+    }
+
+    return $text
+}

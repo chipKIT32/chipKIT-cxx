@@ -1,0 +1,24 @@
+# We want to override softfp functions with optimized e500 equivalents.
+
+spe-arith-functions = adddf3 subdf3 muldf3 divdf3
+spe-cmp-functions = cmpdf2 eqdf2 gedf2 gtdf2 ledf2 ltdf2 nedf2 unorddf2
+spe-cnv-functions = fixdfdi fixdfsi fixunsdfdi fixunsdfsi \
+                    floatdidf floatsidf floatundidf floatunsidf \
+                    extendsfdf2 truncdfsf2
+spe-neg-functions = negdf2
+spe-functions = $(spe-arith-functions) $(spe-cmp-functions) $(spe-cnv-functions) $(spe-neg-functions)
+
+spe-files = spe_neg.S
+spe-files += $(foreach f,$(spe-arith-functions),spe_$(f).S)
+# helpers for the arithmetic functions
+spe-files += spe_add_exception.S spe_muldiv_scale2.S
+spe-files += spe_ledf2.S spe_gedf2.S spe_eqdf2.S spe_unorddf2.S
+# helpers for the comparision functions
+spe-files += spe_unord_sub.S
+spe-files += $(foreach f,$(spe-cnv-functions),spe_$(f).S)
+
+LIB2FUNCS_EXCLUDE += $(addprefix _, $(spe-cnv-functions))
+
+spe-softfp-srcs := $(addsuffix .c, $(spe-functions))
+LIB2ADD := $(filter-out $(foreach f,$(spe-softfp-srcs),%$(f)), $(LIB2ADD))
+LIB2ADD += $(addprefix $(srcdir)/config/rs6000/, $(spe-files))

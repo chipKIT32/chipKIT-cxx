@@ -1,0 +1,25 @@
+# multilibs  -*- mode:Makefile -*-
+
+MULTILIB_EXCEPTIONS :=
+MULTILIB_MATCHES    :=
+MULTILIB_ALIASES    :=
+
+# For all items in EGLIBC_CONFIGS except for the last one
+# do $1.  For the last one do $2.  The items are separated with ",".
+EGLIBC_AWK = $(shell echo $(EGLIBC_CONFIGS) | $(AWK) \
+	'{ \
+	N=split ($$0, configs, ","); \
+	for (i = 1; i < N; ++i) $1; \
+	if (N > 0) $2; \
+	}')
+
+MULTILIB_OPTIONS    := $(call EGLIBC_AWK, \
+	printf ("feglibc=%s/", configs[i]), \
+	printf ("feglibc=%s\n", configs[i]))
+MULTILIB_DIRNAMES   := $(call EGLIBC_AWK, \
+	printf ("%s ", configs[i]), \
+	printf ("%s\n", configs[i]))
+MULTILIB_OSDIRNAMES := $(call EGLIBC_AWK, \
+	printf ("feglibc.%s=!%s ", configs[i], configs[i]), \
+	printf ("feglibc.%s=!%s\n", configs[i], configs[i]))
+

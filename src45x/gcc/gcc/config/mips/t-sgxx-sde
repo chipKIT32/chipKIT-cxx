@@ -1,0 +1,17 @@
+# SourceryG++ overrides for SDE builds
+
+# We must build libgcc2.a with -G 0, in case the user wants to link
+# without the $gp register. Use -fno-optimize-sibling-calls in case
+# we have a mixed mips16/non-mips16 environment where a plain "jump"
+# instuction won't work across the divide (no jx instruction).
+# Compile libraries with -mcode-xonly, so that they are link-compatible
+# with both -mcode-readable=pcrel and -mcode-readable=yes.
+TARGET_LIBGCC2_CFLAGS = -G 0 -fno-optimize-sibling-calls -mcode-xonly
+
+MULTILIB_OPTIONS = EL/EB mips16/mmicromips mfp64/msoft-float/mno-float mcode-readable=no
+MULTILIB_DIRNAMES = el eb mips16 micromips fp64 sof nof spram
+MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e
+MULTILIB_EXTRA_OPTS = mno-jals
+MULTILIB_EXCLUSIONS = mcode-readable=no/!mips16
+# Only hard and soft float micromips
+MULTILIB_EXCEPTIONS = *mmicromips/mfp64* *mmicromips/mno-float*

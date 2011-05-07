@@ -1,0 +1,17 @@
+# Multilibs for powerpc embedded ELF targets.
+
+MULTILIB_OPTIONS	= te500v1/te500v2/te600/te500mc \
+			  msoft-float
+
+MULTILIB_DIRNAMES	= te500v1 te500v2 te600 te500mc \
+			  nof
+
+MULTILIB_EXCEPTIONS	= *te600*/*msoft-float* \
+			  *te500v1*/*msoft-float* \
+			  *te500v2*/*msoft-float* \
+			  *te500mc*/*msoft-float*
+
+MULTILIB_EXTRA_OPTS	= mno-eabi mstrict-align
+
+MULTILIB_MATCHES	= ${MULTILIB_MATCHES_FLOAT} \
+			  ${MULTILIB_MATCHES_ENDIAN}

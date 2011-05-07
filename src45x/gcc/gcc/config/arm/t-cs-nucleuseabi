@@ -1,0 +1,44 @@
+# Multilibs for SourceryG++ arm-samsung-nucleuseabi
+
+# the following multilibs are build
+# .: -marm -march=armv5te -mfloat-abi=soft
+# softfp: -marm -march=armv5te -mfloat-abi=softfp
+# t/v7a/softfp: -mthumb -march=armv7-a -mfloat-abi=softfp
+
+# clear out the lists
+MULTILIB_OPTIONS      :=
+MULTILIB_DIRNAMES     :=
+MULTILIB_MATCHES      :=
+MULTILIB_EXCEPTIONS   :=
+MULTILIB_ALIASES      :=
+MULTILIB_EXCEPTIONS   :=
+MULTILIB_OSDIRNAMES   :=
+
+MULTILIB_OPTIONS      += mthumb
+MULTILIB_DIRNAMES     += t
+MULTILIB_EXCEPTIONS   += mthumb
+
+MULTILIB_OPTIONS      += march=armv7-a
+MULTILIB_DIRNAMES     += v7a
+MULTILIB_MATCHES      += march?armv7-a=march?armv7a
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a9
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a8
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a5
+MULTILIB_EXCEPTIONS   += march=armv7-a
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7-a
+
+MULTILIB_OPTIONS      += mfloat-abi=softfp/mfloat-abi=hard
+MULTILIB_DIRNAMES     += softfp hard
+
+# arm-7a+softp gets the thumb v7a/softfp lib
+MULTILIB_ALIASES      += mthumb/march?armv7-a/mfloat-abi?softfp=march?armv7-a/mfloat-abi?softfp
+# thumb+softp gets the softfp lib
+MULTILIB_ALIASES      += mfloat-abi?softfp=mthumb/mfloat-abi?softfp
+
+# if you ask for hard float you *will* get the hard float library
+# arm-7a+hard gets the thumb v7a/hard lib
+MULTILIB_ALIASES      += mthumb/march?armv7-a/mfloat-abi?hard=march?armv7-a/mfloat-abi?hard
+# thumb+hard gets the thumb v7a/hard lib
+MULTILIB_ALIASES      += mthumb/march?armv7-a/mfloat-abi?hard=mthumb/mfloat-abi?hard
+# hard gets the thumb v7a/hard lib
+MULTILIB_ALIASES      += mthumb/march?armv7-a/mfloat-abi?hard=mfloat-abi?hard

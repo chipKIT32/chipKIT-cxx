@@ -1,0 +1,30 @@
+# Wind River GNU/Linux Configuration.
+# Copyright (C) 2006, 2007
+# Free Software Foundation, Inc.
+#
+# This file is part of GCC.
+#
+# GCC is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3, or (at your option)
+# any later version.
+# 
+# GCC is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GCC; see the file COPYING3.  If not see
+# <http://www.gnu.org/licenses/>.
+
+# Build hard-float (32-bit and 64-bit), soft-float, E500v1 and E500v2
+# libraries.
+MULTILIB_OPTIONS = muclibc m64 msoft-float te500v1 te500v2
+MULTILIB_DIRNAMES = uclibc 64 soft-float te500v1 te500v2
+MULTILIB_EXCEPTIONS = *muclibc*/*m64* *muclibc*/*msoft-float*
+MULTILIB_EXCEPTIONS += *muclibc*/*te500v1* *muclibc*/*te500v2*
+MULTILIB_EXCEPTIONS += *m64*/*msoft-float* *m64*/*te500v1* *m64*/*te500v2*
+MULTILIB_EXCEPTIONS += *msoft-float*/*te500v1* *msoft-float*/*te500v2*
+MULTILIB_EXCEPTIONS += *te500v1*/*te500v2*
+MULTILIB_OSDIRNAMES = muclibc=!uclibc m64=../lib64 msoft-float=!soft-float

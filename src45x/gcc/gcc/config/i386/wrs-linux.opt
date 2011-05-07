@@ -1,0 +1,5 @@
+; Additional options for Wind River Linux Sourcery G++.
+
+msystem-glibc
+Target
+Use system version of GLIBC

@@ -1,0 +1,15 @@
+# Multilibs for powerpc embedded ELF targets.
+
+MULTILIB_OPTIONS	= m32/m64
+
+MULTILIB_DIRNAMES	= 32 64
+
+MULTILIB_EXCEPTIONS	= 
+
+MULTILIB_EXTRA_OPTS	= mno-eabi mstrict-align
+
+MULTILIB_MATCHES	= ${MULTILIB_MATCHES_FLOAT} \
+			  ${MULTILIB_MATCHES_ENDIAN}
+
+softfp_wrap_start := '\#ifndef __powerpc64__'
+softfp_wrap_end := '\#endif'

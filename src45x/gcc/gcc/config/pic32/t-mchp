@@ -1,0 +1,42 @@
+# We must build libgcc2.a with -G 0, in case the user wants to link
+# without the $gp register. Use -fno-optimize-sibling-calls in case
+# we have a mixed mips16/non-mips16 environment where a plain "jump"
+# instuction won't work across the divide (no jx instruction).
+# Compile libraries with -mcode-xonly, so that they are link-compatible
+# with both -mcode-readable=pcrel and -mcode-readable=yes.
+TARGET_LIBGCC2_CFLAGS = -G 0 -fno-optimize-sibling-calls -mcode-xonly -O2
+
+# Don't let CTOR_LIST end up in sdata section.
+CRTSTUFF_T_CFLAGS = -G 0
+
+# TODO: Restore full multilib permutations
+MULTILIB_OPTIONS = mips16
+MULTILIB_DIRNAMES = mips16
+MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e
+MULTILIB_EXCLUSIONS = mcode-readable=no/!mips16
+MULTILIB_EXCEPTIONS =
+
+# For chipKIT only
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o #crti.o crtn.o
+
+# Microchip PIC32-specific format checking and pragmas
+mchp.o: $(srcdir)/config/pic32/mchp.c $(srcdir)/config/pic32/mchp.h \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  tree.h c-format.h intl.h $(CPPLIB_H) c-pragma.h $(TM_H) $(TM_P_H) \
+  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
+  $(srcdir)/config/mips/mips-machine-function.h $(srcdir)/config/pic32/mchp-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/pic32/mchp.c
+
+mchp-pragmas.o: $(srcdir)/config/pic32/mchp-pragmas.c \
+  $(srcdir)/config/pic32/mchp-pragmas.h \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  tree.h c-format.h intl.h $(CPPLIB_H) c-pragma.h $(TM_H) $(TM_P_H) \
+  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
+  $(srcdir)/config/mips/mips-machine-function.h $(srcdir)/config/pic32/mchp-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/pic32/mchp-pragmas.c
+
+# Build the multilibs.
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
