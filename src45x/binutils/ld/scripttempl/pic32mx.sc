@@ -222,10 +222,12 @@ EOF
 fi
 
 
-# Hard coded for chipKIT Mega at the moment
+# Hard coded for chipKIT Max32 at the moment
 
 cat <<EOF
-/* chipKIT Mega - PIC32MX795F512L */
+/* chipKIT Max32 - PIC32MX795F512L */
+/* Default linker script, for normal executables */
+OUTPUT_FORMAT("elf32-tradlittlemips")
 OUTPUT_ARCH(pic32mx)
 ENTRY(_reset)
 /*
@@ -256,6 +258,7 @@ _ebase_address  = 0x9D000000;
  * Memory Address Equates
  *************************************************************************/
 _RESET_ADDR              = 0x9D001000;
+_EEPROM_ADDR             = 0x9D07F000;
 _BEV_EXCPT_ADDR          = 0xBFC00380;
 _DBG_EXCPT_ADDR          = 0xBFC00480;
 _DBG_CODE_ADDR           = 0xBFC02000;
@@ -270,12 +273,13 @@ _GEN_EXCPT_ADDR          = _ebase_address + 0x180;
  *************************************************************************/
 MEMORY
 {
-  kseg0_program_mem    (rx)  : ORIGIN = 0x9D001000, LENGTH = 0x80000-0x1000
-  kseg0_boot_mem             : ORIGIN = 0x9FC00490, LENGTH = 0
+  kseg0_program_mem    (rx)  : ORIGIN = 0x9D001000, LENGTH = 0x7E000 /* Length set for Uno or Mega */
+  kseg0_eeprom_mem           : ORIGIN = 0x9D07F000, LENGTH = 0x1000 /* Reserve for eeprom emulation */
+  kseg0_boot_mem             : ORIGIN = 0x9FC00490, LENGTH = 0 /* Don't use boot memory */
   exception_mem              : ORIGIN = 0x9D000000, LENGTH = 0x1000
-  kseg1_boot_mem             : ORIGIN = 0xBFC00000, LENGTH = 0
+  kseg1_boot_mem             : ORIGIN = 0xBFC00000, LENGTH = 0 /* Don't use boot memory */
   debug_exec_mem             : ORIGIN = 0xBFC02000, LENGTH = 0
-  config3                    : ORIGIN = 0xBFC02FF0, LENGTH = 0
+  config3                    : ORIGIN = 0xBFC02FF0, LENGTH = 0 /* Disallow setting config fuses from the application */
   config2                    : ORIGIN = 0xBFC02FF4, LENGTH = 0
   config1                    : ORIGIN = 0xBFC02FF8, LENGTH = 0
   config0                    : ORIGIN = 0xBFC02FFC, LENGTH = 0
@@ -283,21 +287,7 @@ MEMORY
   sfrs                       : ORIGIN = 0xBF800000, LENGTH = 0x100000
   configsfrs                 : ORIGIN = 0xBFC02FF0, LENGTH = 0x10
 }
-SECTIONS
-{
-  /DISCARD/ : {
-    KEEP(*(.config_BFC02FF0))
-  }
-  /DISCARD/ : {
-    KEEP(*(.config_BFC02FF4))
-  }
-  /DISCARD/ : {
-    KEEP(*(.config_BFC02FF8))
-  }
-  /DISCARD/ : {
-    KEEP(*(.config_BFC02FFC))
-  }
-}
+
 SECTIONS
 {
   /* Boot Sections */
@@ -305,6 +295,11 @@ SECTIONS
   {
     KEEP(*(.reset))
   } > kseg0_program_mem
+  
+  .eeprom.pic32 _EEPROM_ADDR :
+  { 
+    KEEP(*(.eeprom .eeprom.*))
+  } > kseg0_eeprom_mem
 
   /DISCARD/ : { *(.bev_handler) }
 
@@ -760,9 +755,10 @@ SECTIONS
   {
     _persist_begin = .;
     *(.persist .persist.*)
+    . = ALIGN(4);
     _persist_end = .;
   } >kseg1_data_mem
-  .data   :
+  .data  ALIGN(4)  :
   {
     _data_begin = . ;
     *(.data .data.* .gnu.linkonce.d.*)
@@ -808,7 +804,7 @@ SECTIONS
     *(.scommon)
     _sbss_end = . ;
   } >kseg1_data_mem
-  .bss   :
+  .bss ALIGN(4)  :
   {
     *(.dynbss)
     *(.bss .bss.* .gnu.linkonce.b.*)
@@ -895,10 +891,10 @@ SECTIONS
   /* DWARF 2 */
   .debug_info     0 : { *(.debug_info .gnu.linkonce.wi.*) }
   .debug_abbrev   0 : { *(.debug_abbrev) }
-  /DISCARD/ : { *(.debug_line) }
+  /DISCARD/         : { *(.debug_line) }
   .debug_frame    0 : { *(.debug_frame) }
   .debug_str      0 : { *(.debug_str) }
-  .debug_loc      0 : { *(.debug_loc) }
+  /DISCARD/         : { *(.debug_loc) }
   .debug_macinfo  0 : { *(.debug_macinfo) }
   /* SGI/MIPS DWARF 2 extensions */
   .debug_weaknames 0 : { *(.debug_weaknames) }

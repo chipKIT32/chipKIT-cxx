@@ -1,5 +1,5 @@
-This is ../../../src45x/gcc/mpfr/mpfr.info, produced by makeinfo
-version 4.13 from ../../../src45x/gcc/mpfr/mpfr.texi.
+This is ../../../cxx/src45x/gcc/mpfr/mpfr.info, produced by makeinfo
+version 4.13 from ../../../cxx/src45x/gcc/mpfr/mpfr.texi.
 
 This manual documents how to install and use the Multiple Precision
 Floating-Point Reliable Library, version 2.4.2.
@@ -3589,34 +3589,34 @@ Function and Type Index
 
 
 Tag Table:
-Node: Top918
-Node: Copying2157
-Node: Introduction to MPFR3887
-Node: Installing MPFR5799
-Node: Reporting Bugs9417
-Node: MPFR Basics11033
-Node: MPFR Interface26270
-Node: Initialization Functions28489
-Node: Assignment Functions35057
-Node: Combined Initialization and Assignment Functions42652
-Node: Conversion Functions43934
-Node: Basic Arithmetic Functions50641
-Node: Comparison Functions59493
-Node: Special Functions62915
-Node: Input and Output Functions75386
-Node: Formatted Output Functions77316
-Node: Integer Related Functions86828
-Node: Rounding Related Functions91719
-Node: Miscellaneous Functions94189
-Node: Exception Related Functions100975
-Node: Compatibility with MPF107128
-Node: Custom Interface109620
-Node: Internals113803
-Node: Contributors115126
-Node: References117291
-Node: GNU Free Documentation License118599
-Node: Concept Index141042
-Node: Function Index146126
+Node: Top926
+Node: Copying2165
+Node: Introduction to MPFR3895
+Node: Installing MPFR5807
+Node: Reporting Bugs9425
+Node: MPFR Basics11041
+Node: MPFR Interface26278
+Node: Initialization Functions28497
+Node: Assignment Functions35065
+Node: Combined Initialization and Assignment Functions42660
+Node: Conversion Functions43942
+Node: Basic Arithmetic Functions50649
+Node: Comparison Functions59501
+Node: Special Functions62923
+Node: Input and Output Functions75394
+Node: Formatted Output Functions77324
+Node: Integer Related Functions86836
+Node: Rounding Related Functions91727
+Node: Miscellaneous Functions94197
+Node: Exception Related Functions100983
+Node: Compatibility with MPF107136
+Node: Custom Interface109628
+Node: Internals113811
+Node: Contributors115134
+Node: References117299
+Node: GNU Free Documentation License118607
+Node: Concept Index141050
+Node: Function Index146134
 
 End Tag Table
 

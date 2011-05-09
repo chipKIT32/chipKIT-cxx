@@ -1,0 +1,130 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-07-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* include/sparc-signal.h: Renamed to ...
+	* include/solaris-signal.h: ... this.
+	* configure.ac: Use it on any *-*-solaris2* target.
+	* configure: Regenerate.
+	* configure.host (i?86-*-solaris2*): Set can_unwind_signal=yes.
+	* Makefile.am (prims.lo): Add -fno-omit-frame-pointer to AM_CXXFLAGS.
+	* Makefile.in: Regenerate.
+
+2010-06-11  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline:
+	2010-05-25  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libgcj/44216
+	* configure.ac (libgcj_cv_exidx): Enable AC_LANG_WERROR.
+	Save and restore werror flag.
+	* configure: Regenerate.
+
+2010-06-10  Iain Sandoe  <iains@gcc.gnu.org>
+
+	PR bootstrap/43170
+	* configure: Regenerate.
+
+2010-05-25  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac: Redirect grep stdout, stderr to /dev/null instead
+	of grep -q.
+	Use -- instead of grep -e.
+	* configure: Regenerate.
+
+2010-04-19  Andrew Haley  <aph@redhat.com>
+
+	PR libgcj/40860
+	* configure.ac: Handle --no-merge-exidx-entries.
+
+2010-04-14  Release Manager
+
+	* GCC 4.5.0 released.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* gcj/Makefile.in: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* testsuite/Makefile.in: Regenerate.
+
+2010-03-21  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/42811
+	* configure.ac (DLLTOOL): Call AC_CHECK_TOOL.
+	(libgcj_sublib_core_extra_deps): New host-dependent configure var.
+	(LIBGCJ_SUBLIB_CORE_EXTRA_DEPS): AC_SUBST it.
+	* configure.host (libgcj_sublib_core_extra_deps): Define
+	appropriately on Cygwin and MinGW.
+	(libgcj_sublib_core_extra_deps): Add libgcj-noncore-dummy import
+	stub library on Cygwin and MinGW.
+	* Makefile.am (LIBJAVA_CORE_EXTRA): Import AC_SUBST'd
+	LIBGCJ_SUBLIB_CORE_EXTRA_DEPS if building sublibs, else define empty.
+	(libgcj_la_DEPENDENCIES): Use it.
+	(DLL_VERSION): New makefile macro.
+	(libgcj-noncore-dummy.dll.a): New build rule for dummy import stub
+	library.
+	(libgcj_noncore_la_LIBADD): Trim superfluous convenience libs.
+	(AM_MAKEFLAGS): Add DLLTOOL recursive propagation.
+	* libgcj-noncore-dummy.def: New file.
+	* Makefile.in: Regenerate.
+	* include/Makefile.in: Likewise.
+	* testsuite/Makefile.in: Likewise.
+	* configure: Likewise.
+	* gcj/Makefile.in: Likewise.
+
+2010-03-21  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	PR target/42811 (prerequisite)
+	* jvmti.cc (_Jv_GetJVMTIEnv): Avoid use of uninitialised memory.
+
+2010-03-13  Matthias Klose  <doko@ubuntu.com>
+
+	PR libgcj/42676
+	* Regenerate .h files for anonymous inner classes.
+
+2010-03-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.host (mips-sgi-irix6*): Don't set libgcj_interpreter.
+
+2010-02-24  Andrew Haley  <aph@redhat.com>
+
+	PR java/40816
+	* include/jni_md.h: jboolean is an unsigned type.
+
+2010-02-02  Jack Howarth  <howarth@bromo.med.uc.edu>
+
+	PR java/41991
+	* include/posix.h: Redefine _Unwind_FindEnclosingFunction.
+
+2010-01-26  Andrew Haley  <aph@redhat.com>
+
+	* java/lang/natClass.cc (registerClosure): Make sure closures is
+	non NULL.
+
+2010-01-19  Matthias Klose  <doko@ubuntu.com>
+
+	* Regenerate .class files.
+	* classpath/lib/java/security/VMSecureRandom*.class: Remove.
+
+2010-01-16  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.am (write_entries_to_file): Use \012 instead of \n
+	with tr.
+	* scripts/makemake.tcl: Likewise.
+	* sources.am: Regenerate.
+	* Makefile.in: Regenerate.
+
+2010-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* gnu/gcj/convert/Convert.java (version): Update copyright notice
+	dates.
+	* gnu/gcj/tools/gcj_dbtool/Main.java (main): Likewise.
+
+2010-01-06  Matthias Klose  <doko@ubuntu.com>
+
+	* Regenerate .class files with updated ecj.jar (based on 3.5.1).

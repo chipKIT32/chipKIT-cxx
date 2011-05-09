@@ -1,4 +1,4 @@
-This is ../../../../src45x/gcc/mpc/doc/mpc.info, produced by makeinfo version 4.13 from ../../../../src45x/gcc/mpc/doc/mpc.texi.
+This is ../../../../cxx/src45x/gcc/mpc/doc/mpc.info, produced by makeinfo version 4.13 from ../../../../cxx/src45x/gcc/mpc/doc/mpc.texi.
 
 START-INFO-DIR-ENTRY
 * mpc: (mpc.info).               Multiple Precision Complex Library.
@@ -1218,29 +1218,29 @@ Function and Type Index
 
 
 Tag Table:
-Node: Top1035
-Node: Copying1698
-Node: Introduction to MPC2356
-Node: Installing MPC3064
-Node: Reporting Bugs6762
-Node: MPC Basics8091
-Ref: return-value11739
-Node: Complex Functions12914
-Node: Initializing Complex Numbers14032
-Node: Assigning Complex Numbers16422
-Node: String and Stream Input and Output20138
-Ref: string-io20284
-Node: Complex Comparison26704
-Node: Projection & Decomposing27783
-Node: Basic Arithmetic29158
-Node: Power Functions and Logarithm33600
-Node: Trigonometric Functions35255
-Node: Miscellaneous Complex Functions37161
-Node: Advanced Functions39304
-Node: Internals40377
-Node: Contributors40824
-Node: References41170
-Node: Concept Index42084
-Node: Function Index44256
+Node: Top1043
+Node: Copying1706
+Node: Introduction to MPC2364
+Node: Installing MPC3072
+Node: Reporting Bugs6770
+Node: MPC Basics8099
+Ref: return-value11747
+Node: Complex Functions12922
+Node: Initializing Complex Numbers14040
+Node: Assigning Complex Numbers16430
+Node: String and Stream Input and Output20146
+Ref: string-io20292
+Node: Complex Comparison26712
+Node: Projection & Decomposing27791
+Node: Basic Arithmetic29166
+Node: Power Functions and Logarithm33608
+Node: Trigonometric Functions35263
+Node: Miscellaneous Complex Functions37169
+Node: Advanced Functions39312
+Node: Internals40385
+Node: Contributors40832
+Node: References41178
+Node: Concept Index42092
+Node: Function Index44264
 
 End Tag Table

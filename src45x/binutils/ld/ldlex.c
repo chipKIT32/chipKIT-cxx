@@ -1,5 +1,5 @@
 
-#line 3 "../../../src45x/binutils/ld/ldlex.c"
+#line 3 "../../../cxx/src45x/binutils/ld/ldlex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -1664,7 +1664,7 @@ int yywrap (void) { return 1; }
 
 
 
-#line 1668 "../../../src45x/binutils/ld/ldlex.c"
+#line 1668 "../../../cxx/src45x/binutils/ld/ldlex.c"
 
 #define INITIAL 0
 #define SCRIPT 1
@@ -1876,7 +1876,7 @@ YY_DECL
 	}
     }
 
-#line 1880 "../../../src45x/binutils/ld/ldlex.c"
+#line 1880 "../../../cxx/src45x/binutils/ld/ldlex.c"
 
 	if ( !(yy_init) )
 		{
@@ -3043,7 +3043,7 @@ YY_RULE_SETUP
 #line 465 "ldlex.l"
 ECHO;
 	YY_BREAK
-#line 3047 "../../../src45x/binutils/ld/ldlex.c"
+#line 3047 "../../../cxx/src45x/binutils/ld/ldlex.c"
 
 	case YY_END_OF_BUFFER:
 		{

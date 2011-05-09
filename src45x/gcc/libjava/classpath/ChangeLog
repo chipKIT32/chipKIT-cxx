@@ -1,0 +1,316 @@
+2010-07-31  Release Manager
+
+	* GCC 4.5.1 released.
+
+2010-06-04  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* scripts/check_jni_methods.sh.in: Don't use diff -U.
+	Adapt grep regex, ignore file and problem message.
+
+2010-05-27  Andrew John Hughes  <ahughes@redhat.com>
+
+	* configure.ac:
+	Disable plugin by default and warn about
+	unmaintained status when enabled.
+	* configure: Regenerated.
+
+2010-04-14  Release Manager
+
+	* GCC 4.5.0 released.
+
+2010-04-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* HACKING: Update required Automake version.
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* doc/Makefile.in: Regenerate.
+	* doc/api/Makefile.in: Regenerate.
+	* examples/Makefile.in: Regenerate.
+	* external/Makefile.in: Regenerate.
+	* external/jsr166/Makefile.in: Regenerate.
+	* external/relaxngDatatype/Makefile.in: Regenerate.
+	* external/sax/Makefile.in: Regenerate.
+	* external/w3c_dom/Makefile.in: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* lib/Makefile.in: Regenerate.
+	* native/Makefile.in: Regenerate.
+	* native/fdlibm/Makefile.in: Regenerate.
+	* native/jawt/Makefile.in: Regenerate.
+	* native/jni/Makefile.in: Regenerate.
+	* native/jni/classpath/Makefile.in: Regenerate.
+	* native/jni/gconf-peer/Makefile.in: Regenerate.
+	* native/jni/gstreamer-peer/Makefile.in: Regenerate.
+	* native/jni/gtk-peer/Makefile.in: Regenerate.
+	* native/jni/java-io/Makefile.in: Regenerate.
+	* native/jni/java-lang/Makefile.in: Regenerate.
+	* native/jni/java-math/Makefile.in: Regenerate.
+	* native/jni/java-net/Makefile.in: Regenerate.
+	* native/jni/java-nio/Makefile.in: Regenerate.
+	* native/jni/java-util/Makefile.in: Regenerate.
+	* native/jni/midi-alsa/Makefile.in: Regenerate.
+	* native/jni/midi-dssi/Makefile.in: Regenerate.
+	* native/jni/native-lib/Makefile.in: Regenerate.
+	* native/jni/qt-peer/Makefile.in: Regenerate.
+	* native/jni/xmlj/Makefile.in: Regenerate.
+	* native/plugin/Makefile.in: Regenerate.
+	* resource/Makefile.in: Regenerate.
+	* scripts/Makefile.in: Regenerate.
+	* tools/Makefile.in: Regenerate.
+2010-03-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libgcj/38251
+	* tools/Makefile.am (dist-hook): Prune .svn directories in asm and
+	classes copies.
+	* tools/Makefile.in: Regenerate.
+
+	Revert:
+	2008-11-05  Andrew Haley  <aph@redhat.com>
+
+	* tools/Makefile.am (UPDATE_TOOLS_ZIP, CREATE_TOOLS_ZIP): Exclude
+	.svn direcories.
+
+2010-01-18  Andreas Tobler  <andreast@fgznet.ch>
+
+	* tools/Makefile.am (GJDOC_EX): Use find -name pattern -prune -o.
+	* tools/Makefile.in: Regenerate.
+
+2009-12-05  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+	* doc/Makefile.in: Regenerate.
+	* doc/api/Makefile.in: Regenerate.
+	* examples/Makefile.in: Regenerate.
+	* external/Makefile.in: Regenerate.
+	* external/jsr166/Makefile.in: Regenerate.
+	* external/relaxngDatatype/Makefile.in: Regenerate.
+	* external/sax/Makefile.in: Regenerate.
+	* external/w3c_dom/Makefile.in: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* lib/Makefile.in: Regenerate.
+	* native/Makefile.in: Regenerate.
+	* native/fdlibm/Makefile.in: Regenerate.
+	* native/jawt/Makefile.in: Regenerate.
+	* native/jni/Makefile.in: Regenerate.
+	* native/jni/classpath/Makefile.in: Regenerate.
+	* native/jni/gconf-peer/Makefile.in: Regenerate.
+	* native/jni/gstreamer-peer/Makefile.in: Regenerate.
+	* native/jni/gtk-peer/Makefile.in: Regenerate.
+	* native/jni/java-io/Makefile.in: Regenerate.
+	* native/jni/java-lang/Makefile.in: Regenerate.
+	* native/jni/java-math/Makefile.in: Regenerate.
+	* native/jni/java-net/Makefile.in: Regenerate.
+	* native/jni/java-nio/Makefile.in: Regenerate.
+	* native/jni/java-util/Makefile.in: Regenerate.
+	* native/jni/midi-alsa/Makefile.in: Regenerate.
+	* native/jni/midi-dssi/Makefile.in: Regenerate.
+	* native/jni/native-lib/Makefile.in: Regenerate.
+	* native/jni/qt-peer/Makefile.in: Regenerate.
+	* native/jni/xmlj/Makefile.in: Regenerate.
+	* native/plugin/Makefile.in: Regenerate.
+	* resource/Makefile.in: Regenerate.
+	* scripts/Makefile.in: Regenerate.
+	* tools/Makefile.in: Regenerate.
+
+2009-10-22  Richard Guenther  <rguenther@suse.de>
+
+	PR cp-tools/39177
+	* tools/gnu/classpath/tools/jar/Creator.java (writeCommandLineEntries):
+	Do not use uninitialized manifest.
+	* tools/classes/gnu/classpath/tools/jar/Creator.class: Re-generated.
+
+2009-08-26  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* ltmain.sh (removedotparts): Don't use comma as 's' separator.
+	(collapseslashes): Likewise.
+
+2009-08-24  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure.ac (AC_PREREQ): Bump to 2.64.
+
+2009-08-22  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* doc/cp-hacking.texinfo (Needed Tools and Libraries): Bump
+	Autoconf version to 2.64, Automake to 1.11, M4 to 1.4.6.
+
+	* Makefile.in: Regenerate.
+	* aclocal.m4: Regenerate.
+	* configure: Regenerate.
+	* doc/Makefile.in: Regenerate.
+	* doc/api/Makefile.in: Regenerate.
+	* examples/Makefile.in: Regenerate.
+	* external/Makefile.in: Regenerate.
+	* external/jsr166/Makefile.in: Regenerate.
+	* external/relaxngDatatype/Makefile.in: Regenerate.
+	* external/sax/Makefile.in: Regenerate.
+	* external/w3c_dom/Makefile.in: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* include/config.h.in: Regenerate.
+	* lib/Makefile.in: Regenerate.
+	* native/Makefile.in: Regenerate.
+	* native/fdlibm/Makefile.in: Regenerate.
+	* native/jawt/Makefile.in: Regenerate.
+	* native/jni/Makefile.in: Regenerate.
+	* native/jni/classpath/Makefile.in: Regenerate.
+	* native/jni/gconf-peer/Makefile.in: Regenerate.
+	* native/jni/gstreamer-peer/Makefile.in: Regenerate.
+	* native/jni/gtk-peer/Makefile.in: Regenerate.
+	* native/jni/java-io/Makefile.in: Regenerate.
+	* native/jni/java-lang/Makefile.in: Regenerate.
+	* native/jni/java-math/Makefile.in: Regenerate.
+	* native/jni/java-net/Makefile.in: Regenerate.
+	* native/jni/java-nio/Makefile.in: Regenerate.
+	* native/jni/java-util/Makefile.in: Regenerate.
+	* native/jni/midi-alsa/Makefile.in: Regenerate.
+	* native/jni/midi-dssi/Makefile.in: Regenerate.
+	* native/jni/native-lib/Makefile.in: Regenerate.
+	* native/jni/qt-peer/Makefile.in: Regenerate.
+	* native/jni/xmlj/Makefile.in: Regenerate.
+	* native/plugin/Makefile.in: Regenerate.
+	* resource/Makefile.in: Regenerate.
+	* scripts/Makefile.in: Regenerate.
+	* tools/Makefile.in: Regenerate.
+
+2009-08-20  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* ltmain.sh (func_normal_abspath): New function.
+	(func_relative_path): Likewise.
+	(func_mode_help): Document new -bindir option for link mode.
+	(func_mode_link): Add new -bindir option, and use it to place
+	output DLL if specified.
+
+2009-06-29  Andrew Haley  <aph@redhat.com>
+
+	PR java/40590	
+	* tools/gnu/classpath/tools/javah/FieldHelper.java (print):
+	Use printName().
+	* tools/gnu/classpath/tools/javah/MethodHelper.java (print):
+	Use printName().
+	* tools/gnu/classpath/tools/javah/CniStubPrinter.java (printDecl):
+	Use printName().
+	* tools/gnu/classpath/tools/javah/Keywords.java (words): Replace
+	with keywords list from  gcc/java/mangle.c.
+	* tools/gnu/classpath/tools/javah/ClassWrapper.java (printMethods):
+	Don't pre-convert a C++ keyword.
+	(print(CniPrintStream)): Call CniPrintStream.printName().
+	(printContents): Likewise.
+	* tools/gnu/classpath/tools/javah/CniPrintStream.java
+	(getClassName): Don't call replaceAll("/", "::").
+	(print(Type)): Add ""::" befor name, " *" after.  Use printName(), not
+	print.
+	(printName(PrintStream, String), printName(String), printlnName):
+	New methods.
+	(moveToPackage): Use printName().
+
+2009-03-01  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
+
+	* configure: Regenerate.
+
+2009-02-05  Andrew John Hughes  <ahughes@redhat.com>
+
+	* NEWS: Add VM updates.
+	
+2009-02-05  Andrew John Hughes  <ahughes@redhat.com>
+
+	* NEWS: Updated.
+	* configure.ac:
+	Bump to 0.98 proper.
+
+2009-02-05  Andrew Haley  <aph@redhat.com>
+
+	PR libgcj/38861
+	* native/plugin/gcjwebplugin.cc: Cope with the changed header file
+	format.  https://bugzilla.mozilla.org/show_bug.cgi?id=455458
+	(GCJ_GetJavaClass): Likewise.
+	(NP_Initialize): Likewise.
+
+2009-02-05  Mark Wielaard  <mark@klomp.org>
+
+	PR classpath/38912:
+	* gnu/xml/stream/XMLParser.java:
+	(getLocalName()): Respect stringInterning.
+	(getName()): Likewise.
+	(getPrefix()): Likewise.
+
+2009-02-04  Andrew John Hughes  <ahughes@redhat.com>
+
+	* native/jni/native-lib/cpproc.c:
+	(cpproc_forkAndExec): Don't return on a -1
+	result from chdir as this may be valid in
+	some cases.  A better fix is needed.
+	
+2009-02-03  Andrew John Hughes  <ahughes@redhat.com>
+
+	* native/jni/native-lib/cpproc.c:
+	(cpproc_forkAndExec): Handle return of
+	chdir.
+	
+2009-02-03  Andrew John Hughes  <ahughes@redhat.com>
+
+	PR classpath/38417:
+	* gnu/java/security/jce/prng/SecureRandomAdapter.java:
+	Remove unneeded import.
+	* gnu/javax/crypto/jce/prng/FortunaImpl.java:
+	Fix typo.
+	* java/security/SecureRandom.java:
+	Remove duplicate use of VMSecureRandom,
+	call SecureRandomAdapter instead.
+	* vm/reference/gnu/java/security/jce/prng/VMSecureRandom.java:
+	Moved from java/security so SecureRandomAdapter can
+	access it.
+
+2009-01-22  Mario Torre  <neugens@aicas.com>
+
+	PR classpath/38417:
+	* gnu/java/security/jce/prng/SecureRandomAdapter.java:
+	(getSeed(int)): New; retrieve seed from source specified
+	by securerandom.source property or failing that, use
+	VMSecureRandom.
+	* gnu/javax/crypto/jce/prng/ARCFourRandomSpi.java:
+	(engineGenerateSeed(int)): Use SecureRandomAdapter.
+	(engineNextBytes(byte[])): Initialise using new seed.
+	* gnu/javax/crypto/jce/prng/CSPRNGSpi.java:
+	(engineGenerateSeed(int)): Use SecureRandomAdapter.
+	(engineNextBytes(byte[])): Initialise using new seed.
+	* gnu/javax/crypto/jce/prng/FortunaImpl.java:
+	(engineSetSeed(byte[])): Initialise with new seed if unused.
+	(engineGenerateSeed(int)): Use SecureRandomAdapter.	
+	* gnu/javax/crypto/jce/prng/ICMRandomSpi.java:
+	(engineGenerateSeed(int)): Use SecureRandomAdapter.	
+	(engineNextBytes(byte[])): Initialise using new seed.
+	* gnu/javax/crypto/jce/prng/UMacRandomSpi.java:
+	(engineGenerateSeed(int)): Use SecureRandomAdapter.	
+	(engineNextBytes(byte[])): Initialise using new seed.
+	* gnu/javax/crypto/prng/ICMGenerator.java:
+	(setup(Map)): Call fillBlock().
+
+2009-01-22  Mark Wielaard  <mark@klomp.org>
+
+	* tools/gnu/classpath/tools/gjdoc/Main.java (getGjdocVersion):
+	Read version.properties from package.
+
+2009-01-05  Robert Schuster  <robertschuster@fsfe.org>
+
+	* gnu/java/awt/peer/gtk/CairoGraphics2D.java:
+	(drawPolyline): Rewritten.
+
+2009-01-05  Andrew John Hughes  <gnu_andrew@member.fsf.org>
+
+	* Makefile.am:
+	Add ChangeLog-2008 to EXTRA_DIST.
+	
+2009-01-02  Andrew John Hughes  <gnu_andrew@member.fsf.org>
+
+	* ChangeLog-2008: New file.
+	
+2009-01-02  Andrew John Hughes  <gnu_andrew@member.fsf.org>
+
+	* java/text/MessageFormat.java:
+	(setLocale(Locale)): Integer format should use
+	NumberFormat.getIntegerInstance.
+
+
+Local Variables:
+coding: iso-latin-1-unix	
+End:
+	
