@@ -1123,6 +1123,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                   emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_SRSCTL_REG_NUM),
                                             gen_rtx_REG (SImode, K0_REG_NUM)));
                 }
+              emit_insn (gen_mips_wrpgpr (stack_pointer_rtx, stack_pointer_rtx));
               /* Restore previously loaded Status.  */
               emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_STATUS_REG_NUM),
                                         gen_rtx_REG (SImode, K1_REG_NUM)));
@@ -1197,6 +1198,13 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                 }
               else /* (interrupt_priority == 7) */
                 {
+                  /* Update SP.  */
+                  if (step2 > 0)
+                    {
+                      emit_insn (gen_add3_insn (stack_pointer_rtx,
+                                                stack_pointer_rtx,
+                                                GEN_INT (step2)));
+                    }
                   /* Do not preserve EPC for IPL7 */
                   /* k1 already holds STATUS */
                   /* k0 already holds SRSCTL */
@@ -1207,7 +1215,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                                                 gen_rtx_REG (SImode, K0_REG_NUM)));
                     }
                 }
-
+              emit_insn (gen_mips_wrpgpr (stack_pointer_rtx, stack_pointer_rtx));
               /* Restore previously loaded Status.  */
               emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_STATUS_REG_NUM),
                                         gen_rtx_REG (SImode, K1_REG_NUM)));
@@ -1279,7 +1287,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                   mips_emit_move (gen_rtx_REG (word_mode, K0_REG_NUM), mem);
                   offset -= UNITS_PER_WORD;
                 }
-              /* If we don't use shoadow register set, we need to update SP.  */
+              /* Update SP.  */
               if (step2 > 0)
                 {
                   emit_insn (gen_add3_insn (stack_pointer_rtx,
@@ -1377,7 +1385,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                   mips_emit_move (gen_rtx_REG (word_mode, K0_REG_NUM), mem);
                   offset -= UNITS_PER_WORD;
                 }
-              /* If we don't use shadow register set, we need to update SP.  */
+              /* update SP.  */
               if (step2 > 0)
                 {
                   emit_insn (gen_add3_insn (stack_pointer_rtx,
@@ -1391,6 +1399,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
                   emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_SRSCTL_REG_NUM),
                                             gen_rtx_REG (SImode, K0_REG_NUM)));
                 }
+              emit_insn (gen_mips_wrpgpr (stack_pointer_rtx, stack_pointer_rtx));
               /* Restore previously loaded Status.  */
               emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_STATUS_REG_NUM),
                                         gen_rtx_REG (SImode, K1_REG_NUM)));
@@ -1399,8 +1408,6 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1,
             {
               gcc_assert(0);
             }
-
-          emit_insn (gen_mips_wrpgpr (stack_pointer_rtx, stack_pointer_rtx));
 
         } /* (cfun->machine->interrupt_handler_p) */
       else /* not an interrupt */
