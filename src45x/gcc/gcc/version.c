@@ -28,7 +28,7 @@ along with GCC; see the file COPYING3.  If not see
 #ifdef BUGURL
 const char bug_report_url[] = BUGURL;
 #else
-const char bug_report_url[] = "<URL:http://www.microchip.com/chipkit>";
+const char bug_report_url[] = "<URL:http://chipkit.org/forum>";
 #endif
 
 /* The complete version string, assembled from several pieces.
@@ -37,6 +37,6 @@ const char bug_report_url[] = "<URL:http://www.microchip.com/chipkit>";
 
 /* const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION; */
 
-const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.30-20110506";
+const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.30.01-20110531";
 const char pkgversion_string[] = PKGVERSION;
 

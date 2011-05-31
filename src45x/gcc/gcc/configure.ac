@@ -815,8 +815,8 @@ esac],
 [onestep=""])
 AC_SUBST(onestep)
 
-ACX_PKGVERSION([Microchip Technology])
-ACX_BUGURL([http://support.microchip.com])
+ACX_PKGVERSION(chipKIT])
+ACX_BUGURL([http://chipkit.org/forum/])
 
 # Sanity check enable_languages in case someone does not run the toplevel
 # configure # script.
