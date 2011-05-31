@@ -1,0 +1,8 @@
+#
+# List of files containing version numbers, and associated patterns
+# to allow them to be patched by the "chipKIT_stampversion" Perl script.
+
+# FILE			START						END
+binutils/bfd/version.h		#define\s+BFD_VERSION_DATE\s+
+gcc/gcc/version.c	const char version_string[] = BASEVER " " "[0-9.]+\s*	";
+#gdb/version.in								
