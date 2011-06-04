@@ -110,8 +110,8 @@ if test $want_elf_stt_common = true; then
     [Define if we may generate symbols with ELF's STT_COMMON type])
 fi
 	 
-ACX_PKGVERSION([Microchip Technology])
-ACX_BUGURL([http://support.microchip.com/])
+ACX_PKGVERSION([chipKIT])
+ACX_BUGURL([http://chipkit.org/forum/])
 
 AM_BINUTILS_WARNINGS
 

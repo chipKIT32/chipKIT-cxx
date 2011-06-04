@@ -244,13 +244,13 @@ $DECK
    IF match_pos <> 0 THEN;
       POSITION(BEGINNING_OF(match_pos));
       ERASE(match_pos);
-      COPY_TEXT('"(Microchip Technology) "');
+      COPY_TEXT('"(chipKIT) "');
    ENDIF;
    match_pos := SEARCH_QUIETLY('@report_bugs_to@', FORWARD, EXACT, rang);
    IF match_pos <> 0 THEN;
       POSITION(BEGINNING_OF(match_pos));
       ERASE(match_pos);
-      COPY_TEXT('"<http://support.microchip.com/>"');
+      COPY_TEXT('"<http://chipkit.org/forum/>"');
    ENDIF;
    WRITE_FILE(file, GET_INFO(COMMAND_LINE, "output_file"));
    QUIT
