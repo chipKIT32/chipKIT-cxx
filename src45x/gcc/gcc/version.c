@@ -37,6 +37,6 @@ const char bug_report_url[] = "<URL:http://chipkit.org/forum>";
 
 /* const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION; */
 
-const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.30.01-20110531";
+const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.30.01-20110607";
 const char pkgversion_string[] = PKGVERSION;
 
