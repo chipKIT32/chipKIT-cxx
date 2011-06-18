@@ -1415,15 +1415,22 @@ mchp_compute_frame_info (void)
 
           /* When the context-saving mode is not specified, assume that IPL7 uses
              SRS and other IPL levels use software. This assumption comes from the
-             original Daytona family. The Talladega family introduces configurable
+             original MX3/MX4 family. The MX5, MX6, MX7 family introduces configurable
              shadow registers. You can map your shadow registers to an IPL level
              using configuration fuses. */
           ipl_len = strlen(IDENTIFIER_POINTER (TREE_VALUE (ipl_tree)));
           if (ipl_len == (sizeof("ipl7")-1))
             {
+#if 1
+              /* For chipKIT, assume AUTO if the context-save mechanism 
+                 isn't specified */
+              cfun->machine->current_function_type = 
+              current_function_type = AUTO_CONTEXT_SAVE;
+#else
               if (cfun->machine->interrupt_priority == 7)
                 {
-                  cfun->machine->current_function_type = current_function_type = SRS_CONTEXT_SAVE;
+                  cfun->machine->current_function_type = 
+                    current_function_type = SRS_CONTEXT_SAVE;
                   cfun->machine->use_shadow_register_set_p = true;
                   mchp_isr_backcompat = 1; /* No need to save SRSCTL */
                 }
@@ -1432,6 +1439,7 @@ mchp_compute_frame_info (void)
                   cfun->machine->current_function_type = current_function_type = SOFTWARE_CONTEXT_SAVE;
                   mchp_isr_backcompat = 1; /* No need to save SRSCTL */
                 }
+#endif
             }
           else if ((ipl_len > sizeof("ipl7")) && (ipl_len < (sizeof("ipl7software"))))
             {
