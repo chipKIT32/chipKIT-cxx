@@ -282,7 +282,7 @@ static struct pic32_section *pic32_section_list;
 **    function to be omitted from the final link.
 */
 
-struct reduced_set_list 
+struct reduced_set_list
 {
   char *reduced_set;
   char *module_name;
@@ -362,10 +362,10 @@ struct function_pair_type function_pairs[] =
     /* isscanf() */
     { "sscanf",    "_sscanf",    0 },
     { "_dsscanf",  "_sscanf",    0 },
-    
+
     { "vsscanf",    "_vsscanf",    0 },
     { "_dvsscanf",  "_vsscanf",    0 },
-    
+
     { "vscanf",    "_vscanf",    0 },
     { "_dvscanf",  "_vscanf",    0 },
 
@@ -1097,7 +1097,7 @@ mchp_smartio_fn_list(struct bfd_link_hash_entry *h, PTR p) {
 
     for (c = &h->root.string[strlen(mchp_smartio_symbol)]; *c; c++) {
       if (*c == '_') continue;
-      if (*c == '0') bit = 0; 
+      if (*c == '0') bit = 0;
       else {
         bit = *c - 'A' + 1;
         if (bit > 26) bit = 27 + (*c - 'a');
@@ -1240,7 +1240,7 @@ smartio_symbols(struct bfd_link_info *info) {
                for (l = smartio_fn_list; l; l=l->next)
                  fprintf(stderr,"  because of: %s\n", l->h->root.string);
              }
-             
+
              new = bfd_link_hash_lookup(info->hash, buffer_map_to, 1, 1 , 1);
              new->type =  bfd_link_hash_undefined;
              bfd_link_add_undef(info->hash, new);
@@ -1273,14 +1273,14 @@ smartio_symbols(struct bfd_link_info *info) {
     }
 }
 
-unsigned int (*mchp_force_keep_symbol)(char *, char *) = force_keep_symbol;
-void (*mchp_smartio_symbols)(struct bfd_link_info *) = smartio_symbols;
+extern unsigned int (*mchp_force_keep_symbol)(char *, char *) = force_keep_symbol;
+extern void (*mchp_smartio_symbols)(struct bfd_link_info *) = smartio_symbols;
 
 /* This is called after all the input files have been opened.  */
 static void
 pic32_after_open(void)
 {
- 
+
   /*
   ** Merge full- and reduced-set I/O functions
   */
@@ -1291,39 +1291,8 @@ pic32_after_open(void)
 
       mchp_smartio_symbols(0);
 
-#if 0
-      while ( function_pairs[i].full_set )
-
-        {
-          struct bfd_link_hash_entry *full, *reduced;
-          char *func1, *func2;
-
-          func1 = function_pairs[i].full_set;
-          func2 = function_pairs[i].reduced_set;
-          if (pic32_debug)
-            printf("\nLooking for (%s, %s) ...", func1, func2);
-
-          if ((full = bfd_mchp_is_defined_global_symbol (func1)) &&
-              (reduced = bfd_mchp_is_defined_global_symbol (func2)))
-            {
-              if (pic32_debug)
-                printf("Found\n\nRedirecting %s -> %s\n", func2, func1);
-
-              /* redirect reduced_set function to full_set function */
-              reduced->u.def.value = full->u.def.value;
-              reduced->u.def.section = full->u.def.section;
-
-              /* remove the reduced_set module */
-              bfd_pic32_remove_archive_module (function_pairs[i].module_name);
-            }
-          else
-            if (pic32_debug)
-              printf("Not Found\n");
-          i++;
-        }
-#endif
     } /* pic32_smart_io */
-    
+
     gld${EMULATION_NAME}_after_open();
 }
 
@@ -1648,10 +1617,10 @@ elf_link_check_archive_element (name, abfd, info)
   info = info;
 
   return TRUE;
-} 
+}
 
 bfd_boolean (*mchp_elf_link_check_archive_element)(char *name, bfd *abfd,
-                                                    struct bfd_link_info *) = 
+                                                    struct bfd_link_info *) =
   elf_link_check_archive_element;
 
 
