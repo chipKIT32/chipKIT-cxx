@@ -638,8 +638,6 @@ extern enum mips_function_type_tag current_function_type;
   mchp_subtarget_override_options1()
 
 #undef MIPS_SUBTARGET_OVERRIDE_OPTIONS2
-#define MIPS_SUBTARGET_OVERRIDE_OPTIONS2() \
-  mchp_subtarget_override_options2()
 
 #undef MIPS_SUBTARGET_MIPS16_ENABLED
 #define MIPS_SUBTARGET_MIPS16_ENABLED(decl) \
