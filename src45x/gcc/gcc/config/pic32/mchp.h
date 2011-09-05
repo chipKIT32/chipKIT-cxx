@@ -43,7 +43,7 @@ extern       HOST_WIDE_INT mchp_pic32_license_valid;
 #define DEFAULT_SIGNED_CHAR 1
 
 #undef TARGET_SHORT_DOUBLE
-#define TARGET_SHORT_DOUBLE  1
+#define TARGET_SHORT_DOUBLE  0
 
 /*
 ** This is how to output a reference to a user-level label named NAME.
