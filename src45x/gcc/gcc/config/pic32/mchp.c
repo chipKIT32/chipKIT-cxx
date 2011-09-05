@@ -209,6 +209,9 @@ mchp_subtarget_override_options1 (void)
       mchp_io_size_val = 1;
     }
 
+    /* Smart IO always disabled for chipKIT */
+    mchp_io_size_val = 0;
+
   /* Don't emit DWARF3/4 unless specifically selected. */
   if (dwarf_strict < 0)
     dwarf_strict = 1;

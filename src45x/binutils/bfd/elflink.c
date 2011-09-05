@@ -3729,7 +3729,7 @@ error_free_dyn:
 	return TRUE;
 
       /* Save the DT_AUDIT entry for the linker emulation code. */
-      elf_dt_audit (abfd) = audit; 
+      elf_dt_audit (abfd) = audit;
     }
 
   /* If this is a dynamic object, we always link against the .dynsym
@@ -4029,7 +4029,7 @@ error_free_dyn:
 		  && h->root.u.undef.abfd)
 		undef_bfd = h->root.u.undef.abfd;
 	    }
-	  
+
 	  if (ever == NULL)
 	    {
 	      if (info->default_imported_symver)
@@ -4522,7 +4522,7 @@ error_free_dyn:
           undefsyms = mchp_undefsym_init(info);
 
         /* create or load a table entry for this symbol */
-        usym = mchp_undefsym_lookup(undefsyms, name, 1, 0); 
+        usym = mchp_undefsym_lookup(undefsyms, name, 1, 0);
       }
 #endif
 
@@ -4976,8 +4976,8 @@ _bfd_elf_archive_symbol_lookup (bfd *abfd,
  * we only call this function if it is a valid pointer
  */
 
-unsigned int (*mchp_force_keep_symbol)(char *, char *);
-void (*mchp_smartio_symbols)(struct bfd_link_info*);
+extern unsigned int (*mchp_force_keep_symbol)(char *, char *);
+extern void (*mchp_smartio_symbols)(struct bfd_link_info*);
 #endif
 
 /* Add symbols from an ELF archive file to the linker hash table.  We
@@ -5042,7 +5042,7 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
   { static int smartio_run=0;
-    
+
     if (smartio_run == 0) {
       /* look through the undef list and adds those symbols that are smartio
          to the undefined list */
@@ -5133,7 +5133,7 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
           if (mchp_elf_link_check_archive_element &&
-              !mchp_elf_link_check_archive_element (symdef->name, element, 
+              !mchp_elf_link_check_archive_element (symdef->name, element,
                                                      info))
             continue;
 #endif
@@ -11487,7 +11487,7 @@ _bfd_elf_gc_mark_hook (asection *sec,
 	  if (sec_name && *sec_name != '\0')
 	    {
 	      bfd *i;
-	      
+
 	      for (i = info->input_bfds; i; i = i->link_next)
 		{
 		  sec = bfd_get_section_by_name (i, sec_name);

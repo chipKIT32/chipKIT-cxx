@@ -8,7 +8,6 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
 #include "bucomm.h"
 #include "libiberty.h"
 
@@ -205,7 +204,7 @@ write_hex_file (char *name, bfd *abfd)
       printf ("Error: could not open file %s for writing!\n", name);
       return 1;
     }
-  
+
   if (verbose)
     {
       printf ("writing %s\n\n", name);
@@ -430,7 +429,7 @@ write_section (bfd *abfd, asection *sect, PTR fp)
           }
         /* add checksum */
         fprintf (hexfile, "%2.2x\n", (unsigned char) sum);
-      }    
+      }
     }
 }
 
