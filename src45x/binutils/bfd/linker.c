@@ -28,16 +28,16 @@
 #include "genlink.h"
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
-/* 
- * make common version of this symbol which will be initialized to NIL 
+/*
+ * make common version of this symbol which will be initialized to NIL
  * unless we are creating the linker where an initialized definition will
  * be provided by pic30-elf.em or pic30-coff.em
  *
  * we only call this function if it is a valid pointer
  */
 
-unsigned int (*mchp_force_keep_symbol)(char *, char *);
-void (*mchp_smartio_symbols)(struct bfd_link_info*);
+__attribute__((weak)) unsigned int (*mchp_force_keep_symbol)(char *, char *);
+__attribute__((weak)) void (*mchp_smartio_symbols)(struct bfd_link_info*);
 #endif
 
 /*
@@ -1229,14 +1229,14 @@ generic_link_check_archive_element (bfd *abfd,
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
       /* we may need to pull this symbol in because it is a SMARTIO fn */
-      if (mchp_force_keep_symbol && 
+      if (mchp_force_keep_symbol &&
           mchp_force_keep_symbol((char*)p->name, (char*)abfd->filename)) {
         /* I hate to duplicate code, but ... we may have no hash table */
         if (! bfd_is_com_section (p->section))
           {
             bfd_size_type symcount;
             asymbol **symbols;
-  
+
             /* This object file defines this symbol, so pull it in.  */
             if (!(*info->callbacks->add_archive_element) (info, abfd,
                                                           bfd_asymbol_name (p)))
@@ -2973,7 +2973,7 @@ DESCRIPTION
 /* Sections marked with the SEC_LINK_ONCE flag should only be linked
    once into the output.  This routine checks each section, and
    arrange to discard it if a section of the same name has already
-   been linked.  This code assumes that all relevant sections have the 
+   been linked.  This code assumes that all relevant sections have the
    SEC_LINK_ONCE flag set; that is, it does not depend solely upon the
    section name.  bfd_section_already_linked is called via
    bfd_map_over_sections.  */
@@ -3321,7 +3321,7 @@ bfd_generic_define_common_symbol (bfd *output_bfd,
 
 /*
 FUNCTION
-	bfd_find_version_for_sym 
+	bfd_find_version_for_sym
 
 SYNOPSIS
 	struct bfd_elf_version_tree * bfd_find_version_for_sym

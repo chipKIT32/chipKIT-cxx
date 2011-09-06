@@ -68,7 +68,7 @@ do {                     \
  */
 #undef  LIB_SPEC
 #if 1 /* chipKIT */
-#define LIB_SPEC "--start-group -lc -lm -le -lsupc++ %{!mno-peripheral-libs:-lmchp_peripheral %{mprocessor=*:-lmchp_peripheral_%*}} --end-group"
+#define LIB_SPEC "--start-group -lc -lm -lsupc++ -lpic32 %{!mno-peripheral-libs:-lmchp_peripheral %{mprocessor=*:-lmchp_peripheral_%*}} --end-group"
 #else
 #define LIB_SPEC "--start-group %{!mno-mpdebug-lib:-ldebug} -lc -lm -le -ldsp -lsupc++ %{!mno-peripheral-libs:-lmchp_peripheral %{mprocessor=*:-lmchp_peripheral_%*}} --end-group"
 #endif
@@ -182,6 +182,8 @@ do {                     \
 %{O2:%{!fno-remove-local-statics: -fremove-local-statics}} \
 %{O*:%{O|O0|O1|O2|Os:;:%{!fno-remove-local-statics: -fremove-local-statics}}} \
 %{!fexceptions:-fno-exceptions} \
+%{!fno-function-sections:-ffunction-sections} \
+%{!fno-data-sections:-fdata-sections} \
 %(subtarget_cc1_spec) \
 "
 #else

@@ -35,7 +35,7 @@
 #endif
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
-bfd_boolean (*mchp_elf_link_check_archive_element)
+__attribute__((weak)) bfd_boolean (*mchp_elf_link_check_archive_element)
   PARAMS ((char *, bfd *, struct bfd_link_info *));
 extern int pic32_debug;
 #endif
@@ -4976,8 +4976,8 @@ _bfd_elf_archive_symbol_lookup (bfd *abfd,
  * we only call this function if it is a valid pointer
  */
 
-extern unsigned int (*mchp_force_keep_symbol)(char *, char *);
-extern void (*mchp_smartio_symbols)(struct bfd_link_info*);
+__attribute__((weak)) unsigned int (*mchp_force_keep_symbol)(char *, char *);
+__attribute__((weak)) void (*mchp_smartio_symbols)(struct bfd_link_info*);
 #endif
 
 /* Add symbols from an ELF archive file to the linker hash table.  We

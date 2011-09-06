@@ -1273,8 +1273,8 @@ smartio_symbols(struct bfd_link_info *info) {
     }
 }
 
-extern unsigned int (*mchp_force_keep_symbol)(char *, char *) = force_keep_symbol;
-extern void (*mchp_smartio_symbols)(struct bfd_link_info *) = smartio_symbols;
+unsigned int (*mchp_force_keep_symbol)(char *, char *) = force_keep_symbol;
+void (*mchp_smartio_symbols)(struct bfd_link_info *) = smartio_symbols;
 
 /* This is called after all the input files have been opened.  */
 static void
