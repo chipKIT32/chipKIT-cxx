@@ -752,7 +752,7 @@ arm*-*-linux*)			# ARM GNU/Linux with ELF
 	    # The EABI requires the use of __cxa_atexit.
 	    default_use_cxa_atexit=yes
 	    case ${target} in
-	    arm-wrs-linux-gnueabi) 
+	    arm-wrs-linux-gnueabi)
 		tm_file="$tm_file arm/wrs-linux.h"
 		tmake_file="$tmake_file arm/t-wrs-linux"
 		tm_defines="$tm_defines TARGET_FLEXLM"
@@ -1853,7 +1853,7 @@ mips*-*-linux*)				# Linux MIPS, either endian.
         mipsisa32*)
 		tm_defines="${tm_defines} MIPS_ISA_DEFAULT=32"
 		;;
-	mips-wrs-linux-gnu) 
+	mips-wrs-linux-gnu)
 		tmake_file="$tmake_file mips/t-linux64 mips/t-wrs-linux"
 		tm_file="$tm_file mips/linux64.h mips/octeon.h mips/wrs-linux.h"
 		tm_defines="$tm_defines TARGET_FLEXLM"
@@ -3682,8 +3682,13 @@ case ${target} in
 			target_cpu_default2="MASK_SPLIT_ADDRESSES"
 		fi
 		tm_defines="TARGET_ENDIAN_DEFAULT=0 ${tm_defines}"
-		tm_defines="US_SOFTWARE_GOFAST ${tm_defines}"
-		tmake_file="pic32/t-fastmath ${tmake_file}"
+		if test "x$enable_gofast" = xyes
+		then
+			tm_defines="US_SOFTWARE_GOFAST $tm_defines"
+			tmake_file="mips/t-gofast $tmake_file"
+		else
+			tmake_file="mips/t-fprules-softfp soft-fp/t-softfp $tmake_file"
+		fi
 		;;
 
 	powerpc*-*-* | rs6000-*-*)
