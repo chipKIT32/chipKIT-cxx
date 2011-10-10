@@ -27,7 +27,7 @@
 #include "bfdlink.h"
 #include "genlink.h"
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx) && defined(ENABLE_SMARTIO)
 /*
  * make common version of this symbol which will be initialized to NIL
  * unless we are creating the linker where an initialized definition will
@@ -998,7 +998,7 @@ _bfd_generic_link_add_archive_symbols
   unsigned int indx;
   struct bfd_link_hash_entry **pundef;
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx)  && defined(ENABLE_SMARTIO)
   { static int smartio_run=0;
 
     if (smartio_run == 0) {
@@ -1227,7 +1227,7 @@ generic_link_check_archive_element (bfd *abfd,
       h = bfd_link_hash_lookup (info->hash, bfd_asymbol_name (p), FALSE,
 				FALSE, TRUE);
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx)  && defined(ENABLE_SMARTIO)
       /* we may need to pull this symbol in because it is a SMARTIO fn */
       if (mchp_force_keep_symbol &&
           mchp_force_keep_symbol((char*)p->name, (char*)abfd->filename)) {

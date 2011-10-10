@@ -6817,7 +6817,7 @@ lang_new_phdr (const char *name,
   n->phdrs = phdrs;
   n->at = at;
   n->flags = flags;
-  
+
   hdrs = n->type == 1 && (phdrs || filehdr);
 
   for (pp = &lang_phdr_list; *pp != NULL; pp = &(*pp)->next)

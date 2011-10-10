@@ -30,14 +30,14 @@
 #include "libiberty.h"
 #include "objalloc.h"
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx)
 #include "pic32-utils.h"
+extern int pic32_debug;
 #endif
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx) && defined(ENABLE_SMARTIO)
 __attribute__((weak)) bfd_boolean (*mchp_elf_link_check_archive_element)
   PARAMS ((char *, bfd *, struct bfd_link_info *));
-extern int pic32_debug;
 #endif
 
 /* This struct is used to pass information to routines called via
@@ -3401,7 +3401,7 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
   size_t tabsize = 0;
   size_t hashsize = 0;
 
-#if 1
+#if defined(TARGET_IS_elf32pic32mx)
   if (pic32_debug)
     printf("\nLoading symbols from %s\n", abfd->filename);
 #endif
@@ -4512,7 +4512,7 @@ error_free_dyn:
 	    }
 	}
 
-#if 1
+#if 0
     /* For PIC32 Smart IO v2 */
     if (definition == FALSE)
       {
@@ -4967,7 +4967,7 @@ _bfd_elf_archive_symbol_lookup (bfd *abfd,
   return h;
 }
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx) && defined(ENABLE_SMARTIO)
 /*
  * make common version of this symbol which will be initialized to NIL
  * unless we are creating the linker where an initialized definition will
@@ -5040,10 +5040,10 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
   if (defined == NULL || included == NULL)
     goto error_return;
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if 0 || defined(TARGET_IS_elf32pic32mx) && defined(ENABLE_SMARTIO)
   { static int smartio_run=0;
 
-    if (smartio_run == 0) {
+    if ((smartio_run == 0) && mchp_smartio_symbols) {
       /* look through the undef list and adds those symbols that are smartio
          to the undefined list */
       mchp_smartio_symbols(info);
@@ -5131,7 +5131,7 @@ elf_link_add_archive_symbols (bfd *abfd, struct bfd_link_info *info)
 	      goto error_return;
 	    }
 
-#if 1 || defined(TARGET_IS_elf32pic32mx)
+#if defined(TARGET_IS_elf32pic32mx)  && defined(ENABLE_SMARTIO)
           if (mchp_elf_link_check_archive_element &&
               !mchp_elf_link_check_archive_element (symdef->name, element,
                                                      info))
@@ -5205,6 +5205,7 @@ bfd_elf_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
     default:
       bfd_set_error (bfd_error_wrong_format);
       return FALSE;
+        return TRUE;
     }
 }
 
