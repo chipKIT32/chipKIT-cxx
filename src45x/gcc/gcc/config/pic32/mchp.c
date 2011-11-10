@@ -2311,7 +2311,7 @@ mchp_strip_name_encoding (const char *symbol_name)
           *f++=#ALT[0]; \
           added |=  JOIN(conv_,ALT); }
 
-        if (match->encoded_name == 0) {
+        {
           char extra_flags[sizeof("_aAcdeEfFgGnopsuxX0")] = "_";
           char *f = &extra_flags[1];
           mchp_conversion_status added;
