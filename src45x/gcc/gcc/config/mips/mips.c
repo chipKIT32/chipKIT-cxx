@@ -10777,21 +10777,23 @@ mips_output_function_epilogue (FILE *file ATTRIBUTE_UNUSED,
 void
 mips_save_reg (rtx reg, rtx mem)
 {
-
 #if defined(TARGET_MCHP_PIC32MX)
-#  ifndef MIPS_HI_TEMP
-#    define MIPS_HI_TEMP(mode)  gen_rtx_REG (SImode, V1_REGNUM)
-#  endif
-#  ifndef MIPS_LO_TEMP
-#    define MIPS_LO_TEMP(mode) gen_rtx_REG (SImode, V0_REGNUM)
-#  endif
-#else
-#  ifndef MIPS_HI_TEMP
-#    define MIPS_HI_TEMP(mode) MIPS_PROLOGUE_TEMP(mode)
-#  endif
-#  ifndef MIPS_LO_TEMP
-#    define MIPS_LO_TEMP(mode) MIPS_PROLOGUE_TEMP(mode)
-#  endif
+	#define MIPS_PROLOGUE_HI_TEMP_REGNUM \
+	  (cfun->machine->interrupt_handler_p ? V1_REGNUM : GP_REG_FIRST + 3)
+	#define MIPS_PROLOGUE_LO_TEMP_REGNUM \
+	  (cfun->machine->interrupt_handler_p ? V0_REGNUM : GP_REG_FIRST + 3)
+	#define MIPS_EPILOGUE_HI_TEMP_REGNUM               \
+	  (cfun->machine->interrupt_handler_p           \
+	   ? V1_REGNUM                                 \
+	   : GP_REG_FIRST + (TARGET_MIPS16 ? 6 : 8))
+	#define MIPS_EPILOGUE_LO_TEMP_REGNUM               \
+	  (cfun->machine->interrupt_handler_p           \
+	   ? V0_REGNUM                                 \
+	   : GP_REG_FIRST + (TARGET_MIPS16 ? 6 : 8))
+	#define MIPS_PROLOGUE_HI_TEMP(MODE) gen_rtx_REG (MODE, MIPS_PROLOGUE_HI_TEMP_REGNUM)
+	#define MIPS_EPILOGUE_HI_TEMP(MODE) gen_rtx_REG (MODE, MIPS_EPILOGUE_HI_TEMP_REGNUM)
+	#define MIPS_PROLOGUE_LO_TEMP(MODE) gen_rtx_REG (MODE, MIPS_PROLOGUE_LO_TEMP_REGNUM)
+	#define MIPS_EPILOGUE_LO_TEMP(MODE) gen_rtx_REG (MODE, MIPS_EPILOGUE_LO_TEMP_REGNUM)
 #endif
 
   if (GET_MODE (reg) == DFmode && !TARGET_FLOAT64)
@@ -10811,23 +10813,31 @@ mips_save_reg (rtx reg, rtx mem)
     }
   else
     {
+#if defined(TARGET_MCHP_PIC32MX)
       if (REGNO (reg) == HI_REGNUM)
         {
-          mips_emit_save_slot_move (mem, reg, MIPS_HI_TEMP (GET_MODE (reg)));
+          mips_emit_save_slot_move (mem, reg, MIPS_PROLOGUE_HI_TEMP (GET_MODE (reg)));
         }
-#if defined(TARGET_MCHP_PIC32MX)
       else if (REGNO (reg) == LO_REGNUM)
         {
-          mips_emit_save_slot_move (mem, reg, MIPS_LO_TEMP (GET_MODE (reg)));
+          mips_emit_save_slot_move (mem, reg, MIPS_PROLOGUE_LO_TEMP (GET_MODE (reg)));
         }
-#endif
       else
         {
           mips_emit_save_slot_move (mem, reg, MIPS_PROLOGUE_TEMP (GET_MODE (reg)));
         }
+#else
+      mips_emit_save_slot_move (mem, reg, MIPS_PROLOGUE_TEMP (GET_MODE (reg)));
+#endif
     }
-#undef MIPS_HI_TEMP
-#undef MIPS_LO_TEMP
+#undef MIPS_PROLOGUE_HI_TEMP_REGNUM
+#undef MIPS_PROLOGUE_LO_TEMP_REGNUM
+#undef MIPS_EPILOGUE_HI_TEMP_REGNUM
+#undef MIPS_EPILOGUE_HI_TEMP_REGNUM
+#undef MIPS_PROLOGUE_HI_TEMP
+#undef MIPS_EPILOGUE_HI_TEMP
+#undef MIPS_PROLOGUE_LO_TEMP
+#undef MIPS_EPILOGUE_LO_TEMP
 }
 
 /* The __gnu_local_gp symbol.  */
@@ -11185,12 +11195,54 @@ mips_expand_prologue (void)
 void
 mips_restore_reg (rtx reg, rtx mem)
 {
+#if defined(TARGET_MCHP_PIC32MX)
+	#define MIPS_PROLOGUE_HI_TEMP_REGNUM \
+	  (cfun->machine->interrupt_handler_p ? V1_REGNUM : GP_REG_FIRST + 3)
+	#define MIPS_PROLOGUE_LO_TEMP_REGNUM \
+	  (cfun->machine->interrupt_handler_p ? V0_REGNUM : GP_REG_FIRST + 3)
+	#define MIPS_EPILOGUE_HI_TEMP_REGNUM               \
+	  (cfun->machine->interrupt_handler_p           \
+	   ? V1_REGNUM                                 \
+	   : GP_REG_FIRST + (TARGET_MIPS16 ? 6 : 8))
+	#define MIPS_EPILOGUE_LO_TEMP_REGNUM               \
+	  (cfun->machine->interrupt_handler_p           \
+	   ? V0_REGNUM                                 \
+	   : GP_REG_FIRST + (TARGET_MIPS16 ? 6 : 8))
+	#define MIPS_PROLOGUE_HI_TEMP(MODE) gen_rtx_REG (MODE, MIPS_PROLOGUE_HI_TEMP_REGNUM)
+	#define MIPS_EPILOGUE_HI_TEMP(MODE) gen_rtx_REG (MODE, MIPS_EPILOGUE_HI_TEMP_REGNUM)
+	#define MIPS_PROLOGUE_LO_TEMP(MODE) gen_rtx_REG (MODE, MIPS_PROLOGUE_LO_TEMP_REGNUM)
+	#define MIPS_EPILOGUE_LO_TEMP(MODE) gen_rtx_REG (MODE, MIPS_EPILOGUE_LO_TEMP_REGNUM)
+#endif
+
   /* There's no MIPS16 instruction to load $31 directly.  Load into
      $7 instead and adjust the return insn appropriately.  */
   if (TARGET_MIPS16 && REGNO (reg) == RETURN_ADDR_REGNUM)
     reg = gen_rtx_REG (GET_MODE (reg), GP_REG_FIRST + 7);
 
+#if defined(TARGET_MCHP_PIC32MX)
+  if (REGNO (reg) == HI_REGNUM)
+    {
+      mips_emit_save_slot_move (reg, mem, MIPS_EPILOGUE_HI_TEMP (GET_MODE (reg)));
+    }
+  else if (REGNO (reg) == LO_REGNUM)
+    {
+      mips_emit_save_slot_move (reg, mem, MIPS_EPILOGUE_LO_TEMP (GET_MODE (reg)));
+    }
+  else
+    {
+      mips_emit_save_slot_move (reg, mem, MIPS_EPILOGUE_TEMP (GET_MODE (reg)));
+    }
+#else
   mips_emit_save_slot_move (reg, mem, MIPS_EPILOGUE_TEMP (GET_MODE (reg)));
+#endif
+#undef MIPS_PROLOGUE_HI_TEMP_REGNUM
+#undef MIPS_PROLOGUE_LO_TEMP_REGNUM
+#undef MIPS_EPILOGUE_HI_TEMP_REGNUM
+#undef MIPS_EPILOGUE_HI_TEMP_REGNUM
+#undef MIPS_PROLOGUE_HI_TEMP
+#undef MIPS_EPILOGUE_HI_TEMP
+#undef MIPS_PROLOGUE_LO_TEMP
+#undef MIPS_EPILOGUE_LO_TEMP
 }
 
 /* Emit any instructions needed before a return.  */
