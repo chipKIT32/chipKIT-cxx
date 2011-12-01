@@ -1460,6 +1460,10 @@ fvar-tracking-uninit
 Common Report Var(flag_var_tracking_uninit) Optimization
 Perform variable tracking and also tag variables that are uninitialized
 
+fframe-base-loclist
+Common Report Var(flag_frame_base_loclist) Init(0)
+Allow use of DWARF2 location lists for frame base
+
 ftree-vectorize
 Common Report Var(flag_tree_vectorize) Optimization
 Enable loop vectorization on trees
