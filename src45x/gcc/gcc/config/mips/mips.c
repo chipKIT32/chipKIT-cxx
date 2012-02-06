@@ -9721,12 +9721,7 @@ mips_cfun_might_clobber_call_saved_reg_p (unsigned int regno)
      the rtl.  Incoming values are passed in call-clobbered registers,
      so we can assume that any live call-saved register is set within
      the function.  */
-#ifdef TARGET_MCHP_PIC32MX
-  if (df_regs_ever_live_p (regno)
-      && !cfun->machine->use_shadow_register_set_p)
-#else
   if (df_regs_ever_live_p (regno))
-#endif
     return true;
 
   /* Check for registers that are clobbered by FUNCTION_PROFILER.
@@ -9741,12 +9736,7 @@ mips_cfun_might_clobber_call_saved_reg_p (unsigned int regno)
 
   /* The function's prologue will need to set the frame pointer if
      frame_pointer_needed.  */
-#ifdef TARGET_MCHP_PIC32MX
-  if (regno == HARD_FRAME_POINTER_REGNUM && frame_pointer_needed
-      && !cfun->machine->use_shadow_register_set_p)
-#else
   if (regno == HARD_FRAME_POINTER_REGNUM && frame_pointer_needed)
-#endif
     return true;
 
   /* If a MIPS16 function returns a value in FPRs, its epilogue
