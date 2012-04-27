@@ -181,6 +181,7 @@ do {                     \
 %{save-temps: -fverbose-asm} \
 %{O2:%{!fno-remove-local-statics: -fremove-local-statics}} \
 %{O*:%{O|O0|O1|O2|Os:;:%{!fno-remove-local-statics: -fremove-local-statics}}} \
+%{!mtune:-mtune=4kec} \
 %{!fexceptions:-fno-exceptions} \
 %{!fno-function-sections:-ffunction-sections} \
 %{!fno-data-sections:-fdata-sections} \
@@ -202,6 +203,7 @@ do {                     \
 %{save-temps: -fverbose-asm} \
 %{O2:%{!fno-remove-local-statics: -fremove-local-statics}} \
 %{O*:%{O|O0|O1|O2|Os:;:%{!fno-remove-local-statics: -fremove-local-statics}}} \
+%{!mtune:-mtune=4kec} \
 %{!fexceptions:-fno-exceptions} \
 %(subtarget_cc1_spec) \
 "
