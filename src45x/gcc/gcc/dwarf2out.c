@@ -57,6 +57,13 @@ along with GCC; see the file COPYING3.  If not see
    DW_CFA_... = DWARF2 CFA call frame instruction
    DW_TAG_... = DWARF2 DIE tag */
 
+/* chipKIT */
+#if defined(TARGET_MCHP_PIC32MX)
+ #ifndef _BUILD_MCHP_
+  #define _BUILD_MCHP_ 1
+ #endif
+#endif
+
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
@@ -16640,6 +16647,62 @@ add_bit_offset_attribute (dw_die_ref die, tree decl)
      is different on big-endian and little-endian machines, the computation
      below must take account of these differences.  */
   highest_order_object_bit_offset = object_offset_in_bytes * BITS_PER_UNIT;
+#ifdef _BUILD_C30_
+  {
+    /*
+    ** For any given bit-field, the "containing object" is a hypothetical
+    ** object (of some integral or enum type) within which the given bit-field
+    ** lives.  The type of this hypothetical "containing object" is always the
+    ** same as the  declared type of the individual bit-field itself (for GCC
+    ** anyway ... the DWARF spec doesn't actually mandate this).  Note that it
+    ** is the size (in bytes) of the hypothetical "containing object" which
+    ** will be given in the DW_AT_byte_size attribute for this bit-field.
+    **
+    ** The DW_AT_bit_offset attribute is a constant value that specifies
+    ** the number of bits to the left of the leftmost (most significant)
+    ** bit of the bit field value. Since, for GCC, the containing object
+    ** for a bit field is always the same as the declared type, we can
+    ** calculate the bit-offset using the following:
+    ** - the field size (the number of bits in the field)
+    ** - the starting bit position of the field
+    ** - the containing object size (the size of the containing type)
+    ** We are not concerned with the containing object's alignment, since this
+    ** does not affect the number of bits in the containing object.
+    ** The only nuance is that the starting bit position of the field
+    ** may be greater that the size of the containing object type, so
+    ** the bit position of the high-order bit of the field needs to be
+    ** normalized before calculating the bit-offset.
+    **
+    ** This code replaces the original calculation, which is opaque
+    ** and incorrect.
+    */
+    tree field_size_tree;
+    unsigned HOST_WIDE_INT field_size_in_bits;
+    unsigned HOST_WIDE_INT type_size_in_bits;
+
+    field_size_tree = DECL_SIZE (decl);
+    if (! field_size_tree)
+    {
+      field_size_tree = bitsize_zero_node;
+    }
+    if (host_integerp (field_size_tree, 1))
+    {
+      field_size_in_bits = tree_low_cst (field_size_tree, 1);
+    }
+    else
+    {
+      field_size_in_bits = BITS_PER_WORD;
+    }
+    type_size_in_bits = simple_type_size_in_bits (type);
+    if (type_size_in_bits == 0)
+    {
+      type_size_in_bits = BITS_PER_WORD;
+    }
+    highest_order_field_bit_offset = bitpos_int + field_size_in_bits;
+    highest_order_field_bit_offset %= type_size_in_bits;
+    bit_offset = type_size_in_bits - highest_order_field_bit_offset;
+  }
+#else
   highest_order_field_bit_offset = bitpos_int;
 
   if (! BYTES_BIG_ENDIAN)
@@ -16652,6 +16715,7 @@ add_bit_offset_attribute (dw_die_ref die, tree decl)
     = (! BYTES_BIG_ENDIAN
        ? highest_order_object_bit_offset - highest_order_field_bit_offset
        : highest_order_field_bit_offset - highest_order_object_bit_offset);
+#endif
 
   add_AT_unsigned (die, DW_AT_bit_offset, bit_offset);
 }
@@ -18054,45 +18118,47 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	}
       else
 	{
-#if defined(TARGET_MCHP_PIC32MX)
-	  if (flag_frame_base_loclist)
-	  {
-	    dw_loc_list_ref list = convert_cfa_to_fb_loc_list (cfa_fb_offset);
-	    if (list->dw_loc_next)
-	      add_AT_loc_list (subr_die, DW_AT_frame_base, list);
- 	    else
-	      add_AT_loc (subr_die, DW_AT_frame_base, list->expr);
-	      
+#if defined(_BUILD_MCHP_)
+          if (flag_frame_base_loclist)
+          {
+            dw_loc_list_ref list = convert_cfa_to_fb_loc_list (cfa_fb_offset);
+            if (list->dw_loc_next)
+              add_AT_loc_list (subr_die, DW_AT_frame_base, list);
+            else
+              add_AT_loc (subr_die, DW_AT_frame_base, list->expr);
+
             /* Compute a displacement from the "steady-state frame pointer" to
-	       the CFA.  The former is what all stack slots and argument slots
-	       will reference in the rtl; the later is what we've told the
-	       debugger about.  We'll need to adjust all frame_base references
-	       by this displacement.  */
+               the CFA.  The former is what all stack slots and argument slots
+               will reference in the rtl; the later is what we've told the
+               debugger about.  We'll need to adjust all frame_base references
+               by this displacement.  */
             compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
-	  }
-	  else
-	  {
-	    rtx fp_reg;
-	    fp_reg
-	      = frame_pointer_needed ? hard_frame_pointer_rtx : stack_pointer_rtx;
-	    add_AT_loc (subr_die, DW_AT_frame_base, 
-	      reg_loc_descriptor (fp_reg, VAR_INIT_STATUS_INITIALIZED));
-	  }
+          }
+          else
+          {
+            rtx fp_reg;
+            fp_reg
+              = frame_pointer_needed ? hard_frame_pointer_rtx : stack_pointer_rtx;
+            add_AT_loc (subr_die, DW_AT_frame_base,
+              reg_loc_descriptor (fp_reg, VAR_INIT_STATUS_INITIALIZED));
+          }
 #else
 	  dw_loc_list_ref list = convert_cfa_to_fb_loc_list (cfa_fb_offset);
 	  if (list->dw_loc_next)
 	    add_AT_loc_list (subr_die, DW_AT_frame_base, list);
  	  else
 	    add_AT_loc (subr_die, DW_AT_frame_base, list->expr);
-	    
-          /* Compute a displacement from the "steady-state frame pointer" to
-	     the CFA.  The former is what all stack slots and argument slots
-	     will reference in the rtl; the later is what we've told the
-	     debugger about.  We'll need to adjust all frame_base references
-	     by this displacement.  */
-          compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
 #endif
-	}
+       }
+	    
+#if !defined(_BUILD_MCHP_)
+       /* Compute a displacement from the "steady-state frame pointer" to
+	  the CFA.  The former is what all stack slots and argument slots
+	  will reference in the rtl; the later is what we've told the
+	  debugger about.  We'll need to adjust all frame_base references
+	  by this displacement.  */
+       compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+#endif
 
       if (cfun->static_chain_decl)
 	add_AT_location_description (subr_die, DW_AT_static_link,
@@ -20518,7 +20584,7 @@ dwarf2out_source_line (unsigned int line, const char *filename,
     {
       int file_num = maybe_emit_file (lookup_filename (filename));
 
-      switch_to_section (current_function_section ());
+      switch_to_section (current_function_section ()); /* TODO */
 
       /* If requested, emit something human-readable.  */
       if (flag_debug_asm)
@@ -20614,7 +20680,7 @@ dwarf2out_start_source_file (unsigned int lineno, const char *filename)
   if (debug_info_level >= DINFO_LEVEL_VERBOSE)
     {
       int file_num = maybe_emit_file (lookup_filename (filename));
-
+      switch_to_section (debug_macinfo_section);
       dw2_asm_output_data (1, DW_MACINFO_start_file, "Start new file");
       dw2_asm_output_data_uleb128 (lineno, "Included from line number %d",
 				   lineno);
@@ -21703,7 +21769,11 @@ dwarf2out_finish (const char *filename)
   /* If we emitted any DW_FORM_strp form attribute, output the string
      table too.  */
   if (debug_str_hash)
+    {
+      switch_to_section (debug_str_section);
       htab_traverse (debug_str_hash, output_indirect_string, NULL);
+      switch_to_section (text_section);
+    }
 }
 #else
 
