@@ -65,7 +65,7 @@ extern char *canonicalize_file_name (const char *);
 #  endif
 # endif
 #else
-  /* cygwin has realpath, so it won't get here.  */ 
+  /* cygwin has realpath, so it won't get here.  */
 # if defined (_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h> /* for GetFullPathName */
@@ -137,6 +137,9 @@ lrealpath (const char *filename)
 #if defined (_WIN32)
   {
     char buf[MAX_PATH];
+#if defined (CHIPKIT_PIC32)
+    char bufLong[MAX_PATH];
+#endif
     char* basename;
 
     if (_access (filename, F_OK) != 0)
@@ -150,6 +153,9 @@ lrealpath (const char *filename)
       }
 
     DWORD len = GetFullPathName (filename, MAX_PATH, buf, &basename);
+#if defined (CHIPKIT_PIC32)
+    len = GetLongPathName (buf, bufLong, MAX_PATH);
+#endif
     if (len == 0 || len > MAX_PATH - 1)
       return strdup (filename);
     else
