@@ -4762,7 +4762,11 @@ process_command (int argc, const char **argv)
           else
             {
               infiles[n_infiles].language = spec_lang;
+#if defined (_WIN32) && defined (TARGET_MCHP_PIC32MX) && defined (CHIPKIT_PIC32)
+              infiles[n_infiles++].name = lrealpath (argv[i]);
+#else
               infiles[n_infiles++].name = argv[i];
+#endif
             }
 
           free (fname);
@@ -5672,8 +5676,10 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 		    int j;
 
 		    for (i = 0; i < n_infiles; i++)
+		    {
 		      if (compile_input_file_p (&infiles[i]))
 			n_files++;
+			}
 
 		    argv = (char **) alloca (sizeof (char *) * (n_files + 1));
 
@@ -5691,10 +5697,12 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 		  }
 		else
 		  for (i = 0; (int) i < n_infiles; i++)
+		  {
 		    if (compile_input_file_p (&infiles[i]))
 		      {
 			store_arg (infiles[i].name, 0, 0);
 			infiles[i].compiled = true;
+		      }
 		      }
 	      }
 	    else
@@ -7635,7 +7643,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
 		}
 
 	      value = 0;
-	      
+
 #ifdef CSL_LICENSE_FEATURE
 	      if (!license_checked)
 		{
@@ -7884,7 +7892,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
   if (license)
     license_impl->license_delete (license);
 #endif
-    
+
   return (signal_count != 0 ? 2
 	  : error_count > 0 ? (pass_exit_codes ? greatest_status : 1)
 	  : 0);
