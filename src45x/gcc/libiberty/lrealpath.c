@@ -171,10 +171,12 @@ lrealpath (const char *filename)
       return strdup (filename);
     else
       {
+#if !defined (CHIPKIT_PIC32)
 	/* The file system is case-preserving but case-insensitive,
 	   Canonicalize to lowercase, using the codepage associated
 	   with the process locale.  */
         CharLowerBuff (buf, len);
+#endif
         return strdup (buf);
       }
   }
