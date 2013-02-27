@@ -4762,11 +4762,7 @@ process_command (int argc, const char **argv)
           else
             {
               infiles[n_infiles].language = spec_lang;
-#if defined (_WIN32) && defined (TARGET_MCHP_PIC32MX) && defined (CHIPKIT_PIC32)
-              infiles[n_infiles++].name = lrealpath (argv[i]);
-#else
               infiles[n_infiles++].name = argv[i];
-#endif
             }
 
           free (fname);
