@@ -15825,10 +15825,8 @@ md_convert_frag (bfd *abfd ATTRIBUTE_UNUSED, segT asec, fragS *fragp)
       bfd_byte *buf;
       offsetT val;
       unsigned long insn;
-      addressT addr;
 
       type = RELAX_MICROMIPS_TYPE (fragp->fr_subtype);
-      addr = fragp->fr_address + fragp->fr_fix;
       resolve_symbol_value (fragp->fr_symbol);
       val = S_GET_VALUE (fragp->fr_symbol);
       if ((val & 1) != 0)
