@@ -75,7 +75,20 @@ gen_peephole (rtx peep)
 	  printf ("       if (insn == 0) goto L%d; }\n",
 		  insn_code_number);
 	  printf ("  while (NOTE_P (insn)\n");
-	  printf ("\t || (NONJUMP_INSN_P (insn)\n");
+/* CAW
+
+   This was changed with revision 84341 from
+      GET_CODE(insn) == INSN to NONJUMP_INSN_P(insn)
+   The 'comment' is "Likewise" (ie use INSN_P,....)
+   These two are not identical and now we cannot peep jump instructions (like
+   return).  
+
+   If this was done on purpose the comment should be something other than
+   "Likewise".
+
+*/
+
+	  printf ("\t || (INSN_P (insn)\n");
 	  printf ("\t     && (GET_CODE (PATTERN (insn)) == USE\n");
 	  printf ("\t\t || GET_CODE (PATTERN (insn)) == CLOBBER)));\n");
 

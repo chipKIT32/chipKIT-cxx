@@ -57,6 +57,74 @@
    (set_attr "sync_required_oldval" "2")
    (set_attr "sync_insn1_op2" "3")])
 
+(define_insn "mips_val_compare_and_swap<d>_acq"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YC,YC"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR [(match_operand:GPR 2 "reg_or_0_operand" "dJ,dJ")
+			      (match_operand:GPR 3 "arith_operand" "I,d")]
+	 UNSPEC_COMPARE_AND_SWAP_ACQ))]
+  "GENERATE_LL_SC"
+  { return mips_output_sync_loop (insn, operands); }
+  [(set_attr "sync_release_barrier" "no")
+   (set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_required_oldval" "2")
+   (set_attr "sync_insn1_op2" "3")])
+
+(define_insn "mips_val_compare_and_swap<d>_rel"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YC,YC"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR [(match_operand:GPR 2 "reg_or_0_operand" "dJ,dJ")
+			      (match_operand:GPR 3 "arith_operand" "I,d")]
+	 UNSPEC_COMPARE_AND_SWAP_REL))]
+  "GENERATE_LL_SC"
+  { return mips_output_sync_loop (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_required_oldval" "2")
+   (set_attr "sync_insn1_op2" "3")
+   (set_attr "sync_acquire_barrier" "no")])
+
+(define_insn "mips_bool_compare_and_swap<d>_acq"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+        (eq:GPR (match_operand:GPR 1 "memory_operand" "+YC,YC")
+                (match_operand:GPR 2 "reg_or_0_operand" "dJ,dJ")))
+   (set (match_dup 1)
+        (unspec_volatile:GPR [(match_dup 2)
+                              (match_operand:GPR 3 "arith_operand" "I,d")]
+         UNSPEC_COMPARE_AND_SWAP_ACQ))]
+  "GENERATE_LL_SC"
+  { return mips_output_sync_loop (insn, operands); }
+  [(set_attr "sync_release_barrier" "no")
+   (set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_cmp" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_required_oldval" "2")
+   (set_attr "sync_insn1_op2" "3")])
+
+(define_insn "mips_bool_compare_and_swap<d>_rel"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+        (eq:GPR (match_operand:GPR 1 "memory_operand" "+YC,YC")
+                (match_operand:GPR 2 "reg_or_0_operand" "dJ,dJ")))
+   (set (match_dup 1)
+        (unspec_volatile:GPR [(match_dup 2)
+                              (match_operand:GPR 3 "arith_operand" "I,d")]
+         UNSPEC_COMPARE_AND_SWAP_REL))]
+  "GENERATE_LL_SC"
+  { return mips_output_sync_loop (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_cmp" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_required_oldval" "2")
+   (set_attr "sync_insn1_op2" "3")
+   (set_attr "sync_acquire_barrier" "no")])
+
 (define_expand "sync_compare_and_swap<mode>"
   [(match_operand:SHORT 0 "register_operand")
    (match_operand:SHORT 1 "memory_operand")
@@ -90,13 +158,38 @@
    (set_attr "sync_required_oldval" "4")
    (set_attr "sync_insn1_op2" "5")])
 
-(define_insn "sync_add<mode>"
+(define_expand "sync_add<mode>"
+  [(match_operand:GPR 0 "memory_operand")
+   (match_operand:GPR 1 "arith_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  if (GENERATE_LDADD)
+    emit_insn (gen_sync_add_ldadd<mode> (operands[0], operands[1]));
+  else
+    emit_insn (gen_sync_add_ll_sc<mode> (operands[0], operands[1]));
+  DONE;
+})
+
+(define_insn "sync_add_ldadd<mode>"
+  [(set (match_operand:GPR 0 "memory_operand" "+YE,YE")
+	(unspec_volatile:GPR
+          [(plus:GPR (match_dup 0)
+		     (match_operand:GPR 1 "arith_operand" "I,d"))]
+	  UNSPEC_SYNC_OLD_OP))]
+  "GENERATE_LDADD"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_mem" "0")
+   (set_attr "sync_insn1_op2" "1")
+   (set_attr "sync_atomic_insn" "ldadd")])
+
+(define_insn "sync_add_ll_sc<mode>"
   [(set (match_operand:GPR 0 "memory_operand" "+YC,YC")
 	(unspec_volatile:GPR
           [(plus:GPR (match_dup 0)
 		     (match_operand:GPR 1 "arith_operand" "I,d"))]
 	  UNSPEC_SYNC_OLD_OP))]
-  "GENERATE_LL_SC"
+  "GENERATE_LL_SC && !GENERATE_LDADD"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_insn1" "addiu,addu")
    (set_attr "sync_mem" "0")
@@ -344,19 +437,75 @@
    (set_attr "sync_exclusive_mask" "3")
    (set_attr "sync_insn1_op2" "4")])
 
-(define_insn "sync_sub<mode>"
+(define_expand "sync_sub<mode>"
+  [(match_operand:GPR 0 "memory_operand")
+   (match_operand:GPR 1 "register_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  if (GENERATE_LDADD)
+    emit_insn (gen_sync_sub_ldadd<mode> (operands[0], operands[1]));
+  else
+    emit_insn (gen_sync_sub_ll_sc<mode> (operands[0], operands[1]));
+  DONE;
+})
+
+(define_insn "sync_sub_ldadd<mode>"
+  [(set (match_operand:GPR 0 "memory_operand" "+YE")
+	(unspec_volatile:GPR
+          [(minus:GPR (match_dup 0)
+		      (match_operand:GPR 1 "register_operand" "d"))]
+	 UNSPEC_SYNC_OLD_OP))]
+  "GENERATE_LDADD"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_insn1" "neg")
+   (set_attr "sync_mem" "0")
+   (set_attr "sync_insn1_op2" "1")
+   (set_attr "sync_atomic_insn" "ldadd")])
+
+(define_insn "sync_sub_ll_sc<mode>"
   [(set (match_operand:GPR 0 "memory_operand" "+YC")
 	(unspec_volatile:GPR
           [(minus:GPR (match_dup 0)
 		      (match_operand:GPR 1 "register_operand" "d"))]
 	 UNSPEC_SYNC_OLD_OP))]
-  "GENERATE_LL_SC"
+  "GENERATE_LL_SC && !GENERATE_LDADD"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_insn1" "subu")
    (set_attr "sync_mem" "0")
    (set_attr "sync_insn1_op2" "1")])
 
-(define_insn "sync_old_add<mode>"
+(define_expand "sync_old_add<mode>"
+  [(match_operand:GPR 0 "register_operand")
+   (match_operand:GPR 1 "memory_operand")
+   (match_operand:GPR 2 "arith_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  rtx gen;
+  if (GENERATE_LDADD)
+    gen = gen_sync_old_add_ldadd<mode> (operands[0], operands[1], operands[2]);
+  else
+    gen = gen_sync_old_add_ll_sc<mode> (operands[0], operands[1], operands[2]);
+  emit_insn (gen);
+  DONE;
+})
+
+(define_insn "sync_old_add_ldadd<mode>"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YE,YE"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR
+          [(plus:GPR (match_dup 1)
+		     (match_operand:GPR 2 "arith_operand" "I,d"))]
+	 UNSPEC_SYNC_OLD_OP))]
+  "GENERATE_LDADD"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_insn1_op2" "2")
+   (set_attr "sync_atomic_insn" "ldadd")])
+
+(define_insn "sync_old_add_ll_sc<mode>"
   [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
 	(match_operand:GPR 1 "memory_operand" "+YC,YC"))
    (set (match_dup 1)
@@ -364,14 +513,45 @@
           [(plus:GPR (match_dup 1)
 		     (match_operand:GPR 2 "arith_operand" "I,d"))]
 	 UNSPEC_SYNC_OLD_OP))]
-  "GENERATE_LL_SC"
+  "GENERATE_LL_SC && !GENERATE_LDADD"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_insn1" "addiu,addu")
    (set_attr "sync_oldval" "0")
    (set_attr "sync_mem" "1")
    (set_attr "sync_insn1_op2" "2")])
 
-(define_insn "sync_old_sub<mode>"
+(define_expand "sync_old_sub<mode>"
+  [(match_operand:GPR 0 "register_operand")
+   (match_operand:GPR 1 "memory_operand")
+   (match_operand:GPR 2 "register_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  rtx gen;
+  if (GENERATE_LDADD)
+    gen = gen_sync_old_sub_ldadd<mode> (operands[0], operands[1], operands[2]);
+  else
+    gen = gen_sync_old_sub_ll_sc<mode> (operands[0], operands[1], operands[2]);
+  emit_insn (gen);
+  DONE;
+})
+
+(define_insn "sync_old_sub_ldadd<mode>"
+  [(set (match_operand:GPR 0 "register_operand" "=&d")
+	(match_operand:GPR 1 "memory_operand" "+YE"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR
+          [(minus:GPR (match_dup 1)
+		      (match_operand:GPR 2 "register_operand" "d"))]
+	 UNSPEC_SYNC_OLD_OP))]
+  "GENERATE_LDADD"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_insn1" "neg")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_insn1_op2" "2")
+   (set_attr "sync_atomic_insn" "ldadd")])
+
+(define_insn "sync_old_sub_ll_sc<mode>"
   [(set (match_operand:GPR 0 "register_operand" "=&d")
 	(match_operand:GPR 1 "memory_operand" "+YC"))
    (set (match_dup 1)
@@ -379,14 +559,32 @@
           [(minus:GPR (match_dup 1)
 		      (match_operand:GPR 2 "register_operand" "d"))]
 	 UNSPEC_SYNC_OLD_OP))]
-  "GENERATE_LL_SC"
+  "GENERATE_LL_SC && !GENERATE_LDADD"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_insn1" "subu")
    (set_attr "sync_oldval" "0")
    (set_attr "sync_mem" "1")
    (set_attr "sync_insn1_op2" "2")])
 
-(define_insn "sync_new_add<mode>"
+(define_expand "sync_new_add<mode>"
+  [(match_operand:GPR 0 "register_operand")
+   (match_operand:GPR 1 "memory_operand")
+   (match_operand:GPR 2 "arith_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  if (GENERATE_LDADD)
+    {
+      emit_insn (gen_sync_old_add_ldadd<mode> (operands[0], operands[1],
+                                               operands[2]));
+      emit_insn (gen_add<mode>3 (operands[0], operands[0], operands[2]));
+    }
+  else
+    emit_insn (gen_sync_new_add_ll_sc<mode> (operands[0], operands[1],
+                                             operands[2]));
+  DONE;
+})
+
+(define_insn "sync_new_add_ll_sc<mode>"
   [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
         (plus:GPR (match_operand:GPR 1 "memory_operand" "+YC,YC")
 		  (match_operand:GPR 2 "arith_operand" "I,d")))
@@ -394,7 +592,7 @@
 	(unspec_volatile:GPR
 	  [(plus:GPR (match_dup 1) (match_dup 2))]
 	 UNSPEC_SYNC_NEW_OP))]
-  "GENERATE_LL_SC"
+  "GENERATE_LL_SC && !GENERATE_LDADD"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_insn1" "addiu,addu")
    (set_attr "sync_oldval" "0")
@@ -402,7 +600,25 @@
    (set_attr "sync_mem" "1")
    (set_attr "sync_insn1_op2" "2")])
 
-(define_insn "sync_new_sub<mode>"
+(define_expand "sync_new_sub<mode>"
+   [(match_operand:GPR 0 "register_operand")
+    (match_operand:GPR 1 "memory_operand")
+    (match_operand:GPR 2 "register_operand")]
+  "GENERATE_LL_SC || GENERATE_LDADD"
+{
+  if (GENERATE_LDADD)
+    {
+      emit_insn (gen_sync_old_sub<mode> (operands[0], operands[1],
+                                         operands[2]));
+      emit_insn (gen_sub<mode>3 (operands[0], operands[0], operands[2]));
+    }
+  else
+    emit_insn (gen_sync_new_sub_ll_sc<mode> (operands[0], operands[1],
+                                             operands[2]));
+  DONE;
+})
+
+(define_insn "sync_new_sub_ll_sc<mode>"
   [(set (match_operand:GPR 0 "register_operand" "=&d")
         (minus:GPR (match_operand:GPR 1 "memory_operand" "+YC")
 		   (match_operand:GPR 2 "register_operand" "d")))
@@ -501,19 +717,78 @@
    (set_attr "sync_mem" "1")
    (set_attr "sync_insn1_op2" "2")])
 
-(define_insn "sync_lock_test_and_set<mode>"
+(define_expand "sync_lock_test_and_set<mode>"
+  [(match_operand:GPR 0 "register_operand")
+   (match_operand:GPR 1 "memory_operand")
+   (match_operand:GPR 2 "arith_operand")]
+  "GENERATE_LL_SC || GENERATE_SWAP"
+{
+  rtx gen;
+  if (GENERATE_SWAP)
+    gen = gen_mips_swap<d>_acq (operands[0], operands[1], operands[2]);
+  else
+    gen = gen_mips_swap<d>_ll_sc_acq (operands[0], operands[1], operands[2]);
+  emit_insn (gen);
+  DONE;
+})
+
+(define_insn "mips_swap<d>_ll_sc_acq"
   [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
 	(match_operand:GPR 1 "memory_operand" "+YC,YC"))
    (set (match_dup 1)
 	(unspec_volatile:GPR [(match_operand:GPR 2 "arith_operand" "I,d")]
-	 UNSPEC_SYNC_EXCHANGE))]
-  "GENERATE_LL_SC"
+	 UNSPEC_SWAP_ACQ))]
+  "GENERATE_LL_SC && !GENERATE_SWAP"
   { return mips_output_sync_loop (insn, operands); }
   [(set_attr "sync_release_barrier" "no")
    (set_attr "sync_insn1" "li,move")
    (set_attr "sync_oldval" "0")
    (set_attr "sync_mem" "1")
    (set_attr "sync_insn1_op2" "2")])
+
+(define_insn "mips_swap<d>_ll_sc_rel"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YC,YC"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR [(match_operand:GPR 2 "arith_operand" "I,d")]
+	 UNSPEC_SWAP_REL))]
+  "GENERATE_LL_SC && !GENERATE_SWAP"
+  { return mips_output_sync_loop (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_insn1_op2" "2")
+   (set_attr "sync_acquire_barrier" "no")])
+
+(define_insn "mips_swap<d>_acq"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YE,YE"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR [(match_operand:GPR 2 "arith_operand" "I,d")]
+	 UNSPEC_SWAP_ACQ))]
+  "GENERATE_SWAP"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_release_barrier" "no")
+   (set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_insn1_op2" "2")
+   (set_attr "sync_atomic_insn" "swap")])
+
+(define_insn "mips_swap<d>_rel"
+  [(set (match_operand:GPR 0 "register_operand" "=&d,&d")
+	(match_operand:GPR 1 "memory_operand" "+YE,YE"))
+   (set (match_dup 1)
+	(unspec_volatile:GPR [(match_operand:GPR 2 "arith_operand" "I,d")]
+	 UNSPEC_SWAP_REL))]
+  "GENERATE_SWAP"
+  { return mips_output_atomic (insn, operands); }
+  [(set_attr "sync_insn1" "li,move")
+   (set_attr "sync_oldval" "0")
+   (set_attr "sync_mem" "1")
+   (set_attr "sync_insn1_op2" "2")
+   (set_attr "sync_atomic_insn" "swap")
+   (set_attr "sync_acquire_barrier" "no")])
 
 (define_expand "sync_lock_test_and_set<mode>"
   [(match_operand:SHORT 0 "register_operand")

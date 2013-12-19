@@ -14,4 +14,4 @@ foo:
 	jals	0xffffffe
 
 # Force at least 8 (non-delay-slot) zero bytes, to make 'objdump' print ...
-	.space  8
+	.space	8

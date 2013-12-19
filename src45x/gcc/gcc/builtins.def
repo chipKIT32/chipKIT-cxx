@@ -747,6 +747,13 @@ DEF_EXT_LIB_BUILTIN    (BUILT_IN_VPRINTF_CHK, "__vprintf_chk", BT_FN_INT_INT_CON
 DEF_BUILTIN_STUB (BUILT_IN_PROFILE_FUNC_ENTER, "profile_func_enter")
 DEF_BUILTIN_STUB (BUILT_IN_PROFILE_FUNC_EXIT, "profile_func_exit")
 
+DEF_BUILTIN (BUILT_IN_PROFILE_CALL_ENTER, "__cyg_profile_call_enter", BUILT_IN_NORMAL, BT_FN_VOID_PTR, BT_LAST,
+	     false, false, false, ATTR_NULL, true, true)
+DEF_BUILTIN (BUILT_IN_PROFILE_CALL_INSIDE, "__cyg_profile_call_inside", BUILT_IN_NORMAL, BT_FN_VOID_PTR, BT_LAST,
+	     false, false, false, ATTR_NULL, true, true)
+DEF_BUILTIN (BUILT_IN_PROFILE_CALL_EXIT, "__cyg_profile_call_exit", BUILT_IN_NORMAL, BT_FN_VOID_PTR, BT_LAST,
+	     false, false, false, ATTR_NULL, true, true)
+
 /* TLS emulation.  */
 DEF_BUILTIN (BUILT_IN_EMUTLS_GET_ADDRESS, targetm.emutls.get_address,
 	     BUILT_IN_NORMAL,

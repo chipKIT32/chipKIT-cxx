@@ -1,6 +1,6 @@
 # Data file for mpc_div.
 #
-# Copyright (C) 2008, 2009 Andreas Enge
+# Copyright (C) INRIA, 2008, 2009, 2010
 #
 # This file is part of the MPC Library.
 #
@@ -2425,3 +2425,6 @@
 0 0 7    1 7    1   7    1 7    1  7    1 7   -0 N N
 0 0 7    1 7    1   7    1 7    1  7    1 7   +0 N N
 0 0 7    1 7   +0   7    1 7    1  7    1 7    1 N N
+
+# overflow (reported by Emmanuel Thome)
+- + 250 -inf 250 +inf 250 1 250 0 250 -1e-164895850 250 -1e-164895850 N N

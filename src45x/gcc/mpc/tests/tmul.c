@@ -1,6 +1,6 @@
 /* tmul -- test file for mpc_mul.
 
-Copyright (C) 2002, 2005, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2005, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -80,7 +80,7 @@ cmpmul (mpc_srcptr x, mpc_srcptr y, mpc_rnd_t rnd)
 
 
 static void
-testmul (long a, long b, long c, long d, mp_prec_t prec, mpc_rnd_t rnd)
+testmul (long a, long b, long c, long d, mpfr_prec_t prec, mpc_rnd_t rnd)
 {
   mpc_t x, y;
 
@@ -102,7 +102,7 @@ check_regular (void)
 {
   mpc_t x, y;
   mpc_rnd_t rnd_re, rnd_im;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
 
   testmul (247, -65, -223, 416, 8, 24);
   testmul (5, -896, 5, -32, 3, 2);
@@ -134,7 +134,7 @@ check_regular (void)
   mpfr_set_str (MPC_IM (y), "-0xECp-146", 16, GMP_RNDN);
   cmpmul (x, y, MPC_RNDNN);
 
-  for (prec = 2; prec < 1000; prec = prec * 1.1 + 1)
+  for (prec = 2; prec < 1000; prec = (mpfr_prec_t) (prec * 1.1 + 1))
     {
       mpc_set_prec (x, prec);
       mpc_set_prec (y, prec);
@@ -151,38 +151,6 @@ check_regular (void)
   mpc_clear (y);
 }
 
-
-static void
-check_special (void)
-{
-  mpc_t x, y, z;
-  int inexact;
-
-  mpc_init2 (x, 8);
-  mpc_init2 (y, 8);
-  mpc_init2 (z, 8);
-
-  mpc_set_si_si (x, 4, 3, MPC_RNDNN);
-  mpc_set_si_si (y, 1, -2, MPC_RNDNN);
-  inexact = mpc_mul (z, x, y, MPC_RNDNN);
-  if (MPC_INEX_RE(inexact) || MPC_INEX_IM(inexact))
-    {
-      fprintf (stderr, "Error: (4+3*I)*(1-2*I) should be exact with prec=8\n");
-      exit (1);
-    }
-
-  mpc_set_prec (x, 27);
-  mpc_set_prec (y, 27);
-  mpfr_set_str (MPC_RE(x), "1.11111011011000010101000000e-2", 2, GMP_RNDN);
-  mpfr_set_str (MPC_IM(x), "1.11010001010110111001110001e-3", 2, GMP_RNDN);
-  mpfr_set_str (MPC_RE(y), "1.10100101110110011011100100e-1", 2, GMP_RNDN);
-  mpfr_set_str (MPC_IM(y), "1.10111100011000001100110011e-1", 2, GMP_RNDN);
-  cmpmul (x, y, 0);
-
-  mpc_clear (x);
-  mpc_clear (y);
-  mpc_clear (z);
-}
 
 #ifdef TIMING
 static void
@@ -231,10 +199,11 @@ timemul (void)
 }
 #endif
 
+
 int
 main (void)
 {
-  DECL_FUNC (CCC, f, mpc_mul);
+  DECL_FUNC (C_CC, f, mpc_mul);
   f.properties = FUNC_PROP_SYMETRIC;
 
   test_start ();
@@ -243,7 +212,6 @@ main (void)
   timemul ();
 #endif
 
-  check_special ();
   check_regular ();
 
   data_check (f, "mul.dat");

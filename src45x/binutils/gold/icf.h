@@ -105,7 +105,7 @@ class Icf
   // Given an object and a section index, this returns true if the
   // pointer of the function defined in this section is taken.
   bool
-  section_has_function_pointers(Object *obj, unsigned int shndx)
+  section_has_function_pointers(Object* obj, unsigned int shndx)
   {
     return (this->fptr_section_id_.find(Section_id(obj, shndx))
             != this->fptr_section_id_.end());
@@ -114,7 +114,7 @@ class Icf
   // Records that a pointer of the function defined in this section
   // is taken.
   void
-  set_section_has_function_pointers(Object *obj, unsigned int shndx)
+  set_section_has_function_pointers(Object* obj, unsigned int shndx)
   {
     this->fptr_section_id_.insert(Section_id(obj, shndx));
   }
@@ -168,10 +168,11 @@ class Icf
 // earlier gcc versions, like 4.0.3, put constructors and destructors in
 // .gnu.linkonce.t sections and hence should be included too.
 inline bool
-is_section_foldable_candidate(const char* section_name)
+is_section_foldable_candidate(const std::string& section_name)
 {
-  return (is_prefix_of(".text", section_name)
-          || is_prefix_of(".gnu.linkonce.t", section_name));
+  const char* section_name_cstr = section_name.c_str();
+  return (is_prefix_of(".text", section_name_cstr)
+          || is_prefix_of(".gnu.linkonce.t", section_name_cstr));
 }
 
 } // End of namespace gold.

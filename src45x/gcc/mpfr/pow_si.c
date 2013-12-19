@@ -1,13 +1,13 @@
 /* mpfr_pow_si -- power function x^y with y a signed int
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -29,7 +29,7 @@ MA 02110-1301, USA. */
  */
 
 int
-mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
+mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mpfr_rnd_t rnd)
 {
   MPFR_LOG_FUNC (("x[%#R]=%R n=%ld rnd=%d", x, x, n, rnd),
                  ("y[%#R]=%R", y, y));
@@ -65,16 +65,18 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
               MPFR_RET(0);
             }
         }
-      MPFR_CLEAR_FLAGS (y);
 
       /* detect exact powers: x^(-n) is exact iff x is a power of 2 */
       if (mpfr_cmp_si_2exp (x, MPFR_SIGN(x), MPFR_EXP(x) - 1) == 0)
         {
-          mp_exp_t expx = MPFR_EXP (x) - 1, expy;
+          mpfr_exp_t expx = MPFR_EXP (x) - 1, expy;
           MPFR_ASSERTD (n < 0);
           /* Warning: n * expx may overflow!
+           *
            * Some systems (apparently alpha-freebsd) abort with
            * LONG_MIN / 1, and LONG_MIN / -1 is undefined.
+           * http://www.freebsd.org/cgi/query-pr.cgi?pr=72024
+           *
            * Proof of the overflow checking. The expressions below are
            * assumed to be on the rational numbers, but the word "overflow"
            * still has its own meaning in the C context. / still denotes
@@ -118,7 +120,10 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
            * MPFR_EXP_MAX instead of __gmpfr_emin and __gmpfr_emax. The
            * current bounds do not lead to noticeably slower code and
            * allow us to avoid a bug in Sun's compiler for Solaris/x86
-           * (when optimizations are enabled).
+           * (when optimizations are enabled); known affected versions:
+           *   cc: Sun C 5.8 2005/10/13
+           *   cc: Sun C 5.8 Patch 121016-02 2006/03/31
+           *   cc: Sun C 5.8 Patch 121016-04 2006/10/18
            */
           expy =
             n != -1 && expx > 0 && expx > (__gmpfr_emin - 1) / n ?
@@ -134,9 +139,9 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
         /* Declaration of the intermediary variable */
         mpfr_t t;
         /* Declaration of the size variable */
-        mp_prec_t Ny;                              /* target precision */
-        mp_prec_t Nt;                              /* working precision */
-        mp_rnd_t rnd1;
+        mpfr_prec_t Ny;                              /* target precision */
+        mpfr_prec_t Nt;                              /* working precision */
+        mpfr_rnd_t rnd1;
         int size_n;
         int inexact;
         unsigned long abs_n;
@@ -145,7 +150,7 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
 
         abs_n = - (unsigned long) n;
         count_leading_zeros (size_n, (mp_limb_t) abs_n);
-        size_n = BITS_PER_MP_LIMB - size_n;
+        size_n = GMP_NUMB_BITS - size_n;
 
         /* initial working precision */
         Ny = MPFR_PREC (y);
@@ -159,8 +164,8 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
         /* We will compute rnd(rnd1(1/x) ^ |n|), where rnd1 is the rounding
            toward sign(x), to avoid spurious overflow or underflow, as in
            mpfr_pow_z. */
-        rnd1 = MPFR_EXP (x) < 1 ? GMP_RNDZ :
-          (MPFR_SIGN (x) > 0 ? GMP_RNDU : GMP_RNDD);
+        rnd1 = MPFR_EXP (x) < 1 ? MPFR_RNDZ :
+          (MPFR_SIGN (x) > 0 ? MPFR_RNDU : MPFR_RNDD);
 
         MPFR_ZIV_INIT (loop, Nt);
         for (;;)
@@ -195,7 +200,7 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
                 MPFR_ZIV_FREE (loop);
                 mpfr_clear (t);
                 MPFR_LOG_MSG (("underflow\n", 0));
-                if (rnd == GMP_RNDN)
+                if (rnd == MPFR_RNDN)
                   {
                     mpfr_t y2, nn;
 
@@ -207,12 +212,12 @@ mpfr_pow_si (mpfr_ptr y, mpfr_srcptr x, long int n, mp_rnd_t rnd)
                                                     MPFR_EXP (x) - 1) != 0);
                     mpfr_init2 (y2, 2);
                     mpfr_init2 (nn, sizeof (long) * CHAR_BIT);
-                    inexact = mpfr_set_si (nn, n, GMP_RNDN);
+                    inexact = mpfr_set_si (nn, n, MPFR_RNDN);
                     MPFR_ASSERTN (inexact == 0);
                     inexact = mpfr_pow_general (y2, x, nn, rnd, 1,
                                                 (mpfr_save_expo_t *) NULL);
                     mpfr_clear (nn);
-                    mpfr_set (y, y2, GMP_RNDN);
+                    mpfr_set (y, y2, MPFR_RNDN);
                     mpfr_clear (y2);
                     MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, MPFR_FLAGS_UNDERFLOW);
                     goto end;

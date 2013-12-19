@@ -34,5 +34,5 @@ int main (void)
 }
 
 /* Requires fast-math.  */
-/* { dg-final { scan-tree-dump-times "vectorized 1 loops" 1 "vect" { xfail *-*-* } } } */
+/* { dg-final { scan-tree-dump-times "vectorized 1 loops" 1 "vect" { xfail { ! "arm*-*-*" } } } } */
 /* { dg-final { cleanup-tree-dump "vect" } } */

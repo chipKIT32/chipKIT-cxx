@@ -1,6 +1,6 @@
 /* configure.ac
 
-Copyright (C) 2008, 2009 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -23,7 +23,7 @@ MA 02111-1307, USA. */
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(mpc, 0.8.1, mpc-discuss@lists.gforge.inria.fr)
+AC_INIT(mpc, 0.9, mpc-discuss@lists.gforge.inria.fr)
 AC_CONFIG_SRCDIR([src/mpc-impl.h])
 AC_CONFIG_HEADER([config.h])
 
@@ -31,6 +31,7 @@ AM_INIT_AUTOMAKE([1.9 -Wall -Werror])
 AM_MAINTAINER_MODE
 
 AC_CANONICAL_HOST
+AC_CONFIG_MACRO_DIR([m4])
 
 dnl Extra arguments to configure
 AC_ARG_WITH([mpfr_include],
@@ -71,6 +72,18 @@ AC_ARG_WITH([gmp],
                AC_MSG_FAILURE([Do not use --with-gmp and --with-gmp-include/--with-gmp-lib options simultaneously.])
             fi
             ])
+AC_ARG_ENABLE([logging],
+             [AC_HELP_STRING([--enable-logging],
+                             [enable logging of function calls to stderr (default = no)])],
+             [case $enableval in
+                 yes) AS_IF([test "x$enable_shared" = "xno"],
+                            AC_MSG_ERROR([Logging works only with shared libraries; do not mix --enable-logging and --disable-shared])) ;;
+                 no)  ;;
+                 *)   AC_MSG_ERROR([Bad value for --enable-logging: Use yes or no]) ;;
+              esac
+             ]
+             )
+
 
 dnl Setup CC and CFLAGS
 
@@ -81,10 +94,16 @@ fi
 
 # Check for programs
 AC_PROG_CC
-AC_PROG_CPP
-AC_PROG_EGREP
-AC_PROG_SED
 AC_LANG(C)
+
+dnl Check GMP Header
+AC_MSG_CHECKING(for gmp.h)
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include "gmp.h"
+]])],[AC_MSG_RESULT(yes)],[
+ AC_MSG_RESULT(no)
+ AC_MSG_ERROR([gmp.h can't be found, or is unusable.])
+])
 
 dnl Check for GMP CFLAGS in gmp.h
 if test -z "$user_redefine_cc" ; then
@@ -102,7 +121,18 @@ esac
 dnl Finally set up LibTool
 AC_PROG_LIBTOOL
 
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([complex.h locale.h inttypes.h stdint.h limits.h unistd.h sys/time.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+
 # Checks for libraries.
+AC_CHECK_LIB([m], [creal])
+
 AC_CHECK_LIB([gmp], [__gmpz_init],
              [LIBS="-lgmp $LIBS"],
              [AC_MSG_ERROR([libgmp not found or uses a different ABI.])])
@@ -125,44 +155,49 @@ AC_COMPILE_IFELSE(
         [AC_LANG_SOURCE(
         [[
 #include "gmp.h"
-#if (__GNU_MP_VERSION*100 + __GNU_MP_VERSION_MINOR*10 + __GNU_MP_VERSION_PATCHLEVEL < 420)
-# error "Minimal GMP version is 4.2"
+#if (__GNU_MP_VERSION*100 + __GNU_MP_VERSION_MINOR*10 + __GNU_MP_VERSION_PATCHLEVEL < 432)
+# error "Minimal GMP version is 4.3.2"
 error
 #endif
         ]])],
         [AC_MSG_RESULT(yes)],
         [
         AC_MSG_RESULT(no)
-        AC_MSG_ERROR([GMP version >= 4.2 required])
+        AC_MSG_ERROR([GMP version >= 4.3.2 required])
         ])
 
-# Check for a recent MPFR: we require MPFR 2.3.1 because of a bug in
-# mpfr_div_ui which makes mpc_div_ui return the wrong sign of the zero part
-# when applied on a pure real or pure imaginary parameter (see mpfr r4950)
+# Check for a recent MPFR: we require MPFR 2.4.2 so that the tests
+# in log.dat pass
 AC_MSG_CHECKING(for recent MPFR)
 AC_COMPILE_IFELSE(
         [AC_LANG_SOURCE(
         [[
 #include "mpfr.h"
-#if (MPFR_VERSION < MPFR_VERSION_NUM (2,3,1))
-# error "Minimal MPFR version is 2.3.1"
+#if (MPFR_VERSION < MPFR_VERSION_NUM (2,4,2))
+# error "Minimal MPFR version is 2.4.2"
 error
 #endif
         ]])],
         [AC_MSG_RESULT(yes)],
         [
          AC_MSG_RESULT(no)
-         AC_MSG_ERROR([MPFR version >= 2.3.1 required])
+         AC_MSG_ERROR([MPFR version >= 2.4.2 required])
          ])
 
-# Checks for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS([locale.h inttypes.h limits.h unistd.h sys/time.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_TYPE_SIZE_T
-AC_HEADER_TIME
+# Check for logging feature
+AS_IF([test "x$enable_logging" = "xyes"],
+       [AC_CHECK_HEADERS([dlfcn.h])
+        AC_CHECK_LIB([dl],[dlsym],
+           [
+            AC_DEFINE(HAVE_LIBDL, 1, [Library dl present])
+            LIBS="-ldl $LIBS"
+            AC_TYPE_INTPTR_T
+            AC_LIBOBJ([logging])
+            AC_SUBST([MPC_LOG_H],[src/mpc-log.h])
+           ],
+           [AC_MSG_ERROR([Library dl not found, logging impossible])])
+       ]
+     )
 
 # Checks if compiler accepts warning flags.
 MPC_PROG_CC_WARNINGCFLAGS([WARNINGCFLAGS])

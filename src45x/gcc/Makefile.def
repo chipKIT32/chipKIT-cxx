@@ -342,6 +342,7 @@ dependencies = { module=all-gcc; on=all-libdecnumber; hard=true; };
 dependencies = { module=all-gcc; on=all-libiberty; };
 dependencies = { module=all-gcc; on=all-fixincludes; };
 dependencies = { module=install-gcc ; on=install-fixincludes; };
+dependencies = { module=install-strip-gcc ; on=install-strip-fixincludes; };
 
 dependencies = { module=configure-libcpp; on=configure-libiberty; hard=true; };
 dependencies = { module=configure-libcpp; on=configure-intl; };
@@ -403,9 +404,11 @@ dependencies = { module=all-binutils; on=all-intl; };
 // binutils might be on PATH, and they might need the shared opcodes
 // library.
 dependencies = { module=install-binutils; on=install-opcodes; };
+dependencies = { module=install-strip-binutils; on=install-strip-opcodes; };
 
 // libopcodes depends on libbfd
 dependencies = { module=install-opcodes; on=install-bfd; };
+dependencies = { module=install-strip-opcodes; on=install-strip-bfd; };
 
 dependencies = { module=configure-gas; on=configure-intl; };
 dependencies = { module=all-gas; on=all-libiberty; };
@@ -455,6 +458,7 @@ dependencies = { module=configure-itcl; on=configure-tk; };
 dependencies = { module=all-itcl; on=all-tcl; };
 dependencies = { module=all-itcl; on=all-tk; };
 dependencies = { module=install-itcl; on=install-tcl; };
+dependencies = { module=install-strip-itcl; on=install-strip-tcl; };
 
 dependencies = { module=configure-tk; on=configure-tcl; };
 dependencies = { module=all-tk; on=all-tcl; };
@@ -465,7 +469,9 @@ dependencies = { module=all-sid; on=all-opcodes; };
 dependencies = { module=all-sid; on=all-tcl; };
 dependencies = { module=all-sid; on=all-tk; };
 dependencies = { module=install-sid; on=install-tcl; };
+dependencies = { module=install-strip-sid; on=install-strip-tcl; };
 dependencies = { module=install-sid; on=install-tk; };
+dependencies = { module=install-strip-sid; on=install-strip-tk; };
 
 dependencies = { module=configure-sim; on=configure-intl; };
 dependencies = { module=all-sim; on=all-intl; };

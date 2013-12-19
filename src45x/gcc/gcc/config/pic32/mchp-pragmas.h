@@ -34,52 +34,6 @@ along with GCC; see the file COPYING3.  If not see
 #define MCHP_CONFIGURATION_HEADER_SIZE \
   (sizeof (MCHP_CONFIGURATION_HEADER_MARKER) + 5)
 
-#define MCHP_WORD_MARKER        "CWORD:"
-#define MCHP_SETTING_MARKER     "CSETTING:"
-#define MCHP_VALUE_MARKER       "CVALUE:"
-#define MCHP_WORD_MARKER_LEN    (sizeof (MCHP_WORD_MARKER) - 1)
-#define MCHP_SETTING_MARKER_LEN (sizeof (MCHP_SETTING_MARKER) - 1)
-#define MCHP_VALUE_MARKER_LEN   (sizeof (MCHP_VALUE_MARKER) - 1)
-
-/* Pretty much arbitrary max line length for the config data file.
-   Anything longer than this is either absurd or a bogus file. */
-#define MCHP_MAX_CONFIG_LINE_LENGTH 1024
-
-struct mchp_config_value
-  {
-    char *name;
-    char *description;
-    unsigned value;
-    struct mchp_config_value *next;
-  };
-struct mchp_config_setting
-  {
-    char *name;
-    char *description;
-    unsigned mask;
-    struct mchp_config_value *values;
-    struct mchp_config_setting *next;
-  };
-struct mchp_config_word
-  {
-    unsigned address;
-    unsigned mask;
-    unsigned default_value;
-    struct mchp_config_setting *settings;
-  };
-
-struct mchp_config_specification
-  {
-    struct mchp_config_word *word; /* the definition of the word this value
-                                    is referencing */
-    unsigned value;           /* the value of the word to put to the device */
-    unsigned referenced_bits; /* the bits which have been explicitly specified
-                                i.e., have had a setting = value pair in a
-                                config pragma */
-    struct mchp_config_specification *next;
-  };
-
-extern struct mchp_config_specification *mchp_configuration_values;
 
 /* Microchip devices also allow interrupt vector dispactch functions
    to be defined via a pragma or an attribute (of the interrupt handler).
@@ -87,8 +41,12 @@ extern struct mchp_config_specification *mchp_configuration_values;
    the end of processing the translation unit. */
 struct vector_dispatch_spec
   {
-    const char *target; /* target function name */
-    int vector_number;  /* exception vector table number */
+    const char *target;                 /* target function name */
+    enum pic32_isa_mode isr_isa_mode;   /* isa mode of the target function */
+    bool longcall;                      /* Is a longcall required? */
+    int vector_number;                  /* exception vector table number */
+    int emit_dispatch;                  /* nonzero to emit a dispatch function */
+    const_tree *node;
     struct vector_dispatch_spec *next;
   };
 extern struct vector_dispatch_spec *vector_dispatch_list_head;

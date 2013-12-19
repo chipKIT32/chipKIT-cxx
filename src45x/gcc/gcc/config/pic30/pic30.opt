@@ -1,0 +1,250 @@
+; Options for the PIC30 port of the compiler
+;
+; Copyright (C) 2008,2009 Free Software Foundation, Inc
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+; License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+; calum.wilkie@microchip.com
+;
+; The beauty of this file is now options processing is spread among
+; even *MORE* files.  Not all of which are C.  Pure genius.
+;
+
+; define some masks that are set by -mcpu=
+
+Mask(ARCH_PIC24F)
+
+Mask(ARCH_PIC24FK)
+
+Mask(ARCH_PIC24H)
+
+Mask(ARCH_PIC30FXXXX)
+
+Mask(ARCH_PIC30F202X)
+
+Mask(ARCH_PIC33F)
+
+Mask(ARCH_PIC33E)
+
+Mask(ARCH_PIC24E)
+
+Mask(ARCH_GENERIC)
+
+Mask(ARCH_DA_GENERIC)
+
+Mask(ARCH_EP_GENERIC)
+
+; define some masks used by other options
+
+Mask(LARGE_CODE)
+
+Mask(CONST_IN_DATA)
+
+Mask(LARGE_AGG)
+
+Mask(LARGE_SCALAR)
+
+Mask(PA)
+
+Mask(NO_ISRW)
+
+Mask(SKIP_DOT_FILE)
+
+Mask(ABI_CHECK)
+
+Mask(CONST_IN_PSV)
+
+Mask(CONST_IN_AUXCODE)
+
+Mask(AUX_FLASH)
+
+Mask(EDS)
+
+Mask(TRACK_PSVPAG)
+
+Mask(NCHAR)
+
+Mask(BIG)
+
+Mask(TRACE_ALL_ADDR)
+
+Mask(ALT_TEXT)
+
+Mask(LEGACY_LIBC)
+
+Mask(TARGET_SHORT_DOUBLE)
+
+Mask(CCI)
+
+Mask(NO_OVERRIDE_INLINE)
+
+; options
+
+mcci
+Target RejectNegative Mask(CCI) MaskExists
+Use CCI keywords
+
+; ugh have to cheat for these two
+msmall-data
+Target RejectNegative InverseMask(LARGE_SCALAR|MASK_LARGE_AGG) MaskExists
+Use small data model
+
+mlarge-data
+Target RejectNegative Mask(LARGE_SCALAR|MASK_LARGE_AGG) MaskExists
+Use large data model
+
+msmall-scalar
+Target RejectNegative InverseMask(LARGE_SCALAR) MaskExists
+Use small scalar data model
+
+mlarge-scalar
+Target RejectNegative Mask(LARGE_SCALAR) MaskExists
+Use large scalar data model
+
+msmall-aggregate
+Target RejectNegative InverseMask(LARGE_AGG) MaskExists
+Use small aggregate data model
+
+mlarge-aggregate
+Target RejectNegative Mask(LARGE_AGG) MaskExists
+Use large aggregate data model
+
+msmall-code
+Target RejectNegative InverseMask(LARGE_CODE) MaskExists
+Use small code model
+
+mlarge-code
+Target RejectNegative Mask(LARGE_CODE) MaskExists
+Use large code model
+
+mconst-in-data
+Target RejectNegative Mask(CONST_IN_DATA) MaskExists
+Put constants in data space
+
+mconst-in-code
+Target RejectNegative InverseMask(CONST_IN_DATA) MaskExists
+Put constants in code space
+
+mconst-in-auxflash
+Target Mask(CONST_IN_AUXCODE) MaskExists
+When combined with -mconst-in-code, put constants into auxiliarly FLASH
+
+mpa
+Target Mask(PA) MaskExists
+Run (or do not run) procedural abstraction stage
+
+mno-isr-warn
+Target RejectNegative Mask(NO_ISRW) MaskExists
+Disable warning for inappropriate use of ISR function names
+
+mshort-double
+Target Mask(TARGET_SHORT_DOUBLE) MaskExists
+Target version of -fshort-double since this flag is not availble to LTO tool
+
+mno-override-inline
+Target RejectNegative Mask(NO_OVERRIDE_INLINE) MaskExists
+Set compiler's override of 'inline' keyword and options for -O1 and -Os; by default the compiler will not inline at these levels
+
+mno-file
+Target Mask(SKIP_DOT_FILE) MaskExists
+Disable placing file directive in assembly output
+
+munified
+Target Mask(EDS) MaskExists
+Use unified data model
+
+mnear-chars
+Target Mask(NCHAR) MaskExists
+Place 'char' variables into near data space, regardless of memory model
+
+menable-large-arrays
+Target Mask(BIG) MaskExists
+Allow arrays larger than 32K
+
+mlarge-arrays
+Target Mask(BIG) MaskExists
+Allow arrays larger than 32K
+
+mtrack
+Target Mask(TRACK_PSVPAG) MaskExists
+Track auto psv page
+
+mdebug
+Target Mask(TRACE_ALL_ADDR) MaskExists
+Enable extra debugging
+
+mauxflash
+Target Mask(AUX_FLASH) MaskExists
+Place all code into auxiliary flash
+
+mlegacy-libc
+Target Mask(LEGACY_LIBC) MaskExists
+use legacy lib/include directory
+
+mprint-builtins
+Target RejectNegative Var(TARGET_PRINT_BUILTINS)
+-mprint-builtins        Print a list of enabled builtin functions
+
+;
+; **************************** CAUTION
+; **************************** Ensure that the '=' sign is not followed by
+; **************************** a space or anything
+; **************************** CAUTION
+;
+mcpu=
+Target RejectNegative Joined Var(pic30_target_cpu) VarExists
+Select target CPU
+
+merrata=
+Target RejectNegative Joined Var(pic30_errata) VarExists
+Enable compiler generated work-arounds for specific errata
+
+mfillupper=
+Target RejectNegative Joined Var(pic30_fillupper) VarExists
+Select global fillupper value for data stored in FLASH
+
+mit=
+Target RejectNegative Joined Var(pic30_it_option) VarExists
+Enable instrumented trace
+
+mpa=
+Target RejectNegative Joined Var(pic30_pa_level) VarExists
+Procedural abstraction nesting limit
+
+mresource=
+Target RejectNegtive Joined Var(pic30_resource_file) VarExists
+Identify compiler resource file
+
+msmart-io
+Target RejectNegative JoinedOrMissing Var(pic30_io_size) VarExists
+Set smart IO library call forwarding level
+
+mtext=
+Target RejectNegative Joined Var(pic30_text_scn) VarExists
+Name the text section (default .text)
+
+msmart-io-format=
+Target RejectNegative Joined Var(pic30_io_fmt) VarExists
+Smart IO format string
+
+msfr-warn=
+Target Joined Var(pic30_io_fmt) VarExists
+Enable [on] or disable (off) sfr warnings
+
+mext=
+Target Joined Var(mchp_import)
+Enable support for importing external code from another vendor

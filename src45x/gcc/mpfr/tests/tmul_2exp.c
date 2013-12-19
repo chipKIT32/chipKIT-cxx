@@ -1,13 +1,13 @@
 /* Test file for mpfr_{mul,div}_2{ui,si}.
 
-Copyright 1999, 2001, 2002, 2003, 2004, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2001, 2002, 2003, 2004, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,7 @@ static const char * const val[] = {
 
 static int
 test_mul (int i, int div, mpfr_ptr y, mpfr_srcptr x,
-          unsigned long int n, mp_rnd_t r)
+          unsigned long int n, mpfr_rnd_t r)
 {
   return
     i == 0 ? (div ? mpfr_div_2ui : mpfr_mul_2ui) (y, x, n, r) :
@@ -46,10 +46,10 @@ test_mul (int i, int div, mpfr_ptr y, mpfr_srcptr x,
 }
 
 static void
-underflow (mp_exp_t e)
+underflow (mpfr_exp_t e)
 {
   mpfr_t x, y, z1, z2;
-  mp_exp_t emin;
+  mpfr_exp_t emin;
   int i, k;
   int prec;
   int rnd;
@@ -66,7 +66,7 @@ underflow (mp_exp_t e)
   mpfr_inits2 (8, x, y, (mpfr_ptr) 0);
   for (i = 15; i <= 17; i++)
     {
-      inex1 = mpfr_set_ui_2exp (x, i, -4, GMP_RNDN);
+      inex1 = mpfr_set_ui_2exp (x, i, -4, MPFR_RNDN);
       MPFR_ASSERTN (inex1 == 0);
       for (prec = 6; prec >= 3; prec -= 3)
         {
@@ -75,9 +75,9 @@ underflow (mp_exp_t e)
             for (k = 1; k <= 4; k++)
               {
                 /* The following one is assumed to be correct. */
-                inex1 = mpfr_mul_2si (y, x, e, GMP_RNDN);
+                inex1 = mpfr_mul_2si (y, x, e, MPFR_RNDN);
                 MPFR_ASSERTN (inex1 == 0);
-                inex1 = mpfr_set_ui (z1, 1 << k, GMP_RNDN);
+                inex1 = mpfr_set_ui (z1, 1 << k, MPFR_RNDN);
                 MPFR_ASSERTN (inex1 == 0);
                 mpfr_clear_flags ();
                 /* Do not use mpfr_div_ui to avoid the optimization
@@ -103,14 +103,15 @@ underflow (mp_exp_t e)
                     printf ("default emin");
                   else
                     printf ("%ld", e);
-                  printf (")\nwith %s, x = %d/16, prec = %d, k = %d, mpfr_%s",
-                          div == 0 ? "mul_2si" : div == 1 ? "div_2si" :
-                          "div_2ui", i, prec, k, mpfr_print_rnd_mode ((mpfr_rnd_t) rnd));
-                  printf ("\nExpected ");
-                  mpfr_out_str (stdout, 16, 0, z1, GMP_RNDN);
+                  printf (") with mpfr_%s,\nx = %d/16, prec = %d, k = %d, "
+                          "%s\n", div == 0 ? "mul_2si" : div == 1 ?
+                          "div_2si" : "div_2ui", i, prec, k,
+                          mpfr_print_rnd_mode ((mpfr_rnd_t) rnd));
+                  printf ("Expected ");
+                  mpfr_out_str (stdout, 16, 0, z1, MPFR_RNDN);
                   printf (", inex = %d, flags = %u\n", SIGN (inex1), flags1);
                   printf ("Got      ");
-                  mpfr_out_str (stdout, 16, 0, z2, GMP_RNDN);
+                  mpfr_out_str (stdout, 16, 0, z2, MPFR_RNDN);
                   printf (", inex = %d, flags = %u\n", SIGN (inex2), flags2);
                   exit (1);
                 }  /* div */
@@ -131,6 +132,114 @@ underflow0 (void)
   underflow (MPFR_EMIN_MIN);
 }
 
+static void
+large (mpfr_exp_t e)
+{
+  mpfr_t x, y, z;
+  mpfr_exp_t emax;
+  int inex;
+  unsigned int flags;
+
+  emax = mpfr_get_emax ();
+  set_emax (e);
+  mpfr_init2 (x, 8);
+  mpfr_init2 (y, 8);
+  mpfr_init2 (z, 4);
+
+  mpfr_set_inf (x, 1);
+  mpfr_nextbelow (x);
+
+  mpfr_mul_2si (y, x, -1, MPFR_RNDU);
+  mpfr_prec_round (y, 4, MPFR_RNDU);
+
+  mpfr_clear_flags ();
+  inex = mpfr_mul_2si (z, x, -1, MPFR_RNDU);
+  flags = __gmpfr_flags;
+
+  if (inex <= 0 || flags != MPFR_FLAGS_INEXACT || ! mpfr_equal_p (y, z))
+    {
+      printf ("Error in large(");
+      if (e == MPFR_EMAX_MAX)
+        printf ("MPFR_EMAX_MAX");
+      else if (e == emax)
+        printf ("default emax");
+      else if (e <= LONG_MAX)
+        printf ("%ld", (long) e);
+      else
+        printf (">LONG_MAX");
+      printf (") for mpfr_mul_2si\n");
+      printf ("Expected inex > 0, flags = %u,\n         y = ",
+              (unsigned int) MPFR_FLAGS_INEXACT);
+      mpfr_dump (y);
+      printf ("Got      inex = %d, flags = %u,\n         y = ",
+              inex, flags);
+      mpfr_dump (z);
+      exit (1);
+    }
+
+  mpfr_clear_flags ();
+  inex = mpfr_div_2si (z, x, 1, MPFR_RNDU);
+  flags = __gmpfr_flags;
+
+  if (inex <= 0 || flags != MPFR_FLAGS_INEXACT || ! mpfr_equal_p (y, z))
+    {
+      printf ("Error in large(");
+      if (e == MPFR_EMAX_MAX)
+        printf ("MPFR_EMAX_MAX");
+      else if (e == emax)
+        printf ("default emax");
+      else if (e <= LONG_MAX)
+        printf ("%ld", (long) e);
+      else
+        printf (">LONG_MAX");
+      printf (") for mpfr_div_2si\n");
+      printf ("Expected inex > 0, flags = %u,\n         y = ",
+              (unsigned int) MPFR_FLAGS_INEXACT);
+      mpfr_dump (y);
+      printf ("Got      inex = %d, flags = %u,\n         y = ",
+              inex, flags);
+      mpfr_dump (z);
+      exit (1);
+    }
+
+  mpfr_clear_flags ();
+  inex = mpfr_div_2ui (z, x, 1, MPFR_RNDU);
+  flags = __gmpfr_flags;
+
+  if (inex <= 0 || flags != MPFR_FLAGS_INEXACT || ! mpfr_equal_p (y, z))
+    {
+      printf ("Error in large(");
+      if (e == MPFR_EMAX_MAX)
+        printf ("MPFR_EMAX_MAX");
+      else if (e == emax)
+        printf ("default emax");
+      else if (e <= LONG_MAX)
+        printf ("%ld", (long) e);
+      else
+        printf (">LONG_MAX");
+      printf (") for mpfr_div_2ui\n");
+      printf ("Expected inex > 0, flags = %u,\n         y = ",
+              (unsigned int) MPFR_FLAGS_INEXACT);
+      mpfr_dump (y);
+      printf ("Got      inex = %d, flags = %u,\n         y = ",
+              inex, flags);
+      mpfr_dump (z);
+      exit (1);
+    }
+
+  mpfr_clears (x, y, z, (mpfr_ptr) 0);
+  set_emax (emax);
+}
+
+static void
+large0 (void)
+{
+  large (256);
+  if (mpfr_get_emax () != MPFR_EMAX_MAX)
+    large (mpfr_get_emax ());
+  large (MPFR_EMAX_MAX);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -145,7 +254,7 @@ main (int argc, char *argv[])
   for (i = 0; i < 3; i++)
     {
       mpfr_set_inf (w, 1);
-      test_mul (i, 0, w, w, 10, GMP_RNDZ);
+      test_mul (i, 0, w, w, 10, MPFR_RNDZ);
       if (!MPFR_IS_INF(w))
         {
           printf ("Result is not Inf (i = %d)\n", i);
@@ -153,7 +262,7 @@ main (int argc, char *argv[])
         }
 
       mpfr_set_nan (w);
-      test_mul (i, 0, w, w, 10, GMP_RNDZ);
+      test_mul (i, 0, w, w, 10, MPFR_RNDZ);
       if (!MPFR_IS_NAN(w))
         {
           printf ("Result is not NaN (i = %d)\n", i);
@@ -162,24 +271,24 @@ main (int argc, char *argv[])
 
       for (k = 0 ; k < numberof(val) ; k+=3)
         {
-          mpfr_set_str (w, val[k], 16, GMP_RNDN);
-          test_mul (i, 0, z, w, 10, GMP_RNDZ);
-          if (mpfr_cmp_str (z, val[k+1], 16, GMP_RNDN))
+          mpfr_set_str (w, val[k], 16, MPFR_RNDN);
+          test_mul (i, 0, z, w, 10, MPFR_RNDZ);
+          if (mpfr_cmp_str (z, val[k+1], 16, MPFR_RNDN))
             {
               printf ("ERROR for x * 2^n (i = %d) for %s\n", i, val[k]);
               printf ("Expected: %s\n"
                       "Got     : ", val[k+1]);
-              mpfr_out_str (stdout, 16, 0, z, GMP_RNDN);
+              mpfr_out_str (stdout, 16, 0, z, MPFR_RNDN);
               putchar ('\n');
               exit (1);
             }
-          test_mul (i, 1, z, w, 10, GMP_RNDZ);
-          if (mpfr_cmp_str (z, val[k+2], 16, GMP_RNDN))
+          test_mul (i, 1, z, w, 10, MPFR_RNDZ);
+          if (mpfr_cmp_str (z, val[k+2], 16, MPFR_RNDN))
             {
               printf ("ERROR for x / 2^n (i = %d) for %s\n", i, val[k]);
               printf ("Expected: %s\n"
                       "Got     : ", val[k+2]);
-              mpfr_out_str (stdout, 16, 0, z, GMP_RNDN);
+              mpfr_out_str (stdout, 16, 0, z, MPFR_RNDN);
               putchar ('\n');
               exit (1);
             }
@@ -187,15 +296,15 @@ main (int argc, char *argv[])
 
       mpfr_set_inf (w, 1);
       mpfr_nextbelow (w);
-      test_mul (i, 0, w, w, 1, GMP_RNDN);
+      test_mul (i, 0, w, w, 1, MPFR_RNDN);
       if (!mpfr_inf_p (w))
         {
           printf ("Overflow error (i = %d)!\n", i);
           exit (1);
         }
-      mpfr_set_ui (w, 0, GMP_RNDN);
+      mpfr_set_ui (w, 0, MPFR_RNDN);
       mpfr_nextabove (w);
-      test_mul (i, 1, w, w, 1, GMP_RNDN);
+      test_mul (i, 1, w, w, 1, MPFR_RNDN);
       if (mpfr_cmp_ui (w, 0))
         {
           printf ("Underflow error (i = %d)!\n", i);
@@ -207,10 +316,10 @@ main (int argc, char *argv[])
     {
       unsigned long lmp1 = (unsigned long) LONG_MAX + 1;
 
-      mpfr_set_ui (w, 1, GMP_RNDN);
-      mpfr_mul_2ui (w, w, LONG_MAX/2, GMP_RNDZ);
-      mpfr_div_2ui (w, w, lmp1, GMP_RNDZ);
-      mpfr_mul_2ui (w, w, lmp1 - LONG_MAX/2, GMP_RNDZ);
+      mpfr_set_ui (w, 1, MPFR_RNDN);
+      mpfr_mul_2ui (w, w, LONG_MAX/2, MPFR_RNDZ);
+      mpfr_div_2ui (w, w, lmp1, MPFR_RNDZ);
+      mpfr_mul_2ui (w, w, lmp1 - LONG_MAX/2, MPFR_RNDZ);
       if (!mpfr_cmp_ui (w, 1))
         {
           printf ("Underflow LONG_MAX error!\n");
@@ -221,6 +330,7 @@ main (int argc, char *argv[])
   mpfr_clears (w, z, (mpfr_ptr) 0);
 
   underflow0 ();
+  large0 ();
 
   tests_end_mpfr ();
   return 0;

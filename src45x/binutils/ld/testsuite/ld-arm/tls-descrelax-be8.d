@@ -69,11 +69,13 @@ Disassembly of section .text:
     80ca:	bf00      	nop
     80cc:	0000000c 	.word	0x0000000c
     80d0:	4801      	ldr	r0, \[pc, #4\]	; \(80d8 <bar\+0x38>\)
-    80d2:	f3af 8000 	nop.w
+    80d2:	(f3af 8000)|(bf00     ) 	nop(.w)?
+#...
     80d6:	46c0      	nop			; \(mov r8, r8\)
     80d8:	0000000c 	.word	0x0000000c
     80dc:	4801      	ldr	r0, \[pc, #4\]	; \(80e4 <bar\+0x44>\)
-    80de:	f3af 8000 	nop.w
+    80de:	(f3af 8000)|(bf00     ) 	nop(.w)?
+#...
     80e2:	46c0      	nop			; \(mov r8, r8\)
     80e4:	00000014 	.word	0x00000014
     80e8:	4802      	ldr	r0, \[pc, #8\]	; \(80f4 <bar\+0x54>\)

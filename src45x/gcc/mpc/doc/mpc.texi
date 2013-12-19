@@ -1,7 +1,6 @@
 \input texinfo
 @ignore
-Copyright (C) 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
-Andreas Enge, Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -34,9 +33,11 @@ was introduced.
 @end iftex
 
 @include version.texi
+@set MINGMP 4.3.2
+@set MINMPFR 2.4.2
 
-@set AUTHORS Andreas Enge, Philippe Th@'eveny, Paul Zimmermann
-@set COPYRIGHTDATES 2002, 2003, 2004, 2005, 2007, 2008, 2009
+@set AUTHORS INRIA
+@set COPYRIGHTDATES 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
 @ifinfo
 @format
 START-INFO-DIR-ENTRY
@@ -165,8 +166,8 @@ probably a good idea to skim through it.
 @chapter Installing MPC
 @cindex Installation
 
-To build MPC, you first have to install GNU MP (version 4.2 or higher) and
-GNU MPFR (version 2.3.1 or higher) on your computer.  You need a C compiler,
+To build MPC, you first have to install GNU MP (version @value{MINGMP} or higher) and
+GNU MPFR (version @value{MINMPFR} or higher) on your computer.  You need a C compiler,
 preferably GCC, but any reasonable compiler should work. And you need a
 standard Unix @samp{make} program, plus some other standard Unix utility
 programs.
@@ -203,6 +204,22 @@ directories with @samp{./configure --with-mpf-lib=<mpfr_lib_dir>
 Another useful parameter is @samp{--prefix}, which can be used to
 specify an alternative installation location instead of
 @file{/usr/local}; see @samp{make install} below.
+
+If for debugging purposes you wish to log calls to MPC functions from
+within your code, add the parameter @samp{--enable-logging}.
+In your code, replace the inclusion of @file{mpc.h} by @file{mpc-log.h}
+and link the executable dynamically.
+Then all calls to functions with only complex arguments are printed to
+@file{stderr} in the following form: First, the function name is given,
+followed by its type such as @samp{c_cc}, meaning that the function has
+one complex result (one @samp{c} in front of the @samp{_}), computed from
+two complex arguments (two @samp{c} after the @samp{_}). Then, the
+precisions of the real and the imaginary part of the first result is given,
+followed by the second one and so on. Finally, for each argument, the
+precisions of its real and imaginary part are specified and the argument
+itself is printed in hexadecimal via the function
+@code{mpc_out_str}
+(@pxref{string-io,,String and Stream Input and Output}).
 
 Use @samp{./configure --help} for an exhaustive list of parameters.
 
@@ -356,11 +373,11 @@ arbitrary precision floating-point numbers (for the real and imaginary parts).
 The C data type for such objects is @code{mpc_t}.
 
 @cindex Precision
-@tindex @code{mp_prec_t}
+@tindex @code{mpfr_prec_t}
 @noindent
 The @dfn{Precision} is the number of bits used to represent the mantissa
 of the real and imaginary parts;
-the corresponding C data type is @code{mp_prec_t}.
+the corresponding C data type is @code{mpfr_prec_t}.
 For more details on the allowed precision range,
 @ifinfo
 @pxref{Nomenclature and Types,,, mpfr.info,MPFR}.
@@ -451,6 +468,11 @@ return an integer that is 0, positive or negative depending on
 whether the rounded value is the same, larger or smaller then
 the exact result.
 
+Some functions, such as @code{mpc_sin_cos}, compute two complex results;
+the macros @code{MPC_INEX1(i)} and @code{MPC_INEX2(i)}, applied to
+the return value @code{i} of such a function, yield the exactness value
+corresponding to the first or the second computed value, respectively.
+
 
 @section Branch Cuts And Special Values
 
@@ -490,6 +512,7 @@ different word size.
 @menu
 * Initializing Complex Numbers::
 * Assigning Complex Numbers::
+* Converting Complex Numbers::
 * String and Stream Input and Output::
 * Complex Comparison::
 * Projection & Decomposing::
@@ -509,14 +532,14 @@ An @code{mpc_t} object must be initialized before storing the first value in
 it.  The functions @code{mpc_init2} and @code{mpc_init3}
 are used for that purpose.
 
-@deftypefun void mpc_init2 (mpc_t @var{z}, mp_prec_t @var{prec})
+@deftypefun void mpc_init2 (mpc_t @var{z}, mpfr_prec_t @var{prec})
 Initialize @var{z} to precision @var{prec} bits
 and set its real and imaginary parts to NaN.
 Normally, a variable should be initialized once only
 or at least be cleared, using @code{mpc_clear}, between initializations.
 @end deftypefun
 
-@deftypefun void mpc_init3 (mpc_t @var{z}, mp_prec_t @var{prec_r}, mp_prec_t @var{prec_i})
+@deftypefun void mpc_init3 (mpc_t @var{z}, mpfr_prec_t @var{prec_r}, mpfr_prec_t @var{prec_i})
 Initialize @var{z} with the precision of its real part being
 @var{prec_r} bits and the precision of its imaginary part being
 @var{prec_i} bits, and set the real and imaginary parts to NaN.
@@ -545,7 +568,7 @@ calculation.  A typical use would be for adjusting the precision gradually in
 iterative algorithms like Newton-Raphson, making the computation precision
 closely match the actual accurate part of the numbers.
 
-@deftypefun void mpc_set_prec (mpc_t @var{x}, mp_prec_t @var{prec})
+@deftypefun void mpc_set_prec (mpc_t @var{x}, mpfr_prec_t @var{prec})
 Reset the precision of @var{x} to be @strong{exactly} @var{prec} bits,
 and set its real/imaginary parts to NaN.
 The previous value stored in @var{x} is lost. It is equivalent to
@@ -554,27 +577,31 @@ a call to @code{mpc_clear(x)} followed by a call to
 case the current allocated space for the mantissa of @var{x} is sufficient.
 @end deftypefun
 
-@deftypefun mp_prec_t mpc_get_prec (mpc_t @var{x})
+@deftypefun mpfr_prec_t mpc_get_prec (mpc_t @var{x})
 If the real and imaginary part of @var{x} have the same precision, it is returned,
 otherwise, 0 is returned.
 @end deftypefun
 
-@deftypefun void mpc_get_prec2 (mp_prec_t* @var{pr}, mp_prec_t* @var{pi}, mpc_t @var{x})
+@deftypefun void mpc_get_prec2 (mpfr_prec_t* @var{pr}, mpfr_prec_t* @var{pi}, mpc_t @var{x})
 Returns the precision of the real part of @var{x} via @var{pr} and of its imaginary part
 via @var{pi}.
 @end deftypefun
 
 
-@node Assigning Complex Numbers, String and Stream Input and Output, Initializing Complex Numbers, Complex Functions
+@node Assigning Complex Numbers, Converting Complex Numbers, Initializing Complex Numbers, Complex Functions
 @comment  node-name,  next,  previous,  up
 @section Assignment Functions
 @cindex Complex assignment functions
 
 These functions assign new values to already initialized complex numbers
 (@pxref{Initializing Complex Numbers}).
-When using any functions with @code{intmax_t} parameter, you must include
-@code{<stdint.h>} or @code{<inttypes.h>} before @file{mpc.h}, to allow
+When using any functions with @code{intmax_t} or @code{uintmax_t}
+parameters, you must include
+@code{<stdint.h>} or @code{<inttypes.h>} @emph{before} @file{mpc.h}, to allow
 @file{mpc.h} to define prototypes for these functions.
+Similarly, functions with parameters of type @code{complex} or
+@code{long complex} are defined only if @code{<complex.h>} is included
+@emph{before} @file{mpc.h}.
 If you need assignment functions that are not in the current API, you can
 define them using the @code{MPC_SET_X_Y} macro (@pxref{Advanced Functions}).
 
@@ -589,6 +616,8 @@ with the given rounding mode @var{rnd}.
 @deftypefunx int mpc_set_sj (mpc_t @var{rop}, intmax_t @var{op}, mpc_rnd_t @var{rnd})
 @deftypefunx int mpc_set_d (mpc_t @var{rop}, double @var{op}, mpc_rnd_t @var{rnd})
 @deftypefunx int mpc_set_ld (mpc_t @var{rop}, long double @var{op}, mpc_rnd_t @var{rnd})
+@deftypefunx int mpc_set_dc (mpc_t @var{rop}, double _Complex @var{op}, mpc_rnd_t @var{rnd})
+@deftypefunx int mpc_set_ldc (mpc_t @var{rop}, long double _Complex @var{op}, mpc_rnd_t @var{rnd})
 @deftypefunx int mpc_set_z (mpc_t @var{rop}, mpz_t @var{op} mpc_rnd_t @var{rnd})
 @deftypefunx int mpc_set_q (mpc_t @var{rop}, mpq_t @var{op} mpc_rnd_t @var{rnd})
 @deftypefunx int mpc_set_f (mpc_t @var{rop}, mpf_t @var{op} mpc_rnd_t @var{rnd})
@@ -617,6 +646,12 @@ double-precision number, and then only to a complex number.
 @deftypefunx int mpc_set_fr_fr (mpc_t @var{rop}, mpfr_t @var{op1}, mpfr_t @var{op2}, mpc_rnd_t @var{rnd})
 Set the real part of @var{rop} from @var{op1}, and its imaginary part from
 @var{op2}, according to the rounding mode @var{rnd}.
+
+Beware that the behaviour of @code{mpc_set_fr_fr} is undefined if @var{op1}
+or @var{op2} is a pointer to the real or imaginary part of @var{rop}.
+To exchange the real and the imaginary part of a complex number, either use
+@code{mpfr_swap (mpc_realref (rop), mpc_imagref (rop))}, which also exchanges
+the precisions of the two parts; or use a temporary variable.
 @end deftypefun
 
 For functions assigning complex variables from strings or input streams,
@@ -634,13 +669,31 @@ third auxiliary variable.
 @end deftypefun
 
 
-@node String and Stream Input and Output, Complex Comparison, Assigning Complex Numbers, Complex Functions
+@node Converting Complex Numbers, String and Stream Input and Output, Assigning Complex Numbers, Complex Functions
+@comment  node-name,  next,  previous,  up
+@section Conversion Functions
+@cindex Conversion functions
+
+The following functions are available only if @code{<complex.h>}
+is included @emph{before} @file{mpc.h}.
+
+@deftypefun double _Complex mpc_get_dc (mpc_t @var{op}, mpc_rnd_t @var{rnd})
+@deftypefunx {long double _Complex} mpc_get_ldc (mpc_t @var{op}, mpc_rnd_t @var{rnd})
+Convert @var{op} to a C complex number, using the rounding mode @var{rnd}.
+@end deftypefun
+
+
+For functions converting complex variables to strings or stream output,
+@pxref{string-io,,String and Stream Input and Output}.
+
+
+@node String and Stream Input and Output, Complex Comparison, Converting Complex Numbers, Complex Functions
 @comment  node-name,  next,  previous,  up
 @cindex String and stream input and output
 @anchor{string-io}
 @section String and Stream Input and Output
 
-@deftypefun int mpc_strtoc (mpc_t @var{rop}, char *@var{nptr}, char **@var{endptr}, int @var{base}, mpc_rnd_t @var{rnd})
+@deftypefun int mpc_strtoc (mpc_t @var{rop}, const char *@var{nptr}, char **@var{endptr}, int @var{base}, mpc_rnd_t @var{rnd})
 Read a complex number from a string @var{nptr} in base @var{base}, rounded to
 the precision of @var{rop} with the given rounding mode @var{rnd}.
 The @var{base} must be either 0 or a number from 2 to 36 (otherwise the
@@ -676,7 +729,7 @@ For instance, @code{"(1.024e+3 +2.05e+3)"} and @code{"(0b1p+10 +0x802)"} are
 valid strings for @code{base}=0 and represent the same value.
 @end deftypefun
 
-@deftypefun int mpc_set_str (mpc_t @var{rop}, char *@var{s}, int @var{base}, mpc_rnd_t rnd)
+@deftypefun int mpc_set_str (mpc_t @var{rop}, const char *@var{s}, int @var{base}, mpc_rnd_t rnd)
 Set @var{rop} to the value of the string @var{s} in base @var{base}, rounded
 to the precision of @var{rop} with the given rounding mode @var{rnd}.
 See the documentation of @code{mpc_strtoc} for a detailed description of the
@@ -921,6 +974,10 @@ of the real and imaginary parts by @var{op2}
 when @var{rop} and @var{op1} are identical.
 @end deftypefun
 
+@deftypefun int mpc_fma (mpc_t @var{rop}, mpc_t @var{op1}, mpc_t @var{op2}, mpc_t @var{op3}, mpc_rnd_t @var{rnd})
+Set @var{rop} to @var{op1} times @var{op2} plus @var{op3},
+rounded according to @var{rnd}, with only one final rounding.
+@end deftypefun
 
 @node Power Functions and Logarithm, Trigonometric Functions, Basic Arithmetic, Complex Functions
 @comment  node-name,  next,  previous,  up
@@ -973,6 +1030,13 @@ rounded according to @var{rnd} with the precision of @var{rop}.
 @deftypefun int mpc_cos (mpc_t @var{rop}, mpc_t @var{op}, mpc_rnd_t @var{rnd})
 Set @var{rop} to the cosine of @var{op},
 rounded according to @var{rnd} with the precision of @var{rop}.
+@end deftypefun
+
+@deftypefun int mpc_sin_cos (mpc_t @var{rop_sin}, mpc_t @var{rop_cos}, mpc_t @var{op}, mpc_rnd_t @var{rnd_sin}, mpc_rnd_t @var{rnd_cos})
+Set @var{rop_sin} to the sine of @var{op},
+rounded according to @var{rnd_sin} with the precision of @var{rop_sin},
+and @var{rop_cos} to the cosine of @var{op},
+rounded according to @var{rnd_cos} with the precision of @var{rop_cos}.
 @end deftypefun
 
 @deftypefun int mpc_tan (mpc_t @var{rop}, mpc_t @var{op}, mpc_rnd_t @var{rnd})

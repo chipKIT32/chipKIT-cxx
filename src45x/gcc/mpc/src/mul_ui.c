@@ -1,6 +1,6 @@
 /* mpc_mul_ui -- Multiply a complex number by a nonnegative integer.
 
-Copyright (C) 2002, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2009
 
 This file is part of the MPC Library.
 

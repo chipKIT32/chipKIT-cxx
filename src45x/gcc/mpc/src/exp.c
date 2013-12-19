@@ -1,6 +1,6 @@
 /* mpc_exp -- exponential of a complex number.
 
-Copyright (C) 2002, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -25,29 +25,13 @@ int
 mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
   mpfr_t x, y, z;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
   int ok = 0;
   int inex_re, inex_im;
 
-  /* let op = a + i*b, then exp(op) = exp(a)*[cos(b) + i*sin(b)]
-                                    = exp(a)*cos(b) + i*exp(a)*sin(b).
-
-     We use the following algorithm (same for the imaginary part):
-
-     (1) x = o(exp(a)) rounded towards +infinity:
-     (2) y = o(cos(b)) rounded to nearest
-     (3) r = o(x*y)
-     then the error on r for the real part is at most 4 ulps:
-     |r - exp(a)*cos(b)| <= ulp(r) + |x*y - exp(a)*cos(b)|
-                         <= ulp(r) + |x*y - exp(a)*y| + exp(a) * |y - cos(b)|
-                         <= ulp(r) + |y| ulp(x) + 1/2 * x * ulp(y)
-                         <= ulp(r) + 2 * ulp(x*y) + ulp(x*y) [Rule 4]
-                         <= 4 * ulp(r) [Rule 8]
-  */
-  
   /* special values */
   if (mpfr_nan_p (MPC_RE (op)) || mpfr_nan_p (MPC_IM (op)))
-    /* NaNs 
+    /* NaNs
        exp(nan +i*y) = nan -i*0   if y = -0,
                        nan +i*0   if y = +0,
                        nan +i*nan otherwise
@@ -76,7 +60,7 @@ mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
 
   if (mpfr_zero_p (MPC_IM(op)))
-    /* special case when the input is real 
+    /* special case when the input is real
        exp(x-i*0) = exp(x) -i*0, even if x is NaN
        exp(x+i*0) = exp(x) +i*0, even if x is NaN */
     {
@@ -95,7 +79,7 @@ mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
 
   if (mpfr_inf_p (MPC_RE (op)))
-    /* real part is an infinity, 
+    /* real part is an infinity,
        exp(-inf +i*y) = 0*(cos y +i*sin y)
        exp(+inf +i*y) = +/-inf +i*nan         if y = +/-inf
                         +inf*(cos y +i*sin y) if 0 < |y| < inf */
@@ -107,7 +91,7 @@ mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         mpfr_set_ui (n, 0, GMP_RNDN);
       else
         mpfr_set_inf (n, +1);
-      
+
       if (mpfr_inf_p (MPC_IM (op)))
         {
           inex_re = mpfr_set (MPC_RE (rop), n, GMP_RNDN);
@@ -148,8 +132,13 @@ mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
   /* from now on, both parts of op are regular numbers */
 
-  prec = MPC_MAX_PREC(rop);
-
+  prec = MPC_MAX_PREC(rop)
+         + MPC_MAX (MPC_MAX (-mpfr_get_exp (MPC_RE (op)), 0),
+                   -mpfr_get_exp (MPC_IM (op)));
+    /* When op is close to 0, then exp is close to 1+Re(op), while
+       cos is close to 1-Im(op); to decide on the ternary value of exp*cos,
+       we need a high enough precision so that none of exp or cos is
+       computed as 1. */
   mpfr_init2 (x, 2);
   mpfr_init2 (y, 2);
   mpfr_init2 (z, 2);
@@ -164,29 +153,40 @@ mpc_exp (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
       /* FIXME: x may overflow so x.y does overflow too, while Re(exp(op))
          could be represented in the precision of rop. */
-      mpfr_exp (x, MPC_RE(op), GMP_RNDN);
-      mpfr_sin_cos (z, y, MPC_IM(op), GMP_RNDN);
-      mpfr_mul (y, y, x, GMP_RNDN);
-
-      ok = mpfr_inf_p (y) || mpfr_zero_p (x)
+      mpfr_clear_overflow ();
+      mpfr_clear_underflow ();
+      mpfr_exp (x, MPC_RE(op), GMP_RNDN); /* error <= 0.5ulp */
+      mpfr_sin_cos (z, y, MPC_IM(op), GMP_RNDN); /* errors <= 0.5ulp */
+      mpfr_mul (y, y, x, GMP_RNDN); /* error <= 2ulp */
+      ok = mpfr_overflow_p () || mpfr_zero_p (x)
         || mpfr_can_round (y, prec - 2, GMP_RNDN, GMP_RNDZ,
-                       MPFR_PREC(MPC_RE(rop)) + (MPC_RND_RE(rnd) == GMP_RNDN));
+                       MPC_PREC_RE(rop) + (MPC_RND_RE(rnd) == GMP_RNDN));
       if (ok) /* compute imaginary part */
         {
           mpfr_mul (z, z, x, GMP_RNDN);
-          ok = mpfr_inf_p (z) || mpfr_zero_p (x)
+          ok = mpfr_overflow_p () || mpfr_zero_p (x)
             || mpfr_can_round (z, prec - 2, GMP_RNDN, GMP_RNDZ,
-                       MPFR_PREC(MPC_IM(rop)) + (MPC_RND_IM(rnd) == GMP_RNDN));
+                       MPC_PREC_IM(rop) + (MPC_RND_IM(rnd) == GMP_RNDN));
         }
     }
   while (ok == 0);
 
   inex_re = mpfr_set (MPC_RE(rop), y, MPC_RND_RE(rnd));
   inex_im = mpfr_set (MPC_IM(rop), z, MPC_RND_IM(rnd));
+  if (mpfr_overflow_p ()) {
+    /* overflow in real exponential, inex is sign of infinite result */
+    inex_re = mpfr_sgn (y);
+    inex_im = mpfr_sgn (z);
+  }
+  else if (mpfr_underflow_p ()) {
+    /* underflow in real exponential, inex is opposite of sign of 0 result */
+    inex_re = (mpfr_signbit (y) ? +1 : -1);
+    inex_im = (mpfr_signbit (z) ? +1 : -1);
+  }
 
   mpfr_clear (x);
   mpfr_clear (y);
   mpfr_clear (z);
-  
+
   return MPC_INEX(inex_re, inex_im);
 }

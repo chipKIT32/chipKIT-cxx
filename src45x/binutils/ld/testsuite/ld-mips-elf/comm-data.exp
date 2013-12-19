@@ -1,6 +1,6 @@
 # Expect script for common symbol override, MIPS variation.
 #
-#   Copyright 2010  Free Software Foundation, Inc.
+#   Copyright 2011  Free Software Foundation, Inc.
 #
 # This file is part of the GNU Binutils.
 #
@@ -24,12 +24,7 @@
 # Written by Maciej W. Rozycki <macro@codesourcery.com>
 #
 
-# Exclude non-ELF targets.
-if ![is_elf_format] {
-    return
-}
-
-# Exclude non-Linux targets; feel free to include your favourite one
+# Exclude non-Linux targets; feel free to include your favorite one
 # if you like.
 if ![istarget mips*-*-linux*] {
     return
@@ -38,6 +33,9 @@ if ![istarget mips*-*-linux*] {
 proc mips_comm_data_test { abi flag emul reloc } {
 
     set testname "MIPS $abi/$reloc common symbol override test"
+
+    # There's no "-z copyreloc" option, deal with it.
+    set ZFLAG [string map [list copyreloc "" nocopyreloc "-z $reloc"] $reloc]
     set AFLAGS "$flag -EB"
     set LDFLAGS "-m$emul"
 
@@ -66,7 +64,7 @@ proc mips_comm_data_test { abi flag emul reloc } {
     run_ld_link_tests [list \
 	[list \
 	    "$testname" \
-	    "$LDFLAGS -z $reloc -Ltmpdir -lmips-$abi-$reloc-comm-data" \
+	    "$LDFLAGS $ZFLAG -Ltmpdir -lmips-$abi-$reloc-comm-data" \
 	    "$AFLAGS -call_nonpic" \
 	    { ../ld-elf/comm-data2.s } \
 	    { \
@@ -79,7 +77,10 @@ proc mips_comm_data_test { abi flag emul reloc } {
     ]
 }
 
-set abis { o32 -32 elf32btsmip n32 -n32 elf32btsmipn32 n64 -64 elf64btsmip }
+# For targets that default to a specific ISA (instead of "from-abi"),
+# the 64-bit -march option is required to override it, like for
+# "mipsisa32r2el-*-*".
+set abis { o32 -32 elf32btsmip n32 "-n32 -march=mips3" elf32btsmipn32 n64 "-64 -march=mips3" elf64btsmip }
 set relocs { copyreloc nocopyreloc }
 foreach { abi flag emul } $abis {
     foreach reloc $relocs {

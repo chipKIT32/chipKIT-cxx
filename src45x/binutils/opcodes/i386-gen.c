@@ -1,4 +1,4 @@
-/* Copyright 2007, 2008, 2009, 2010
+/* Copyright 2007, 2008, 2009, 2010, 2011, 2012
    Free Software Foundation, Inc.
 
    This file is part of the GNU opcodes library.
@@ -43,11 +43,11 @@ typedef struct initializer
 static initializer cpu_flag_init[] =
 {
   { "CPU_UNKNOWN_FLAGS",
-    "~CpuL1OM" },
+    "~(CpuL1OM|CpuK1OM)" },
   { "CPU_GENERIC32_FLAGS",
     "Cpu186|Cpu286|Cpu386" },
-  { "CPU_GENERIC64_FLAGS", 
-    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuClflush|Cpu387|Cpu687|CpuMMX|CpuSSE|CpuSSE2|CpuLM" },
+  { "CPU_GENERIC64_FLAGS",
+    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuClflush|Cpu387|Cpu687|CpuNop|CpuMMX|CpuSSE|CpuSSE2|CpuLM" },
   { "CPU_NONE_FLAGS",
    "0" },
   { "CPU_I186_FLAGS",
@@ -89,7 +89,13 @@ static initializer cpu_flag_init[] =
   { "CPU_AMDFAM10_FLAGS",
     "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuFISTTP|CpuNop|CpuMMX|Cpu3dnow|Cpu3dnowA|CpuSSE|CpuSSE2|CpuSSE3|CpuSSE4a|CpuABM|CpuLM" },
   { "CPU_BDVER1_FLAGS",
-    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuFISTTP|CpuNop|CpuMMX|Cpu3dnow|Cpu3dnowA|CpuSSE|CpuSSE2|CpuSSE3|CpuSSE4a|CpuABM|CpuLM|CpuFMA4|CpuXOP|CpuLWP" },
+    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuFISTTP|CpuNop|CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSE4a|CpuABM|CpuLM|CpuFMA4|CpuXOP|CpuLWP" },
+  { "CPU_BDVER2_FLAGS",
+    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuFISTTP|CpuNop|CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSE4a|CpuABM|CpuLM|CpuFMA|CpuFMA4|CpuXOP|CpuLWP|CpuBMI|CpuTBM|CpuF16C" },
+  { "CPU_BTVER1_FLAGS",
+    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuNop|CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4a|CpuABM|CpuLM|CpuPRFCHW" },
+  { "CPU_BTVER2_FLAGS",
+    "Cpu186|Cpu286|Cpu386|Cpu486|Cpu586|Cpu686|CpuSYSCALL|CpuRdtscp|Cpu387|Cpu687|CpuNop|CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4a|CpuSSE4_1|CpuSSE4_2|CpuABM|CpuLM|CpuBMI|CpuF16C|CpuAES|CpuPCLMUL|CpuAVX|CpuMovbe|CpuXsave|CpuXsaveopt|CpuPRFCHW" },
   { "CPU_8087_FLAGS",
     "Cpu8087" },
   { "CPU_287_FLAGS",
@@ -119,7 +125,7 @@ static initializer cpu_flag_init[] =
   { "CPU_SSE4_2_FLAGS",
     "CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2" },
   { "CPU_ANY_SSE_FLAGS",
-    "CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2|CpuSSE4a|CpuAVX" },
+    "CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2|CpuSSE4a|CpuAVX|CpuAVX2" },
   { "CPU_VMX_FLAGS",
     "CpuVMX" },
   { "CPU_SMX_FLAGS",
@@ -140,6 +146,10 @@ static initializer cpu_flag_init[] =
     "CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2|CpuSSE4a|CpuABM|CpuAVX|CpuFMA4|CpuXOP" },
   { "CPU_LWP_FLAGS",
     "CpuLWP" },
+  { "CPU_BMI_FLAGS",
+    "CpuBMI" },
+  { "CPU_TBM_FLAGS",
+    "CpuTBM" },
   { "CPU_MOVBE_FLAGS",
     "CpuMovbe" },
   { "CPU_RDTSCP_FLAGS",
@@ -152,6 +162,18 @@ static initializer cpu_flag_init[] =
     "CpuRdRnd" },
   { "CPU_F16C_FLAGS",
     "CpuF16C" },
+  { "CPU_BMI2_FLAGS",
+    "CpuBMI2" },
+  { "CPU_LZCNT_FLAGS",
+    "CpuLZCNT" },
+  { "CPU_HLE_FLAGS",
+    "CpuHLE" },
+  { "CPU_RTM_FLAGS",
+    "CpuRTM" },
+  { "CPU_INVPCID_FLAGS",
+    "CpuINVPCID" },
+  { "CPU_VMFUNC_FLAGS",
+    "CpuVMFUNC" },
   { "CPU_3DNOW_FLAGS",
     "CpuMMX|Cpu3dnow" },
   { "CPU_3DNOWA_FLAGS",
@@ -166,10 +188,20 @@ static initializer cpu_flag_init[] =
     "CpuABM" },
   { "CPU_AVX_FLAGS",
     "CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2|CpuAVX" },
+  { "CPU_AVX2_FLAGS",
+    "CpuMMX|CpuSSE|CpuSSE2|CpuSSE3|CpuSSSE3|CpuSSE4_1|CpuSSE4_2|CpuAVX|CpuAVX2" },
   { "CPU_ANY_AVX_FLAGS",
-    "CpuAVX" },
+    "CpuAVX|CpuAVX2" },
   { "CPU_L1OM_FLAGS",
     "unknown" },
+  { "CPU_K1OM_FLAGS",
+    "unknown" },
+  { "CPU_ADX_FLAGS",
+    "CpuADX" },
+  { "CPU_RDSEED_FLAGS",
+    "CpuRdSeed" },
+  { "CPU_PRFCHW_FLAGS",
+    "CpuPRFCHW" },
 };
 
 static initializer operand_type_init[] =
@@ -303,7 +335,9 @@ static bitfield cpu_flags[] =
   BITFIELD (CpuSSE4_1),
   BITFIELD (CpuSSE4_2),
   BITFIELD (CpuAVX),
+  BITFIELD (CpuAVX2),
   BITFIELD (CpuL1OM),
+  BITFIELD (CpuK1OM),
   BITFIELD (CpuSSE4a),
   BITFIELD (Cpu3dnow),
   BITFIELD (Cpu3dnowA),
@@ -320,6 +354,8 @@ static bitfield cpu_flags[] =
   BITFIELD (CpuFMA4),
   BITFIELD (CpuXOP),
   BITFIELD (CpuLWP),
+  BITFIELD (CpuBMI),
+  BITFIELD (CpuTBM),
   BITFIELD (CpuLM),
   BITFIELD (CpuMovbe),
   BITFIELD (CpuEPT),
@@ -327,6 +363,15 @@ static bitfield cpu_flags[] =
   BITFIELD (CpuFSGSBase),
   BITFIELD (CpuRdRnd),
   BITFIELD (CpuF16C),
+  BITFIELD (CpuBMI2),
+  BITFIELD (CpuLZCNT),
+  BITFIELD (CpuHLE),
+  BITFIELD (CpuRTM),
+  BITFIELD (CpuINVPCID),
+  BITFIELD (CpuVMFUNC),
+  BITFIELD (CpuRDSEED),
+  BITFIELD (CpuADX),
+  BITFIELD (CpuPRFCHW),
   BITFIELD (Cpu64),
   BITFIELD (CpuNo64),
 #ifdef CpuUnused
@@ -351,6 +396,7 @@ static bitfield opcode_modifiers[] =
   BITFIELD (Size16),
   BITFIELD (Size32),
   BITFIELD (Size64),
+  BITFIELD (CheckRegSize),
   BITFIELD (IgnoreSize),
   BITFIELD (DefaultSize),
   BITFIELD (No_bSuf),
@@ -365,6 +411,8 @@ static bitfield opcode_modifiers[] =
   BITFIELD (RegKludge),
   BITFIELD (FirstXmm0),
   BITFIELD (Implicit1stXmm0),
+  BITFIELD (RepPrefixOk),
+  BITFIELD (HLEPrefixOk),
   BITFIELD (ToDword),
   BITFIELD (ToQword),
   BITFIELD (AddrPrefixOp0),
@@ -379,6 +427,7 @@ static bitfield opcode_modifiers[] =
   BITFIELD (VexOpcode),
   BITFIELD (VexSources),
   BITFIELD (VexImmExt),
+  BITFIELD (VecSIB),
   BITFIELD (SSE2AVX),
   BITFIELD (NoAVX),
   BITFIELD (OldGcc),
@@ -453,7 +502,7 @@ static void
 fail (const char *message, ...)
 {
   va_list args;
-  
+
   va_start (args, message);
   fprintf (stderr, _("%s: Error: "), program_name);
   vfprintf (stderr, message, args);
@@ -465,7 +514,7 @@ static void
 process_copyright (FILE *fp)
 {
   fprintf (fp, "/* This file is automatically generated by i386-gen.  Do not edit!  */\n\
-/* Copyright 2007, 2008, 2009, 2010\n\
+/* Copyright 2007, 2008, 2009, 2010, 2011\n\
    Free Software Foundation, Inc.\n\
 \n\
    This file is part of the GNU opcodes library.\n\
@@ -531,7 +580,7 @@ next_field (char *str, char sep, char **next, char *last)
   *str = '\0';
   remove_trailing_whitespaces (p);
 
-  *next = str + 1; 
+  *next = str + 1;
 
   if (p >= last)
     abort ();
@@ -1020,7 +1069,7 @@ process_i386_opcodes (FILE *table)
   process_i386_cpu_flag (table, "0", 0, ",", "    ", -1);
 
   process_i386_opcode_modifier (table, "0", -1);
- 
+
   fprintf (table, "    { ");
   process_i386_operand_type (table, "0", 0, "\t  ", -1);
   fprintf (table, " } }\n");
@@ -1146,7 +1195,7 @@ process_i386_initializers (void)
 /* Program options.  */
 #define OPTION_SRCDIR	200
 
-struct option long_options[] = 
+struct option long_options[] =
 {
   {"srcdir",  required_argument, NULL, OPTION_SRCDIR},
   {"debug",   no_argument,       NULL, 'd'},
@@ -1177,7 +1226,7 @@ main (int argc, char **argv)
   char *srcdir = NULL;
   int c;
   FILE *table;
-  
+
   program_name = *argv;
   xmalloc_set_program_name (program_name);
 
@@ -1205,7 +1254,7 @@ main (int argc, char **argv)
   if (optind != argc)
     usage (stdout, 1);
 
-  if (srcdir != NULL) 
+  if (srcdir != NULL)
     if (chdir (srcdir) != 0)
       fail (_("unable to change directory to \"%s\", errno = %s\n"),
 	    srcdir, xstrerror (errno));

@@ -16,19 +16,17 @@ text_label:
       msubu   $11, $12
       mul     $13, $14, $15
       pref    4, ($16)
-      .set at
-      pref    4, 32767($17)
-      pref    4, -32768($18)
-      .set noat
+      pref    4, 2047($17)
+      pref    4, -2048($18)
       ssnop
 
 
       # privileged instructions
 
       cache   5, ($1)
+      cache   5, 2047($2)
+      cache   5, -2048($3)
       .set at
-      cache   5, 32767($2)
-      cache   5, -32768($3)
       cache   5, 32768($4)
       cache   5, -32769($5)
       cache   5, 32768

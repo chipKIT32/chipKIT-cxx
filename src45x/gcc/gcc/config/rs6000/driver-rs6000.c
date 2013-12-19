@@ -29,6 +29,7 @@ along with GCC; see the file COPYING3.  If not see
 
 #ifdef __linux__
 # include <link.h>
+# include <asm/cputable.h>
 #endif
 
 #if defined (__APPLE__) || (__FreeBSD__)
@@ -156,13 +157,21 @@ detect_processor_freebsd (void)
 
 #ifdef __linux__
 
+
+static const char *platform = 0;
+static bool hard_float = false;
+static bool auxv_read = false;
+
 /* Returns AT_PLATFORM if present, otherwise generic PowerPC.  */
 
-static const char *
-elf_platform (void)
+static void
+elf_auxv (void)
 {
   int fd;
 
+  if (auxv_read)
+    return;
+  
   fd = open ("/proc/self/auxv", O_RDONLY);
 
   if (fd != -1)
@@ -179,15 +188,48 @@ elf_platform (void)
 	  for (av = (ElfW(auxv_t) *) buf; av->a_type != AT_NULL; ++av)
 	    switch (av->a_type)
 	      {
+	      case AT_HWCAP:
+		if (av->a_un.a_val & PPC_FEATURE_HAS_FPU)
+		  hard_float = true;
+		break;
+		
 	      case AT_PLATFORM:
-		return (const char *) av->a_un.a_val;
+		{
+		  const char *name = (const char *)av->a_un.a_val;
+		  if (name)
+		    {
+		      /* Strip leading 'ppc' */
+		      if (!memcmp (name, "ppc", 3))
+			{
+			  name += 3;
+			  if (!name[0])
+			    name = NULL;
+			}
+		    }
+		  platform = name;
+		  break;
+		}
 
 	      default:
 		break;
 	      }
 	}
     }
-  return NULL;
+  auxv_read = true;
+}
+
+static const char *
+elf_platform (void)
+{
+  elf_auxv ();
+  return platform;
+}
+
+static bool
+elf_float (void)
+{
+  elf_auxv ();
+  return hard_float;
 }
 
 /* Returns AT_PLATFORM if present, otherwise generic 32.  */
@@ -520,6 +562,14 @@ host_detect_local_cpu (int argc, const char **argv)
   return concat (cache, "-m", argv[0], "=", cpu, " ", options, NULL);
 }
 
+const char *
+host_detect_local_float (int argc ATTRIBUTE_UNUSED,
+			 const char **argv ATTRIBUTE_UNUSED)
+{
+  return elf_float () ? "-mhard-float" : "-msoft-float";
+}
+
+
 #else /* GCC_VERSION */
 
 /* If we aren't compiling with GCC we just provide a minimal
@@ -541,6 +591,13 @@ host_detect_local_cpu (int argc, const char **argv)
     cpu = "powerpc";
 
   return concat ("-m", argv[0], "=", cpu, NULL);
+}
+
+const char *
+host_detect_local_float (int argc ATTRIBUTE_UNUSED,
+			 const char **argv ATTRIBUTE_UNUSED)
+{
+  return NULL;
 }
 
 #endif /* GCC_VERSION */

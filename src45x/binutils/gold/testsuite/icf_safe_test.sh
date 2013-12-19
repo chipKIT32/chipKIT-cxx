@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # icf_safe_test.sh -- test --icf=safe
 
 # Copyright 2009 Free Software Foundation, Inc.
@@ -49,8 +51,8 @@ check_fold()
 
 arch_specific_safe_fold()
 {
-    grep_x86=`grep -q -e "Advanced Micro Devices X86-64" -e "Intel 80386" $2`
-    if [ $? == 0 ];
+    grep_x86=`grep -q -e "Advanced Micro Devices X86-64" -e "Intel 80386" -e "ARM" $2`
+    if [ $? -eq 0 ];
     then
       check_fold $1 $3 $4
     else

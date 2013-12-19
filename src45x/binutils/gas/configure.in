@@ -17,7 +17,7 @@ AC_CANONICAL_TARGET
 AC_ISC_POSIX
 
 changequote(,)dnl
-BFD_VERSION=`sed -n -e 's/^.._INIT_AUTOMAKE.*,[ 	]*\([^ 	]*\)[ 	]*).*/\1/p' < ${srcdir}/../bfd/configure.in`
+BFD_VERSION=`${srcdir}/../bfd/configure --version | sed -n -e '1s,.* ,,p'`
 changequote([,])dnl
 AM_INIT_AUTOMAKE(gas, ${BFD_VERSION})
 
@@ -57,6 +57,15 @@ AM_BINUTILS_WARNINGS
 
 # Generate a header file
 AC_CONFIG_HEADERS(config.h:config.in)
+
+# PR 14072
+AH_VERBATIM([00_CONFIG_H_CHECK],
+[/* Check that config.h is #included before system headers
+   (this works only for glibc, but that should be enough).  */
+#if defined(__GLIBC__) && !defined(__CONFIG_H__)
+#  error config.h must be #included before system headers
+#endif
+#define __CONFIG_H__ 1])
 
 # If we are on a DOS filesystem, we must use gdb.ini rather than
 # .gdbinit.
@@ -253,13 +262,10 @@ changequote([,])dnl
 	esac
 	# Decide which ABI to target by default.
 	case ${target} in
-	  mips64el-sicortex-linux-gnu)
-	    mips_default_abi=N64_ABI
-	    ;;
-	  mips64*-linux* | mips-sgi-irix6*)
+	  mips64*-linux* | mips-sgi-irix6* | mips64*-freebsd* | mips64*-kfreebsd*-gnu)
 	    mips_default_abi=N32_ABI
 	    ;;
-	  mips*-linux*)
+	  mips*-linux* | mips*-freebsd* | mips*-kfreebsd*-gnu)
 	    mips_default_abi=O32_ABI
 	    ;;
 	  mips64*-openbsd*)
@@ -273,7 +279,7 @@ changequote([,])dnl
 	    ;;
 	esac
 
-	# Output special "disable" defines for pic32mx.
+	# Output special "disable" defines for pic32mx (Microchip PIC32 MCUs).
 	case ${target} in
 	  pic32*-*-*)
 	    AC_DEFINE(DISABLE_ABI_SELECTION, [], [Disable ABI options?])
@@ -287,8 +293,6 @@ changequote([,])dnl
 	    AC_DEFINE(DISABLE_MIPS3D_ASE_SELECTION, [],
 	              [Disable MIPS3D ASE options?])
 	    AC_DEFINE(DISABLE_MT_ASE_SELECTION, [], [Disable MT ASE options?])
-	    AC_DEFINE(DISABLE_DSP_ASE_SELECTION, [], [Disable DSP ASE options?])
-	    AC_DEFINE(DISABLE_DSP2_ASE_SELECTION, [], [Disable DSP2 ASE options?])
 	    AC_DEFINE(DISABLE_SMARTMIPS_ASE_SELECTION, [],
 	              [Disable SMARTMIPS ASE options?])
 	    ;;
@@ -332,13 +336,13 @@ changequote([,])dnl
           extra_objects="$extra_objects bfin-parse.o"
         fi
 
-        echo ${extra_objects} | grep -s "bfin-lex.o"
+        echo ${extra_objects} | grep -s "bfin-lex-wrapper.o"
         if test $? -ne 0 ; then
-          extra_objects="$extra_objects bfin-lex.o"
+          extra_objects="$extra_objects bfin-lex-wrapper.o"
         fi
         ;;
 
-      fr30 | ip2k | iq2000 | lm32 | m32r | openrisc)
+      epiphany | fr30 | ip2k | iq2000 | lm32 | m32r | openrisc)
 	using_cgen=yes
 	;;
 
@@ -365,9 +369,9 @@ changequote([,])dnl
 	  extra_objects="$extra_objects itbl-parse.o"
 	fi
 
-	echo ${extra_objects} | grep -s "itbl-lex.o"
+	echo ${extra_objects} | grep -s "itbl-lex-wrapper.o"
 	if test $? -ne 0 ; then
-	  extra_objects="$extra_objects itbl-lex.o"
+	  extra_objects="$extra_objects itbl-lex-wrapper.o"
 	fi
 
 	echo ${extra_objects} | grep -s "itbl-ops.o"
@@ -384,6 +388,13 @@ changequote([,])dnl
 	if test $this_target = $target ; then
 	  AC_DEFINE_UNQUOTED(DEFAULT_ARCH, "${arch}", [Default architecture.])
 	fi
+	;;
+
+      rl78)
+        echo ${extra_objects} | grep -s "rl78-parse.o"
+        if test $? -ne 0 ; then
+          extra_objects="$extra_objects rl78-parse.o"
+        fi
 	;;
 
       rx)
@@ -429,14 +440,15 @@ changequote([,])dnl
    case ${te_file} in
       vms) extra_objects="$extra_objects te-vms.o" ;;
    esac
- 
+
 # From target name and format, produce a list of supported emulations.
 
     case ${generic_target}-${fmt} in
       # cpu_type for pic32mx is set to mips. No emulations supported for pic32mx
       mips-mchp-*-elf)  ;;
       mips-*-irix5*-*)	emulation="mipsbelf mipslelf mipself mipsbecoff mipslecoff mipsecoff" ;;
-      mips*-*-linux*-*) case "$endian" in
+      mips*-*-linux*-* | mips*-*-freebsd* | mips*-*-kfreebsd*-gnu)
+			case "$endian" in
 			big)	emulation="mipsbelf mipslelf mipself" ;;
 			*)	emulation="mipslelf mipsbelf mipself" ;;
 			esac ;;
@@ -500,6 +512,11 @@ if test ${all_targets} = "yes"; then
   ;;
   esac
 fi
+
+# PE code has way too many macros tweaking behaviour
+case ${te_file} in
+  pe*) emulations="" ;;
+esac
 
 # Assign floating point type.  Most processors with FP support
 # IEEE FP.  On those that don't support FP at all, usually IEEE
@@ -647,7 +664,7 @@ AC_DEFINE_UNQUOTED(TARGET_OS,		"${target_os}",    [Target OS.])
 AC_PROG_YACC
 AM_PROG_LEX
 
-ALL_LINGUAS="fr tr es rw id ru"
+ALL_LINGUAS="fr tr es rw id ru fi ja"
 ZW_GNU_GETTEXT_SISTER_DIR
 AM_PO_SUBDIRS
 
@@ -655,7 +672,8 @@ AM_MAINTAINER_MODE
 AM_CONDITIONAL(GENINSRC_NEVER, false)
 AC_EXEEXT
 
-AC_CHECK_HEADERS(string.h stdlib.h memory.h strings.h unistd.h stdarg.h varargs.h errno.h sys/types.h limits.h time.h sys/stat.h)
+AC_CHECK_HEADERS(string.h stdlib.h memory.h strings.h unistd.h errno.h sys/types.h limits.h locale.h time.h sys/stat.h)
+ACX_HEADER_STRING
 
 # Put this here so that autoconf's "cross-compiling" message doesn't confuse
 # people who are not cross-compiling but are compiling cross-assemblers.
@@ -675,9 +693,9 @@ AC_C_INLINE
 
 # VMS doesn't have unlink.
 AC_CHECK_FUNCS(unlink remove, break)
+AC_CHECK_FUNCS(sbrk setlocale)
 
-# Some systems don't have sbrk().
-AC_CHECK_FUNCS(sbrk)
+AM_LC_MESSAGES
 
 # do we need the math library?
 case "${need_libm}" in
@@ -739,8 +757,7 @@ GAS_CHECK_DECL_NEEDED(malloc, f, char *(*f)(), $gas_test_headers)
 GAS_CHECK_DECL_NEEDED(sbrk, f, char *(*f)(), $gas_test_headers)
 GAS_CHECK_DECL_NEEDED(strstr, f, char *(*f)(), $gas_test_headers)
 
-AC_CHECK_DECLS([mempcpy])
-AC_CHECK_DECLS([vsnprintf])
+AC_CHECK_DECLS([free, getenv, malloc, mempcpy, realloc, stpcpy, strstr, vsnprintf])
 
 BFD_BINARY_FOPEN
 

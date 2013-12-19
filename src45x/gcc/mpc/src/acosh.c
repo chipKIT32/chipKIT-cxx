@@ -1,6 +1,6 @@
 /* mpc_acosh -- inverse hyperbolic cosine of a complex number.
 
-Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 
@@ -40,7 +40,7 @@ mpc_acosh (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       mpfr_set_nan (MPC_IM (rop));
       return 0;
     }
-  
+
   /* Note reversal of precisions due to later multiplication by i or -i */
   mpc_init3 (a, MPC_PREC_IM(rop), MPC_PREC_RE(rop));
 

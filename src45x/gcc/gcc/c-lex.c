@@ -387,6 +387,10 @@ c_lex_with_flags (tree *value, location_t *loc, unsigned char *cpp_flags,
 	  break;
 	}
 
+#if defined(_BUILD_C32_)
+	break;
+#endif
+
       /* FALLTHROUGH */
     case CPP_HASH:
     case CPP_PASTE:

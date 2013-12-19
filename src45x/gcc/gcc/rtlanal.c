@@ -85,6 +85,32 @@ int target_flags;
 static unsigned int
 num_sign_bit_copies_in_rep[MAX_MODE_INT + 1][MAX_MODE_INT + 1];
 
+
+#ifdef _BUILD_C30_
+/* Return 1 X uses a MEM */
+int rtx_uses_mem_p(rtx x)
+{
+  RTX_CODE code = GET_CODE(x);
+  int i;
+  const char *fmt;
+
+  if (code == MEM) return 1;
+
+  fmt = GET_RTX_FORMAT (GET_CODE(x));
+  for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
+    if (fmt[i] == 'e') {
+      if (rtx_uses_mem_p (XEXP (x, i))) return 1;
+    }
+    else if (fmt[i] == 'E') {
+      int j;
+
+      for (j = 0; j < XVECLEN (x, i); j++)
+        if (rtx_uses_mem_p (XVECEXP (x, i, j))) return 1;
+    }
+  return 0;
+}
+#endif
+
 /* Return 1 if the value of X is unstable
    (would be different at a different point in the program).
    The frame pointer, arg pointer, etc. are considered stable
@@ -403,10 +429,8 @@ nonzero_address_p (const_rtx x)
       return nonzero_address_p (XEXP (x, 0));
 
     case PLUS:
-      if (CONST_INT_P (XEXP (x, 1)))
-        return nonzero_address_p (XEXP (x, 0));
       /* Handle PIC references.  */
-      else if (XEXP (x, 0) == pic_offset_table_rtx
+      if (XEXP (x, 0) == pic_offset_table_rtx
 	       && CONSTANT_P (XEXP (x, 1)))
 	return true;
       return false;
@@ -1946,6 +1970,33 @@ remove_reg_equal_equiv_notes (rtx insn)
     }
 }
 
+/* Remove all REG_EQUAL and REG_EQUIV notes referring to REGNO.  */
+
+void
+remove_reg_equal_equiv_notes_for_regno (unsigned int regno)
+{
+  df_ref eq_use;
+
+  if (!df)
+    return;
+
+  /* This loop is a little tricky.  We cannot just go down the chain because
+     it is being modified by the actions in the loop.  So we simply iterate
+     over the head.  We plan to drain the list anyway.  */
+  while ((eq_use = DF_REG_EQ_USE_CHAIN (regno)) != NULL)
+    {
+      rtx insn = DF_REF_INSN (eq_use);
+      rtx note = find_reg_equal_equiv_note (insn);
+
+      /* This assert is generally triggered when someone deletes a REG_EQUAL
+	 or REG_EQUIV note by hacking the list manually rather than calling
+	 remove_note.  */
+      gcc_assert (note);
+
+      remove_note (insn, note);
+    }
+}
+
 /* Search LISTP (an EXPR_LIST) for an entry whose first operand is NODE and
    return 1 if it is found.  A simple equality test is used to determine if
    NODE matches.  */
@@ -2641,6 +2692,7 @@ tablejump_p (const_rtx insn, rtx *labelp, rtx *tablep)
 
   if (JUMP_P (insn)
       && (label = JUMP_LABEL (insn)) != NULL_RTX
+      && !ANY_RETURN_P (label)
       && (table = next_active_insn (label)) != NULL_RTX
       && JUMP_TABLE_DATA_P (table))
     {
@@ -4750,9 +4802,7 @@ canonicalize_condition (rtx insn, rtx cond, int reverse, rtx *earliest,
 	 stop if it isn't a single set or if it has a REG_INC note because
 	 we don't want to bother dealing with it.  */
 
-      do
-	prev = prev_nonnote_insn (prev);
-      while (prev && DEBUG_INSN_P (prev));
+      prev = prev_nonnote_nondebug_insn (prev);
 
       if (prev == 0
 	  || !NONJUMP_INSN_P (prev)

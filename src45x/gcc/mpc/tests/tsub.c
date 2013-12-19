@@ -1,6 +1,6 @@
 /* test file for mpc_sub.
 
-Copyright (C) 2008 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2008, 2011
 
 This file is part of the MPC Library.
 
@@ -24,7 +24,7 @@ MA 02111-1307, USA. */
 int
 main (void)
 {
-  DECL_FUNC (CCC, f, mpc_sub);
+  DECL_FUNC (C_CC, f, mpc_sub);
 
   test_start ();
 

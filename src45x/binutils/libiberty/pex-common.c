@@ -1,5 +1,5 @@
 /* Common code for executing a program in a sub-process.
-   Copyright (C) 2005 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2010 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@airs.com>.
 
 This file is part of the libiberty library.
@@ -599,7 +599,7 @@ void
 pex_free (struct pex_obj *obj)
 {
   /* Close pipe file descriptors corresponding to child's stdout and
-     stderr so that the child does not hang trying to output anything
+     stderr so that the child does not hang trying to output something
      while we're waiting for it.  */
   if (obj->next_input >= 0 && obj->next_input != STDIN_FILE_NO)
     obj->funcs->close (obj, obj->next_input);
@@ -623,12 +623,9 @@ pex_free (struct pex_obj *obj)
 
   if (obj->next_input_name_allocated)
     free (obj->next_input_name);
-  if (obj->children != NULL)
-    free (obj->children);
-  if (obj->status != NULL)
-    free (obj->status);
-  if (obj->time != NULL)
-    free (obj->time);
+  free (obj->children);
+  free (obj->status);
+  free (obj->time);
 
   if (obj->remove_count > 0)
     {

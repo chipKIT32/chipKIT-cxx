@@ -1,6 +1,6 @@
 # Data file for mpc_norm.
 #
-# Copyright (C) 2008 Andreas Enge
+# Copyright (C) INRIA, 2008, 2010
 #
 # This file is part of the MPC Library.
 #
@@ -76,3 +76,6 @@
 
 # overflow
 + 53 +inf  2 0x1p536870912 2 0x1p536870912 U
+
+# infinite loop reported by E. Thome
+- 250 +0 250 -0xf.fdda3457c3e69e5841461d505b42987feb42867a4a2d2872179c4efa20054c0@-136943039 250 -0xc.670d1beda685fdd771b6246e32ff49ec4fd70aec25367444e00933e6965d3c0@-136943040 N

@@ -107,7 +107,7 @@ Lock_impl_threads::Lock_impl_threads()
     gold_fatal(_("pthread_mutextattr_settype failed: %s"), strerror(err));
 #endif
 
-  err = pthread_mutex_init (&this->mutex_, &attr);
+  err = pthread_mutex_init(&this->mutex_, &attr);
   if (err != 0)
     gold_fatal(_("pthread_mutex_init failed: %s"), strerror(err));
 
@@ -404,7 +404,7 @@ Once::run_once(void* arg)
 
   err = pthread_mutex_unlock(&once_pointer_control);
   if (err != 0)
-    gold_fatal(_("pthread_mutex_unlock falied: %s"), strerror(err));
+    gold_fatal(_("pthread_mutex_unlock failed: %s"), strerror(err));
 
 #endif // defined(ENABLE_THREADS)
 }

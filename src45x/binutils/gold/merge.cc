@@ -1,6 +1,6 @@
 // merge.cc -- handle section merging for gold
 
-// Copyright 2006, 2007, 2008, 2010 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -145,7 +145,7 @@ bool
 Object_merge_map::get_output_offset(const Merge_map* merge_map,
 				    unsigned int shndx,
 				    section_offset_type input_offset,
-				    section_offset_type *output_offset)
+				    section_offset_type* output_offset)
 {
   Input_merge_map* map = this->get_input_merge_map(shndx);
   if (map == NULL
@@ -242,6 +242,7 @@ Merge_map::add_mapping(Relobj* object, unsigned int shndx,
 		       section_offset_type offset, section_size_type length,
 		       section_offset_type output_offset)
 {
+  gold_assert(object != NULL);
   Object_merge_map* object_merge_map = object->merge_map();
   if (object_merge_map == NULL)
     {
@@ -303,6 +304,26 @@ Output_merge_base::do_is_merge_section_for(const Relobj* object,
 					   unsigned int shndx) const
 {
   return this->merge_map_.is_merge_section_for(object, shndx);
+}
+
+// Record a merged input section for script processing.
+
+void
+Output_merge_base::record_input_section(Relobj* relobj, unsigned int shndx)
+{
+  gold_assert(this->keeps_input_sections_ && relobj != NULL);
+  // If this is the first input section, record it.  We need do this because
+  // this->input_sections_ is unordered.
+  if (this->first_relobj_ == NULL)
+    {
+      this->first_relobj_ = relobj;
+      this->first_shndx_ = shndx;
+    }
+
+  std::pair<Input_sections::iterator, bool> result =
+    this->input_sections_.insert(Section_id(relobj, shndx));
+  // We should insert a merge section once only.
+  gold_assert(result.second);
 }
 
 // Class Output_merge_data.
@@ -385,27 +406,16 @@ bool
 Output_merge_data::do_add_input_section(Relobj* object, unsigned int shndx)
 {
   section_size_type len;
-  section_size_type uncompressed_size = 0;
-  unsigned char* uncompressed_data = NULL;
-  const unsigned char* p = object->section_contents(shndx, &len, false);
-
-  if (object->section_is_compressed(shndx, &uncompressed_size))
-    {
-      uncompressed_data = new unsigned char[uncompressed_size];
-      if (!decompress_input_section(p, len, uncompressed_data,
-				    uncompressed_size))
-	object->error(_("could not decompress section %s"),
-		      object->section_name(shndx).c_str());
-      p = uncompressed_data;
-      len = uncompressed_size;
-    }
+  bool is_new;
+  const unsigned char* p = object->decompressed_section_contents(shndx, &len,
+								 &is_new);
 
   section_size_type entsize = convert_to_section_size_type(this->entsize());
 
   if (len % entsize != 0)
     {
-      if (uncompressed_data != NULL)
-	delete[] uncompressed_data;
+      if (is_new)
+	delete[] p;
       return false;
     }
 
@@ -432,8 +442,12 @@ Output_merge_data::do_add_input_section(Relobj* object, unsigned int shndx)
       this->add_mapping(object, shndx, i, entsize, k);
     }
 
-  if (uncompressed_data != NULL)
-    delete[] uncompressed_data;
+  // For script processing, we keep the input sections.
+  if (this->keeps_input_sections())
+    record_input_section(object, shndx);
+
+  if (is_new)
+    delete[] p;
 
   return true;
 }
@@ -492,20 +506,10 @@ Output_merge_string<Char_type>::do_add_input_section(Relobj* object,
 						     unsigned int shndx)
 {
   section_size_type len;
-  section_size_type uncompressed_size = 0;
-  unsigned char* uncompressed_data = NULL;
-  const unsigned char* pdata = object->section_contents(shndx, &len, false);
-
-  if (object->section_is_compressed(shndx, &uncompressed_size))
-    {
-      uncompressed_data = new unsigned char[uncompressed_size];
-      if (!decompress_input_section(pdata, len, uncompressed_data,
-				    uncompressed_size))
-	object->error(_("could not decompress section %s"),
-		      object->section_name(shndx).c_str());
-      pdata = uncompressed_data;
-      len = uncompressed_size;
-    }
+  bool is_new;
+  const unsigned char* pdata = object->decompressed_section_contents(shndx,
+								     &len,
+								     &is_new);
 
   const Char_type* p = reinterpret_cast<const Char_type*>(pdata);
   const Char_type* pend = p + len / sizeof(Char_type);
@@ -515,8 +519,8 @@ Output_merge_string<Char_type>::do_add_input_section(Relobj* object,
     {
       object->error(_("mergeable string section length not multiple of "
 		      "character size"));
-      if (uncompressed_data != NULL)
-	delete[] uncompressed_data;
+      if (is_new)
+	delete[] pdata;
       return false;
     }
 
@@ -577,8 +581,12 @@ Output_merge_string<Char_type>::do_add_input_section(Relobj* object,
   this->input_count_ += count;
   this->input_size_ += len;
 
-  if (uncompressed_data != NULL)
-    delete[] uncompressed_data;
+  // For script processing, we keep the input sections.
+  if (this->keeps_input_sections())
+    record_input_section(object, shndx);
+
+  if (is_new)
+    delete[] pdata;
 
   return true;
 }

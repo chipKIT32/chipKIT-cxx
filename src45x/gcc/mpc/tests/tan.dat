@@ -1,6 +1,6 @@
 # Data test file for mpc_tan.
 
-# Copyright (C) 2008 Paul Zimmermann, Philippe Th\'eveny
+# Copyright (C) INRIA, 2008, 2010
 
 # This file is part of the MPC Library.
 #
@@ -125,3 +125,6 @@
 # corner case
 - + 9 -0x9bp-51 9 -1    9 -0x16dp-8 9 -0x77p-3   N N
 
+# huge values
++ - 53 -0 53 -1  53 0x4580CBF242683p-3 53 -0x1B3E8A3660D279p-3 N N
++ + 53 -0 53 +1  53 -0x1B3E8A3660D279p-3 53 0x4580CBF242683p-3 N N

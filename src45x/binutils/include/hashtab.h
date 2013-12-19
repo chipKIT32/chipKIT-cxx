@@ -1,5 +1,5 @@
 /* An expandable hash tables datatype.  
-   Copyright (C) 1999, 2000, 2002, 2003, 2004, 2005, 2009
+   Copyright (C) 1999, 2000, 2002, 2003, 2004, 2005, 2009, 2010
    Free Software Foundation, Inc.
    Contributed by Vladimir Makarov (vmakarov@cygnus.com).
 
@@ -157,6 +157,9 @@ extern htab_t	htab_create_alloc_ex (size_t, htab_hash,
                                       void *, htab_alloc_with_arg,
                                       htab_free_with_arg);
 
+extern htab_t  htab_create_typed_alloc (size_t, htab_hash, htab_eq, htab_del,
+					htab_alloc, htab_alloc, htab_free);
+
 /* Backward-compatibility functions.  */
 extern htab_t htab_create (size_t, htab_hash, htab_eq, htab_del);
 extern htab_t htab_try_create (size_t, htab_hash, htab_eq, htab_del);
@@ -204,3 +207,4 @@ extern hashval_t iterative_hash (const void *, size_t, hashval_t);
 #endif /* __cplusplus */
 
 #endif /* __HASHTAB_H */
+

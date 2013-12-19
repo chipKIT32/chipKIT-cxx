@@ -135,6 +135,8 @@ static enum machine_mode arm_promote_function_mode (const_tree,
 static bool arm_return_in_memory (const_tree, const_tree);
 static rtx arm_function_value (const_tree, const_tree, bool);
 static rtx arm_libcall_value (enum machine_mode, const_rtx);
+static enum machine_mode arm_promote_libcall_mode (enum machine_mode,
+						   int *, const_tree, int);
 
 static void arm_internal_label (FILE *, const char *, unsigned long);
 static void arm_output_mi_thunk (FILE *, tree, HOST_WIDE_INT, HOST_WIDE_INT,
@@ -235,6 +237,10 @@ static bool arm_builtin_support_vector_misalignment (enum machine_mode mode,
 						     const_tree type,
 						     int misalignment,
 						     bool is_packed);
+static int arm_default_branch_cost (bool, bool);
+static int arm_cortex_a5_branch_cost (bool, bool);
+static int arm_cortex_m_branch_cost (bool, bool);
+static bool arm_fixed_point_supported_p (void);
 
 
 /* Table of machine attributes.  */
@@ -340,6 +346,9 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef  TARGET_LIBCALL_VALUE
 #define TARGET_LIBCALL_VALUE arm_libcall_value
+
+#undef  TARGET_PROMOTE_LIBCALL_MODE
+#define TARGET_PROMOTE_LIBCALL_MODE arm_promote_libcall_mode
 
 #undef  TARGET_ASM_OUTPUT_MI_THUNK
 #define TARGET_ASM_OUTPUT_MI_THUNK arm_output_mi_thunk
@@ -529,6 +538,10 @@ static const struct attribute_spec arm_attribute_table[] =
 #define TARGET_SUPPORT_VECTOR_MISALIGNMENT \
   arm_builtin_support_vector_misalignment
 
+#undef TARGET_FIXED_POINT_SUPPORTED_P
+#define TARGET_FIXED_POINT_SUPPORTED_P \
+  arm_fixed_point_supported_p
+
 struct gcc_target targetm = TARGET_INITIALIZER;
 
 /* Obstack for minipool constant handling.  */
@@ -569,10 +582,7 @@ enum arm_abi_type arm_abi;
 enum arm_tp_type target_thread_pointer = TP_AUTO;
 
 /* Which tls dialect to use.  */
-#ifndef TLS_DIALECT_DEFAULT
-#define TLS_DIALECT_DEFAULT TLS_ARM
-#endif
-enum arm_tls_type target_tls_dialect = TLS_DIALECT_DEFAULT;
+enum arm_tls_type target_tls_dialect = TLS_GNU;
 
 /* Used to parse -mstructure_size_boundary command line option.  */
 int    arm_structure_size_boundary = DEFAULT_STRUCTURE_SIZE_BOUNDARY;
@@ -603,12 +613,13 @@ static int thumb_call_reg_needed;
 #define FL_THUMB2     (1 << 16)	      /* Thumb-2.  */
 #define FL_NOTM	      (1 << 17)	      /* Instructions not present in the 'M'
 					 profile.  */
-#define FL_DIV	      (1 << 18)	      /* Hardware divide.  */
+#define FL_THUMB_DIV  (1 << 18)	      /* Hardware divide (Thumb mode).  */
 #define FL_VFPV3      (1 << 19)       /* Vector Floating Point V3.  */
 #define FL_NEON       (1 << 20)       /* Neon instructions.  */
 #define FL_ARCH7EM    (1 << 21)	      /* Instructions present in the ARMv7E-M
 					 architecture.  */
 #define FL_ARCH7      (1 << 22)       /* Architecture 7.  */
+#define FL_ARM_DIV    (1 << 23)	      /* Hardware divide (ARM mode).  */
 
 #define FL_IWMMXT     (1 << 29)	      /* XScale v2 or "Intel Wireless MMX technology".  */
 
@@ -633,10 +644,11 @@ static int thumb_call_reg_needed;
 #define FL_FOR_ARCH6ZK	FL_FOR_ARCH6K
 #define FL_FOR_ARCH6T2	(FL_FOR_ARCH6 | FL_THUMB2)
 #define FL_FOR_ARCH6M	(FL_FOR_ARCH6 & ~FL_NOTM)
+#define FL_FOR_ARCH6SM	FL_FOR_ARCH6M
 #define FL_FOR_ARCH7	((FL_FOR_ARCH6T2 & ~FL_NOTM) | FL_ARCH7)
 #define FL_FOR_ARCH7A	(FL_FOR_ARCH7 | FL_NOTM | FL_ARCH6K)
-#define FL_FOR_ARCH7R	(FL_FOR_ARCH7A | FL_DIV)
-#define FL_FOR_ARCH7M	(FL_FOR_ARCH7 | FL_DIV)
+#define FL_FOR_ARCH7R	(FL_FOR_ARCH7A | FL_THUMB_DIV)
+#define FL_FOR_ARCH7M	(FL_FOR_ARCH7 | FL_THUMB_DIV)
 #define FL_FOR_ARCH7EM  (FL_FOR_ARCH7M | FL_ARCH7EM)
 
 /* The bits in this mask specify which
@@ -722,7 +734,8 @@ int arm_cpp_interwork = 0;
 int arm_arch_thumb2;
 
 /* Nonzero if chip supports integer division instruction.  */
-int arm_arch_hwdiv;
+int arm_arch_arm_hwdiv;
+int arm_arch_thumb_hwdiv;
 
 /* In case of a PRE_INC, POST_INC, PRE_DEC, POST_DEC memory reference, we
    must report the mode of the memory reference from PRINT_OPERAND to
@@ -781,37 +794,83 @@ const struct tune_params arm_slowmul_tune =
 {
   arm_slowmul_rtx_costs,
   NULL,
-  3
+  3,				/* Constant limit.  */
+  true,				/* Prefer constant pool.  */
+  arm_default_branch_cost
 };
 
 const struct tune_params arm_fastmul_tune =
 {
   arm_fastmul_rtx_costs,
   NULL,
-  1
+  1,				/* Constant limit.  */
+  true,				/* Prefer constant pool.  */
+  arm_default_branch_cost
 };
 
 const struct tune_params arm_xscale_tune =
 {
   arm_xscale_rtx_costs,
   xscale_sched_adjust_cost,
-  2
+  2,				/* Constant limit.  */
+  true,				/* Prefer constant pool.  */
+  arm_default_branch_cost
 };
 
 const struct tune_params arm_9e_tune =
 {
   arm_9e_rtx_costs,
   NULL,
-  1
+  1,				/* Constant limit.  */
+  true,				/* Prefer constant pool.  */
+  arm_default_branch_cost
+};
+
+const struct tune_params arm_v6t2_tune =
+{
+  arm_9e_rtx_costs,
+  NULL,
+  1,				/* Constant limit.  */
+  false,			/* Prefer constant pool.  */
+  arm_default_branch_cost
+};
+
+/* Generic Cortex tuning.  Use more specific tunings if appropriate.  */
+const struct tune_params arm_cortex_tune =
+{
+  arm_9e_rtx_costs,
+  NULL,
+  1,				/* Constant limit.  */
+  false,			/* Prefer constant pool.  */
+  arm_default_branch_cost
+};
+
+const struct tune_params arm_cortex_a5_tune =
+{
+  arm_9e_rtx_costs,
+  NULL,
+  1,				/* Constant limit.  */
+  false,			/* Prefer constant pool.  */
+  arm_cortex_a5_branch_cost
 };
 
 const struct tune_params arm_cortex_a9_tune =
 {
   arm_9e_rtx_costs,
   cortex_a9_sched_adjust_cost,
-  1
+  1,				/* Constant limit.  */
+  false,			/* Prefer constant pool.  */
+  arm_default_branch_cost
 };
 
+const struct tune_params arm_cortex_m_tune =
+{
+  arm_9e_rtx_costs,
+  NULL,
+  1,				/* Constant limit.  */
+  true,				/* Prefer constant pool.  */
+  arm_cortex_m_branch_cost
+};
 
 /* Not all of these give usefully different compilation alternatives,
    but there is no simple way of generalizing them.  */
@@ -850,6 +909,7 @@ static const struct processors all_architectures[] =
   {"armv6zk", arm1176jzs, "6ZK", FL_CO_PROC |             FL_FOR_ARCH6ZK, NULL},
   {"armv6t2", arm1156t2s, "6T2", FL_CO_PROC |             FL_FOR_ARCH6T2, NULL},
   {"armv6-m", cortexm1,	  "6M",				  FL_FOR_ARCH6M, NULL},
+  {"armv6s-m", cortexm1,  "6SM",			  FL_FOR_ARCH6SM, NULL},
   {"armv7",   cortexa8,	  "7",	 FL_CO_PROC |		  FL_FOR_ARCH7, NULL},
   {"armv7-a", cortexa8,	  "7A",	 FL_CO_PROC |		  FL_FOR_ARCH7A, NULL},
   {"armv7-r", cortexr4,	  "7R",	 FL_CO_PROC |		  FL_FOR_ARCH7R, NULL},
@@ -989,6 +1049,49 @@ bit_count (unsigned long value)
     }
 
   return count;
+}
+
+typedef struct
+{
+  enum machine_mode mode;
+  const char *name;
+} arm_fixed_mode_set;
+
+/* A small helper for setting fixed-point library libfuncs.  */
+
+static void
+arm_set_fixed_optab_libfunc (optab optable, enum machine_mode mode,
+			     const char *funcname, const char *modename,
+			     int num_suffix)
+{
+  char buffer[50];
+  
+  if (num_suffix == 0)
+    sprintf (buffer, "__gnu_%s%s", funcname, modename);
+  else
+    sprintf (buffer, "__gnu_%s%s%d", funcname, modename, num_suffix);
+  
+  set_optab_libfunc (optable, mode, buffer);
+}
+
+static void
+arm_set_fixed_conv_libfunc (convert_optab optable, enum machine_mode to,
+			    enum machine_mode from, const char *funcname,
+			    const char *toname, const char *fromname)
+{
+  char buffer[50];
+  char *maybe_suffix_2 = "";
+  
+  /* Follow the logic for selecting a "2" suffix in fixed-bit.h.  */
+  if (ALL_FIXED_POINT_MODE_P (from) && ALL_FIXED_POINT_MODE_P (to)
+      && UNSIGNED_FIXED_POINT_MODE_P (from) == UNSIGNED_FIXED_POINT_MODE_P (to)
+      && ALL_FRACT_MODE_P (from) == ALL_FRACT_MODE_P (to))
+    maybe_suffix_2 = "2";
+  
+  sprintf (buffer, "__gnu_%s%s%s%s", funcname, fromname, toname,
+	   maybe_suffix_2);
+
+  set_conv_libfunc (optable, to, from, buffer);
 }
 
 /* Set up library functions unique to ARM.  */
@@ -1135,6 +1238,137 @@ arm_init_libfuncs (void)
     default:
       break;
     }
+
+  /* Use names prefixed with __gnu_ for fixed-point helper functions.  */
+  {
+    const arm_fixed_mode_set fixed_arith_modes[] =
+      {
+	{ QQmode, "qq" },
+	{ UQQmode, "uqq" },
+	{ HQmode, "hq" },
+	{ UHQmode, "uhq" },
+	{ SQmode, "sq" },
+	{ USQmode, "usq" },
+	{ DQmode, "dq" },
+	{ UDQmode, "udq" },
+	{ TQmode, "tq" },
+	{ UTQmode, "utq" },
+	{ HAmode, "ha" },
+	{ UHAmode, "uha" },
+	{ SAmode, "sa" },
+	{ USAmode, "usa" },
+	{ DAmode, "da" },
+	{ UDAmode, "uda" },
+	{ TAmode, "ta" },
+	{ UTAmode, "uta" }
+      };
+    const arm_fixed_mode_set fixed_conv_modes[] =
+      {
+	{ QQmode, "qq" },
+	{ UQQmode, "uqq" },
+	{ HQmode, "hq" },
+	{ UHQmode, "uhq" },
+	{ SQmode, "sq" },
+	{ USQmode, "usq" },
+	{ DQmode, "dq" },
+	{ UDQmode, "udq" },
+	{ TQmode, "tq" },
+	{ UTQmode, "utq" },
+	{ HAmode, "ha" },
+	{ UHAmode, "uha" },
+	{ SAmode, "sa" },
+	{ USAmode, "usa" },
+	{ DAmode, "da" },
+	{ UDAmode, "uda" },
+	{ TAmode, "ta" },
+	{ UTAmode, "uta" },
+	{ QImode, "qi" },
+	{ HImode, "hi" },
+	{ SImode, "si" },
+	{ DImode, "di" },
+	{ TImode, "ti" },
+	{ SFmode, "sf" },
+	{ DFmode, "df" }
+      };
+    unsigned int i, j;
+
+    for (i = 0; i < ARRAY_SIZE (fixed_arith_modes); i++)
+      {
+	arm_set_fixed_optab_libfunc (add_optab, fixed_arith_modes[i].mode,
+				     "add", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ssadd_optab, fixed_arith_modes[i].mode,
+				     "ssadd", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (usadd_optab, fixed_arith_modes[i].mode,
+				     "usadd", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (sub_optab, fixed_arith_modes[i].mode,
+				     "sub", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (sssub_optab, fixed_arith_modes[i].mode,
+				     "sssub", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ussub_optab, fixed_arith_modes[i].mode,
+				     "ussub", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (smul_optab, fixed_arith_modes[i].mode,
+				     "mul", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ssmul_optab, fixed_arith_modes[i].mode,
+				     "ssmul", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (usmul_optab, fixed_arith_modes[i].mode,
+				     "usmul", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (sdiv_optab, fixed_arith_modes[i].mode,
+				     "div", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (udiv_optab, fixed_arith_modes[i].mode,
+				     "udiv", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ssdiv_optab, fixed_arith_modes[i].mode,
+				     "ssdiv", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (usdiv_optab, fixed_arith_modes[i].mode,
+				     "usdiv", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (neg_optab, fixed_arith_modes[i].mode,
+				     "neg", fixed_arith_modes[i].name, 2);
+	arm_set_fixed_optab_libfunc (ssneg_optab, fixed_arith_modes[i].mode,
+				     "ssneg", fixed_arith_modes[i].name, 2);
+	arm_set_fixed_optab_libfunc (usneg_optab, fixed_arith_modes[i].mode,
+				     "usneg", fixed_arith_modes[i].name, 2);
+	arm_set_fixed_optab_libfunc (ashl_optab, fixed_arith_modes[i].mode,
+				     "ashl", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ashr_optab, fixed_arith_modes[i].mode,
+				     "ashr", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (lshr_optab, fixed_arith_modes[i].mode,
+				     "lshr", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (ssashl_optab, fixed_arith_modes[i].mode,
+				     "ssashl", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (usashl_optab, fixed_arith_modes[i].mode,
+				     "usashl", fixed_arith_modes[i].name, 3);
+	arm_set_fixed_optab_libfunc (cmp_optab, fixed_arith_modes[i].mode,
+				     "cmp", fixed_arith_modes[i].name, 2);
+      }
+
+    for (i = 0; i < ARRAY_SIZE (fixed_conv_modes); i++)
+      for (j = 0; j < ARRAY_SIZE (fixed_conv_modes); j++)
+	{
+	  if (i == j
+	      || (!ALL_FIXED_POINT_MODE_P (fixed_conv_modes[i].mode)
+		  && !ALL_FIXED_POINT_MODE_P (fixed_conv_modes[j].mode)))
+	    continue;
+
+	  arm_set_fixed_conv_libfunc (fract_optab, fixed_conv_modes[i].mode,
+				      fixed_conv_modes[j].mode, "fract",
+				      fixed_conv_modes[i].name,
+				      fixed_conv_modes[j].name);
+	  arm_set_fixed_conv_libfunc (satfract_optab,
+				      fixed_conv_modes[i].mode,
+				      fixed_conv_modes[j].mode, "satfract",
+				      fixed_conv_modes[i].name,
+				      fixed_conv_modes[j].name);
+	  arm_set_fixed_conv_libfunc (fractuns_optab,
+				      fixed_conv_modes[i].mode,
+				      fixed_conv_modes[j].mode, "fractuns",
+				      fixed_conv_modes[i].name,
+				      fixed_conv_modes[j].name);
+	  arm_set_fixed_conv_libfunc (satfractuns_optab,
+				      fixed_conv_modes[i].mode,
+				      fixed_conv_modes[j].mode, "satfractuns",
+				      fixed_conv_modes[i].name,
+				      fixed_conv_modes[j].name);
+	}
+  }
 
   if (TARGET_AAPCS_BASED)
     synchronize_libfunc = init_one_libfunc ("__sync_synchronize");
@@ -1625,7 +1859,8 @@ arm_override_options (void)
   arm_tune_wbuf = (tune_flags & FL_WBUF) != 0;
   arm_tune_xscale = (tune_flags & FL_XSCALE) != 0;
   arm_arch_iwmmxt = (insn_flags & FL_IWMMXT) != 0;
-  arm_arch_hwdiv = (insn_flags & FL_DIV) != 0;
+  arm_arch_thumb_hwdiv = (insn_flags & FL_THUMB_DIV) != 0;
+  arm_arch_arm_hwdiv = (insn_flags & FL_ARM_DIV) != 0;
   arm_tune_cortex_a5 = (arm_tune == cortexa5) != 0;
   arm_tune_cortex_a9 = (arm_tune == cortexa9) != 0;
 
@@ -1821,10 +2056,10 @@ arm_override_options (void)
 
   if (target_tls_dialect_switch)
     {
-      if (strcmp (target_tls_dialect_switch, "arm") == 0)
-	target_tls_dialect = TLS_ARM;
-      else if (strcmp (target_tls_dialect_switch, "gnu") == 0)
+      if (strcmp (target_tls_dialect_switch, "gnu") == 0)
 	target_tls_dialect = TLS_GNU;
+      else if (strcmp (target_tls_dialect_switch, "gnu2") == 0)
+	target_tls_dialect = TLS_GNU2;
       else
 	error ("invalid thread dialect option: -mtls-dialect=%s",
 	       target_tls_dialect_switch);
@@ -1908,6 +2143,22 @@ arm_override_options (void)
   if (arm_selected_tune->core == cortexm4)
     flag_schedule_interblock = 0;
 
+  /* Enable -munaligned-access by default for
+     - all ARMv6 architecture-based processors
+     - ARMv7-A, ARMv7-R, and ARMv7-M architecture-based processors.
+
+     Disable -munaligned-access by default for
+     - all pre-ARMv6 architecture-based processors
+     - ARMv6-M architecture-based processors.  */
+
+  if (unaligned_access == 2)
+    {
+      if (arm_arch6 && (arm_arch_notm || arm_arch7))
+	unaligned_access = 1;
+      else
+	unaligned_access = 0;
+    }
+
   if (TARGET_THUMB1 && flag_schedule_insns)
     {
       /* Don't warn since it's on by default in -O2.  */
@@ -1952,7 +2203,8 @@ arm_override_options (void)
     set_param_value ("gcse-unrestricted-cost", 2);
 
   /* ARM EABI defaults to strict volatile bitfields.  */
-  if (TARGET_AAPCS_BASED && flag_strict_volatile_bitfields < 0)
+  if (TARGET_AAPCS_BASED && flag_strict_volatile_bitfields < 0
+      && abi_version_at_least(2))
     flag_strict_volatile_bitfields = 1;
 
   /* Register global variables with the garbage collector.  */
@@ -2203,6 +2455,18 @@ arm_trampoline_adjust_address (rtx addr)
   return addr;
 }
 
+/* Return true if we should try to use a simple_return insn, i.e. perform
+   shrink-wrapping if possible.  This is the case if we need to emit a
+   prologue, which we can test by looking at the offsets.  */
+bool
+use_simple_return_p (void)
+{
+  arm_stack_offsets *offsets;
+
+  offsets = arm_get_frame_offsets ();
+  return offsets->outgoing_args != 0;
+}
+
 /* Return 1 if it is possible to return using a single instruction.
    If SIBLING is non-null, this is a test for a return before a sibling
    call.  SIBLING is the call insn, so we can examine its register usage.  */
@@ -2381,10 +2645,16 @@ const_ok_for_arm (HOST_WIDE_INT i)
     {
       HOST_WIDE_INT v;
 
-      /* Allow repeated pattern.  */
+      /* Allow repeated patterns 0x00XY00XY or 0xXYXYXYXY.  */
       v = i & 0xff;
       v |= v << 16;
       if (i == v || i == (v | (v << 8)))
+	return TRUE;
+
+      /* Allow repeated pattern 0xXY00XY00.  */
+      v = i & 0xff00;
+      v |= v << 16;
+      if (i == v)
 	return TRUE;
     }
 
@@ -3453,7 +3723,7 @@ arm_function_value(const_tree type, const_tree func,
     return aapcs_allocate_return_reg (mode, type, func);
 
   /* Promote integer types.  */
-  if (INTEGRAL_TYPE_P (type))
+  if (INTEGRAL_TYPE_P (type) || FIXED_POINT_TYPE_P (type))
     mode = arm_promote_function_mode (type, mode, &unsignedp, func, 1);
 
   /* Promotes small structs returned in a register to full-word size
@@ -3572,6 +3842,20 @@ arm_libcall_value (enum machine_mode mode, const_rtx libcall)
     }
 
   return LIBCALL_VALUE (mode);
+}
+
+/* Libcall arguments and return values are promoted to word size.  */
+
+static enum machine_mode
+arm_promote_libcall_mode (enum machine_mode mode,
+			  int *punsignedp ATTRIBUTE_UNUSED,
+			  const_tree fntype ATTRIBUTE_UNUSED,
+			  int for_return ATTRIBUTE_UNUSED)
+{
+  if (GET_MODE_CLASS (mode) == MODE_INT && GET_MODE_SIZE (mode) < 4)
+    return SImode;
+
+  return mode;
 }
 
 /* Determine the amount of memory needed to store the possible return
@@ -4394,6 +4678,12 @@ aapcs_allocate_return_reg (enum machine_mode mode, const_tree type,
 rtx
 aapcs_libcall_value (enum machine_mode mode)
 {
+  /* Libcalls returning sub-word-sized fixed-point types should be returned as
+     SImode, to enable correct padding in big-endian mode.  */
+  if (BYTES_BIG_ENDIAN && ALL_FIXED_POINT_MODE_P (mode)
+      && GET_MODE_SIZE (mode) <= 4)
+    mode = SImode;
+
   return aapcs_allocate_return_reg (mode, NULL_TREE, NULL_TREE);
 }
 
@@ -5652,10 +5942,22 @@ arm_legitimate_index_p (enum machine_mode mode, rtx index, RTX_CODE outer,
 	    && INTVAL (index) > -1024
 	    && (INTVAL (index) & 3) == 0);
 
-  if (TARGET_NEON
-      && (VALID_NEON_DREG_MODE (mode) || VALID_NEON_QREG_MODE (mode)))
+  /* For quad modes, we restrict the constant offset to be slightly less
+     than what the instruction format permits.  We do this because for
+     quad mode moves, we will actually decompose them into two separate
+     double-mode reads or writes.  INDEX must therefore be a valid
+     (double-mode) offset and so should INDEX+8.  */
+  if (TARGET_NEON && VALID_NEON_QREG_MODE (mode))
     return (code == CONST_INT
 	    && INTVAL (index) < 1016
+	    && INTVAL (index) > -1024
+	    && (INTVAL (index) & 3) == 0);
+
+  /* We have no such constraint on double mode offsets, so we permit the
+     full range of the instruction format.  */
+  if (TARGET_NEON && VALID_NEON_DREG_MODE (mode))
+    return (code == CONST_INT
+	    && INTVAL (index) < 1024
 	    && INTVAL (index) > -1024
 	    && (INTVAL (index) & 3) == 0);
 
@@ -5772,10 +6074,22 @@ thumb2_legitimate_index_p (enum machine_mode mode, rtx index, int strict_p)
 		&& (INTVAL (index) & 3) == 0);
     }
 
-  if (TARGET_NEON
-      && (VALID_NEON_DREG_MODE (mode) || VALID_NEON_QREG_MODE (mode)))
+  /* For quad modes, we restrict the constant offset to be slightly less
+     than what the instruction format permits.  We do this because for
+     quad mode moves, we will actually decompose them into two separate
+     double-mode reads or writes.  INDEX must therefore be a valid
+     (double-mode) offset and so should INDEX+8.  */
+  if (TARGET_NEON && VALID_NEON_QREG_MODE (mode))
     return (code == CONST_INT
 	    && INTVAL (index) < 1016
+	    && INTVAL (index) > -1024
+	    && (INTVAL (index) & 3) == 0);
+
+  /* We have no such constraint on double mode offsets, so we permit the
+     full range of the instruction format.  */
+  if (TARGET_NEON && VALID_NEON_DREG_MODE (mode))
+    return (code == CONST_INT
+	    && INTVAL (index) < 1024
 	    && INTVAL (index) > -1024
 	    && (INTVAL (index) & 3) == 0);
 
@@ -6118,14 +6432,7 @@ legitimize_tls_address (rtx x, rtx reg)
   switch (model)
     {
     case TLS_MODEL_GLOBAL_DYNAMIC:
-      if (TARGET_ARM_TLS)
-	{
-	  insns = arm_call_tls_get_addr (x, reg, &ret, TLS_GD32);
-	  dest = gen_reg_rtx (Pmode);
-	  emit_libcall_block (insns, dest, ret, x);
-	  return dest;
-	}
-      else
+      if (TARGET_GNU2_TLS)
 	{
 	  reg = arm_tls_descseq_addr (x, reg);
 
@@ -6133,9 +6440,24 @@ legitimize_tls_address (rtx x, rtx reg)
 	  
 	  return gen_rtx_PLUS (Pmode, tp, reg);
 	}
+      else
+	{
+	  insns = arm_call_tls_get_addr (x, reg, &ret, TLS_GD32);
+	  dest = gen_reg_rtx (Pmode);
+	  emit_libcall_block (insns, dest, ret, x);
+	  return dest;
+	}
 
     case TLS_MODEL_LOCAL_DYNAMIC:
-      if (TARGET_ARM_TLS)
+      if (TARGET_GNU2_TLS)
+	{
+	  reg = arm_tls_descseq_addr (x, reg);
+
+	  tp = arm_load_tp (NULL_RTX);
+	  
+	  return gen_rtx_PLUS (Pmode, tp, reg);
+	}
+      else
 	{
 	  insns = arm_call_tls_get_addr (x, reg, &ret, TLS_LDM32);
 	  
@@ -6152,14 +6474,6 @@ legitimize_tls_address (rtx x, rtx reg)
 				   UNSPEC_TLS);
 	  addend = force_reg (SImode, gen_rtx_CONST (SImode, addend));
 	  return gen_rtx_PLUS (Pmode, dest, addend);
-	}
-      else
-	{
-	  reg = arm_tls_descseq_addr (x, reg);
-
-	  tp = arm_load_tp (NULL_RTX);
-	  
-	  return gen_rtx_PLUS (Pmode, tp, reg);
 	}
 
     case TLS_MODEL_INITIAL_EXEC:
@@ -7517,7 +7831,7 @@ thumb2_size_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case MOD:
     case UDIV:
     case UMOD:
-      if (arm_arch_hwdiv)
+      if (TARGET_IDIV)
 	*total = COSTS_WIDE_INSNS (1);
       else
 	*total = THUMB2_LIBCALL_COST;
@@ -8351,6 +8665,28 @@ arm_adjust_cost (rtx insn, rtx link, rtx dep, int cost)
     }
 
   return cost;
+}
+
+static int
+arm_default_branch_cost (bool speed_p, bool predictable_p ATTRIBUTE_UNUSED)
+{
+  if (TARGET_32BIT)
+    return (TARGET_THUMB2 && !speed_p) ? 1 : 4;
+  else
+    return (optimize > 0) ? 2 : 0;
+}
+
+static int
+arm_cortex_a5_branch_cost (bool speed_p, bool predictable_p)
+{
+  return speed_p ? 0 : arm_default_branch_cost (speed_p, predictable_p);
+}
+
+static int
+arm_cortex_m_branch_cost (bool speed_p, bool predictable_p)
+{
+  return (TARGET_32BIT && speed_p) ? 1
+	 : arm_default_branch_cost (speed_p, predictable_p);
 }
 
 static int fp_consts_inited = 0;
@@ -9358,8 +9694,9 @@ arm_return_in_msb (const_tree valtype)
 {
   return (TARGET_AAPCS_BASED
           && BYTES_BIG_ENDIAN
-          && (AGGREGATE_TYPE_P (valtype)
-              || TREE_CODE (valtype) == COMPLEX_TYPE));
+	  && (AGGREGATE_TYPE_P (valtype)
+	      || TREE_CODE (valtype) == COMPLEX_TYPE
+	      || FIXED_POINT_TYPE_P (valtype)));
 }
 
 /* Returns TRUE if INSN is an "LDR REG, ADDR" instruction.
@@ -9633,6 +9970,11 @@ arm_note_pic_base (rtx *x, void *date ATTRIBUTE_UNUSED)
 static bool
 arm_cannot_copy_insn_p (rtx insn)
 {
+  /* The tls call insn cannot be copied, as it is paired with a data
+     word.  */
+  if (recog_memoized (insn) == CODE_FOR_tlscall)
+    return true;
+  
   return for_each_rtx (&PATTERN (insn), arm_note_pic_base, NULL);
 }
 
@@ -10288,6 +10630,331 @@ arm_gen_store_multiple (int base_regno, int count, rtx to, int up,
   return result;
 }
 
+/* Copy a block of memory using plain ldr/str/ldrh/strh instructions, to permit
+   unaligned copies on processors which support unaligned semantics for those
+   instructions.  INTERLEAVE_FACTOR can be used to attempt to hide load latency
+   (using more registers) by doing e.g. load/load/store/store for a factor of 2.
+   An interleave factor of 1 (the minimum) will perform no interleaving. 
+   Load/store multiple are used for aligned addresses where possible.  */
+
+static void
+arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
+				   HOST_WIDE_INT length,
+				   unsigned int interleave_factor)
+{
+  rtx *regs = XALLOCAVEC (rtx, interleave_factor);
+  HOST_WIDE_INT block_size_bytes = interleave_factor * UNITS_PER_WORD;
+  HOST_WIDE_INT i, j;
+  HOST_WIDE_INT remaining = length, words;
+  rtx halfword_tmp = NULL, byte_tmp = NULL;
+  rtx dst, src;
+  bool src_aligned = MEM_ALIGN (srcbase) >= BITS_PER_WORD;
+  bool dst_aligned = MEM_ALIGN (dstbase) >= BITS_PER_WORD;
+  HOST_WIDE_INT srcoffset, dstoffset;
+  HOST_WIDE_INT src_autoinc, dst_autoinc;
+  rtx mem, addr;
+  
+  gcc_assert (1 <= interleave_factor && interleave_factor <= 4);
+  
+  /* Use hard registers if we have aligned source or destination so we can use
+     load/store multiple with contiguous registers.  */
+  if (dst_aligned || src_aligned)
+    for (i = 0; i < interleave_factor; i++)
+      regs[i] = gen_rtx_REG (SImode, i);
+  else
+    for (i = 0; i < interleave_factor; i++)
+      regs[i] = gen_reg_rtx (SImode);
+
+  dst = copy_addr_to_reg (XEXP (dstbase, 0));
+  src = copy_addr_to_reg (XEXP (srcbase, 0));
+
+  srcoffset = dstoffset = 0;
+  
+  /* Calls to arm_gen_load_multiple and arm_gen_store_multiple update SRC/DST.
+     For copying the last bytes we want to subtract this offset again.  */
+  src_autoinc = dst_autoinc = 0;
+
+  /* Copy BLOCK_SIZE_BYTES chunks.  */
+
+  for (i = 0; i + block_size_bytes <= length; i += block_size_bytes)
+    {
+      /* Load words.  */
+      if (src_aligned && interleave_factor > 1)
+        {
+	  emit_insn (arm_gen_load_multiple (0, interleave_factor, src, TRUE,
+					    TRUE, srcbase, &srcoffset));
+	  src_autoinc += UNITS_PER_WORD * interleave_factor;
+	}
+      else
+        {
+	  for (j = 0; j < interleave_factor; j++)
+	    {
+	      addr = plus_constant (src, srcoffset + j * UNITS_PER_WORD
+					 - src_autoinc);
+	      mem = adjust_automodify_address (srcbase, SImode, addr,
+					       srcoffset + j * UNITS_PER_WORD);
+	      emit_insn (gen_unaligned_loadsi (regs[j], mem));
+	    }
+	  srcoffset += block_size_bytes;
+	}
+
+      /* Store words.  */
+      if (dst_aligned && interleave_factor > 1)
+        {
+          emit_insn (arm_gen_store_multiple (0, interleave_factor, dst, TRUE,
+					     TRUE, dstbase, &dstoffset));
+	  dst_autoinc += UNITS_PER_WORD * interleave_factor;
+	}
+      else
+        {
+	  for (j = 0; j < interleave_factor; j++)
+	    {
+	      addr = plus_constant (dst, dstoffset + j * UNITS_PER_WORD
+					 - dst_autoinc);
+	      mem = adjust_automodify_address (dstbase, SImode, addr,
+					       dstoffset + j * UNITS_PER_WORD);
+	      emit_insn (gen_unaligned_storesi (mem, regs[j]));
+	    }
+	  dstoffset += block_size_bytes;
+	}
+
+      remaining -= block_size_bytes;
+    }
+  
+  /* Copy any whole words left (note these aren't interleaved with any
+     subsequent halfword/byte load/stores in the interests of simplicity).  */
+  
+  words = remaining / UNITS_PER_WORD;
+
+  gcc_assert (words < interleave_factor);
+  
+  if (src_aligned && words > 1)
+    {
+      emit_insn (arm_gen_load_multiple (0, words, src, TRUE, TRUE, srcbase,
+					&srcoffset));
+      src_autoinc += UNITS_PER_WORD * words;
+    }
+  else
+    {
+      for (j = 0; j < words; j++)
+        {
+	  addr = plus_constant (src,
+				srcoffset + j * UNITS_PER_WORD - src_autoinc);
+	  mem = adjust_automodify_address (srcbase, SImode, addr,
+					   srcoffset + j * UNITS_PER_WORD);
+	  emit_insn (gen_unaligned_loadsi (regs[j], mem));
+	}
+      srcoffset += words * UNITS_PER_WORD;
+    }
+
+  if (dst_aligned && words > 1)
+    {
+      emit_insn (arm_gen_store_multiple (0, words, dst, TRUE, TRUE, dstbase,
+					 &dstoffset));
+      dst_autoinc += words * UNITS_PER_WORD;
+    }
+  else
+    {
+      for (j = 0; j < words; j++)
+        {
+	  addr = plus_constant (dst,
+				dstoffset + j * UNITS_PER_WORD - dst_autoinc);
+	  mem = adjust_automodify_address (dstbase, SImode, addr,
+					   dstoffset + j * UNITS_PER_WORD);
+	  emit_insn (gen_unaligned_storesi (mem, regs[j]));
+	}
+      dstoffset += words * UNITS_PER_WORD;
+    }
+
+  remaining -= words * UNITS_PER_WORD;
+  
+  gcc_assert (remaining < 4);
+  
+  /* Copy a halfword if necessary.  */
+  
+  if (remaining >= 2)
+    {
+      halfword_tmp = gen_reg_rtx (SImode);
+
+      addr = plus_constant (src, srcoffset - src_autoinc);
+      mem = adjust_automodify_address (srcbase, HImode, addr, srcoffset);
+      emit_insn (gen_unaligned_loadhiu (halfword_tmp, mem));
+
+      /* Either write out immediately, or delay until we've loaded the last
+	 byte, depending on interleave factor.  */
+      if (interleave_factor == 1)
+        {
+	  addr = plus_constant (dst, dstoffset - dst_autoinc);
+	  mem = adjust_automodify_address (dstbase, HImode, addr, dstoffset);
+	  emit_insn (gen_unaligned_storehi (mem,
+		       gen_lowpart (HImode, halfword_tmp)));
+	  halfword_tmp = NULL;
+	  dstoffset += 2;
+	}
+
+      remaining -= 2;
+      srcoffset += 2;
+    }
+  
+  gcc_assert (remaining < 2);
+  
+  /* Copy last byte.  */
+  
+  if ((remaining & 1) != 0)
+    {
+      byte_tmp = gen_reg_rtx (SImode);
+
+      addr = plus_constant (src, srcoffset - src_autoinc);
+      mem = adjust_automodify_address (srcbase, QImode, addr, srcoffset);
+      emit_move_insn (gen_lowpart (QImode, byte_tmp), mem);
+
+      if (interleave_factor == 1)
+        {
+	  addr = plus_constant (dst, dstoffset - dst_autoinc);
+	  mem = adjust_automodify_address (dstbase, QImode, addr, dstoffset);
+	  emit_move_insn (mem, gen_lowpart (QImode, byte_tmp));
+	  byte_tmp = NULL;
+	  dstoffset++;
+	}
+
+      remaining--;
+      srcoffset++;
+    }
+  
+  /* Store last halfword if we haven't done so already.  */
+  
+  if (halfword_tmp)
+    {
+      addr = plus_constant (dst, dstoffset - dst_autoinc);
+      mem = adjust_automodify_address (dstbase, HImode, addr, dstoffset);
+      emit_insn (gen_unaligned_storehi (mem,
+		   gen_lowpart (HImode, halfword_tmp)));
+      dstoffset += 2;
+    }
+
+  /* Likewise for last byte.  */
+
+  if (byte_tmp)
+    {
+      addr = plus_constant (dst, dstoffset - dst_autoinc);
+      mem = adjust_automodify_address (dstbase, QImode, addr, dstoffset);
+      emit_move_insn (mem, gen_lowpart (QImode, byte_tmp));
+      dstoffset++;
+    }
+  
+  gcc_assert (remaining == 0 && srcoffset == dstoffset);
+}
+
+/* From mips_adjust_block_mem:
+
+   Helper function for doing a loop-based block operation on memory
+   reference MEM.  Each iteration of the loop will operate on LENGTH
+   bytes of MEM.
+
+   Create a new base register for use within the loop and point it to
+   the start of MEM.  Create a new memory reference that uses this
+   register.  Store them in *LOOP_REG and *LOOP_MEM respectively.  */
+
+static void
+arm_adjust_block_mem (rtx mem, HOST_WIDE_INT length, rtx *loop_reg,
+		      rtx *loop_mem)
+{
+  *loop_reg = copy_addr_to_reg (XEXP (mem, 0));
+  
+  /* Although the new mem does not refer to a known location,
+     it does keep up to LENGTH bytes of alignment.  */
+  *loop_mem = change_address (mem, BLKmode, *loop_reg);
+  set_mem_align (*loop_mem, MIN (MEM_ALIGN (mem), length * BITS_PER_UNIT));
+}
+
+/* From mips_block_move_loop:
+
+   Move LENGTH bytes from SRC to DEST using a loop that moves BYTES_PER_ITER
+   bytes at a time.  LENGTH must be at least BYTES_PER_ITER.  Assume that
+   the memory regions do not overlap.  */
+
+static void
+arm_block_move_unaligned_loop (rtx dest, rtx src, HOST_WIDE_INT length,
+			       unsigned int interleave_factor,
+			       HOST_WIDE_INT bytes_per_iter)
+{
+  rtx label, src_reg, dest_reg, final_src, test;
+  HOST_WIDE_INT leftover;
+  
+  leftover = length % bytes_per_iter;
+  length -= leftover;
+  
+  /* Create registers and memory references for use within the loop.  */
+  arm_adjust_block_mem (src, bytes_per_iter, &src_reg, &src);
+  arm_adjust_block_mem (dest, bytes_per_iter, &dest_reg, &dest);
+  
+  /* Calculate the value that SRC_REG should have after the last iteration of
+     the loop.  */
+  final_src = expand_simple_binop (Pmode, PLUS, src_reg, GEN_INT (length),
+				   0, 0, OPTAB_WIDEN);
+
+  /* Emit the start of the loop.  */
+  label = gen_label_rtx ();
+  emit_label (label);
+  
+  /* Emit the loop body.  */
+  arm_block_move_unaligned_straight (dest, src, bytes_per_iter,
+				     interleave_factor);
+
+  /* Move on to the next block.  */
+  emit_move_insn (src_reg, plus_constant (src_reg, bytes_per_iter));
+  emit_move_insn (dest_reg, plus_constant (dest_reg, bytes_per_iter));
+  
+  /* Emit the loop condition.  */
+  test = gen_rtx_NE (VOIDmode, src_reg, final_src);
+  emit_jump_insn (gen_cbranchsi4 (test, src_reg, final_src, label));
+  
+  /* Mop up any left-over bytes.  */
+  if (leftover)
+    arm_block_move_unaligned_straight (dest, src, leftover, interleave_factor);
+}
+
+/* Emit a block move when either the source or destination is unaligned (not
+   aligned to a four-byte boundary).  This may need further tuning depending on
+   core type, optimize_size setting, alignment of source/destination, etc.  */
+
+static int
+arm_movmemqi_unaligned (rtx *operands)
+{
+  HOST_WIDE_INT length = INTVAL (operands[2]);
+  
+  if (optimize_size)
+    {
+      bool src_aligned = MEM_ALIGN (operands[1]) >= BITS_PER_WORD;
+      bool dst_aligned = MEM_ALIGN (operands[0]) >= BITS_PER_WORD;
+      /* Inlined memcpy using ldr/str/ldrh/strh can be quite big: try to limit
+         size of code if optimizing for size.  We'll use ldm/stm if src_aligned
+	 or dst_aligned though: allow more interleaving in those cases since the
+	 resulting code can be smaller.  */
+      unsigned int interleave_factor = (src_aligned || dst_aligned) ? 2 : 1;
+      HOST_WIDE_INT bytes_per_iter = (src_aligned || dst_aligned) ? 8 : 4;
+      
+      if (length > 12)
+	arm_block_move_unaligned_loop (operands[0], operands[1], length,
+				       interleave_factor, bytes_per_iter);
+      else
+	arm_block_move_unaligned_straight (operands[0], operands[1], length,
+					   interleave_factor);
+    }
+  else
+    {
+      /* Note that the loop created by arm_block_move_unaligned_loop may be
+         subject to loop unrolling, which makes tuning this condition a little
+	 awkward.  */
+      if (length > 32)
+	arm_block_move_unaligned_loop (operands[0], operands[1], length, 4, 16);
+      else
+	arm_block_move_unaligned_straight (operands[0], operands[1], length, 4);
+    }
+  
+  return 1;
+}
+
 int
 arm_gen_movmemqi (rtx *operands)
 {
@@ -10300,8 +10967,13 @@ arm_gen_movmemqi (rtx *operands)
 
   if (GET_CODE (operands[2]) != CONST_INT
       || GET_CODE (operands[3]) != CONST_INT
-      || INTVAL (operands[2]) > 64
-      || INTVAL (operands[3]) & 3)
+      || INTVAL (operands[2]) > 64)
+    return 0;
+
+  if (unaligned_access && (INTVAL (operands[3]) & 3) != 0)
+    return arm_movmemqi_unaligned (operands);
+
+  if (INTVAL (operands[3]) & 3)
     return 0;
 
   dstbase = operands[0];
@@ -10662,12 +11334,14 @@ arm_select_cc_mode (enum rtx_code op, rtx x, rtx y)
 
   /* Alternate canonicalizations of the above.  These are somewhat cleaner.  */
   if (GET_CODE (x) == AND
+      && (op == EQ || op == NE)
       && COMPARISON_P (XEXP (x, 0))
       && COMPARISON_P (XEXP (x, 1)))
     return arm_select_dominance_cc_mode (XEXP (x, 0), XEXP (x, 1),
 					 DOM_CC_X_AND_Y);
 
   if (GET_CODE (x) == IOR
+      && (op == EQ || op == NE)
       && COMPARISON_P (XEXP (x, 0))
       && COMPARISON_P (XEXP (x, 1)))
     return arm_select_dominance_cc_mode (XEXP (x, 0), XEXP (x, 1),
@@ -11117,6 +11791,15 @@ arm_pad_arg_upward (enum machine_mode mode, const_tree type)
   if (type && BYTES_BIG_ENDIAN && INTEGRAL_TYPE_P (type))
     return false;
 
+  /* Half-float values are only passed to libcalls, not regular functions.
+     They should be passed and returned as "short"s (see RTABI).  To achieve
+     that effect in big-endian mode, pad downwards so the value is passed in
+     the least-significant end of the register.  ??? This needs to be here
+     rather than in arm_pad_reg_upward due to peculiarity in the handling of
+     libcall arguments.  */
+  if (BYTES_BIG_ENDIAN && mode == HFmode)
+    return false;
+
   return true;
 }
 
@@ -11134,7 +11817,8 @@ arm_pad_reg_upward (enum machine_mode mode ATTRIBUTE_UNUSED,
 {
   if (TARGET_AAPCS_BASED
       && BYTES_BIG_ENDIAN
-      && (AGGREGATE_TYPE_P (type) || TREE_CODE (type) == COMPLEX_TYPE)
+      && (AGGREGATE_TYPE_P (type) || TREE_CODE (type) == COMPLEX_TYPE
+	  || FIXED_POINT_TYPE_P (type))
       && int_size_in_bytes (type) <= 4)
     return true;
 
@@ -11335,6 +12019,7 @@ is_jump_table (rtx insn)
 
   if (GET_CODE (insn) == JUMP_INSN
       && JUMP_LABEL (insn) != NULL
+      && !ANY_RETURN_P (JUMP_LABEL (insn))
       && ((table = next_real_insn (JUMP_LABEL (insn)))
 	  == next_real_insn (insn))
       && table != NULL
@@ -14219,7 +14904,7 @@ arm_get_vfp_saved_size (void)
 /* Generate a function exit sequence.  If REALLY_RETURN is false, then do
    everything bar the final return instruction.  */
 const char *
-output_return_instruction (rtx operand, int really_return, int reverse)
+output_return_instruction (rtx operand, bool really_return, bool reverse, bool simple)
 {
   char conditional[10];
   char instr[100];
@@ -14257,10 +14942,15 @@ output_return_instruction (rtx operand, int really_return, int reverse)
 
   sprintf (conditional, "%%?%%%c0", reverse ? 'D' : 'd');
 
-  cfun->machine->return_used_this_function = 1;
+  if (simple)
+    live_regs_mask = 0;
+  else
+    {
+      cfun->machine->return_used_this_function = 1;
 
-  offsets = arm_get_frame_offsets ();
-  live_regs_mask = offsets->saved_regs_mask;
+      offsets = arm_get_frame_offsets ();
+      live_regs_mask = offsets->saved_regs_mask;
+    }
 
   if (live_regs_mask)
     {
@@ -14825,7 +15515,8 @@ arm_output_epilogue (rtx sibling)
 		  && !crtl->tail_call_emit)
 		{
 		  unsigned long mask;
-		  mask = (1 << (arm_size_return_regs() / 4)) - 1;
+                  /* Preserve return values, of any size.  */
+		  mask = (1 << ((arm_size_return_regs() + 3) / 4)) - 1;
 		  mask ^= 0xf;
 		  mask &= ~saved_regs_mask;
 		  reg = 0;
@@ -15449,7 +16140,10 @@ arm_get_frame_offsets (void)
   offsets->soft_frame = offsets->saved_regs + CALLER_INTERWORKING_SLOT_SIZE;
   /* A leaf function does not need any stack alignment if it has nothing
      on the stack.  */
-  if (leaf && frame_size == 0)
+  if (leaf && frame_size == 0
+      /* However if it calls alloca(), we have a dynamically allocated
+	 block of BIGGEST_ALIGNMENT on stack, so still do stack alignment.  */
+      && ! cfun->calls_alloca)
     {
       offsets->outgoing_args = offsets->soft_frame;
       offsets->locals_base = offsets->soft_frame;
@@ -17158,6 +17852,7 @@ arm_final_prescan_insn (rtx insn)
 
   /* If we start with a return insn, we only succeed if we find another one.  */
   int seeking_return = 0;
+  enum rtx_code return_code = UNKNOWN;
 
   /* START_INSN will hold the insn from where we start looking.  This is the
      first insn after the following code_label if REVERSE is true.  */
@@ -17196,7 +17891,7 @@ arm_final_prescan_insn (rtx insn)
 	  else
 	    return;
 	}
-      else if (GET_CODE (body) == RETURN)
+      else if (ANY_RETURN_P (body))
         {
 	  start_insn = next_nonnote_insn (start_insn);
 	  if (GET_CODE (start_insn) == BARRIER)
@@ -17207,6 +17902,7 @@ arm_final_prescan_insn (rtx insn)
 	    {
 	      reverse = TRUE;
 	      seeking_return = 1;
+	      return_code = GET_CODE (body);
 	    }
 	  else
 	    return;
@@ -17247,11 +17943,15 @@ arm_final_prescan_insn (rtx insn)
 	  label = XEXP (XEXP (SET_SRC (body), 2), 0);
 	  then_not_else = FALSE;
 	}
-      else if (GET_CODE (XEXP (SET_SRC (body), 1)) == RETURN)
-	seeking_return = 1;
-      else if (GET_CODE (XEXP (SET_SRC (body), 2)) == RETURN)
+      else if (ANY_RETURN_P (XEXP (SET_SRC (body), 1)))
+	{
+	  seeking_return = 1;
+	  return_code = GET_CODE (XEXP (SET_SRC (body), 1));
+	}
+      else if (ANY_RETURN_P (XEXP (SET_SRC (body), 2)))
         {
 	  seeking_return = 1;
+	  return_code = GET_CODE (XEXP (SET_SRC (body), 2));
 	  then_not_else = FALSE;
         }
       else
@@ -17352,8 +18052,7 @@ arm_final_prescan_insn (rtx insn)
 		       && !use_return_insn (TRUE, NULL)
 		       && !optimize_size)
 		fail = TRUE;
-	      else if (GET_CODE (scanbody) == RETURN
-		       && seeking_return)
+	      else if (GET_CODE (scanbody) == return_code)
 	        {
 		  arm_ccfsm_state = 2;
 		  succeed = TRUE;
@@ -19068,6 +19767,12 @@ arm_scalar_mode_supported_p (enum machine_mode mode)
 {
   if (mode == HFmode)
     return (arm_fp16_format != ARM_FP16_FORMAT_NONE);
+  else if (mode == QQmode || mode == HQmode || mode == SQmode
+	   || mode == UQQmode || mode == UHQmode || mode == USQmode
+	   || mode == HAmode || mode == SAmode || mode == UHAmode
+	   || mode == USAmode || mode == DQmode || mode == UDQmode
+	   || mode == DAmode || mode == UDAmode)
+    return true;
   else
     return default_scalar_mode_supported_p (mode);
 }
@@ -22114,6 +22819,11 @@ arm_vector_mode_supported_p (enum machine_mode mode)
 	  || (mode == V8QImode)))
     return true;
 
+  if (TARGET_INT_SIMD && (mode == V4UQQmode || mode == V4QQmode
+      || mode == V2UHQmode || mode == V2HQmode || mode == V2UHAmode
+      || mode == V2HAmode))
+    return true;
+
   return false;
 }
 
@@ -22718,6 +23428,7 @@ arm_issue_rate (void)
     {
     case cortexr4:
     case cortexr4f:
+    case cortexr5:
     case cortexa5:
     case cortexa8:
     case cortexa9:
@@ -22907,10 +23618,13 @@ arm_have_conditional_execution (void)
 static bool
 arm_vector_alignment_reachable (const_tree type, bool is_packed)
 {
-  /* Vectors which aren't in packed structures will not be less aligned than
-     the natural alignment of their element type, so this is safe.  */
+  /* NOTE: returning true here will unconditionally peel loop iterations so
+     that aligned accesses can be used.  This is undesirable when misaligned
+     accesses are available, particularly for small loop iteration counts,
+     since the overhead for dispatching to multiple versions of the loop is
+     quite high.  */
   if (TARGET_NEON && !BYTES_BIG_ENDIAN)
-    return !is_packed;
+    return false;
 
   return default_builtin_vector_alignment_reachable (type, is_packed);
 }
@@ -23309,6 +24023,19 @@ arm_expand_sync (enum machine_mode mode,
       emit_insn (arm_call_generator (generator, target, memory, required_value,
 				     new_value));
     }
+}
+
+/* Return TRUE if fixed-point operations are supported.  */
+
+bool
+arm_fixed_point_supported_p (void)
+{
+  /* At least some operations helpful for fixed-point support are available
+     from arch3m onwards -- 32 bit x 32 bit -> 64 bit multiplies.  There's not
+     much point in arbitrarily restricting fixed-point support to particular
+     architecture versions though since gaps can be filled by libcalls, so
+     return TRUE unconditionally.  */
+  return true;
 }
 
 #include "gt-arm.h"

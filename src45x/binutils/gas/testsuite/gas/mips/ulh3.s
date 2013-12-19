@@ -1,3 +1,4 @@
+text_label:
 	ulh	$4,($5)
 	ulh	$4,0x12345678($5)
 	ulh	$4,symbol

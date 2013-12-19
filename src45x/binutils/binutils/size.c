@@ -54,12 +54,14 @@ static int berkeley_format = BSD_DEFAULT;
 static int show_version = 0;
 static int show_help = 0;
 static int show_totals = 0;
-static int show_common = 0;
+static int show_common = 1;
+static int split_rodata_from_text = 1;
 
 static bfd_size_type common_size;
 static bfd_size_type total_bsssize;
 static bfd_size_type total_datasize;
 static bfd_size_type total_textsize;
+static bfd_size_type total_rodatasize;
 
 /* Program exit status.  */
 static int return_code = 0;
@@ -82,7 +84,10 @@ usage (FILE *stream, int status)
   -A|-B     --format={sysv|berkeley}  Select output style (default is %s)\n\
   -o|-d|-x  --radix={8|10|16}         Display numbers in octal, decimal or hex\n\
   -t        --totals                  Display the total sizes (Berkeley only)\n\
-            --common                  Display total size for *COM* syms\n\
+  -s        --split                   Split read-only data from text size\n\
+  -S        --no-split                Do not split read-only data from text size\n\
+  -c        --common                  Display total size for *COM* syms\n\
+  -C        --no-common               Do not display total size for *COM* syms\n\
             --target=<bfdname>        Set the binary file format\n\
             @<file>                   Read options from <file>\n\
   -h        --help                    Display this information\n\
@@ -106,11 +111,14 @@ usage (FILE *stream, int status)
 
 static struct option long_options[] =
 {
+  {"no-common", no_argument, &show_common, 0},
   {"common", no_argument, &show_common, 1},
   {"format", required_argument, 0, OPTION_FORMAT},
   {"radix", required_argument, 0, OPTION_RADIX},
   {"target", required_argument, 0, OPTION_TARGET},
   {"totals", no_argument, &show_totals, 1},
+  {"split", no_argument, &split_rodata_from_text, 1},
+  {"no-split", no_argument, &split_rodata_from_text, 0},
   {"version", no_argument, &show_version, 1},
   {"help", no_argument, &show_help, 1},
   {0, no_argument, 0, 0}
@@ -141,8 +149,8 @@ main (int argc, char **argv)
   bfd_init ();
   set_default_bfd_target ();
 
-  while ((c = getopt_long (argc, argv, "ABHhVvdfotx", long_options,
-			   (int *) 0)) != EOF)
+  while ((c = getopt_long (argc, argv, "ABcCHhVvdfotsSx", long_options,
+ 			   (int *) 0)) != EOF)
     switch (c)
       {
       case OPTION_FORMAT:
@@ -211,6 +219,18 @@ main (int argc, char **argv)
       case 't':
 	show_totals = 1;
 	break;
+      case 's':
+        split_rodata_from_text = 1;
+        break;
+      case 'S':
+        split_rodata_from_text = 0;
+        break;
+      case 'c':
+        show_common = 1;
+        break;
+      case 'C':
+        show_common = 0;
+        break;
       case 'f': /* FIXME : For sysv68, `-f' means `full format', i.e.
 		   `[fname:] M(.text) + N(.data) + O(.bss) + P(.comment) = Q'
 		   where `fname: ' appears only if there are >= 2 input files,
@@ -242,10 +262,23 @@ main (int argc, char **argv)
 
   if (show_totals && berkeley_format)
     {
-      bfd_size_type total = total_textsize + total_datasize + total_bsssize;
+      bfd_size_type total = total_textsize
+                          + total_rodatasize 
+                          + total_datasize 
+                          + total_bsssize;
 
-      rprint_number (7, total_textsize);
-      putchar('\t');
+      if (!split_rodata_from_text)
+        {
+          rprint_number (7, total_textsize + total_rodatasize);
+          putchar('\t');
+        }
+      else
+        {
+          rprint_number (7, total_textsize);
+          putchar('\t');
+          rprint_number (7, total_rodatasize);
+          putchar('\t');
+        }
       rprint_number (7, total_datasize);
       putchar('\t');
       rprint_number (7, total_bsssize);
@@ -253,6 +286,10 @@ main (int argc, char **argv)
 	      (unsigned long) total, (unsigned long) total);
       fputs ("(TOTALS)\n", stdout);
     }
+#if defined(DEBUG)
+  printf ("\nshow_common = %d\n", show_common);
+  printf ("split_rodata_from_text = %d\n", split_rodata_from_text);  
+#endif
 
   return return_code;
 }
@@ -436,6 +473,7 @@ rprint_number (int width, bfd_size_type num)
 static bfd_size_type bsssize;
 static bfd_size_type datasize;
 static bfd_size_type textsize;
+static bfd_size_type rodatasize;
 
 static void
 berkeley_sum (bfd *abfd ATTRIBUTE_UNUSED, sec_ptr sec,
@@ -443,14 +481,20 @@ berkeley_sum (bfd *abfd ATTRIBUTE_UNUSED, sec_ptr sec,
 {
   flagword flags;
   bfd_size_type size;
+  const char* scn_name;
 
   flags = bfd_get_section_flags (abfd, sec);
+  
   if ((flags & SEC_ALLOC) == 0)
     return;
 
   size = bfd_get_section_size (sec);
-  if ((flags & SEC_CODE) != 0 || (flags & SEC_READONLY) != 0)
-    textsize += size;
+  scn_name = bfd_get_section_name (abfd, sec);
+
+  if (((flags & SEC_CODE) != 0) && (strncmp (scn_name, ".rodata", 7) != 0))
+     textsize += size;
+  else if ((flags & SEC_READONLY) != 0)
+    rodatasize += size;
   else if ((flags & SEC_HAS_CONTENTS) != 0)
     datasize += size;
   else
@@ -466,24 +510,49 @@ print_berkeley_format (bfd *abfd)
   bsssize = 0;
   datasize = 0;
   textsize = 0;
+  rodatasize = 0;
 
   bfd_map_over_sections (abfd, berkeley_sum, NULL);
 
   bsssize += common_size;
-  if (files_seen++ == 0)
-    puts ((radix == octal) ? "   text\t   data\t    bss\t    oct\t    hex\tfilename" :
-	  "   text\t   data\t    bss\t    dec\t    hex\tfilename");
-
-  total = textsize + datasize + bsssize;
+   if (files_seen++ == 0)
+    {
+#if 0
+     puts ((radix == octal) ? "   text\t   data\t    bss\t    oct\t    hex\tfilename" :
+ 	  "   text\t   data\t    bss\t    dec\t    hex\tfilename");
+#else
+        if (!split_rodata_from_text)
+          {
+          puts ((radix == octal) ? "   text\t   data\t    bss\t    oct\t    hex\tfilename" :
+           "   text\t   data\t    bss\t    dec\t    hex\tfilename");
+          }
+        else
+          {
+          puts ((radix == octal) ? "   text\t rodata\t   data\t    bss\t    oct\t    hex\tfilename" :
+           "   text\t rodata\t   data\t    bss\t    dec\t    hex\tfilename");
+          }
+#endif
+    }
+  total = textsize + rodatasize + datasize + bsssize;
 
   if (show_totals)
     {
       total_textsize += textsize;
+      total_rodatasize += rodatasize;
       total_datasize += datasize;
       total_bsssize  += bsssize;
     }
 
-  rprint_number (7, textsize);
+  if (!split_rodata_from_text)
+    {
+      rprint_number (7, textsize + rodatasize);
+    }
+  else
+    {
+      rprint_number (7, textsize);
+      putchar ('\t');
+      rprint_number (7, rodatasize);
+    }
   putchar ('\t');
   rprint_number (7, datasize);
   putchar ('\t');

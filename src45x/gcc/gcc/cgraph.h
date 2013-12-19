@@ -697,6 +697,13 @@ cgraph_node_set_size (cgraph_node_set set)
    Each constant in memory thus far output is recorded
    in `const_desc_table'.  */
 
+#ifdef _BUILD_C30_
+  /* section_name ... on some targets strings need to be in the same section
+       to be accessible 
+  
+     GTY types cannot have conditional objects in them.  love it
+   */
+#endif
 struct GTY(()) constant_descriptor_tree {
   /* A MEM for the constant.  */
   rtx rtl;
@@ -708,6 +715,7 @@ struct GTY(()) constant_descriptor_tree {
      hashfn is called can't work properly, as that means recursive
      use of the hash table during hash table expansion.  */
   hashval_t hash;
+  const char *section_name;
 };
 
 /* Return true when function NODE is only called directly.

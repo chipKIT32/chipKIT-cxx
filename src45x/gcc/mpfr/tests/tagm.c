@@ -1,13 +1,13 @@
 /* Test file for mpfr_agm.
 
-Copyright 1999, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,26 +28,84 @@ MA 02110-1301, USA. */
 #define check(a,b,r) check4(a,b,r,0.0)
 
 static void
-check4 (const char *as, const char *bs, mp_rnd_t rnd_mode, const char *res)
+check4 (const char *as, const char *bs, mpfr_rnd_t rnd_mode,
+        const char *res, int inex)
 {
-  mpfr_t ta, tb, tres;
+  mpfr_t ta, tb, tc, tres;
+  mpfr_exp_t emin, emax;
+  int i;
 
-  mpfr_inits2 (53, ta, tb, tres, (mpfr_ptr) 0);
+  emin = mpfr_get_emin ();
+  emax = mpfr_get_emax ();
 
-  mpfr_set_str1 (ta, as);
-  mpfr_set_str1 (tb, bs);
+  mpfr_inits2 (53, ta, tb, tc, tres, (mpfr_ptr) 0);
 
-  mpfr_agm(tres, ta, tb, rnd_mode);
-
-  if (mpfr_cmp_str1 (tres, res))
+  for (i = 0; i <= 2; i++)
     {
-      printf ("mpfr_agm failed for a=%s, b=%s, rnd_mode=%d\n",as,bs,rnd_mode);
-      printf ("expected result is %s, got ",res);
-      mpfr_out_str(stdout, 10, 0, tres, GMP_RNDN);
-      putchar('\n');
-      exit (1);
-  }
-  mpfr_clears (ta, tb, tres, (mpfr_ptr) 0);
+      unsigned int expflags, newflags;
+      int inex2;
+
+      mpfr_set_str1 (ta, as);
+      mpfr_set_str1 (tb, bs);
+      mpfr_set_str1 (tc, res);
+
+      if (i > 0)
+        {
+          mpfr_exp_t ea, eb, ec, e0;
+
+          set_emin (MPFR_EMIN_MIN);
+          set_emax (MPFR_EMAX_MAX);
+
+          ea = mpfr_get_exp (ta);
+          eb = mpfr_get_exp (tb);
+          ec = mpfr_get_exp (tc);
+
+          e0 = i == 1 ? __gmpfr_emin : __gmpfr_emax;
+          if ((i == 1 && ea < eb) || (i == 2 && ea > eb))
+            {
+              mpfr_set_exp (ta, e0);
+              mpfr_set_exp (tb, e0 + (eb - ea));
+              mpfr_set_exp (tc, e0 + (ec - ea));
+            }
+          else
+            {
+              mpfr_set_exp (ta, e0 + (ea - eb));
+              mpfr_set_exp (tb, e0);
+              mpfr_set_exp (tc, e0 + (ec - eb));
+            }
+        }
+
+      __gmpfr_flags = expflags =
+        (randlimb () & 1) ? MPFR_FLAGS_ALL ^ MPFR_FLAGS_ERANGE : 0;
+      inex2 = mpfr_agm (tres, ta, tb, rnd_mode);
+      newflags = __gmpfr_flags;
+      expflags |= MPFR_FLAGS_INEXACT;
+
+      if (SIGN (inex2) != inex || newflags != expflags ||
+          ! mpfr_equal_p (tres, tc))
+        {
+          printf ("mpfr_agm failed in rnd_mode=%s for\n",
+                  mpfr_print_rnd_mode (rnd_mode));
+          printf ("  a = ");
+          mpfr_out_str (stdout, 10, 0, ta, MPFR_RNDN);
+          printf ("\n");
+          printf ("  b = ");
+          mpfr_out_str (stdout, 10, 0, tb, MPFR_RNDN);
+          printf ("\n");
+          printf ("expected inex = %d, flags = %u,\n"
+                  "         ", inex, expflags);
+          mpfr_dump (tc);
+          printf ("got      inex = %d, flags = %u,\n"
+                  "         ", inex2, newflags);
+          mpfr_dump (tres);
+          exit (1);
+        }
+
+      set_emin (emin);
+      set_emax (emax);
+    }
+
+  mpfr_clears (ta, tb, tc, tres, (mpfr_ptr) 0);
 }
 
 static void
@@ -60,9 +118,9 @@ check_large (void)
   mpfr_init2 (b, 82);
   mpfr_init2 (agm, 82);
 
-  mpfr_set_ui (a, 1, GMP_RNDN);
+  mpfr_set_ui (a, 1, MPFR_RNDN);
   mpfr_set_str_binary (b, "0.1111101100001000000001011000110111101000001011111000100001000101010100011111110010E-39");
-  mpfr_agm (agm, a, b, GMP_RNDN);
+  mpfr_agm (agm, a, b, MPFR_RNDN);
   mpfr_set_str_binary (a, "0.1110001000111101101010101010101101001010001001001011100101111011110101111001111100E-4");
   if (mpfr_cmp (agm, a))
     {
@@ -75,16 +133,16 @@ check_large (void)
   mpfr_set_prec (a, 268);
   mpfr_set_prec (b, 268);
   mpfr_set_prec (agm, 268);
-  mpfr_set_str (a, "703.93543315330225238487276503953366664991725089988315253092140138947103394917006", 10, GMP_RNDN);
-  mpfr_set_str (b, "703.93543315330225238487279020523738740563816490895994499256063816906728642622316", 10, GMP_RNDN);
-  mpfr_agm (agm, a, b, GMP_RNDN);
+  mpfr_set_str (a, "703.93543315330225238487276503953366664991725089988315253092140138947103394917006", 10, MPFR_RNDN);
+  mpfr_set_str (b, "703.93543315330225238487279020523738740563816490895994499256063816906728642622316", 10, MPFR_RNDN);
+  mpfr_agm (agm, a, b, MPFR_RNDN);
 
   mpfr_set_prec (a, 18);
   mpfr_set_prec (b, 70);
   mpfr_set_prec (agm, 67);
   mpfr_set_str_binary (a, "0.111001111100101000e8");
   mpfr_set_str_binary (b, "0.1101110111100100010100110000010111011011011100110100111001010100100001e10");
-  inex = mpfr_agm (agm, a, b, GMP_RNDN);
+  inex = mpfr_agm (agm, a, b, MPFR_RNDN);
   mpfr_set_str_binary (b, "0.1111110010011101101100010101011011010010010000001010100011000110011e9");
   if (mpfr_cmp (agm, b))
     {
@@ -100,10 +158,10 @@ check_large (void)
   /* test worst case: 9 consecutive ones after the last bit */
   mpfr_set_prec (a, 2);
   mpfr_set_prec (b, 2);
-  mpfr_set_ui (a, 1, GMP_RNDN);
-  mpfr_set_ui (b, 2, GMP_RNDN);
+  mpfr_set_ui (a, 1, MPFR_RNDN);
+  mpfr_set_ui (b, 2, MPFR_RNDN);
   mpfr_set_prec (agm, 904);
-  mpfr_agm (agm, a, b, GMP_RNDZ);
+  mpfr_agm (agm, a, b, MPFR_RNDZ);
 
   mpfr_clear (a);
   mpfr_clear (b);
@@ -120,67 +178,67 @@ check_nans (void)
   mpfr_init2 (m, 123L);
 
   /* agm(1,nan) == nan */
-  mpfr_set_ui (x, 1L, GMP_RNDN);
+  mpfr_set_ui (x, 1L, MPFR_RNDN);
   mpfr_set_nan (y);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_nan_p (m));
 
   /* agm(1,+inf) == +inf */
-  mpfr_set_ui (x, 1L, GMP_RNDN);
+  mpfr_set_ui (x, 1L, MPFR_RNDN);
   mpfr_set_inf (y, 1);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_inf_p (m));
   MPFR_ASSERTN (mpfr_sgn (m) > 0);
 
   /* agm(+inf,+inf) == +inf */
   mpfr_set_inf (x, 1);
   mpfr_set_inf (y, 1);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_inf_p (m));
   MPFR_ASSERTN (mpfr_sgn (m) > 0);
 
   /* agm(-inf,+inf) == nan */
   mpfr_set_inf (x, -1);
   mpfr_set_inf (y, 1);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_nan_p (m));
 
   /* agm(+0,+inf) == nan */
-  mpfr_set_ui (x, 0, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
   mpfr_set_inf (y, 1);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_nan_p (m));
 
   /* agm(+0,1) == +0 */
-  mpfr_set_ui (x, 0, GMP_RNDN);
-  mpfr_set_ui (y, 1, GMP_RNDN);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
+  mpfr_set_ui (y, 1, MPFR_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (MPFR_IS_ZERO (m) && MPFR_IS_POS(m));
 
   /* agm(-0,1) == +0 */
-  mpfr_set_ui (x, 0, GMP_RNDN);
-  mpfr_neg (x, x, GMP_RNDN);
-  mpfr_set_ui (y, 1, GMP_RNDN);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
+  mpfr_neg (x, x, MPFR_RNDN);
+  mpfr_set_ui (y, 1, MPFR_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (MPFR_IS_ZERO (m) && MPFR_IS_POS(m));
 
   /* agm(-0,+0) == +0 */
-  mpfr_set_ui (x, 0, GMP_RNDN);
-  mpfr_neg (x, x, GMP_RNDN);
-  mpfr_set_ui (y, 0, GMP_RNDN);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
+  mpfr_neg (x, x, MPFR_RNDN);
+  mpfr_set_ui (y, 0, MPFR_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (MPFR_IS_ZERO (m) && MPFR_IS_POS(m));
 
   /* agm(1,1) == 1 */
-  mpfr_set_ui (x, 1, GMP_RNDN);
-  mpfr_set_ui (y, 1, GMP_RNDN);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_set_ui (x, 1, MPFR_RNDN);
+  mpfr_set_ui (y, 1, MPFR_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_cmp_ui (m ,1) == 0);
 
   /* agm(-1,-2) == NaN */
-  mpfr_set_si (x, -1, GMP_RNDN);
-  mpfr_set_si (y, -2, GMP_RNDN);
-  mpfr_agm (m, x, y, GMP_RNDN);
+  mpfr_set_si (x, -1, MPFR_RNDN);
+  mpfr_set_si (y, -2, MPFR_RNDN);
+  mpfr_agm (m, x, y, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_nan_p (m));
 
   mpfr_clear (x);
@@ -202,16 +260,16 @@ main (int argc, char* argv[])
   check_nans ();
 
   check_large ();
-  check4 ("2.0", "1.0", GMP_RNDN, "1.45679103104690677029");
-  check4 ("6.0", "4.0", GMP_RNDN, "4.94936087247260925182");
-  check4 ("62.0", "61.0", GMP_RNDN, "6.14989837188450749750e+01");
-  check4 ("0.5", "1.0", GMP_RNDN, "7.28395515523453385143e-01");
-  check4 ("1.0", "2.0", GMP_RNDN, "1.45679103104690677029");
-  check4 ("234375765.0", "234375000.0", GMP_RNDN, "2.3437538249984395504e8");
-  check4 ("8.0", "1.0", GMP_RNDU, "3.615756177597362786");
-  check4 ("1.0", "44.0", GMP_RNDU, "1.33658354512981247808e1");
-  check4 ("1.0", "3.7252902984619140625e-9", GMP_RNDU,
-          "7.55393356971199025907e-02");
+  check4 ("2.0", "1.0", MPFR_RNDN, "1.456791031046906869", -1);
+  check4 ("6.0", "4.0", MPFR_RNDN, "4.949360872472608925", 1);
+  check4 ("62.0", "61.0", MPFR_RNDN, "61.498983718845075902", -1);
+  check4 ("0.5", "1.0", MPFR_RNDN, "0.72839551552345343459", -1);
+  check4 ("1.0", "2.0", MPFR_RNDN, "1.456791031046906869", -1);
+  check4 ("234375765.0", "234375000.0", MPFR_RNDN, "234375382.49984394025", 1);
+  check4 ("8.0", "1.0", MPFR_RNDU, "3.61575617759736274873", 1);
+  check4 ("1.0", "44.0", MPFR_RNDU, "13.3658354512981243907", 1);
+  check4 ("1.0", "3.7252902984619140625e-9", MPFR_RNDU,
+          "0.07553933569711989657765", 1);
   test_generic (2, 300, 17);
 
   tests_end_mpfr ();

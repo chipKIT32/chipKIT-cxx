@@ -1,6 +1,6 @@
 /* mpc_inp_str -- Input a complex number from a given stream.
 
-Copyright (C) 2009 Andreas Enge, Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -107,6 +107,7 @@ extract_string (FILE *stream)
   if (c == '(') {
     size_t n;
     char *suffix;
+    int ret;
 
     /* (n-char-sequence) only after a NaN */
     if ((nread != 3
@@ -131,14 +132,16 @@ extract_string (FILE *stream)
     }
 
     /* Warning: the sprintf does not allow overlap between arguments. */
-    n = lenstr + sprintf (str + lenstr, "(%s", suffix);
+    ret = sprintf (str + lenstr, "(%s", suffix);
+    MPC_ASSERT (ret >= 0);
+    n = lenstr + (size_t) ret;
     MPC_ASSERT (n == nread);
 
     c = getc (stream);
     if (c == ')') {
       str = mpc_realloc_str (str, strsize, nread + 2);
       strsize = nread + 2;
-      str [nread] = c;
+      str [nread] = (char) c;
       str [nread+1] = '\0';
       nread++;
     }
@@ -173,6 +176,7 @@ mpc_rnd_t rnd_mode)
        char *real_str;
        char *imag_str;
        size_t n;
+       int ret;
 
        nread++; /* the opening parenthesis */
        white = skip_whitespace (stream);
@@ -194,7 +198,9 @@ mpc_rnd_t rnd_mode)
        nread += strlen (imag_str);
 
        str = mpc_alloc_str (nread + 2);
-       n = sprintf (str, "(%s %s", real_str, imag_str);
+       ret = sprintf (str, "(%s %s", real_str, imag_str);
+       MPC_ASSERT (ret >= 0);
+       n = (size_t) ret;
        MPC_ASSERT (n == nread + 1);
        mpc_free_str (real_str);
        mpc_free_str (imag_str);
@@ -203,7 +209,7 @@ mpc_rnd_t rnd_mode)
        c = getc (stream);
        if (c == ')') {
          str = mpc_realloc_str (str, nread +2, nread + 3);
-         str [nread+1] = c;
+         str [nread+1] = (char) c;
          str [nread+2] = '\0';
          nread++;
        }

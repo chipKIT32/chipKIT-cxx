@@ -1,5 +1,5 @@
 /* ARM assembler/disassembler support.
-   Copyright 2004, 2010 Free Software Foundation, Inc.
+   Copyright 2004, 2010, 2011 Free Software Foundation, Inc.
 
    This file is part of GDB and GAS.
 
@@ -33,7 +33,8 @@
 #define ARM_EXT_V5J	 0x00000800	/* Jazelle extension.	   */
 #define ARM_EXT_V6       0x00001000     /* ARM V6.                 */
 #define ARM_EXT_V6K      0x00002000     /* ARM V6K.                */
-#define ARM_EXT_V6Z      0x00004000     /* ARM V6Z.                */
+/*			 0x00004000	   Was ARM V6Z.            */
+#define ARM_EXT_V8	 0x00004000     /* is now ARMv8.           */
 #define ARM_EXT_V6T2	 0x00008000	/* Thumb-2.                */
 #define ARM_EXT_DIV	 0x00010000	/* Integer division.       */
 /* The 'M' in Arm V7M stands for Microcontroller.
@@ -49,6 +50,12 @@
 #define ARM_EXT_THUMB_MSR 0x02000000	/* Thumb MSR/MRS.	    */
 #define ARM_EXT_V6_DSP 0x04000000	/* ARM v6 (DSP-related),
 					   not in v7-M.  */
+#define ARM_EXT_MP       0x08000000     /* Multiprocessing Extensions.  */
+#define ARM_EXT_SEC	 0x10000000	/* Security extensions.  */
+#define ARM_EXT_OS	 0x20000000	/* OS Extensions.  */
+#define ARM_EXT_ADIV	 0x40000000	/* Integer divide extensions in ARM 
+					   state.  */
+#define ARM_EXT_VIRT	 0x80000000	/* Virtualization extensions.  */
 
 /* Co-processor space extensions.  */
 #define ARM_CEXT_XSCALE   0x00000001	/* Allow MIA etc.          */
@@ -72,6 +79,9 @@
 #define FPU_VFP_EXT_FP16 0x00100000	/* Half-precision extensions. */
 #define FPU_NEON_EXT_FMA 0x00080000	/* Neon fused multiply-add    */
 #define FPU_VFP_EXT_FMA	 0x00040000	/* VFP fused multiply-add     */
+#define FPU_VFP_EXT_ARMV8 0x00020000	/* FP for ARMv8.  */
+#define FPU_NEON_EXT_ARMV8 0x00010000	/* Neon for ARMv8.  */
+#define FPU_CRYPTO_EXT_ARMV8 0x00008000	/* Crypto for ARMv8.  */
 
 /* Architectures are the sum of the base and extensions.  The ARM ARM (rev E)
    defines the following: ARMv3, ARMv3M, ARMv4xM, ARMv4, ARMv4TxM, ARMv4T,
@@ -96,29 +106,34 @@
 #define ARM_AEXT_V5TEJ	(ARM_AEXT_V5TE	| ARM_EXT_V5J)
 #define ARM_AEXT_V6     (ARM_AEXT_V5TEJ | ARM_EXT_V6)
 #define ARM_AEXT_V6K    (ARM_AEXT_V6    | ARM_EXT_V6K)
-#define ARM_AEXT_V6Z    (ARM_AEXT_V6    | ARM_EXT_V6Z)
-#define ARM_AEXT_V6ZK   (ARM_AEXT_V6    | ARM_EXT_V6K | ARM_EXT_V6Z)
+#define ARM_AEXT_V6Z    (ARM_AEXT_V6K	| ARM_EXT_SEC)
+#define ARM_AEXT_V6ZK   (ARM_AEXT_V6K	| ARM_EXT_SEC)
 #define ARM_AEXT_V6T2   (ARM_AEXT_V6 \
     | ARM_EXT_V6T2 | ARM_EXT_V6_NOTM | ARM_EXT_THUMB_MSR \
     | ARM_EXT_V6_DSP )
 #define ARM_AEXT_V6KT2  (ARM_AEXT_V6T2 | ARM_EXT_V6K)
-#define ARM_AEXT_V6ZT2  (ARM_AEXT_V6T2 | ARM_EXT_V6Z)
-#define ARM_AEXT_V6ZKT2 (ARM_AEXT_V6T2 | ARM_EXT_V6K | ARM_EXT_V6Z)
-#define ARM_AEXT_V7_ARM	(ARM_AEXT_V6ZKT2 | ARM_EXT_V7 | ARM_EXT_BARRIER)
+#define ARM_AEXT_V6ZT2  (ARM_AEXT_V6T2 | ARM_EXT_SEC)
+#define ARM_AEXT_V6ZKT2 (ARM_AEXT_V6T2 | ARM_EXT_V6K | ARM_EXT_SEC)
+#define ARM_AEXT_V7_ARM	(ARM_AEXT_V6KT2 | ARM_EXT_V7 | ARM_EXT_BARRIER)
 #define ARM_AEXT_V7A	(ARM_AEXT_V7_ARM | ARM_EXT_V7A)
 #define ARM_AEXT_V7R	(ARM_AEXT_V7_ARM | ARM_EXT_V7R | ARM_EXT_DIV)
 #define ARM_AEXT_NOTM \
   (ARM_AEXT_V4 | ARM_EXT_V5ExP | ARM_EXT_V5J | ARM_EXT_V6_NOTM \
    | ARM_EXT_V6_DSP )
+#define ARM_AEXT_V6M_ONLY \
+  ((ARM_EXT_BARRIER | ARM_EXT_V6M | ARM_EXT_THUMB_MSR) & ~(ARM_AEXT_NOTM))
 #define ARM_AEXT_V6M \
-  ((ARM_AEXT_V6K | ARM_EXT_BARRIER | ARM_EXT_V6M | ARM_EXT_THUMB_MSR) \
-   & ~(ARM_AEXT_NOTM))
+  ((ARM_AEXT_V6K | ARM_AEXT_V6M_ONLY) & ~(ARM_AEXT_NOTM))
+#define ARM_AEXT_V6SM (ARM_AEXT_V6M | ARM_EXT_OS)
 #define ARM_AEXT_V7M \
   ((ARM_AEXT_V7_ARM | ARM_EXT_V6M | ARM_EXT_V7M | ARM_EXT_DIV) \
    & ~(ARM_AEXT_NOTM))
 #define ARM_AEXT_V7 (ARM_AEXT_V7A & ARM_AEXT_V7R & ARM_AEXT_V7M)
 #define ARM_AEXT_V7EM \
   (ARM_AEXT_V7M | ARM_EXT_V5ExP | ARM_EXT_V6_DSP)
+#define ARM_AEXT_V8A \
+  (ARM_AEXT_V7A | ARM_EXT_MP | ARM_EXT_SEC | ARM_EXT_DIV | ARM_EXT_ADIV \
+   | ARM_EXT_VIRT | ARM_EXT_V8)
 
 /* Processors with specific extensions in the co-processor space.  */
 #define ARM_ARCH_XSCALE	ARM_FEATURE (ARM_AEXT_V5TE, ARM_CEXT_XSCALE)
@@ -138,12 +153,15 @@
 #define FPU_VFP_V4D16	(FPU_VFP_V3D16 | FPU_VFP_EXT_FP16 | FPU_VFP_EXT_FMA)
 #define FPU_VFP_V4	(FPU_VFP_V3 | FPU_VFP_EXT_FP16 | FPU_VFP_EXT_FMA)
 #define FPU_VFP_V4_SP_D16 (FPU_VFP_V3xD | FPU_VFP_EXT_FP16 | FPU_VFP_EXT_FMA)
+#define FPU_VFP_ARMV8	(FPU_VFP_V4 | FPU_VFP_EXT_ARMV8)
+#define FPU_NEON_ARMV8	(FPU_NEON_EXT_V1 | FPU_NEON_EXT_FMA | FPU_NEON_EXT_ARMV8)
+#define FPU_CRYPTO_ARMV8 (FPU_CRYPTO_EXT_ARMV8)
 #define FPU_VFP_HARD	(FPU_VFP_EXT_V1xD | FPU_VFP_EXT_V1 | FPU_VFP_EXT_V2 \
 			 | FPU_VFP_EXT_V3xD | FPU_VFP_EXT_FMA | FPU_NEON_EXT_FMA \
                          | FPU_VFP_EXT_V3 | FPU_NEON_EXT_V1 | FPU_VFP_EXT_D32)
 #define FPU_FPA		(FPU_FPA_EXT_V1 | FPU_FPA_EXT_V2)
 
-/* Deprecated */
+/* Deprecated.  */
 #define FPU_ARCH_VFP	ARM_FEATURE (0, FPU_ENDIAN_PURE)
 
 #define FPU_ARCH_FPE	ARM_FEATURE (0, FPU_FPA_EXT_V1)
@@ -170,6 +188,10 @@
 #define FPU_ARCH_VFP_V4_SP_D16 ARM_FEATURE(0, FPU_VFP_V4_SP_D16)
 #define FPU_ARCH_NEON_VFP_V4 \
   ARM_FEATURE(0, FPU_VFP_V4 | FPU_NEON_EXT_V1 | FPU_NEON_EXT_FMA)
+#define FPU_ARCH_VFP_ARMV8 ARM_FEATURE(0, FPU_VFP_ARMV8)
+#define FPU_ARCH_NEON_VFP_ARMV8 ARM_FEATURE(0, FPU_NEON_ARMV8 | FPU_VFP_ARMV8)
+#define FPU_ARCH_CRYPTO_NEON_VFP_ARMV8 \
+  ARM_FEATURE(0, FPU_CRYPTO_ARMV8 | FPU_NEON_ARMV8 | FPU_VFP_ARMV8)
 
 #define FPU_ARCH_ENDIAN_PURE ARM_FEATURE (0, FPU_ENDIAN_PURE)
 
@@ -200,11 +222,13 @@
 #define ARM_ARCH_V6ZT2	ARM_FEATURE (ARM_AEXT_V6ZT2, 0)
 #define ARM_ARCH_V6ZKT2	ARM_FEATURE (ARM_AEXT_V6ZKT2, 0)
 #define ARM_ARCH_V6M	ARM_FEATURE (ARM_AEXT_V6M, 0)
+#define ARM_ARCH_V6SM	ARM_FEATURE (ARM_AEXT_V6SM, 0)
 #define ARM_ARCH_V7	ARM_FEATURE (ARM_AEXT_V7, 0)
 #define ARM_ARCH_V7A	ARM_FEATURE (ARM_AEXT_V7A, 0)
 #define ARM_ARCH_V7R	ARM_FEATURE (ARM_AEXT_V7R, 0)
 #define ARM_ARCH_V7M	ARM_FEATURE (ARM_AEXT_V7M, 0)
 #define ARM_ARCH_V7EM	ARM_FEATURE (ARM_AEXT_V7EM, 0)
+#define ARM_ARCH_V8A	ARM_FEATURE (ARM_AEXT_V8A, 0)
 
 /* Some useful combinations:  */
 #define ARM_ARCH_NONE	ARM_FEATURE (0, 0)
@@ -212,6 +236,29 @@
 #define ARM_ANY		ARM_FEATURE (-1, 0)	/* Any basic core.  */
 #define FPU_ANY_HARD	ARM_FEATURE (0, FPU_FPA | FPU_VFP_HARD | FPU_MAVERICK)
 #define ARM_ARCH_THUMB2 ARM_FEATURE (ARM_EXT_V6T2 | ARM_EXT_V7 | ARM_EXT_V7A | ARM_EXT_V7R | ARM_EXT_V7M | ARM_EXT_DIV, 0)
+/* v7-a+sec.  */
+#define ARM_ARCH_V7A_SEC ARM_FEATURE (ARM_AEXT_V7A | ARM_EXT_SEC, 0)
+/* v7-a+mp+sec.  */
+#define ARM_ARCH_V7A_MP_SEC \
+			ARM_FEATURE (ARM_AEXT_V7A | ARM_EXT_MP | ARM_EXT_SEC, \
+				     0)
+/* v7-a+idiv+mp+sec+virt.  */
+#define ARM_ARCH_V7A_IDIV_MP_SEC_VIRT \
+			ARM_FEATURE (ARM_AEXT_V7A | ARM_EXT_MP | ARM_EXT_SEC \
+				     | ARM_EXT_DIV | ARM_EXT_ADIV \
+				     | ARM_EXT_VIRT, 0)
+/* v7-r+idiv.  */
+#define ARM_ARCH_V7R_IDIV	ARM_FEATURE (ARM_AEXT_V7R | ARM_EXT_ADIV, 0)
+/* Features that are present in v6M and v6S-M but not other v6 cores.  */
+#define ARM_ARCH_V6M_ONLY ARM_FEATURE (ARM_AEXT_V6M_ONLY, 0)
+/* v8-a+fp.  */
+#define ARM_ARCH_V8A_FP	ARM_FEATURE (ARM_AEXT_V8A, FPU_ARCH_VFP_ARMV8)
+/* v8-a+simd (implies fp).  */
+#define ARM_ARCH_V8A_SIMD	ARM_FEATURE (ARM_AEXT_V8A, \
+					     FPU_ARCH_NEON_VFP_ARMV8)
+/* v8-a+crypto (implies simd+fp).  */
+#define ARM_ARCH_V8A_CRYPTOV1 	ARM_FEATURE (ARM_AEXT_V8A, \
+					     FPU_ARCH_CRYPTO_NEON_VFP_ARMV8)
 
 /* There are too many feature bits to fit in a single word, so use a
    structure.  For simplicity we put all core features in one word and
@@ -224,6 +271,9 @@ typedef struct
 
 #define ARM_CPU_HAS_FEATURE(CPU,FEAT) \
   (((CPU).core & (FEAT).core) != 0 || ((CPU).coproc & (FEAT).coproc) != 0)
+
+#define ARM_CPU_IS_ANY(CPU) \
+  ((CPU).core == ((arm_feature_set)ARM_ANY).core)
 
 #define ARM_MERGE_FEATURE_SETS(TARG,F1,F2)	\
   do {						\

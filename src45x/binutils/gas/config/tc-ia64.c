@@ -1,6 +1,6 @@
 /* tc-ia64.c -- Assembler for the HP/Intel IA-64 architecture.
    Copyright 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
-   2008, 2009   Free Software Foundation, Inc.
+   2008, 2009, 2011, 2012 Free Software Foundation, Inc.
    Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    This file is part of GAS, the GNU Assembler.
@@ -614,7 +614,7 @@ pseudo_func[] =
     { "svr4",	PSEUDO_FUNC_CONST,	{ ELFOSABI_NONE } },
     { "hpux",	PSEUDO_FUNC_CONST,	{ ELFOSABI_HPUX } },
     { "nt",	PSEUDO_FUNC_CONST,	{ 2 } },		/* conflicts w/ELFOSABI_NETBSD */
-    { "linux",	PSEUDO_FUNC_CONST,	{ ELFOSABI_LINUX } },
+    { "linux",	PSEUDO_FUNC_CONST,	{ ELFOSABI_GNU } },
     { "freebsd", PSEUDO_FUNC_CONST,	{ ELFOSABI_FREEBSD } },
     { "openvms", PSEUDO_FUNC_CONST,	{ ELFOSABI_OPENVMS } },
     { "nsk",	PSEUDO_FUNC_CONST,	{ ELFOSABI_NSK } },
@@ -861,7 +861,7 @@ ia64_elf_section_letter (int letter, char **ptr_msg)
     return SHF_IA_64_VMS_GLOBAL;
 #endif
 
-  *ptr_msg = _("Bad .section directive: want a,o,s,w,x,M,S,G,T in string");
+  *ptr_msg = _("bad .section directive: want a,o,s,w,x,M,S,G,T in string");
   return -1;
 }
 
@@ -1038,6 +1038,141 @@ ia64_cons_align (int nbytes)
       input_line_pointer = saved_input_line_pointer;
     }
 }
+
+#ifdef TE_VMS
+
+/* .vms_common section, symbol, size, alignment  */
+
+static void
+obj_elf_vms_common (int ignore ATTRIBUTE_UNUSED)
+{
+  char *sec_name;
+  char *sym_name;
+  char c;
+  offsetT size;
+  offsetT cur_size;
+  offsetT temp;
+  symbolS *symbolP;
+  segT current_seg = now_seg;
+  subsegT current_subseg = now_subseg;
+  offsetT log_align;
+
+  /* Section name.  */
+  sec_name = obj_elf_section_name ();
+  if (sec_name == NULL)
+    return;
+
+  /* Symbol name.  */
+  SKIP_WHITESPACE ();
+  if (*input_line_pointer == ',')
+    {
+      input_line_pointer++;
+      SKIP_WHITESPACE ();
+    }
+  else
+    {
+      as_bad (_("expected ',' after section name"));
+      ignore_rest_of_line ();
+      return;
+    }
+
+  sym_name = input_line_pointer;
+  c = get_symbol_end ();
+
+  if (input_line_pointer == sym_name)
+    {
+      *input_line_pointer = c;
+      as_bad (_("expected symbol name"));
+      ignore_rest_of_line ();
+      return;
+    }
+
+  symbolP = symbol_find_or_make (sym_name);
+  *input_line_pointer = c;
+
+  if ((S_IS_DEFINED (symbolP) || symbol_equated_p (symbolP))
+      && !S_IS_COMMON (symbolP))
+    {
+      as_bad (_("Ignoring attempt to re-define symbol"));
+      ignore_rest_of_line ();
+      return;
+    }
+
+  /* Symbol size.  */
+  SKIP_WHITESPACE ();
+  if (*input_line_pointer == ',')
+    {
+      input_line_pointer++;
+      SKIP_WHITESPACE ();
+    }
+  else
+    {
+      as_bad (_("expected ',' after symbol name"));
+      ignore_rest_of_line ();
+      return;
+    }
+
+  temp = get_absolute_expression ();
+  size = temp;
+  size &= ((offsetT) 2 << (stdoutput->arch_info->bits_per_address - 1)) - 1;
+  if (temp != size)
+    {
+      as_warn (_("size (%ld) out of range, ignored"), (long) temp);
+      ignore_rest_of_line ();
+      return;
+    }
+
+  /* Alignment.  */
+  SKIP_WHITESPACE ();
+  if (*input_line_pointer == ',')
+    {
+      input_line_pointer++;
+      SKIP_WHITESPACE ();
+    }
+  else
+    {
+      as_bad (_("expected ',' after symbol size"));
+      ignore_rest_of_line ();
+      return;
+    }
+
+  log_align = get_absolute_expression ();
+
+  demand_empty_rest_of_line ();
+
+  obj_elf_change_section
+    (sec_name, SHT_NOBITS,
+     SHF_ALLOC | SHF_WRITE | SHF_IA_64_VMS_OVERLAID | SHF_IA_64_VMS_GLOBAL,
+     0, NULL, 1, 0);
+
+  S_SET_VALUE (symbolP, 0);
+  S_SET_SIZE (symbolP, size);
+  S_SET_EXTERNAL (symbolP);
+  S_SET_SEGMENT (symbolP, now_seg);
+
+  symbol_get_bfdsym (symbolP)->flags |= BSF_OBJECT;
+
+  record_alignment (now_seg, log_align);
+
+  cur_size = bfd_section_size (stdoutput, now_seg);
+  if ((int) size > cur_size)
+    {
+      char *pfrag
+        = frag_var (rs_fill, 1, 1, (relax_substateT)0, NULL,
+                    (valueT)size - (valueT)cur_size, NULL);
+      *pfrag = 0;
+      bfd_section_size (stdoutput, now_seg) = size;
+    }
+
+  /* Switch back to current segment.  */
+  subseg_set (current_seg, current_subseg);
+
+#ifdef md_elf_section_change_hook
+  md_elf_section_change_hook ();
+#endif
+}
+
+#endif /* TE_VMS */
 
 /* Output COUNT bytes to a memory location.  */
 static char *vbyte_mem_ptr = NULL;
@@ -5232,6 +5367,10 @@ const pseudo_typeS md_pseudo_table[] =
     {"4byte", stmt_cons_ua, 4},
     {"8byte", stmt_cons_ua, 8},
 
+#ifdef TE_VMS
+    {"vms_common", obj_elf_vms_common, 0},
+#endif
+
     { NULL, 0, 0 }
   };
 
@@ -7001,7 +7140,9 @@ IA-64 options:\n\
 			  unwind directive check (default -munwind-check=warning)\n\
   -mhint.b=[ok|warning|error]\n\
 			  hint.b check (default -mhint.b=error)\n\
-  -x | -xexplicit	  turn on dependency violation checking\n\
+  -x | -xexplicit	  turn on dependency violation checking\n"), stream);
+  /* Note for translators: "automagically" can be translated as "automatically" here.  */
+  fputs (_("\
   -xauto		  automagically remove dependency violations (default)\n\
   -xnone		  turn off dependency violation checking\n\
   -xdebug		  debug dependency violation checker\n\
@@ -7644,9 +7785,9 @@ ia64_frob_label (struct symbol *sym)
 int
 ia64_frob_symbol (struct symbol *sym)
 {
-  if ((S_GET_SEGMENT (sym) == &bfd_und_section && ! symbol_used_p (sym) &&
+  if ((S_GET_SEGMENT (sym) == bfd_und_section_ptr && ! symbol_used_p (sym) &&
        ELF_ST_VISIBILITY (S_GET_OTHER (sym)) == STV_DEFAULT)
-      || (S_GET_SEGMENT (sym) == &bfd_abs_section
+      || (S_GET_SEGMENT (sym) == bfd_abs_section_ptr
 	  && ! S_IS_EXTERNAL (sym)))
     return 1;
   return 0;
@@ -11286,7 +11427,7 @@ md_apply_fix (fixS *fix, valueT *valP, segT seg ATTRIBUTE_UNUSED)
     }
   if (fix->fx_addsy)
     {
-      switch (fix->fx_r_type)
+      switch ((unsigned) fix->fx_r_type)
 	{
 	case BFD_RELOC_UNUSED:
 	  /* This must be a TAG13 or TAG13b operand.  There are no external

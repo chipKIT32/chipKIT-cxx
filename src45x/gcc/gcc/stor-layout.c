@@ -172,6 +172,32 @@ variable_size (tree size)
 /* An array of functions used for self-referential size computation.  */
 static GTY(()) VEC (tree, gc) *size_functions;
 
+/* Look inside EXPR into simple arithmetic operations involving constants.
+   Return the outermost non-arithmetic or non-constant node.  */
+
+static tree
+skip_simple_constant_arithmetic (tree expr)
+{
+  while (true)
+    {
+      if (UNARY_CLASS_P (expr))
+	expr = TREE_OPERAND (expr, 0);
+      else if (BINARY_CLASS_P (expr))
+	{
+	  if (TREE_CONSTANT (TREE_OPERAND (expr, 1)))
+	    expr = TREE_OPERAND (expr, 0);
+	  else if (TREE_CONSTANT (TREE_OPERAND (expr, 0)))
+	    expr = TREE_OPERAND (expr, 1);
+	  else
+	    break;
+	}
+      else
+	break;
+    }
+
+  return expr;
+}
+
 /* Similar to copy_tree_r but do not copy component references involving
    PLACEHOLDER_EXPRs.  These nodes are spotted in find_placeholder_in_expr
    and substituted in substitute_in_expr.  */
@@ -239,7 +265,7 @@ self_referential_size (tree size)
   char buf[128];
 
   /* Do not factor out simple operations.  */
-  t = skip_simple_arithmetic (size);
+  t = skip_simple_constant_arithmetic (size);
   if (TREE_CODE (t) == CALL_EXPR)
     return size;
 
@@ -595,12 +621,13 @@ layout_decl (tree decl, unsigned int known_align)
 	  /* See if we can use an ordinary integer mode for a bit-field.
 	     Conditions are: a fixed size that is correct for another mode,
 	     occupying a complete byte or bytes on proper boundary,
-	     and not volatile or not -fstrict-volatile-bitfields.  */
+	     and not -fstrict-volatile-bitfields.  If the latter is set,
+	     we unfortunately can't check TREE_THIS_VOLATILE, as a cast
+	     may make a volatile object later.  */
 	  if (TYPE_SIZE (type) != 0
 	      && TREE_CODE (TYPE_SIZE (type)) == INTEGER_CST
 	      && GET_MODE_CLASS (TYPE_MODE (type)) == MODE_INT
-	      && !(TREE_THIS_VOLATILE (decl)
-		   && flag_strict_volatile_bitfields > 0))
+	      && flag_strict_volatile_bitfields <= 0)
 	    {
 	      enum machine_mode xmode
 		= mode_for_size_tree (DECL_SIZE (decl), MODE_INT, 1);
@@ -696,6 +723,15 @@ layout_decl (tree decl, unsigned int known_align)
       SET_DECL_RTL (decl, rtl);
     }
 }
+
+#ifdef _BUILD_C30_
+void
+relayout_type (tree type)
+{
+  TYPE_SIZE(type) = 0;
+  layout_type(type);
+}
+#endif
 
 /* Given a VAR_DECL, PARM_DECL or RESULT_DECL, clears the results of
    a previous call to layout_decl and calls it again.  */
@@ -2083,6 +2119,14 @@ layout_type (tree type)
     default:
       gcc_unreachable ();
     }
+
+#if 0
+#ifdef _BUILD_C30_
+#ifdef TARGET_LAYOUT_TYPE
+  TARGET_LAYOUT_TYPE(type);
+#endif
+#endif
+#endif
 
   /* Compute the final TYPE_SIZE, TYPE_ALIGN, etc. for TYPE.  For
      records and unions, finish_record_layout already called this

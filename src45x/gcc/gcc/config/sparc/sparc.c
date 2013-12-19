@@ -5563,7 +5563,7 @@ function_arg_advance (struct sparc_args *cum, enum machine_mode mode,
   /* We pass 0 for incoming_p here, it doesn't matter.  */
   function_arg_slotno (cum, mode, type, named, 0, &regno, &padding);
 
-  /* If register required leading padding, add it.  */
+  /* If argument requires leading padding, add it.  */
   cum->words += padding;
 
   if (TARGET_ARCH32)
@@ -5681,7 +5681,7 @@ sparc_struct_value_rtx (tree fndecl, int incoming)
 	  /* We must check and adjust the return address, as it is
 	     optional as to whether the return object is really
 	     provided.  */
-	  rtx ret_rtx = gen_rtx_REG (Pmode, 31);
+	  rtx ret_reg = gen_rtx_REG (Pmode, 31);
 	  rtx scratch = gen_reg_rtx (SImode);
 	  rtx endlab = gen_label_rtx ();
 
@@ -5698,11 +5698,11 @@ sparc_struct_value_rtx (tree fndecl, int incoming)
 	     it's an unimp instruction (the most significant 10 bits
 	     will be zero).  */
 	  emit_move_insn (scratch, gen_rtx_MEM (SImode,
-						plus_constant (ret_rtx, 8)));
+						plus_constant (ret_reg, 8)));
 	  /* Assume the size is valid and pre-adjust */
-	  emit_insn (gen_add3_insn (ret_rtx, ret_rtx, GEN_INT (4)));
+	  emit_insn (gen_add3_insn (ret_reg, ret_reg, GEN_INT (4)));
 	  emit_cmp_and_jump_insns (scratch, size_rtx, EQ, const0_rtx, SImode, 0, endlab);
-	  emit_insn (gen_sub3_insn (ret_rtx, ret_rtx, GEN_INT (4)));
+	  emit_insn (gen_sub3_insn (ret_reg, ret_reg, GEN_INT (4)));
 	  /* Assign stack temp:
 	     Write the address of the memory pointed to by temp_val into
 	     the memory pointed to by mem */

@@ -1,13 +1,13 @@
 /* mpfr_pow_z -- power function x^z with z a MPZ
 
-Copyright 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -29,12 +29,12 @@ MA 02110-1301, USA. */
    or underflow, and uses the precision of y as working precision (warning,
    y and x might be the same variable). */
 static int
-mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd, int cr)
+mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t rnd, int cr)
 {
   mpfr_t res;
-  mp_prec_t prec, err;
+  mpfr_prec_t prec, err;
   int inexact;
-  mp_rnd_t rnd1, rnd2;
+  mpfr_rnd_t rnd1, rnd2;
   mpz_t absz;
   mp_size_t size_z;
   MPFR_ZIV_DECL (loop);
@@ -55,9 +55,9 @@ mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd, int cr)
   /* round toward 1 (or -1) to avoid spurious overflow or underflow,
      i.e. if an overflow or underflow occurs, it is a real exception
      and is not just due to the rounding error. */
-  rnd1 = (MPFR_EXP(x) >= 1) ? GMP_RNDZ
-    : (MPFR_IS_POS(x) ? GMP_RNDU : GMP_RNDD);
-  rnd2 = (MPFR_EXP(x) >= 1) ? GMP_RNDD : GMP_RNDU;
+  rnd1 = (MPFR_EXP(x) >= 1) ? MPFR_RNDZ
+    : (MPFR_IS_POS(x) ? MPFR_RNDU : MPFR_RNDD);
+  rnd2 = (MPFR_EXP(x) >= 1) ? MPFR_RNDD : MPFR_RNDU;
 
   if (cr != 0)
     prec = MPFR_PREC (y) + 3 + size_z + MPFR_INT_CEIL_LOG2 (MPFR_PREC (y));
@@ -110,7 +110,7 @@ mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd, int cr)
   else if (MPFR_UNDERFLOW (flags))
     {
       MPFR_LOG_MSG (("underflow\n", 0));
-      if (rnd == GMP_RNDN)
+      if (rnd == MPFR_RNDN)
         {
           mpfr_t y2, zz;
 
@@ -125,13 +125,13 @@ mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd, int cr)
           MPFR_ASSERTD (mpfr_cmp_si_2exp (x, MPFR_SIGN (x),
                                           MPFR_EXP (x) - 1) != 0);
           mpfr_init2 (y2, 2);
-          mpfr_init2 (zz, ABS (SIZ (z)) * BITS_PER_MP_LIMB);
-          inexact = mpfr_set_z (zz, z, GMP_RNDN);
+          mpfr_init2 (zz, ABS (SIZ (z)) * GMP_NUMB_BITS);
+          inexact = mpfr_set_z (zz, z, MPFR_RNDN);
           MPFR_ASSERTN (inexact == 0);
           inexact = mpfr_pow_general (y2, x, zz, rnd, 1,
                                       (mpfr_save_expo_t *) NULL);
           mpfr_clear (zz);
-          mpfr_set (y, y2, GMP_RNDN);
+          mpfr_set (y, y2, MPFR_RNDN);
           mpfr_clear (y2);
           __gmpfr_flags = MPFR_FLAGS_INEXACT | MPFR_FLAGS_UNDERFLOW;
         }
@@ -161,7 +161,7 @@ mpfr_pow_pos_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd, int cr)
  */
 
 int
-mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
+mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mpfr_rnd_t rnd)
 {
   int   inexact;
   mpz_t tmp;
@@ -212,14 +212,16 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
         }
     }
 
+  MPFR_SAVE_EXPO_MARK (expo);
+
   /* detect exact powers: x^-n is exact iff x is a power of 2
      Do it if n > 0 too as this is faster and this filtering is
      needed in case of underflow. */
   if (MPFR_UNLIKELY (mpfr_cmp_si_2exp (x, MPFR_SIGN (x),
                                        MPFR_EXP (x) - 1) == 0))
     {
-      mp_exp_t expx = MPFR_EXP (x); /* warning: x and y may be the same
-                                       variable */
+      mpfr_exp_t expx = MPFR_EXP (x); /* warning: x and y may be the same
+                                         variable */
 
       MPFR_LOG_MSG (("x^n with x power of two\n", 0));
       mpfr_set_si (y, mpz_odd_p (z) ? MPFR_INT_SIGN(x) : 1, rnd);
@@ -234,8 +236,8 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
           MPFR_LOG_MSG (("underflow\n", 0));
           /* |y| is a power of two, thus |y| <= 2^(emin-2), and in
              rounding to nearest, the value must be rounded to 0. */
-          if (rnd == GMP_RNDN)
-            rnd = GMP_RNDZ;
+          if (rnd == MPFR_RNDN)
+            rnd = MPFR_RNDZ;
           inexact = mpfr_underflow (y, rnd, MPFR_SIGN (y));
         }
       else if (MPFR_UNLIKELY (mpz_cmp_si (tmp, __gmpfr_emax) > 0))
@@ -246,12 +248,9 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
       else
         MPFR_SET_EXP (y, mpz_get_si (tmp));
       mpz_clear (tmp);
-      MPFR_RET (inexact);
+      MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, __gmpfr_flags);
     }
-
-  MPFR_SAVE_EXPO_MARK (expo);
-
-  if (mpz_sgn (z) > 0)
+  else if (mpz_sgn (z) > 0)
     {
       inexact = mpfr_pow_pos_z (y, x, z, rnd, 1);
       MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, __gmpfr_flags);
@@ -260,8 +259,8 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
     {
       /* Declaration of the intermediary variable */
       mpfr_t t;
-      mp_prec_t Nt;   /* Precision of the intermediary variable */
-      mp_rnd_t rnd1;
+      mpfr_prec_t Nt;   /* Precision of the intermediary variable */
+      mpfr_rnd_t rnd1;
       mp_size_t size_z;
       MPFR_ZIV_DECL (loop);
 
@@ -277,8 +276,8 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
 
       /* We will compute rnd(rnd1(1/x) ^ (-z)), where rnd1 is the rounding
          toward sign(x), to avoid spurious overflow or underflow. */
-      rnd1 = MPFR_EXP (x) < 1 ? GMP_RNDZ :
-        (MPFR_SIGN (x) > 0 ? GMP_RNDU : GMP_RNDD);
+      rnd1 = MPFR_EXP (x) < 1 ? MPFR_RNDZ :
+        (MPFR_SIGN (x) > 0 ? MPFR_RNDU : MPFR_RNDD);
 
       MPFR_ZIV_INIT (loop, Nt);
       for (;;)
@@ -317,7 +316,7 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
               MPFR_ZIV_FREE (loop);
               mpfr_clear (t);
               MPFR_LOG_MSG (("underflow\n", 0));
-              if (rnd == GMP_RNDN)
+              if (rnd == MPFR_RNDN)
                 {
                   mpfr_t y2, zz;
 
@@ -328,13 +327,13 @@ mpfr_pow_z (mpfr_ptr y, mpfr_srcptr x, mpz_srcptr z, mp_rnd_t rnd)
                   MPFR_ASSERTD (mpfr_cmp_si_2exp (x, MPFR_SIGN (x),
                                                   MPFR_EXP (x) - 1) != 0);
                   mpfr_init2 (y2, 2);
-                  mpfr_init2 (zz, ABS (SIZ (z)) * BITS_PER_MP_LIMB);
-                  inexact = mpfr_set_z (zz, z, GMP_RNDN);
+                  mpfr_init2 (zz, ABS (SIZ (z)) * GMP_NUMB_BITS);
+                  inexact = mpfr_set_z (zz, z, MPFR_RNDN);
                   MPFR_ASSERTN (inexact == 0);
                   inexact = mpfr_pow_general (y2, x, zz, rnd, 1,
                                               (mpfr_save_expo_t *) NULL);
                   mpfr_clear (zz);
-                  mpfr_set (y, y2, GMP_RNDN);
+                  mpfr_set (y, y2, MPFR_RNDN);
                   mpfr_clear (y2);
                   MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, MPFR_FLAGS_UNDERFLOW);
                   goto end;

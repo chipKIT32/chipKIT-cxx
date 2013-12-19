@@ -98,7 +98,7 @@ index_reg_class (enum machine_mode mode ATTRIBUTE_UNUSED)
    REGNO_MODE_OK_FOR_INDEX_P macro.  */
 
 static inline bool
-ok_for_index_p_1 (unsigned regno, enum machine_mode mode ATTRIBUTE_UNUSED)
+ok_for_index_p_1 (unsigned regno ATTRIBUTE_UNUSED, enum machine_mode mode ATTRIBUTE_UNUSED)
 {
 #ifdef REGNO_MODE_OK_FOR_INDEX_P
   return REGNO_MODE_OK_FOR_INDEX_P (regno, mode);

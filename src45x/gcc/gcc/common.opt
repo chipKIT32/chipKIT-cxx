@@ -502,6 +502,10 @@ fearly-inlining
 Common Report Var(flag_early_inlining) Init(1) Optimization
 Perform early inlining
 
+fextension-elimination
+Common Report Var(flag_ee) Init(0) Optimization
+Perform extension elimination
+
 feglibc=
 Common Report Joined Undocumented
 EGLIBC configuration specifier, serves multilib purposes.
@@ -690,6 +694,10 @@ Common RejectNegative Joined UInteger
 finstrument-functions
 Common Report Var(flag_instrument_function_entry_exit)
 Instrument function entry and exit with profiling calls
+
+finstrument-function-calls
+Common Report Var(flag_instrument_call_entry_exit)
+Instrument call entry and exit with profiling calls
 
 finstrument-functions-exclude-function-list=
 Common RejectNegative Joined
@@ -1157,6 +1165,11 @@ fshow-column
 Common C ObjC C++ ObjC++ Report Var(flag_show_column) Init(1)
 Show column numbers in diagnostics, when available.  Default on
 
+fshrink-wrap
+Common Report Var(flag_shrink_wrap) Optimization
+Emit function prologues only before parts of the function that need it,
+rather than at the top of the function.
+
 fsignaling-nans
 Common Report Var(flag_signaling_nans) Optimization
 Disable optimizations observable by IEEE signaling NaNs
@@ -1294,6 +1307,10 @@ Transform condition stores into unconditional ones
 ftree-switch-conversion
 Common Report Var(flag_tree_switch_conversion) Optimization
 Perform conversions of switch initializations.
+
+ftree-if-to-switch-conversion
+Common Report Var(flag_tree_if_to_switch_conversion) Optimization
+Perform conversions of chains of ifs into switches.
 
 ftree-dce
 Common Report Var(flag_tree_dce) Optimization
@@ -1614,5 +1631,9 @@ Create a shared library
 pie
 Common RejectNegative Negative(shared)
 Create a position independent executable
+
+fuse-caller-save
+Common Report Var(flag_use_caller_save) Optimization
+Use caller save register across calls if possible
 
 ; This comment is to ensure we retain the blank line above.

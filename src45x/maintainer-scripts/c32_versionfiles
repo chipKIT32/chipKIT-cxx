@@ -1,0 +1,10 @@
+# Copyright (c) 2004 MIPS Technologies Inc. All Rights Reserved.
+#
+# List of files containing version numbers, and associated patterns
+# to allow them to be patched by the "sde_stampversion" Perl script.
+
+# FILE			START						END
+binutils/bfd/version.h		#define\s+BFD_VERSION_DATE\s+
+gcc/gcc/version.c	const char version_string[] = BASEVER " " "[0-9.]+\s*	"; /\* XC32 \*/
+#gdb/version.in
+

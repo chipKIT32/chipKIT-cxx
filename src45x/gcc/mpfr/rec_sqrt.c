@@ -1,13 +1,13 @@
 /* mpfr_rec_sqrt -- inverse square root
 
-Copyright 2008, 2009 Free Software Foundation, Inc.
+Copyright 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +26,7 @@ MA 02110-1301, USA. */
 #define MPFR_NEED_LONGLONG_H /* for umul_ppmm */
 #include "mpfr-impl.h"
 
-#define LIMB_SIZE(x) ((((x)-1)>>MPFR_LOG2_BITS_PER_MP_LIMB) + 1)
+#define LIMB_SIZE(x) ((((x)-1)>>MPFR_LOG2_GMP_NUMB_BITS) + 1)
 
 #define MPFR_COM_N(x,y,n)                               \
   {                                                     \
@@ -70,8 +70,8 @@ MA 02110-1301, USA. */
    http://www.loria.fr/~zimmerma/mca/pub226.html
 */
 static void
-mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
-                   mp_srcptr a, mp_prec_t ap, int as)
+mpfr_mpn_rec_sqrt (mpfr_limb_ptr x, mpfr_prec_t p,
+                   mpfr_limb_srcptr a, mpfr_prec_t ap, int as)
 
 {
   /* the following T1 and T2 are bipartite tables giving initial
@@ -191,8 +191,8 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
     }
   else /* p >= 12 */
     {
-      mp_prec_t h, pl;
-      mp_ptr r, s, t, u;
+      mpfr_prec_t h, pl;
+      mpfr_limb_ptr r, s, t, u;
       mp_size_t xn, rn, th, ln, tn, sn, ahn, un;
       mp_limb_t neg, cy, cu;
       MPFR_TMP_DECL(marker);
@@ -209,7 +209,7 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
          thus the h-3 most significant bits of t should be zero,
          which is in fact h+1+as-3 because of the normalization of A.
          This corresponds to th=floor((h+1+as-3)/GMP_NUMB_BITS) limbs. */
-      th = (h + 1 + as - 3) >> MPFR_LOG2_BITS_PER_MP_LIMB;
+      th = (h + 1 + as - 3) >> MPFR_LOG2_GMP_NUMB_BITS;
       tn = LIMB_SIZE(2 * h + 1 + as);
 
       /* we need h+1+as bits of a */
@@ -229,7 +229,7 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
          2h bits, and th at most h bits, then tn-th can store at least h bits,
          thus tn - th >= xn, and reserving the space for u is enough. */
       MPFR_ASSERTD(2 * xn <= un);
-      u = r = (mp_ptr) MPFR_TMP_ALLOC (un * sizeof (mp_limb_t));
+      u = r = (mpfr_limb_ptr) MPFR_TMP_ALLOC (un * sizeof (mp_limb_t));
       if (2 * h <= GMP_NUMB_BITS) /* xn=rn=1, and since p <= 2h-3, n=1,
                                      thus ln = 0 */
         {
@@ -253,7 +253,7 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
          i.e., at weight 2^{-2h} (s is aligned to the low significant bits)
        */
       sn = an + rn;
-      s = (mp_ptr) MPFR_TMP_ALLOC (sn * sizeof (mp_limb_t));
+      s = (mpfr_limb_ptr) MPFR_TMP_ALLOC (sn * sizeof (mp_limb_t));
       if (rn == 1) /* rn=1 implies n=1, since rn*GMP_NUMB_BITS >= 2h,
                            and 2h >= p+3 */
         {
@@ -375,20 +375,37 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
       MPFR_ASSERTD(un == ln + 1 || un == ln + 2);
       /* the high un-ln limbs of u will overlap the low part of {x+ln,xn},
          we need to add or subtract the overlapping part {u + ln, un - ln} */
+      /* Warning! th may be 0, in which case the mpn_add_1 and mpn_sub_1
+         below (with size = th) mustn't be used. In such a case, the limb
+         (carry) will be 0, so that this is semantically a no-op, but if
+         mpn_add_1 and mpn_sub_1 are used, GMP (currently) still does a
+         non-atomic read/write in a place that is not always allocated,
+         with the possible consequences: a crash if the corresponding
+         address is not mapped, or (rather unlikely) memory corruption
+         if another process/thread writes at the same place; things may
+         be worse with future GMP versions. Hence the tests carry != 0. */
       if (neg == 0)
         {
           if (ln > 0)
             MPN_COPY (x, u, ln);
           cy = mpn_add (x + ln, x + ln, xn, u + ln, un - ln);
           /* add cu at x+un */
-          cy += mpn_add_1 (x + un, x + un, th, cu);
+          if (cu != 0)
+            {
+              MPFR_ASSERTD (th != 0);
+              cy += mpn_add_1 (x + un, x + un, th, cu);
+            }
         }
       else /* negative case */
         {
           /* subtract {u+ln, un-ln} from {x+ln,un} */
           cy = mpn_sub (x + ln, x + ln, xn, u + ln, un - ln);
           /* carry cy is at x+un, like cu */
-          cy = mpn_sub_1 (x + un, x + un, th, cy + cu); /* n - un = th */
+          if (cy + cu != 0)
+            {
+              MPFR_ASSERTD (th != 0);
+              cy = mpn_sub_1 (x + un, x + un, th, cy + cu); /* n - un = th */
+            }
           /* cy cannot be zero, since the most significant bit of Xh is 1,
              and the correction is bounded by 2^{-h+3} */
           MPFR_ASSERTD(cy == 0);
@@ -416,12 +433,12 @@ mpfr_mpn_rec_sqrt (mp_ptr x, mp_prec_t p,
 }
 
 int
-mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
+mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)
 {
-  mp_prec_t rp, up, wp;
+  mpfr_prec_t rp, up, wp;
   mp_size_t rn, wn;
   int s, cy, inex;
-  mp_ptr x;
+  mpfr_limb_ptr x;
   int out_of_place;
   MPFR_TMP_DECL(marker);
 
@@ -466,7 +483,6 @@ mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
       MPFR_RET_NAN;
     }
 
-  MPFR_CLEAR_FLAGS(r);
   MPFR_SET_POS(r);
 
   rp = MPFR_PREC(r); /* output precision */
@@ -488,15 +504,15 @@ mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
      up to a full limb to maximize the chance of rounding, while avoiding
      to allocate extra space */
   wp = rp + 11;
-  if (wp < rn * BITS_PER_MP_LIMB)
-    wp = rn * BITS_PER_MP_LIMB;
+  if (wp < rn * GMP_NUMB_BITS)
+    wp = rn * GMP_NUMB_BITS;
   for (;;)
     {
       MPFR_TMP_MARK (marker);
       wn = LIMB_SIZE(wp);
       out_of_place = (r == u) || (wn > rn);
       if (out_of_place)
-        x = (mp_ptr) MPFR_TMP_ALLOC (wn * sizeof (mp_limb_t));
+        x = (mpfr_limb_ptr) MPFR_TMP_ALLOC (wn * sizeof (mp_limb_t));
       else
         x = MPFR_MANT(r);
       mpfr_mpn_rec_sqrt (x, wp, MPFR_MANT(u), up, s);
@@ -504,7 +520,7 @@ mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
          if the input was truncated, the error is at most two ulps
          (see algorithms.tex). */
       if (MPFR_LIKELY (mpfr_round_p (x, wn, wp - (wp < up),
-                                     rp + (rnd_mode == GMP_RNDN))))
+                                     rp + (rnd_mode == MPFR_RNDN))))
         break;
 
       /* We detect only now the exact case where u=2^(2e), to avoid
@@ -512,7 +528,7 @@ mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
          mantissa is exactly 1/2 and the exponent is odd. */
       if (s == 0 && mpfr_cmp_ui_2exp (u, 1, MPFR_EXP(u) - 1) == 0)
         {
-          mp_prec_t pl = wn * BITS_PER_MP_LIMB - wp;
+          mpfr_prec_t pl = wn * GMP_NUMB_BITS - wp;
 
           /* we should have x=111...111 */
           mpn_add_1 (x, x, wn, MPFR_LIMB_ONE << pl);
@@ -522,7 +538,7 @@ mpfr_rec_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
         }
       MPFR_TMP_FREE(marker);
 
-      wp += BITS_PER_MP_LIMB;
+      wp += GMP_NUMB_BITS;
     }
   cy = mpfr_round_raw (MPFR_MANT(r), x, wp, 0, rp, rnd_mode, &inex);
   MPFR_EXP(r) = - (MPFR_EXP(u) - 1 - s) / 2;

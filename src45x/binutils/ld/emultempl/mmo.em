@@ -75,7 +75,7 @@ mmo_place_orphan (asection *s,
      (regardless of whether the linker script lists it as input).  */
   if (os != NULL)
     {
-      lang_add_section (&os->children, s, os);
+      lang_add_section (&os->children, s, NULL, os);
       return os;
     }
 
@@ -151,6 +151,7 @@ mmo_after_open (void)
 		   is->the_bfd);
 	}
     }
+  after_open_default ();
 }
 EOF
 

@@ -310,8 +310,6 @@ AC_SUBST(POLYHEDRAL_BACKEND)
 POLYHEDRAL_BACKEND=polylib
 
 dnl Checking for PPL
-ppl_major_version=0
-ppl_minor_version=10
 AC_SUBST(PPL_CPPFLAGS)
 AC_SUBST(PPL_LDFLAGS)
 AC_SUBST(PPL_LIBS)
@@ -338,9 +336,9 @@ if test "x$with_ppl" != "x" -a "x$with_ppl" != "xno"; then
 	AC_CHECK_HEADER(ppl_c.h,[],
 		        [AC_MSG_ERROR(Can't find PPL headers.)])
 
-	AC_MSG_CHECKING([for version $ppl_major_version.$ppl_minor_version of PPL])
+	AC_MSG_CHECKING([for version 0.10 (or later revision) of PPL])
 	AC_TRY_COMPILE([#include "ppl_c.h"],[
-	#if PPL_VERSION_MAJOR != $ppl_major_version || PPL_VERSION_MINOR != $ppl_minor_version
+	#if PPL_VERSION_MAJOR != 0 || PPL_VERSION_MINOR < 10
 	choke me
 	#endif
 	], [AC_MSG_RESULT([yes])], [AC_MSG_ERROR(Can't find correct version of PPL.) ])
@@ -348,13 +346,38 @@ if test "x$with_ppl" != "x" -a "x$with_ppl" != "xno"; then
  	LIBS="$LIBS -lppl_c -lppl -lgmpxx -lstdc++"
  	if test x$host_alias = xi686-darwin8; then
  	    LIBS="$LIBS -lgcc_s.10.4"
- 	elif test x$host_alias = xi686-apple-darwin10; then
- 	    LIBS="$LIBS -lgcc_s.10.4"
  	elif test x$host_alias != xi686-mingw32; then
           if test x$host_alias != xi586-mingw32msvc; then
- 	    LIBS="$LIBS -lgcc_s"
+            if test x$host_alias!= xi386-ming32; then
+              LIBS="$LIBS -lgcc_s"
+            fi
           fi
  	fi
+	case "$host_alias" in
+	    *linux*)
+		LIBS="$LIBS -lm"
+		;;
+	esac
+	case "$host_alias" in
+	    *linux*)
+		LIBS="$LIBS -lm"
+		;;
+	esac
+	case "$host_alias" in
+	    *linux*)
+		LIBS="$LIBS -lm"
+		;;
+	esac
+	case "$host_alias" in
+	    *linux*)
+		LIBS="$LIBS -lm"
+		;;
+	esac
+	case "$host_alias" in
+	    *linux*)
+		LIBS="$LIBS -lm"
+		;;
+	esac
 	AC_DEFINE([CLOOG_PPL_BACKEND], 1, [Use the PPL backend])
 
 else

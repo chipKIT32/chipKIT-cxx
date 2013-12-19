@@ -99,7 +99,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #if defined(__ARM_ARCH_6__) || defined(__ARM_ARCH_6J__) \
 	|| defined(__ARM_ARCH_6K__) || defined(__ARM_ARCH_6Z__) \
 	|| defined(__ARM_ARCH_6ZK__) || defined(__ARM_ARCH_6T2__) \
-	|| defined(__ARM_ARCH_6M__)
+	|| defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6SM__)
 # define __ARM_ARCH__ 6
 #endif
 
@@ -113,6 +113,10 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #error Unable to determine architecture.
 #endif
 
+#if defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6SM__)
+#define __thumb1_only
+#endif
+
 /* There are times when we might prefer Thumb1 code even if ARM code is
    permitted, for example, the code might be smaller, or there might be
    interworking problems with switching to ARM state if interworking is
@@ -121,7 +125,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
      && !defined(__thumb2__)		\
      && (!defined(__THUMB_INTERWORK__)	\
 	 || defined (__OPTIMIZE_SIZE__)	\
-	 || defined(__ARM_ARCH_6M__)))
+	 || defined(__thumb1_only)))
 # define __prefer_thumb__
 #endif
 
@@ -336,7 +340,7 @@ _buildN1(do_pop, _buildC1(__VA_ARGS__))( __VA_ARGS__)
 
 #ifdef __ARM_EABI__
 .macro THUMB_LDIV0 name signed
-#if defined(__ARM_ARCH_6M__)
+#ifdef __thumb1_only
 	.ifc \signed, unsigned
 	cmp	r0, #0
 	beq	1f
@@ -495,7 +499,7 @@ _L__\name:
 
 #else /* !(__INTERWORKING_STUBS__ || __thumb2__) */
 
-#ifdef __ARM_ARCH_6M__
+#ifdef __thumb1_only
 #define EQUIV .thumb_set
 #else
 .macro	ARM_FUNC_START name
@@ -523,7 +527,7 @@ SYM (__\name):
 #endif
 .endm
 
-#ifndef __ARM_ARCH_6M__
+#ifndef __thumb1_only
 .macro	ARM_FUNC_ALIAS new old
 	.globl	SYM (__\new)
 	EQUIV	SYM (__\new), SYM (__\old)
@@ -1447,14 +1451,14 @@ LSYM(Lover12):
 
 #endif
 
-#if ((__ARM_ARCH__ > 5) && !defined(__ARM_ARCH_6M__)) \
+#if ((__ARM_ARCH__ > 5) && !defined(__thumb1_only)) \
     || defined(__ARM_ARCH_5E__) || defined(__ARM_ARCH_5TE__) \
     || defined(__ARM_ARCH_5TEJ__)
 #define HAVE_ARM_CLZ 1
 #endif
 
 #ifdef L_clzsi2
-#if defined(__ARM_ARCH_6M__)
+#ifdef __thumb1_only
 FUNC_START clzsi2
 	mov	r1, #28
 	mov	r3, #1
@@ -1515,7 +1519,7 @@ ARM_FUNC_START clzsi2
 #ifdef L_clzdi2
 #if !defined(HAVE_ARM_CLZ)
 
-# if defined(__ARM_ARCH_6M__)
+# ifdef __thumb1_only
 FUNC_START clzdi2
 	push	{r4, lr}
 # else
@@ -1540,7 +1544,7 @@ ARM_FUNC_START clzdi2
 	bl	__clzsi2
 # endif
 2:
-# if defined(__ARM_ARCH_6M__)
+# ifdef __thumb1_only
 	pop	{r4, pc}
 # else
 	RETLDM	r4
@@ -1613,7 +1617,7 @@ ARM_FUNC_START clzdi2
 
 /* Don't bother with the old interworking routines for Thumb-2.  */
 /* ??? Maybe only omit these on "m" variants.  */
-#if !defined(__thumb2__) && !defined(__ARM_ARCH_6M__)
+#if !defined(__thumb2__) && !defined(__thumb1_only)
 
 #if defined L_interwork_call_via_rX
 
@@ -1847,10 +1851,10 @@ LSYM(Lchange_\register):
 
 #endif /* Arch supports thumb.  */
 
-#ifndef __ARM_ARCH_6M__
+#ifndef __thumb1_only
 #include "ieee754-df.S"
 #include "ieee754-sf.S"
 #include "bpabi.S"
-#else /* __ARM_ARCH_6M__ */
+#else /* __thumb1_only */
 #include "bpabi-v6m.S"
-#endif /* __ARM_ARCH_6M__ */
+#endif /* __thumb1_only */

@@ -1,14 +1,14 @@
 /* Generic test file for functions with one or two arguments (the second being
    either mpfr_t or double).
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -17,9 +17,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 /* define TWO_ARGS for two-argument functions like mpfr_pow
    define DOUBLE_ARG1 or DOUBLE_ARG2 for function with a double operand in
@@ -50,12 +50,12 @@ MA 02110-1301, USA. */
   do                                                                    \
     {                                                                   \
       printf ("%s\nx = ", (S));                                         \
-      mpfr_out_str (stdout, 2, 0, (X), GMP_RNDN);                       \
+      mpfr_out_str (stdout, 2, 0, (X), MPFR_RNDN);                       \
       printf ("\n");                                                    \
       if ((void *) U != 0)                                              \
         {                                                               \
           printf ("u = ");                                              \
-          mpfr_out_str (stdout, 2, 0, (U), GMP_RNDN);                   \
+          mpfr_out_str (stdout, 2, 0, (U), MPFR_RNDN);                   \
           printf ("\n");                                                \
         }                                                               \
       printf ("yprec = %u, rnd_mode = %s, inexact = %d, flags = %u\n",  \
@@ -82,12 +82,12 @@ MA 02110-1301, USA. */
       printf ("tgeneric: testing function " STR(F)                      \
               ", %s, target prec = %lu\nx = ",                          \
               mpfr_print_rnd_mode (rnd), (unsigned long) (P));          \
-      mpfr_out_str (stdout, 2, 0, (X), GMP_RNDN);                       \
+      mpfr_out_str (stdout, 2, 0, (X), MPFR_RNDN);                       \
       printf ("\n");                                                    \
       if (U)                                                            \
         {                                                               \
           printf ("u = ");                                              \
-          mpfr_out_str (stdout, 2, 0, (U), GMP_RNDN);                   \
+          mpfr_out_str (stdout, 2, 0, (U), MPFR_RNDN);                   \
           printf ("\n");                                                \
         }                                                               \
     }                                                                   \
@@ -108,31 +108,28 @@ MA 02110-1301, USA. */
 #endif
 
 static void
-test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
+test_generic (mpfr_prec_t p0, mpfr_prec_t p1, unsigned int N)
 {
-  mp_prec_t prec, xprec, yprec;
-  mpfr_t x, y, z, t;
+  mpfr_prec_t prec, xprec, yprec;
+  mpfr_t x, y, z, t, w;
 #ifdef TWO_ARGS
   mpfr_t u;
 #elif defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
   mpfr_t u;
   double d;
 #endif
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
   int inexact, compare, compare2;
   unsigned int n;
   unsigned long ctrt = 0, ctrn = 0;
-  mp_exp_t old_emin, old_emax;
+  mpfr_exp_t old_emin, old_emax;
 
   old_emin = mpfr_get_emin ();
   old_emax = mpfr_get_emax ();
 
-  mpfr_init (x);
-  mpfr_init (y);
-  mpfr_init (z);
-  mpfr_init (t);
+  mpfr_inits2 (MPFR_PREC_MIN, x, y, z, t, w, (mpfr_ptr) 0);
 #if defined(TWO_ARGS) || defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
-  mpfr_init (u);
+  mpfr_init2 (u, MPFR_PREC_MIN);
 #endif
 
   /* generic test */
@@ -142,6 +139,7 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
       mpfr_set_prec (t, prec);
       yprec = prec + 10;
       mpfr_set_prec (y, yprec);
+      mpfr_set_prec (w, yprec);
 
       /* Note: in precision p1, we test 4 special cases. */
       for (n = 0; n < (prec == p1 ? N + 4 : N); n++)
@@ -184,10 +182,10 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
               set_emax (MPFR_EMAX_MAX);
               if (n <= 1)
                 {
-                  mpfr_set_si (x, n == 0 ? 1 : -1, GMP_RNDN);
+                  mpfr_set_si (x, n == 0 ? 1 : -1, MPFR_RNDN);
                   mpfr_set_exp (x, mpfr_get_emin ());
 #if defined(TWO_ARGS) || defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
-                  mpfr_set_si (u, randlimb () % 2 == 0 ? 1 : -1, GMP_RNDN);
+                  mpfr_set_si (u, randlimb () % 2 == 0 ? 1 : -1, MPFR_RNDN);
                   mpfr_set_exp (u, mpfr_get_emin ());
 #endif
                 }
@@ -195,10 +193,10 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
                 {
                   if (getenv ("MPFR_CHECK_MAX") == NULL)
                     goto next_n;
-                  mpfr_set_si (x, n == 0 ? 1 : -1, GMP_RNDN);
+                  mpfr_set_si (x, n == 0 ? 1 : -1, MPFR_RNDN);
                   mpfr_setmax (x, REDUCE_EMAX);
 #if defined(TWO_ARGS) || defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
-                  mpfr_set_si (u, randlimb () % 2 == 0 ? 1 : -1, GMP_RNDN);
+                  mpfr_set_si (u, randlimb () % 2 == 0 ? 1 : -1, MPFR_RNDN);
                   mpfr_setmax (u, mpfr_get_emax ());
 #endif
                 }
@@ -223,6 +221,90 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
           TGENERIC_CHECK ("Bad inexact flag",
                           (compare != 0) ^ (mpfr_inexflag_p () == 0));
           ctrt++;
+          /* Consistency test in a reduced exponent range. Doing it
+             for the first 10 samples and for prec == p1 (which has
+             some special cases) should be sufficient. */
+          if (ctrt <= 10 || prec == p1)
+            {
+              unsigned int flags, oldflags = __gmpfr_flags;
+              mpfr_exp_t e, emin, emax, oemin, oemax;
+
+              /* Determine the smallest exponent range containing the
+                 exponents of the mpfr_t inputs (x, and u if TWO_ARGS)
+                 and output (y). */
+              emin = MPFR_EMAX_MAX;
+              emax = MPFR_EMIN_MIN;
+              if (MPFR_IS_PURE_FP (x))
+                {
+                  e = MPFR_GET_EXP (x);
+                  if (e < emin)
+                    emin = e;
+                  if (e > emax)
+                    emax = e;
+                }
+              if (MPFR_IS_PURE_FP (y))
+                {
+                  e = MPFR_GET_EXP (y);
+                  if (e < emin)
+                    emin = e;
+                  if (e > emax)
+                    emax = e;
+                }
+#if defined(TWO_ARGS)
+              if (MPFR_IS_PURE_FP (u))
+                {
+                  e = MPFR_GET_EXP (u);
+                  if (e < emin)
+                    emin = e;
+                  if (e > emax)
+                    emax = e;
+                }
+#endif
+              if (emin > emax)
+                emin = emax;  /* case where all values are singular */
+              oemin = mpfr_get_emin ();
+              oemax = mpfr_get_emax ();
+              mpfr_set_emin (emin);
+              mpfr_set_emax (emax);
+              mpfr_clear_flags ();
+#if defined(TWO_ARGS)
+              inexact = TEST_FUNCTION (w, x, u, rnd);
+#elif defined(DOUBLE_ARG1)
+              inexact = TEST_FUNCTION (w, d, x, rnd);
+#elif defined(DOUBLE_ARG2)
+              inexact = TEST_FUNCTION (w, x, d, rnd);
+#else
+              inexact = TEST_FUNCTION (w, x, rnd);
+#endif
+              flags = __gmpfr_flags;
+              mpfr_set_emin (oemin);
+              mpfr_set_emax (oemax);
+              if (! (SAME_VAL (w, y) &&
+                     SAME_SIGN (inexact, compare) &&
+                     flags == oldflags))
+                {
+                  printf ("Error in reduced exponent range [%"
+                          MPFR_EXP_FSPEC "d,%" MPFR_EXP_FSPEC "d] on:\n",
+                          (mpfr_eexp_t) emin, (mpfr_eexp_t) emax);
+                  printf ("x = ");
+                  mpfr_dump (x);
+#if defined(TWO_ARGS) || defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
+                  printf ("u = ");
+                  mpfr_dump (u);
+#endif
+                  printf ("yprec = %u, rnd_mode = %s\n",
+                          (unsigned int) yprec, mpfr_print_rnd_mode (rnd));
+                  printf ("Expected:\n  y = ");
+                  mpfr_dump (y);
+                  printf ("  inex = %d, flags = %u\n",
+                          SIGN (compare), oldflags);
+                  printf ("Got:\n  w = ");
+                  mpfr_dump (w);
+                  printf ("  inex = %d, flags = %u\n",
+                          SIGN (inexact), flags);
+                  exit (1);
+                }
+            }
           if (MPFR_IS_SINGULAR (y))
             {
               if (MPFR_IS_NAN (y) || mpfr_nanflag_p ())
@@ -264,13 +346,13 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
               TGENERIC_INFO (TEST_FUNCTION, MPFR_PREC (z));
 #endif
               /* Let's increase the precision of the inputs in a random way.
-                 In most cases, this doesn't make any difference, but this
-                 triggers the mpfr_fmod bug fixed in r6235. */
+                 In most cases, this doesn't make any difference, but for
+                 the mpfr_fmod bug fixed in r6230, this triggers the bug. */
               mpfr_prec_round (x, mpfr_get_prec (x) + (randlimb () & 15),
-                               GMP_RNDN);
+                               MPFR_RNDN);
 #if defined(TWO_ARGS)
               mpfr_prec_round (u, mpfr_get_prec (u) + (randlimb () & 15),
-                               GMP_RNDN);
+                               MPFR_RNDN);
               inexact = TEST_FUNCTION (z, x, u, rnd);
 #elif defined(DOUBLE_ARG1)
               inexact = TEST_FUNCTION (z, d, x, rnd);
@@ -284,21 +366,21 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
               if (mpfr_nan_p (z) || mpfr_cmp (t, z) != 0)
                 {
                   printf ("results differ for x=");
-                  mpfr_out_str (stdout, 2, xprec, x, GMP_RNDN);
+                  mpfr_out_str (stdout, 2, xprec, x, MPFR_RNDN);
 #ifdef TWO_ARGS
                   printf ("\nu=");
-                  mpfr_out_str (stdout, 2, xprec, u, GMP_RNDN);
+                  mpfr_out_str (stdout, 2, xprec, u, MPFR_RNDN);
 #elif defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
                   printf ("\nu=");
-                  mpfr_out_str (stdout, 2, IEEE_DBL_MANT_DIG, u, GMP_RNDN);
+                  mpfr_out_str (stdout, 2, IEEE_DBL_MANT_DIG, u, MPFR_RNDN);
 #endif
                   printf (" prec=%u rnd_mode=%s\n", (unsigned) prec,
                           mpfr_print_rnd_mode (rnd));
                   printf ("got      ");
-                  mpfr_out_str (stdout, 2, prec, z, GMP_RNDN);
+                  mpfr_out_str (stdout, 2, prec, z, MPFR_RNDN);
                   puts ("");
                   printf ("expected ");
-                  mpfr_out_str (stdout, 2, prec, t, GMP_RNDN);
+                  mpfr_out_str (stdout, 2, prec, t, MPFR_RNDN);
                   puts ("");
                   printf ("approx   ");
                   mpfr_print_binary (y);
@@ -362,10 +444,7 @@ test_generic (mp_prec_t p0, mp_prec_t p1, unsigned int N)
             ctrn, ctrt);
 #endif
 
-  mpfr_clear (x);
-  mpfr_clear (y);
-  mpfr_clear (z);
-  mpfr_clear (t);
+  mpfr_clears (x, y, z, t, w, (mpfr_ptr) 0);
 #if defined(TWO_ARGS) || defined(DOUBLE_ARG1) || defined(DOUBLE_ARG2)
   mpfr_clear (u);
 #endif

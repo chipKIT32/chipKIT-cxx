@@ -1,6 +1,6 @@
 /* mpc.h -- Include file for mpc.
 
-Copyright (C) 2002, 2003, 2004, 2005, 2007, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2003, 2004, 2005, 2007, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -25,11 +25,16 @@ MA 02111-1307, USA. */
 #include "gmp.h"
 #include "mpfr.h"
 
+/* Backwards compatibility with mpfr<3.0.0 */
+#ifndef mpfr_exp_t
+#define mpfr_exp_t mp_exp_t
+#endif
+
 /* Define MPC version number */
 #define MPC_VERSION_MAJOR 0
-#define MPC_VERSION_MINOR 8
-#define MPC_VERSION_PATCHLEVEL 1
-#define MPC_VERSION_STRING "0.8.1"
+#define MPC_VERSION_MINOR 9
+#define MPC_VERSION_PATCHLEVEL 0
+#define MPC_VERSION_STRING "0.9"
 
 /* Macros dealing with MPC VERSION */
 #define MPC_VERSION_NUM(a,b,c) (((a) << 16L) | ((b) << 8) | (c))
@@ -46,6 +51,11 @@ MA 02111-1307, USA. */
 # define _MPC_H_HAVE_INTMAX_T 1
 #endif
 
+/* Check if complex.h is included */
+#if defined (_COMPLEX_H)
+# define _MPC_H_HAVE_COMPLEX 1
+#endif
+
 /* Return values */
 
 /* Transform negative to 2, positive to 1, leave 0 unchanged */
@@ -53,7 +63,7 @@ MA 02111-1307, USA. */
 /* Transform 2 to negative, 1 to positive, leave 0 unchanged */
 #define MPC_INEX_NEG(inex) (((inex) == 2) ? -1 : ((inex) == 0) ? 0 : 1)
 
-/* the global inexact flag is made of (real flag) + 4 * (imaginary flag), where
+/* The global inexact flag is made of (real flag) + 4 * (imaginary flag), where
    each of the real and imaginary inexact flag are:
    0 when the result is exact (no rounding error)
    1 when the result is larger than the exact value
@@ -63,6 +73,12 @@ MA 02111-1307, USA. */
 #define MPC_INEX_RE(inex) MPC_INEX_NEG((inex) & 3)
 #define MPC_INEX_IM(inex) MPC_INEX_NEG((inex) >> 2)
 
+/* For functions computing two results, the return value is
+   inexact1+16*inexact2, which is 0 iif both results are exact. */
+#define MPC_INEX12(inex1, inex2) (inex1 | (inex2 << 4))
+#define MPC_INEX1(inex) (inex & 15)
+#define MPC_INEX2(inex) (inex >> 4)
+
 /* Definition of rounding modes */
 
 /* a complex rounding mode is just a pair of two real rounding modes
@@ -70,8 +86,8 @@ MA 02111-1307, USA. */
 typedef int mpc_rnd_t;
 
 #define RNDC(r1,r2) (((int)(r1)) + ((int)(r2) << 4))
-#define MPC_RND_RE(x) ((mp_rnd_t)((x) & 0x0F))
-#define MPC_RND_IM(x) ((mp_rnd_t)((x) >> 4))
+#define MPC_RND_RE(x) ((mpfr_rnd_t)((x) & 0x0F))
+#define MPC_RND_IM(x) ((mpfr_rnd_t)((x) >> 4))
 
 #define MPC_RNDNN RNDC(GMP_RNDN,GMP_RNDN)
 #define MPC_RNDNZ RNDC(GMP_RNDN,GMP_RNDZ)
@@ -130,6 +146,7 @@ extern "C" {
 
 __MPC_DECLSPEC int  mpc_add    __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_add_fr __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpfr_srcptr, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_add_si __MPC_PROTO ((mpc_ptr, mpc_srcptr, long int, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_add_ui __MPC_PROTO ((mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_sub    __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_sub_fr __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpfr_srcptr, mpc_rnd_t));
@@ -158,8 +175,8 @@ __MPC_DECLSPEC int  mpc_div_2exp __MPC_PROTO ((mpc_ptr, mpc_srcptr, unsigned lon
 __MPC_DECLSPEC int  mpc_mul_2exp __MPC_PROTO ((mpc_ptr, mpc_srcptr, unsigned long int, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_conj  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_neg   __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
-__MPC_DECLSPEC int  mpc_norm  __MPC_PROTO ((mpfr_ptr, mpc_srcptr, mp_rnd_t));
-__MPC_DECLSPEC int  mpc_abs   __MPC_PROTO ((mpfr_ptr, mpc_srcptr, mp_rnd_t));
+__MPC_DECLSPEC int  mpc_norm  __MPC_PROTO ((mpfr_ptr, mpc_srcptr, mpfr_rnd_t));
+__MPC_DECLSPEC int  mpc_abs   __MPC_PROTO ((mpfr_ptr, mpc_srcptr, mpfr_rnd_t));
 __MPC_DECLSPEC int  mpc_sqrt  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set       __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set_d     __MPC_PROTO ((mpc_ptr, double, mpc_rnd_t));
@@ -179,12 +196,20 @@ __MPC_DECLSPEC int  mpc_set_ui_ui __MPC_PROTO ((mpc_ptr, unsigned long int, unsi
 __MPC_DECLSPEC int  mpc_set_z     __MPC_PROTO ((mpc_ptr, mpz_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set_z_z   __MPC_PROTO ((mpc_ptr, mpz_srcptr, mpz_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC void mpc_swap      __MPC_PROTO ((mpc_ptr, mpc_ptr));
+__MPC_DECLSPEC int  mpc_fma       __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
 
 #ifdef _MPC_H_HAVE_INTMAX_T
 __MPC_DECLSPEC int  mpc_set_sj __MPC_PROTO ((mpc_ptr, intmax_t, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set_uj __MPC_PROTO ((mpc_ptr, uintmax_t,  mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set_sj_sj __MPC_PROTO ((mpc_ptr, intmax_t, intmax_t, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_set_uj_uj __MPC_PROTO ((mpc_ptr, uintmax_t, uintmax_t, mpc_rnd_t));
+#endif
+
+#ifdef _MPC_H_HAVE_COMPLEX
+__MPC_DECLSPEC int  mpc_set_dc __MPC_PROTO ((mpc_ptr, double _Complex, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_set_ldc __MPC_PROTO ((mpc_ptr, long double _Complex, mpc_rnd_t));
+__MPC_DECLSPEC double _Complex  mpc_get_dc __MPC_PROTO ((mpc_srcptr, mpc_rnd_t));
+__MPC_DECLSPEC long double _Complex  mpc_get_ldc __MPC_PROTO ((mpc_srcptr, mpc_rnd_t));
 #endif
 
 __MPC_DECLSPEC void mpc_set_nan     __MPC_PROTO ((mpc_ptr));
@@ -199,6 +224,7 @@ __MPC_DECLSPEC int  mpc_exp  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_log  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_sin  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_cos  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_sin_cos  __MPC_PROTO ((mpc_ptr, mpc_ptr, mpc_srcptr, mpc_rnd_t, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_tan  __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_sinh __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_cosh __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
@@ -211,15 +237,15 @@ __MPC_DECLSPEC int  mpc_acosh __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_atanh __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC void mpc_clear   __MPC_PROTO ((mpc_ptr));
 __MPC_DECLSPEC int  mpc_urandom __MPC_PROTO ((mpc_ptr, gmp_randstate_t));
-__MPC_DECLSPEC void mpc_init2 __MPC_PROTO ((mpc_ptr, mp_prec_t));
-__MPC_DECLSPEC void mpc_init3 __MPC_PROTO ((mpc_ptr, mp_prec_t, mp_prec_t));
-__MPC_DECLSPEC mp_prec_t mpc_get_prec __MPC_PROTO((mpc_srcptr x));
-__MPC_DECLSPEC void mpc_get_prec2 __MPC_PROTO((mp_prec_t *pr, mp_prec_t *pi, mpc_srcptr x));
-__MPC_DECLSPEC void mpc_set_prec  __MPC_PROTO ((mpc_ptr, mp_prec_t));
+__MPC_DECLSPEC void mpc_init2 __MPC_PROTO ((mpc_ptr, mpfr_prec_t));
+__MPC_DECLSPEC void mpc_init3 __MPC_PROTO ((mpc_ptr, mpfr_prec_t, mpfr_prec_t));
+__MPC_DECLSPEC mpfr_prec_t mpc_get_prec __MPC_PROTO((mpc_srcptr x));
+__MPC_DECLSPEC void mpc_get_prec2 __MPC_PROTO((mpfr_prec_t *pr, mpfr_prec_t *pi, mpc_srcptr x));
+__MPC_DECLSPEC void mpc_set_prec  __MPC_PROTO ((mpc_ptr, mpfr_prec_t));
 __MPC_DECLSPEC __gmp_const char * mpc_get_version __MPC_PROTO ((void));
 
-__MPC_DECLSPEC int  mpc_strtoc    _MPFR_PROTO ((mpc_ptr, char *, char **, int, mpc_rnd_t));
-__MPC_DECLSPEC int  mpc_set_str   _MPFR_PROTO ((mpc_ptr, char *, int, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_strtoc    _MPFR_PROTO ((mpc_ptr, const char *, char **, int, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_set_str   _MPFR_PROTO ((mpc_ptr, const char *, int, mpc_rnd_t));
 __MPC_DECLSPEC char * mpc_get_str _MPFR_PROTO ((int, size_t, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC void mpc_free_str  _MPFR_PROTO ((char *));
 #ifdef _MPC_H_HAVE_FILE
@@ -234,8 +260,6 @@ __MPC_DECLSPEC size_t mpc_out_str __MPC_PROTO ((FILE *, int, size_t, mpc_srcptr,
 #define mpc_realref(x) ((x)->re)
 #define mpc_imagref(x) ((x)->im)
 
-#define mpc_add_si(x, y, z, rnd) \
- ( (z) >= 0 ? mpc_add_ui ((x), (y), (unsigned long int) (z), (rnd)) : mpc_sub_ui ((x), (y), (unsigned long int) (-(z)), (rnd)) )
 #define mpc_cmp_si(x, y) \
  ( mpc_cmp_si_si ((x), (y), 0l) )
 #define mpc_ui_sub(x, y, z, r) mpc_ui_ui_sub (x, y, 0ul, z, r)

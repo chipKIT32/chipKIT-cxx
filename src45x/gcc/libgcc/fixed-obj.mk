@@ -22,10 +22,10 @@ endif
 
 #$(info $o$(objext): -DL$($o-label) $($o-opt))
 
-$o$(objext): %$(objext): $(gcc_srcdir)/config/fixed-bit.c
+$o$(objext): %$(objext): $(gcc_srcdir)/config/fixed-bit.c $(FIXED_BIT_MACHINE)
 	$(gcc_compile) -DL$($*-label) $($*-opt) -c $(gcc_srcdir)/config/fixed-bit.c $(vis_hide)
 
 ifeq ($(enable_shared),yes)
-$(o)_s$(objext): %_s$(objext): $(gcc_srcdir)/config/fixed-bit.c
+$(o)_s$(objext): %_s$(objext): $(gcc_srcdir)/config/fixed-bit.c $(FIXED_BIT_MACHINE)
 	$(gcc_s_compile) -DL$($*-label) $($*-opt) -c $(gcc_srcdir)/config/fixed-bit.c
 endif

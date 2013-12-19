@@ -826,6 +826,11 @@ DEFPARAM (PARAM_IPA_SRA_PTR_GROWTH_FACTOR,
 	  "a pointer to an aggregate with",
 	  2, 0, 0)
 
+DEFPARAM (PARAM_IF_TO_SWITCH_THRESHOLD,
+	  "if-to-switch-threshold",
+	  "Threshold for converting an if-chain into a switch",
+	  3, 0, 0)
+
 /*
 Local variables:
 mode:c

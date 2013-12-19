@@ -1,6 +1,6 @@
 /* mpc_mul -- Multiply two complex numbers
 
-Copyright (C) 2002, 2004, 2005, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2004, 2005, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -109,16 +109,24 @@ mpc_mul (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
     /* note that a cannot be a zero */
     return mul_pure_imaginary (a, b, MPC_IM (c), rnd, (a == b || a == c));
 
+  /* Check if b==c and call mpc_sqr in this case, to make sure            */
+  /* mpc_mul(a,b,b) behaves exactly like mpc_sqr(a,b) concerning          */
+  /* internal overflows etc.                                              */
+  if (mpc_cmp (b, c) == 0)
+     return mpc_sqr (a, b, rnd);
+
   /* If the real and imaginary part of one argument have a very different */
   /* exponent, it is not reasonable to use Karatsuba multiplication.      */
-  if (   SAFE_ABS (mp_exp_t, MPFR_EXP (MPC_RE (b)) - MPFR_EXP (MPC_IM (b)))
-         > (mp_exp_t) MPC_MAX_PREC (b) / 2
-         || SAFE_ABS (mp_exp_t, MPFR_EXP (MPC_RE (c)) - MPFR_EXP (MPC_IM (c)))
-         > (mp_exp_t) MPC_MAX_PREC (c) / 2)
+  if (   SAFE_ABS (mpfr_exp_t,
+                   mpfr_get_exp (MPC_RE (b)) - mpfr_get_exp (MPC_IM (b)))
+         > (mpfr_exp_t) MPC_MAX_PREC (b) / 2
+      || SAFE_ABS (mpfr_exp_t,
+                   mpfr_get_exp (MPC_RE (c)) - mpfr_get_exp (MPC_IM (c)))
+         > (mpfr_exp_t) MPC_MAX_PREC (c) / 2)
     return mpc_mul_naive (a, b, c, rnd);
   else
     return ((MPC_MAX_PREC(a)
-             <= (mp_prec_t) MUL_KARATSUBA_THRESHOLD * BITS_PER_MP_LIMB)
+             <= (mpfr_prec_t) MUL_KARATSUBA_THRESHOLD * BITS_PER_MP_LIMB)
             ? mpc_mul_naive : mpc_mul_karatsuba) (a, b, c, rnd);
 }
 
@@ -222,7 +230,7 @@ mul_pure_imaginary (mpc_ptr a, mpc_srcptr u, mpfr_srcptr y, mpc_rnd_t rnd,
   mpc_t result;
 
   if (overlap)
-    mpc_init3 (result, MPFR_PREC (MPC_RE (a)), MPFR_PREC (MPC_IM (a)));
+    mpc_init3 (result, MPC_PREC_RE (a), MPC_PREC_IM (a));
   else
     result [0] = a [0];
 
@@ -240,9 +248,10 @@ mul_pure_imaginary (mpc_ptr a, mpc_srcptr u, mpfr_srcptr y, mpc_rnd_t rnd,
 int
 mpc_mul_naive (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
 {
+   /* We assume that b and c are different, which is checked in mpc_mul. */
   int overlap, inex_re, inex_im;
   mpfr_t u, v, t;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
 
   overlap = (a == b) || (a == c);
 
@@ -259,7 +268,7 @@ mpc_mul_naive (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
 
   if (overlap)
     {
-      mpfr_init2 (t, MPFR_PREC(MPC_RE(a)));
+      mpfr_init2 (t, MPC_PREC_RE(a));
       inex_re = mpfr_sub (t, u, v, MPC_RND_RE(rnd));
     }
   else
@@ -267,13 +276,8 @@ mpc_mul_naive (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
 
   /* Im(a) = Re(b)*Im(c) + Im(b)*Re(c) */
   mpfr_mul (u, MPC_RE(b), MPC_IM(c), GMP_RNDN); /* exact */
-  if (b == c) /* square case */
-    inex_im = mpfr_mul_2exp (MPC_IM(a), u, 1, MPC_RND_IM(rnd));
-  else
-    {
-      mpfr_mul (v, MPC_IM(b), MPC_RE(c), GMP_RNDN); /* exact */
-      inex_im = mpfr_add (MPC_IM(a), u, v, MPC_RND_IM(rnd));
-    }
+  mpfr_mul (v, MPC_IM(b), MPC_RE(c), GMP_RNDN); /* exact */
+  inex_im = mpfr_add (MPC_IM(a), u, v, MPC_RND_IM(rnd));
 
   mpfr_clear (u);
   mpfr_clear (v);
@@ -295,8 +299,8 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
   mpfr_srcptr a, b, c, d;
   int mul_i, ok, inexact, mul_a, mul_c, inex_re, inex_im, sign_x, sign_u;
   mpfr_t u, v, w, x;
-  mp_prec_t prec, prec_re, prec_u, prec_v, prec_w;
-  mp_rnd_t rnd_re, rnd_u, rnd_x;
+  mpfr_prec_t prec, prec_re, prec_u, prec_v, prec_w;
+  mpfr_rnd_t rnd_re, rnd_u;
   int overlap;
      /* true if rop == op1 or rop == op2 */
   mpc_t result;
@@ -306,11 +310,12 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
         imaginary part is used). If this fails, we have to start again and
         need the correct values of op1 and op2.
         So we just create a new variable for the result in this case. */
+  int loop;
+  const int MAX_MUL_LOOP = 1;
 
   overlap = (rop == op1) || (rop == op2);
   if (overlap)
-     mpc_init3 (result, MPFR_PREC (MPC_RE (rop)),
-                        MPFR_PREC (MPC_IM (rop)));
+     mpc_init3 (result, MPC_PREC_RE (rop), MPC_PREC_IM (rop));
   else
      result [0] = rop [0];
 
@@ -342,12 +347,12 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
   /* find the precision and rounding mode for the new real part */
   if (mul_i % 2)
     {
-      prec_re = MPFR_PREC(MPC_IM(rop));
+      prec_re = MPC_PREC_IM(rop);
       rnd_re = MPC_RND_IM(rnd);
     }
   else /* mul_i = 0 or 2 */
     {
-      prec_re = MPFR_PREC(MPC_RE(rop));
+      prec_re = MPC_PREC_RE(rop);
       rnd_re = MPC_RND_RE(rnd);
     }
 
@@ -358,8 +363,8 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
   prec = MPC_MAX_PREC(rop);
 
   mpfr_init2 (u, 2);
-  mpfr_init2 (v, prec_v = MPFR_PREC(a) + MPFR_PREC(d));
-  mpfr_init2 (w, prec_w = MPFR_PREC(b) + MPFR_PREC(c));
+  mpfr_init2 (v, prec_v = mpfr_get_prec (a) + mpfr_get_prec (d));
+  mpfr_init2 (w, prec_w = mpfr_get_prec (b) + mpfr_get_prec (c));
   mpfr_init2 (x, 2);
 
   mpfr_mul (v, a, d, GMP_RNDN); /* exact */
@@ -391,8 +396,10 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
     }
 
    /* now sign_x * sign_u >= 0 */
+   loop = 0;
    do
      {
+        loop++;
          /* the following should give failures with prob. <= 1/prec */
          prec += mpc_ceil_log2 (prec) + 3;
 
@@ -400,41 +407,38 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
          mpfr_set_prec (x, prec);
 
          /* first compute away(b +/- a) and store it in u */
-         rnd_u = (mpfr_sgn (a) > 0) ? GMP_RNDU : GMP_RNDD;
-         if (mul_a == -1)
-           rnd_u = INV_RND(rnd_u);
-         inexact = ((mul_a == -1) ? mpfr_sub : mpfr_add) (u, b, a, rnd_u);
+         inexact = (mul_a == -1 ?
+                    ROUND_AWAY (mpfr_sub (u, b, a, MPFR_RNDA), u) :
+                    ROUND_AWAY (mpfr_add (u, b, a, MPFR_RNDA), u));
 
          /* then compute away(+/-c - d) and store it in x */
-         rnd_x = (mpfr_sgn (c) > 0) ? GMP_RNDU : GMP_RNDD;
-         inexact |= ((mul_c == -1) ? mpfr_add : mpfr_sub) (x, c, d, rnd_x);
+         inexact |= (mul_c == -1 ?
+                     ROUND_AWAY (mpfr_add (x, c, d, MPFR_RNDA), x) :
+                     ROUND_AWAY (mpfr_sub (x, c, d, MPFR_RNDA), x));
          if (mul_c == -1)
            mpfr_neg (x, x, GMP_RNDN);
 
-	 if (inexact == 0)
-	   mpfr_prec_round (u, prec_u = 2 * prec, GMP_RNDN);
+         if (inexact == 0)
+            mpfr_prec_round (u, prec_u = 2 * prec, GMP_RNDN);
 
          /* compute away(u*x) and store it in u */
-         rnd_u = (sign_u > 0) ? GMP_RNDU : GMP_RNDD;
-         inexact |= mpfr_mul (u, u, x, rnd_u); /* (a+b)*(c-d) */
+         inexact |= ROUND_AWAY (mpfr_mul (u, u, x, MPFR_RNDA), u);
+            /* (a+b)*(c-d) */
 
 	 /* if all computations are exact up to here, it may be that
 	    the real part is exact, thus we need if possible to
 	    compute v - w exactly */
 	 if (inexact == 0)
 	   {
-	     mp_prec_t prec_x;
+	     mpfr_prec_t prec_x;
              if (mpfr_zero_p(v))
                prec_x = prec_w;
              else if (mpfr_zero_p(w))
                prec_x = prec_v;
              else
-               {
-                 prec_x = (MPFR_EXP(v) > MPFR_EXP(w)) ? MPFR_EXP(v) - MPFR_EXP(w)
-                   : MPFR_EXP(w) - MPFR_EXP(v);
-                 prec_x += MPC_MAX (prec_v, prec_w) + 1;
-               }
-           /* +1 is necessary for a potential carry */
+                 prec_x = SAFE_ABS (mpfr_exp_t, mpfr_get_exp (v) - mpfr_get_exp (w))
+                          + MPC_MAX (prec_v, prec_w) + 1;
+                 /* +1 is necessary for a potential carry */
 	     /* ensure we do not use a too large precision */
 	     if (prec_x > prec_u)
                prec_x = prec_u;
@@ -442,6 +446,7 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
 	       mpfr_prec_round (x, prec_x, GMP_RNDN);
 	   }
 
+         rnd_u = (sign_u > 0) ? GMP_RNDU : GMP_RNDD;
          inexact |= mpfr_sub (x, v, w, rnd_u); /* ad - bc */
 
          /* in case u=0, ensure that rnd_u rounds x away from zero */
@@ -455,54 +460,57 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
          /* this ensures both we can round correctly and determine the correct
             inexact flag (for rounding to nearest) */
      }
-   while (ok == 0);
+   while (!ok && loop <= MAX_MUL_LOOP);
+      /* after MAX_MUL_LOOP rounds, use mpc_naive instead */
 
-   /* if inexact is zero, then u is exactly ac-bd, otherwise fix the sign
-      of the inexact flag for u, which was rounded away from ac-bd */
-   if (inexact != 0)
-     inexact = mpfr_sgn (u);
+   if (ok) {
+      /* if inexact is zero, then u is exactly ac-bd, otherwise fix the sign
+         of the inexact flag for u, which was rounded away from ac-bd */
+      if (inexact != 0)
+      inexact = mpfr_sgn (u);
 
-   if (mul_i == 0)
-     {
-       inex_re = mpfr_set (MPC_RE(result), u, MPC_RND_RE(rnd));
-       if (inex_re == 0)
-         {
-           inex_re = inexact; /* u is rounded away from 0 */
-           inex_im = mpfr_add (MPC_IM(result), v, w, MPC_RND_IM(rnd));
-         }
-       else
-         inex_im = mpfr_add (MPC_IM(result), v, w, MPC_RND_IM(rnd));
-     }
-   else if (mul_i == 1) /* (x+i*y)/i = y - i*x */
-     {
-       inex_im = mpfr_neg (MPC_IM(result), u, MPC_RND_IM(rnd));
-       if (inex_im == 0)
-         {
-           inex_im = -inexact; /* u is rounded away from 0 */
-           inex_re = mpfr_add (MPC_RE(result), v, w, MPC_RND_RE(rnd));
-         }
-       else
-         inex_re = mpfr_add (MPC_RE(result), v, w, MPC_RND_RE(rnd));
-     }
-   else /* mul_i = 2, z/i^2 = -z */
-     {
-       inex_re = mpfr_neg (MPC_RE(result), u, MPC_RND_RE(rnd));
-       if (inex_re == 0)
-         {
-           inex_re = -inexact; /* u is rounded away from 0 */
-           inex_im = -mpfr_add (MPC_IM(result), v, w,
-                                INV_RND(MPC_RND_IM(rnd)));
-           mpfr_neg (MPC_IM(result), MPC_IM(result), MPC_RND_IM(rnd));
-         }
-       else
-         {
-           inex_im = -mpfr_add (MPC_IM(result), v, w,
-                                INV_RND(MPC_RND_IM(rnd)));
-           mpfr_neg (MPC_IM(result), MPC_IM(result), MPC_RND_IM(rnd));
-         }
-     }
+      if (mul_i == 0)
+      {
+         inex_re = mpfr_set (MPC_RE(result), u, MPC_RND_RE(rnd));
+         if (inex_re == 0)
+            {
+            inex_re = inexact; /* u is rounded away from 0 */
+            inex_im = mpfr_add (MPC_IM(result), v, w, MPC_RND_IM(rnd));
+            }
+         else
+            inex_im = mpfr_add (MPC_IM(result), v, w, MPC_RND_IM(rnd));
+      }
+      else if (mul_i == 1) /* (x+i*y)/i = y - i*x */
+      {
+         inex_im = mpfr_neg (MPC_IM(result), u, MPC_RND_IM(rnd));
+         if (inex_im == 0)
+            {
+            inex_im = -inexact; /* u is rounded away from 0 */
+            inex_re = mpfr_add (MPC_RE(result), v, w, MPC_RND_RE(rnd));
+            }
+         else
+            inex_re = mpfr_add (MPC_RE(result), v, w, MPC_RND_RE(rnd));
+      }
+      else /* mul_i = 2, z/i^2 = -z */
+      {
+         inex_re = mpfr_neg (MPC_RE(result), u, MPC_RND_RE(rnd));
+         if (inex_re == 0)
+            {
+            inex_re = -inexact; /* u is rounded away from 0 */
+            inex_im = -mpfr_add (MPC_IM(result), v, w,
+                                 INV_RND(MPC_RND_IM(rnd)));
+            mpfr_neg (MPC_IM(result), MPC_IM(result), MPC_RND_IM(rnd));
+            }
+         else
+            {
+            inex_im = -mpfr_add (MPC_IM(result), v, w,
+                                 INV_RND(MPC_RND_IM(rnd)));
+            mpfr_neg (MPC_IM(result), MPC_IM(result), MPC_RND_IM(rnd));
+            }
+      }
 
-   mpc_set (rop, result, MPC_RNDNN);
+      mpc_set (rop, result, MPC_RNDNN);
+   }
 
    mpfr_clear (u);
    mpfr_clear (v);
@@ -511,5 +519,8 @@ mpc_mul_karatsuba (mpc_ptr rop, mpc_srcptr op1, mpc_srcptr op2, mpc_rnd_t rnd)
    if (overlap)
       mpc_clear (result);
 
-   return MPC_INEX(inex_re, inex_im);
+   if (ok)
+      return MPC_INEX(inex_re, inex_im);
+   else
+      return mpc_mul_naive (rop, op1, op2, rnd);
 }

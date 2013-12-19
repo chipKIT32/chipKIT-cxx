@@ -1,6 +1,6 @@
 /* tsqr -- test file for mpc_sqr.
 
-Copyright (C) 2002, 2005, 2008 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2005, 2008, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -23,11 +23,7 @@ MA 02111-1307, USA. */
 #include <stdlib.h>
 #include "mpc-tests.h"
 
-void cmpsqr (mpc_srcptr, mpc_rnd_t);
-void testsqr (long, long, mp_prec_t, mpc_rnd_t);
-void special (void);
-
-void cmpsqr (mpc_srcptr x, mpc_rnd_t rnd)
+static void cmpsqr (mpc_srcptr x, mpc_rnd_t rnd)
    /* computes the square of x with the specific function or by simple     */
    /* multiplication using the rounding mode rnd and compares the results  */
    /* and return values.                                                   */
@@ -130,8 +126,8 @@ void cmpsqr (mpc_srcptr x, mpc_rnd_t rnd)
 }
 
 
-void
-testsqr (long a, long b, mp_prec_t prec, mpc_rnd_t rnd)
+static void
+testsqr (long a, long b, mpfr_prec_t prec, mpc_rnd_t rnd)
 {
   mpc_t x;
 
@@ -145,35 +141,8 @@ testsqr (long a, long b, mp_prec_t prec, mpc_rnd_t rnd)
 }
 
 
-void
-special (void)
-{
-  mpc_t x, z;
-  int inexact;
-
-  mpc_init2 (x, 8);
-  mpc_init2 (z, 8);
-
-  mpc_set_si_si (x, 4, 3, MPC_RNDNN);
-  inexact = mpc_sqr (z, x, MPC_RNDNN);
-  if (MPC_INEX_RE(inexact) || MPC_INEX_IM(inexact))
-    {
-      fprintf (stderr, "Error: (4+3*I)^2 should be exact with prec=8\n");
-      exit (1);
-    }
-
-  mpc_set_prec (x, 27);
-  mpfr_set_str (MPC_RE(x), "1.11111011011000010101000000e-2", 2, GMP_RNDN);
-  mpfr_set_str (MPC_IM(x), "1.11010001010110111001110001e-3", 2, GMP_RNDN);
-
-  cmpsqr (x, 0);
-
-  mpc_clear (x);
-  mpc_clear (z);
-}
-
-void
-bugs (void)
+static void
+reuse_bug (void)
 {
   mpc_t z1;
 
@@ -189,41 +158,11 @@ bugs (void)
       ||!mpfr_zero_p (MPC_IM (z1)) || !mpfr_signbit (MPC_IM (z1)))
     {
       printf ("Error: Regression, bug 20081021 reproduced\n");
-      OUT (z1);
+      MPC_OUT (z1);
       exit (1);
     }
 
   mpc_clear (z1);
-}
-
-/* infinite loop */
-void
-bug20090930 (void)
-{
-  mpc_t rop, op;
-
-  mpc_init2 (rop, 3464);
-  mpc_init2 (op, 866);
-  mpfr_set_str (MPC_RE(op), "-2.5763c6519ef1510f8afa101a210b8030b1909cc17004db561a25d9b53e2c08c41c01e8bbac5af6299b9d8786030aa14943d841798c8c369287942e4d4cec42a60ab0922af931159805e631128e97f973754ad53972d5d320a651a3b4a667f0ef2b92dbd698d159c3642675140@192158913", 16, GMP_RNDN);
-  mpfr_set_str (MPC_IM(op), "-d.15f2d530934dd930d66e89d70762d2337a8f973dd6915eb6b532fd372fcc955df1d852632d4e46fe64154ceda991a1302caf1b0ec622497e3e5724dd05b1c89a06e28d7e18e8af58f5ff4c9998cb31714688867524f41e0b31e847c1bf40de5127f858069998efd7c3e599080@192158893", 16, GMP_RNDN);
-  mpc_sqr (rop, op, MPC_RNDNN);
-  mpc_clear (rop);
-  mpc_clear (op);
-}
-
-/* other infinite loop */
-void
-bug20091001 (void)
-{
-  mpc_t rop, op;
-
-  mpc_init2 (rop, 2256);
-  mpc_init2 (op, 564);
-  mpfr_set_str (MPC_RE(op), "c.87999bfd1cb1a64288881e214b7cf1af979863b23c030b79c4a8bebb39177967608388a2e4df527977e7755a25df8af8f72fdd6dd2f42bd00de83088b4e9b59ce85caf2e6b0c0@-184298749", 16, GMP_RNDN);
-  mpfr_set_str (MPC_IM(op), "-2.5109af459d4daf357e09475ec991cdc9b02c8f7dfacdc060d2a24710d09c997f8aea6dbd46f10828c30b583fdcc90d7dcbb895689d594d3813db40784d2309e450d1fb6e38da8@-184298726", 16, GMP_RNDN);
-  mpc_sqr (rop, op, MPC_RNDNN);
-  mpc_clear (rop);
-  mpc_clear (op);
 }
 
 int
@@ -231,11 +170,6 @@ main (void)
 {
   DECL_FUNC (CC, f, mpc_sqr);
   test_start ();
-
-  bug20091001 ();
-  bug20090930 ();
-
-  special ();
 
   testsqr (247, -65, 8, 24);
   testsqr (5, -896, 3, 2);
@@ -250,9 +184,7 @@ main (void)
   data_check (f, "sqr.dat");
   tgeneric (f, 2, 1024, 1, 0);
 
-  bugs ();
-
-  test_end ();
+  reuse_bug ();
 
   return 0;
 }

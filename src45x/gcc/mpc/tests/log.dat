@@ -1,6 +1,6 @@
 # Data test file for mpc_log.
 
-# Copyright (C) 2008, 2009 Paul Zimmermann, Andreas Enge
+# Copyright (C) INRIA, 2008, 2009, 2010
 
 # This file is part of the MPC Library.
 #
@@ -30,9 +30,7 @@
 0 - 2 -inf 53 +0x3243F6A8885A3p-48   2 -0 2 +0     N N
 0 + 2 -inf 53 -0x3243F6A8885A3p-48   2 -0 2 -0     N N
 0 - 2 -inf 53 +0x3243F6A8885A3p-48   2 -0 2 +0     N D
-# The following test reveals a bug in mpfr-2.4.1 and should be disabled for
-# the release as long as mpc does not require a more recent version of mpfr.
-# 0 - 2 -inf 53 -0x3243F6A8885A32p-52  2 -0 2 -0     N D
+0 - 2 -inf 53 -0x3243F6A8885A32p-52  2 -0 2 -0     N D
 
 # log(+0 + i*0) = -inf + i*0
 0 0 2 -inf 2 +0                      2 +0 2 +0    N N

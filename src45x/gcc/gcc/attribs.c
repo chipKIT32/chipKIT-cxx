@@ -402,12 +402,16 @@ decl_attributes (tree *node, tree attributes, int flags)
 						    flags, &no_add_attrs),
 				  returned_attrs);
 
+#ifndef _BUILD_C30_
       /* Layout the decl in case anything changed.  */
       if (spec->type_required && DECL_P (*node)
 	  && (TREE_CODE (*node) == VAR_DECL
 	      || TREE_CODE (*node) == PARM_DECL
 	      || TREE_CODE (*node) == RESULT_DECL))
 	relayout_decl (*node);
+#else
+      /* some C30 attributes can affect type layout, so apply them first */
+#endif
 
       if (!no_add_attrs)
 	{
@@ -459,6 +463,17 @@ decl_attributes (tree *node, tree attributes, int flags)
 								  old_attrs));
 	    }
 	}
+
+#ifdef _BUILD_C30_
+      /* Layout the decl in case anything changed.  */
+      if (spec->type_required && DECL_P (*node)
+          && (TREE_CODE (*node) == VAR_DECL
+              || TREE_CODE (*node) == PARM_DECL
+              || TREE_CODE (*node) == RESULT_DECL)) {
+        relayout_type (*anode);
+        relayout_decl (*node);
+      }
+#endif
 
       if (fn_ptr_tmp)
 	{

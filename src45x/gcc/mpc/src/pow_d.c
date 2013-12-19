@@ -1,6 +1,6 @@
 /* mpc_pow_d -- Raise a complex number to a double-precision power.
 
-Copyright (C) 2009 Paul Zimmermann
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 

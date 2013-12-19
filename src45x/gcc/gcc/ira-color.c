@@ -82,6 +82,12 @@ static alloc_pool splay_tree_node_pool;
    more costly although simpler.  */
 static VEC(ira_allocno_t,heap) *removed_splay_allocno_vec;
 
+/* Helper for qsort comparison callbacks - return a positive integer if
+   X > Y, or a negative value otherwise.  Use a conditional expression
+   instead of a difference computation to insulate from possible overflow
+   issues, e.g. X - Y < 0 for some X > 0 and Y < 0.  */
+#define SORTGT(x,y) (((x) > (y)) ? 1 : -1)
+
 
 
 /* This page contains functions used to find conflicts using allocno
@@ -1360,12 +1366,15 @@ pop_allocnos_from_stack (void)
 static void
 setup_allocno_available_regs_num (ira_allocno_t allocno)
 {
-  int i, n, hard_regs_num, hard_regno;
+  int i, n, hard_regs_num;
+#if 0
+  int hard_regno;
   enum machine_mode mode;
+#endif
   enum reg_class cover_class;
   ira_allocno_t a;
   HARD_REG_SET temp_set;
-#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX) 
+#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX)
   int *a_costs;
 #endif
 
@@ -1383,7 +1392,7 @@ setup_allocno_available_regs_num (ira_allocno_t allocno)
       if (a == allocno)
 	break;
     }
-#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX) 
+#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX)
   ira_allocate_and_copy_costs (&ALLOCNO_UPDATED_HARD_REG_COSTS (a),
                               cover_class, ALLOCNO_HARD_REG_COSTS (a));
   a_costs = ALLOCNO_UPDATED_HARD_REG_COSTS (a);
@@ -1391,9 +1400,9 @@ setup_allocno_available_regs_num (ira_allocno_t allocno)
   for (n = 0, i = hard_regs_num - 1; i >= 0; i--)
     {
     if (TEST_HARD_REG_BIT (temp_set, ira_class_hard_regs[cover_class][i])
-#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX) 
-       || (a_costs != NULL)
-           && a_costs[i] > ALLOCNO_UPDATED_MEMORY_COST (allocno)
+#if defined(TARGET_MIPS) || defined (TARGET_MCHP_PIC32MX)
+       || ((a_costs != NULL)
+           && a_costs[i] > ALLOCNO_UPDATED_MEMORY_COST (allocno))
 #endif
        )
 	n++;
@@ -1759,8 +1768,8 @@ allocno_priority_compare_func (const void *v1p, const void *v2p)
 
   pri1 = allocno_priorities[ALLOCNO_NUM (a1)];
   pri2 = allocno_priorities[ALLOCNO_NUM (a2)];
-  if (pri2 - pri1)
-    return pri2 - pri1;
+  if (pri2 != pri1)
+    return SORTGT (pri2, pri1);
 
   /* If regs are equally good, sort by allocnos, so that the results of
      qsort leave nothing to chance.  */

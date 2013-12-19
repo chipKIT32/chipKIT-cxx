@@ -1,6 +1,6 @@
 /* test file for mpc_sin.
 
-Copyright (C) 2007, 2008 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2007, 2008, 2010
 
 This file is part of the MPC Library.
 

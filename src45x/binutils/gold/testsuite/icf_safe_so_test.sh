@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # icf_safe_so_test.sh -- test --icf=safe
 
 # Copyright 2010 Free Software Foundation, Inc.
@@ -76,7 +78,7 @@ check_fold()
 
 arch_specific_safe_fold()
 {
-    if [ $1 == 0 ];
+    if [ $1 -eq 0 ];
     then
       check_fold $2 $3 $4
     else
@@ -84,9 +86,9 @@ arch_specific_safe_fold()
     fi
 }
 
-X86_32_specific_safe_fold()
+X86_32_or_ARM_specific_safe_fold()
 {
-    grep -e "Intel 80386" $1 > /dev/null 2>&1
+    grep -e "Intel 80386" -e "ARM" $1 > /dev/null 2>&1
     arch_specific_safe_fold $? $2 $3 $4
 }
 
@@ -96,10 +98,10 @@ X86_64_specific_safe_fold()
     arch_specific_safe_fold $? $2 $3 $4
 }
 
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_hidden"
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_internal"
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_static"
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_hidden" "foo_internal"
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_hidden" "foo_static"
-X86_32_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_internal" "foo_static"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_hidden"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_internal"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_prot" "foo_static"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_hidden" "foo_internal"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_hidden" "foo_static"
+X86_32_or_ARM_specific_safe_fold icf_safe_so_test_2.stdout icf_safe_so_test_1.stdout "foo_internal" "foo_static"
 check_nofold icf_safe_so_test_1.stdout "foo_glob" "bar_glob"

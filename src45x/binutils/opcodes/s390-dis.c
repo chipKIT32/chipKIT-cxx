@@ -1,5 +1,5 @@
 /* s390-dis.c -- Disassemble S390 instructions
-   Copyright 2000, 2001, 2002, 2003, 2005, 2007, 2008
+   Copyright 2000, 2001, 2002, 2003, 2005, 2007, 2008, 2012
    Free Software Foundation, Inc.
    Contributed by Martin Schwidefsky (schwidefsky@de.ibm.com).
 
@@ -20,9 +20,9 @@
    Free Software Foundation, 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
 
+#include "sysdep.h"
 #include <stdio.h>
 #include "ansidecl.h"
-#include "sysdep.h"
 #include "dis-asm.h"
 #include "opintl.h"
 #include "opcode/s390.h"
@@ -166,6 +166,8 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
 
   if (status == 0)
     {
+      const struct s390_opcode *op;
+
       /* Find the first match in the opcode table.  */
       opcode_end = s390_opcodes + s390_num_opcodes;
       for (opcode = s390_opcodes + opc_index[(int) buffer[0]];
@@ -178,6 +180,7 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
 	  /* Check architecture.  */
 	  if (!(opcode->modes & current_arch_mask))
 	    continue;
+
 	  /* Check signature of the opcode.  */
 	  if ((buffer[1] & opcode->mask[1]) != opcode->opcode[1]
 	      || (buffer[2] & opcode->mask[2]) != opcode->opcode[2]
@@ -185,6 +188,28 @@ print_insn_s390 (bfd_vma memaddr, struct disassemble_info *info)
 	      || (buffer[4] & opcode->mask[4]) != opcode->opcode[4]
 	      || (buffer[5] & opcode->mask[5]) != opcode->opcode[5])
 	    continue;
+
+	  /* Advance to an opcode with a more specific mask.  */
+	  for (op = opcode + 1; op < opcode_end; op++)
+	    {
+	      if ((buffer[0] & op->mask[0]) != op->opcode[0])
+		break;
+
+	      if ((buffer[1] & op->mask[1]) != op->opcode[1]
+		  || (buffer[2] & op->mask[2]) != op->opcode[2]
+		  || (buffer[3] & op->mask[3]) != op->opcode[3]
+		  || (buffer[4] & op->mask[4]) != op->opcode[4]
+		  || (buffer[5] & op->mask[5]) != op->opcode[5])
+		continue;
+
+	      if (((int)opcode->mask[0] + opcode->mask[1] +
+		   opcode->mask[2] + opcode->mask[3] +
+		   opcode->mask[4] + opcode->mask[5]) <
+		  ((int)op->mask[0] + op->mask[1] +
+		   op->mask[2] + op->mask[3] +
+		   op->mask[4] + op->mask[5]))
+		opcode = op;
+	    }
 
 	  /* The instruction is valid.  */
 	  if (opcode->operands[0] != 0)

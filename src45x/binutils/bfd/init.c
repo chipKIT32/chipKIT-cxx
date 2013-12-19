@@ -24,6 +24,17 @@
 #include "bfd.h"
 #include "libbfd.h"
 
+#ifndef PIC32
+#define PIC32
+#endif
+
+#ifdef PIC32
+#include "../include/elf/pic32.h"
+#include "cpu-pic32.c"
+#endif
+
+
+
 /*
 SECTION
 	Initialization

@@ -1,6 +1,6 @@
 /* mpc_sinh -- hyperbolic sine of a complex number.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008, 2009
 
 This file is part of the MPC Library.
 

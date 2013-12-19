@@ -1,6 +1,7 @@
 /* SPU specific support for 32-bit ELF
 
-   Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+   Copyright 2006, 2007, 2008, 2009, 2010, 2011, 2012
+   Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
 
@@ -602,9 +603,12 @@ spu_elf_create_sections (struct bfd_link_info *info)
     {
       asection *s;
       flagword flags;
-      ibfd = info->input_bfds;
-      flags = SEC_LOAD | SEC_ALLOC | SEC_READONLY | SEC_HAS_CONTENTS
-	      | SEC_IN_MEMORY;
+
+      if (htab->elf.dynobj == NULL)
+	htab->elf.dynobj = ibfd;
+      ibfd = htab->elf.dynobj;
+      flags = (SEC_LOAD | SEC_ALLOC | SEC_READONLY | SEC_HAS_CONTENTS
+	       | SEC_IN_MEMORY | SEC_LINKER_CREATED);
       s = bfd_make_section_anyway_with_flags (ibfd, ".fixup", flags);
       if (s == NULL || !bfd_set_section_alignment (ibfd, s, 2))
 	return FALSE;
@@ -1422,7 +1426,7 @@ build_stub (struct bfd_link_info *info,
 	add = (int) irela->r_addend & 0xffffffff;
       if (add != 0)
 	len += 1 + 8;
-      name = bfd_malloc (len);
+      name = bfd_malloc (len + 1);
       if (name == NULL)
 	return FALSE;
 
@@ -4064,7 +4068,7 @@ sort_bfds (const void *a, const void *b)
   bfd *const *abfd1 = a;
   bfd *const *abfd2 = b;
 
-  return strcmp ((*abfd1)->filename, (*abfd2)->filename);
+  return filename_cmp ((*abfd1)->filename, (*abfd2)->filename);
 }
 
 static unsigned int
@@ -4296,7 +4300,7 @@ spu_elf_auto_overlay (struct bfd_link_info *info)
 
       qsort (bfd_arr, bfd_count, sizeof (*bfd_arr), sort_bfds);
       for (i = 1; i < bfd_count; ++i)
-	if (strcmp (bfd_arr[i - 1]->filename, bfd_arr[i]->filename) == 0)
+	if (filename_cmp (bfd_arr[i - 1]->filename, bfd_arr[i]->filename) == 0)
 	  {
 	    if (bfd_arr[i - 1]->my_archive == bfd_arr[i]->my_archive)
 	      {
@@ -4892,9 +4896,9 @@ spu_elf_relocate_section (bfd *output_bfd,
 	  sym_name = h->root.root.string;
 	}
 
-      if (sec != NULL && elf_discarded_section (sec))
+      if (sec != NULL && discarded_section (sec))
 	RELOC_AGAINST_DISCARDED_SECTION (info, input_bfd, input_section,
-					 rel, relend, howto, contents);
+					 rel, 1, relend, howto, 0, contents);
 
       if (info->relocatable)
 	continue;
@@ -4997,7 +5001,9 @@ spu_elf_relocate_section (bfd *output_bfd,
       else if (is_ea_sym)
 	unresolved_reloc = TRUE;
 
-      if (unresolved_reloc)
+      if (unresolved_reloc
+	  && _bfd_elf_section_offset (output_bfd, info, input_section,
+				      rel->r_offset) != (bfd_vma) -1)
 	{
 	  (*_bfd_error_handler)
 	    (_("%B(%s+0x%lx): unresolvable %s relocation against symbol `%s'"),
@@ -5081,12 +5087,19 @@ spu_elf_relocate_section (bfd *output_bfd,
 	}
       input_section->reloc_count = wrel - relocs;
       /* Backflips for _bfd_elf_link_output_relocs.  */
-      rel_hdr = &elf_section_data (input_section)->rel_hdr;
+      rel_hdr = _bfd_elf_single_rel_hdr (input_section);
       rel_hdr->sh_size = input_section->reloc_count * rel_hdr->sh_entsize;
       ret = 2;
     }
 
   return ret;
+}
+
+static bfd_boolean
+spu_elf_finish_dynamic_sections (bfd *output_bfd ATTRIBUTE_UNUSED,
+				 struct bfd_link_info *info ATTRIBUTE_UNUSED)
+{
+  return TRUE;
 }
 
 /* Adjust _SPUEAR_ syms to point at their overlay stubs.  */
@@ -5395,7 +5408,8 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 
 	      /* If there aren't any relocs, then there's nothing more
 	         to do.  */
-	      if ((isec->flags & SEC_RELOC) == 0
+	      if ((isec->flags & SEC_ALLOC) == 0
+		  || (isec->flags & SEC_RELOC) == 0
 		  || isec->reloc_count == 0)
 		continue;
 
@@ -5438,6 +5452,7 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 #define TARGET_BIG_SYM		bfd_elf32_spu_vec
 #define TARGET_BIG_NAME		"elf32-spu"
 #define ELF_ARCH		bfd_arch_spu
+#define ELF_TARGET_ID		SPU_ELF_DATA
 #define ELF_MACHINE_CODE	EM_SPU
 /* This matches the alignment need for DMA.  */
 #define ELF_MAXPAGESIZE		0x80
@@ -5449,6 +5464,7 @@ spu_elf_size_sections (bfd * output_bfd, struct bfd_link_info *info)
 #define elf_info_to_howto			spu_elf_info_to_howto
 #define elf_backend_count_relocs		spu_elf_count_relocs
 #define elf_backend_relocate_section		spu_elf_relocate_section
+#define elf_backend_finish_dynamic_sections	spu_elf_finish_dynamic_sections
 #define elf_backend_symbol_processing		spu_elf_backend_symbol_processing
 #define elf_backend_link_output_symbol_hook	spu_elf_output_symbol_hook
 #define elf_backend_object_p			spu_elf_object_p
