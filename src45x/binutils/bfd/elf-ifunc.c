@@ -190,20 +190,6 @@ _bfd_elf_allocate_ifunc_dyn_relocs (struct bfd_link_info *info,
   /* Support garbage collection against STT_GNU_IFUNC symbols.  */
   if (h->plt.refcount <= 0 && h->got.refcount <= 0)
     {
-      /* When building shared library, we need to handle the case
-         where it is marked with regular reference, but not non-GOT
-	 reference.  It may happen if we didn't see STT_GNU_IFUNC
-	 symbol at the time when checking relocations.  */
-      if (info->shared
-	  && !h->non_got_ref
-	  && h->ref_regular)
-	for (p = *head; p != NULL; p = p->next)
-	  if (p->count)
-	    {
-	      h->non_got_ref = 1;
-	      goto keep;
-	    }
-
       h->got = htab->init_got_offset;
       h->plt = htab->init_plt_offset;
       *head = NULL;
@@ -223,7 +209,6 @@ _bfd_elf_allocate_ifunc_dyn_relocs (struct bfd_link_info *info,
       return TRUE;
     }
 
-keep:
   bed = get_elf_backend_data (info->output_bfd);
   if (bed->rela_plts_and_copies_p)
     sizeof_reloc = bed->s->sizeof_rela;
@@ -273,20 +258,10 @@ keep:
     *head = NULL;
 
   /* Finally, allocate space.  */
-  p = *head;
-  if (p != NULL)
-    {
-      bfd_size_type count = 0;
-      do
-	{
-	  count += p->count;
-	  p = p->next;
-	}
-      while (p != NULL);
-      htab->irelifunc->size += count * sizeof_reloc;
-    }
+  for (p = *head; p != NULL; p = p->next)
+    htab->irelifunc->size += p->count * sizeof_reloc;
 
-  /* For STT_GNU_IFUNC symbol, .got.plt has the real function address
+  /* For STT_GNU_IFUNC symbol, .got.plt has the real function addres
      and .got has the PLT entry adddress.  We will load the GOT entry
      with the PLT entry in finish_dynamic_symbol if it is used.  For
      branch, it uses .got.plt.  For symbol value,
@@ -299,10 +274,9 @@ keep:
      5. Otherwise use .got so that it can be shared among different
      objects at run-time.
      We only need to relocate .got entry in shared object.  */
-  if (h->got.refcount <= 0
-      || (info->shared
-	  && (h->dynindx == -1
-	      || h->forced_local))
+  if ((info->shared
+       && (h->dynindx == -1
+	   || h->forced_local))
       || (!info->shared
 	  && !h->pointer_equality_needed)
       || (info->executable && info->shared)

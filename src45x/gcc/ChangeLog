@@ -1,38 +1,3 @@
-2010-12-16  Release Manager
-
-	* GCC 4.5.2 released.
-
-2010-11-20  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
-
-	PR other/46202
-	* configure.ac: Fix just-built in-tree STRIP name to be
-	binutils/strip-new.
-	* configure: Regenerate. 	* Makefile.def (install-strip-gcc, install-strip-binutils)
-	(install-strip-opcodes, install-strip-ld, install-strip-itcl)
-	(install-strip-sid): Mirror dependencies on non-strip variants
-	of these targets on the respective -strip prerequisites.
-	* Makefile.tpl (install-strip, install-strip-host)
-	(install-strip-target): New targets.
-	(install-strip-[+module+], install-strip-target-[+module+]):
-	New targets.
-	* Makefile.in: Regenerate.
-
-2010-10-06  Richard Guenther  <rguenther@suse.de>
-
-	Backport from mainline
-	2010-07-23  Marc Glisse <marc.glisse@normalesup.org>
-
-	PR bootstrap/44455
-	* configure.ac (extra_mpfr_configure_flags): Copy from
-	extra_mpc_gmp_configure_flags.
-	* configure: Re-generated.
-
-2010-10-02  Ralf Wildenhues  <Ralf.Wildenhues@gmx.de>
-
-	PR bootstrap/44621
-	* configure.ac: Fix unportable shell quoting.
-	* configure: Regenerate.
-
 2010-07-31  Release Manager
 
 	* GCC 4.5.1 released.
@@ -66,7 +31,7 @@
 2010-06-07  Iain Sandoe  <iains@gcc.gnu.org>
 
 	* MAINTAINERS (Write After Approval): Add myself.
-
+	
 2010-06-04  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	Backport from mainline:
@@ -490,7 +455,7 @@
 2009-10-07 Rafael Avila de Espindola  <espindola@google.com>
 
 	* MAINTAINERS: Change my email address. Change plugi-in to plugin.
-
+	
 2009-10-07  Richard Guenther  <rguenther@suse.de>
 
 	* MAINTAINERS (LTO): List Diego Novillo, Rafael Avila de Espindola,
@@ -742,7 +707,7 @@
 
 	* configure.ac (sh*-*-elf): Don't add target-libgloss to noconfigdirs.
 	* configure: Regenerate.
-
+	
 2009-07-28  Rask Ingemann Lambertsen <ccc94453@vip.cybercity.dk>
 
 	* MAINTAINERS (Write After Approval): Update my e-mail address.
@@ -1034,7 +999,7 @@
 2009-03-11  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* MAINTAINERS: Update e-mail address.
-
+	
 2009-03-11  Dorit Nuzman  <dorit@il.ibm.com>
 
 	* MAINTAINERS: Remove myself as auto-vectorizer maintainer.

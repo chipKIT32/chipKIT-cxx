@@ -35,7 +35,6 @@ const bfd_arch_info_type bfd_moxie_arch =
     2,                /* Unsigned int section alignment power.  */
     TRUE,             /* The one and only.  */
     bfd_default_compatible, 
-    bfd_default_scan,
-    bfd_arch_default_fill,
+    bfd_default_scan ,
     0,
   };

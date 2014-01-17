@@ -1,6 +1,6 @@
 /* POWER/PowerPC XCOFF linker support.
    Copyright 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
+   2005, 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@cygnus.com>, Cygnus Support.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -758,9 +758,9 @@ xcoff_set_import_path (struct bfd_link_info *info,
 	   *pp != NULL;
 	   pp = &(*pp)->next, ++c)
 	{
-	  if (filename_cmp ((*pp)->path, imppath) == 0
-	      && filename_cmp ((*pp)->file, impfile) == 0
-	      && filename_cmp ((*pp)->member, impmember) == 0)
+	  if (strcmp ((*pp)->path, imppath) == 0
+	      && strcmp ((*pp)->file, impfile) == 0
+	      && strcmp ((*pp)->member, impmember) == 0)
 	    break;
 	}
 
@@ -1365,12 +1365,11 @@ xcoff_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
 	     If C_FILE or first time, handle special
 
 	     Advance esym, sym_hash, csect_hash ptrs.  */
-	  if (sym.n_sclass == C_FILE || sym.n_sclass == C_DWARF)
+	  if (sym.n_sclass == C_FILE)
 	    csect = NULL;
 	  if (csect != NULL)
 	    *csect_cache = csect;
-	  else if (first_csect == NULL
-                   || sym.n_sclass == C_FILE || sym.n_sclass == C_DWARF)
+	  else if (first_csect == NULL || sym.n_sclass == C_FILE)
 	    *csect_cache = coff_section_from_bfd_index (abfd, sym.n_scnum);
 	  else
 	    *csect_cache = NULL;
@@ -1997,7 +1996,11 @@ xcoff_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
 		     handle them, and that would only be a warning,
 		     not an error.  */
 		  if (! ((*info->callbacks->multiple_definition)
-			 (info, &(*sym_hash)->root, NULL, NULL, (bfd_vma) 0)))
+			 (info, (*sym_hash)->root.root.string,
+			  NULL, NULL, (bfd_vma) 0,
+			  (*sym_hash)->root.u.def.section->owner,
+			  (*sym_hash)->root.u.def.section,
+			  (*sym_hash)->root.u.def.value)))
 		    goto error_return;
 		  /* Try not to give this error too many times.  */
 		  (*sym_hash)->flags &= ~XCOFF_MULTIPLY_DEFINED;
@@ -2074,10 +2077,6 @@ xcoff_link_add_symbols (bfd *abfd, struct bfd_link_info *info)
   /* Make sure that we have seen all the relocs.  */
   for (o = abfd->sections; o != first_csect; o = o->next)
     {
-      /* Debugging sections have no csects.  */
-      if (bfd_get_section_flags (abfd, o) & SEC_DEBUGGING)
-        continue;
-
       /* Reset the section size and the line number count, since the
 	 data is now attached to the csects.  Don't reset the size of
 	 the .debug section, since we need to read it below in
@@ -2234,8 +2233,7 @@ xcoff_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
 static bfd_boolean
 xcoff_link_check_dynamic_ar_symbols (bfd *abfd,
 				     struct bfd_link_info *info,
-				     bfd_boolean *pneeded,
-				     bfd **subsbfd)
+				     bfd_boolean *pneeded)
 {
   asection *lsec;
   bfd_byte *contents;
@@ -2293,8 +2291,7 @@ xcoff_link_check_dynamic_ar_symbols (bfd *abfd,
 	  && (((struct xcoff_link_hash_entry *) h)->flags
 	      & XCOFF_DEF_DYNAMIC) == 0)
 	{
-	  if (!(*info->callbacks
-		->add_archive_element) (info, abfd, name, subsbfd))
+	  if (! (*info->callbacks->add_archive_element) (info, abfd, name))
 	    return FALSE;
 	  *pneeded = TRUE;
 	  return TRUE;
@@ -2317,8 +2314,7 @@ xcoff_link_check_dynamic_ar_symbols (bfd *abfd,
 static bfd_boolean
 xcoff_link_check_ar_symbols (bfd *abfd,
 			     struct bfd_link_info *info,
-			     bfd_boolean *pneeded,
-			     bfd **subsbfd)
+			     bfd_boolean *pneeded)
 {
   bfd_size_type symesz;
   bfd_byte *esym;
@@ -2329,7 +2325,7 @@ xcoff_link_check_ar_symbols (bfd *abfd,
   if ((abfd->flags & DYNAMIC) != 0
       && ! info->static_link
       && info->output_bfd->xvec == abfd->xvec)
-    return xcoff_link_check_dynamic_ar_symbols (abfd, info, pneeded, subsbfd);
+    return xcoff_link_check_dynamic_ar_symbols (abfd, info, pneeded);
 
   symesz = bfd_coff_symesz (abfd);
   esym = (bfd_byte *) obj_coff_external_syms (abfd);
@@ -2365,8 +2361,7 @@ xcoff_link_check_ar_symbols (bfd *abfd,
 		  || (((struct xcoff_link_hash_entry *) h)->flags
 		      & XCOFF_DEF_DYNAMIC) == 0))
 	    {
-	      if (!(*info->callbacks
-		    ->add_archive_element) (info, abfd, name, subsbfd))
+	      if (! (*info->callbacks->add_archive_element) (info, abfd, name))
 		return FALSE;
 	      *pneeded = TRUE;
 	      return TRUE;
@@ -2391,30 +2386,17 @@ xcoff_link_check_archive_element (bfd *abfd,
 				  bfd_boolean *pneeded)
 {
   bfd_boolean keep_syms_p;
-  bfd *oldbfd;
 
   keep_syms_p = (obj_coff_external_syms (abfd) != NULL);
-  if (!_bfd_coff_get_external_symbols (abfd))
+  if (! _bfd_coff_get_external_symbols (abfd))
     return FALSE;
 
-  oldbfd = abfd;
-  if (!xcoff_link_check_ar_symbols (abfd, info, pneeded, &abfd))
+  if (! xcoff_link_check_ar_symbols (abfd, info, pneeded))
     return FALSE;
 
   if (*pneeded)
     {
-      /* Potentially, the add_archive_element hook may have set a
-	 substitute BFD for us.  */
-      if (abfd != oldbfd)
-	{
-	  if (!keep_syms_p
-	      && !_bfd_coff_free_symbols (oldbfd))
-	    return FALSE;
-	  keep_syms_p = (obj_coff_external_syms (abfd) != NULL);
-	  if (!_bfd_coff_get_external_symbols (abfd))
-	    return FALSE;
-	}
-      if (!xcoff_link_add_symbols (abfd, info))
+      if (! xcoff_link_add_symbols (abfd, info))
 	return FALSE;
       if (info->keep_memory)
 	keep_syms_p = TRUE;
@@ -2422,7 +2404,7 @@ xcoff_link_check_archive_element (bfd *abfd,
 
   if (!keep_syms_p)
     {
-      if (!_bfd_coff_free_symbols (abfd))
+      if (! _bfd_coff_free_symbols (abfd))
 	return FALSE;
     }
 
@@ -3014,7 +2996,6 @@ xcoff_sweep (struct bfd_link_info *info)
 		  || o == xcoff_hash_table (info)->loader_section
 		  || o == xcoff_hash_table (info)->linkage_section
 		  || o == xcoff_hash_table (info)->descriptor_section
-                  || (bfd_get_section_flags (sub, o) & SEC_DEBUGGING)
 		  || strcmp (o->name, ".debug") == 0)
 		o->flags |= SEC_MARK;
 	      else
@@ -3121,7 +3102,9 @@ bfd_xcoff_import_symbol (bfd *output_bfd,
 	      || h->root.u.def.value != val))
 	{
 	  if (! ((*info->callbacks->multiple_definition)
-		 (info, &h->root, output_bfd, bfd_abs_section_ptr, val)))
+		 (info, h->root.root.string, h->root.u.def.section->owner,
+		  h->root.u.def.section, h->root.u.def.value,
+		  output_bfd, bfd_abs_section_ptr, val)))
 	    return FALSE;
 	}
 
@@ -3353,6 +3336,9 @@ static bfd_boolean
 xcoff_post_gc_symbol (struct xcoff_link_hash_entry *h, void * p)
 {
   struct xcoff_loader_info *ldinfo = (struct xcoff_loader_info *) p;
+
+  if (h->root.type == bfd_link_hash_warning)
+    h = (struct xcoff_link_hash_entry *) h->root.u.i.link;
 
   /* __rtinit, this symbol has special handling. */
   if (h->flags & XCOFF_RTINIT)
@@ -4931,25 +4917,21 @@ xcoff_link_input_bfd (struct xcoff_final_link_info *flinfo,
 			     this case, but I don't think it's worth it.  */
 			  is = flinfo->internal_syms + r_symndx;
 
-                          if (is->n_sclass != C_DWARF)
-                            {
-                              name = (_bfd_coff_internal_syment_name
-                                      (input_bfd, is, buf));
+			  name = (_bfd_coff_internal_syment_name
+				  (input_bfd, is, buf));
 
-                              if (name == NULL)
-                                return FALSE;
+			  if (name == NULL)
+			    return FALSE;
 
-                              if (!(*flinfo->info->callbacks->unattached_reloc)
-                                  (flinfo->info, name, input_bfd, o,
-                                   irel->r_vaddr))
-                                return FALSE;
-                            }
+			  if (! ((*flinfo->info->callbacks->unattached_reloc)
+				 (flinfo->info, name, input_bfd, o,
+				  irel->r_vaddr)))
+			    return FALSE;
 			}
 		    }
 		}
 
-	      if ((o->flags & SEC_DEBUGGING) == 0
-                  && xcoff_need_ldrel_p (flinfo->info, irel, h))
+	      if (xcoff_need_ldrel_p (flinfo->info, irel, h))
 		{
 		  asection *sec;
 
@@ -5147,9 +5129,8 @@ xcoff_find_tc0 (bfd *output_bfd, struct xcoff_final_link_info *flinfo)
 /* Write out a non-XCOFF global symbol.  */
 
 static bfd_boolean
-xcoff_write_global_symbol (struct bfd_hash_entry *bh, void * inf)
+xcoff_write_global_symbol (struct xcoff_link_hash_entry *h, void * inf)
 {
-  struct xcoff_link_hash_entry *h = (struct xcoff_link_hash_entry *) bh;
   struct xcoff_final_link_info *flinfo = (struct xcoff_final_link_info *) inf;
   bfd *output_bfd;
   bfd_byte *outsym;
@@ -6233,7 +6214,9 @@ _bfd_xcoff_bfd_final_link (bfd *abfd, struct bfd_link_info *info)
 
   /* Write out all the global symbols which do not come from XCOFF
      input files.  */
-  bfd_hash_traverse (&info->hash->table, xcoff_write_global_symbol, &flinfo);
+  xcoff_link_hash_traverse (xcoff_hash_table (info),
+			    xcoff_write_global_symbol,
+			    (void *) &flinfo);
 
   if (flinfo.outsyms != NULL)
     {

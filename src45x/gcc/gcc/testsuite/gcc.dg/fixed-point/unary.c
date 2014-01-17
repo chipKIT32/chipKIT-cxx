@@ -5,8 +5,6 @@
 
    Check unary operators ++ -- + - !.  */
 
-#include "longlong-support.h"
-
 extern void abort (void);
 
 #define INCDEC(TYPE,POSTFIX) \
@@ -111,148 +109,148 @@ int main ()
   FRACT_INCDEC(short _Fract, hr);
   FRACT_INCDEC(_Fract, r);
   FRACT_INCDEC(long _Fract, lr);
-  LLFRACT_TEST (FRACT_INCDEC(long long _Fract, llr));
+  FRACT_INCDEC(long long _Fract, llr);
   FRACT_INCDEC(_Sat short _Fract, hr);
   FRACT_INCDEC(_Sat _Fract, r);
   FRACT_INCDEC(_Sat long _Fract, lr);
-  LLFRACT_TEST (FRACT_INCDEC(_Sat long long _Fract, llr));
+  FRACT_INCDEC(_Sat long long _Fract, llr);
 
   INCDEC(short _Accum, hk);
   INCDEC(_Accum, k);
   INCDEC(long _Accum, lk);
-  LLACCUM_TEST (INCDEC(long long _Accum, llk));
+  INCDEC(long long _Accum, llk);
   INCDEC(unsigned short _Accum, uhk);
   INCDEC(unsigned _Accum, uk);
   INCDEC(unsigned long _Accum, ulk);
-  ULLACCUM_TEST (INCDEC(unsigned long long _Accum, ullk));
+  INCDEC(unsigned long long _Accum, ullk);
   INCDEC(_Sat short _Accum, hk);
   INCDEC(_Sat _Accum, k);
   INCDEC(_Sat long _Accum, lk);
-  LLACCUM_TEST (INCDEC(_Sat long long _Accum, llk));
+  INCDEC(_Sat long long _Accum, llk);
   INCDEC(_Sat unsigned short _Accum, uhk);
   INCDEC(_Sat unsigned _Accum, uk);
   INCDEC(_Sat unsigned long _Accum, ulk);
-  ULLACCUM_TEST (INCDEC(_Sat unsigned long long _Accum, ullk));
+  INCDEC(_Sat unsigned long long _Accum, ullk);
 
   FRACT_SAT_INCDEC(_Sat short _Fract, hr);
   FRACT_SAT_INCDEC(_Sat _Fract, r);
   FRACT_SAT_INCDEC(_Sat long _Fract, lr);
-  LLFRACT_TEST (FRACT_SAT_INCDEC(_Sat long long _Fract, llr));
+  FRACT_SAT_INCDEC(_Sat long long _Fract, llr);
 
   FRACT_SAT_UNS_INCDEC(_Sat unsigned short _Fract, uhr);
   FRACT_SAT_UNS_INCDEC(_Sat unsigned _Fract, ur);
   FRACT_SAT_UNS_INCDEC(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (FRACT_SAT_UNS_INCDEC(_Sat unsigned long long _Fract, ullr));
+  FRACT_SAT_UNS_INCDEC(_Sat unsigned long long _Fract, ullr);
 
   PLUS(short _Fract, hr);
   PLUS(_Fract, r);
   PLUS(long _Fract, lr);
-  LLFRACT_TEST (PLUS(long long _Fract, llr));
+  PLUS(long long _Fract, llr);
   PLUS(unsigned short _Fract, uhr);
   PLUS(unsigned _Fract, ur);
   PLUS(unsigned long _Fract, ulr);
-  ULLFRACT_TEST (PLUS(unsigned long long _Fract, ullr));
+  PLUS(unsigned long long _Fract, ullr);
   PLUS(_Sat short _Fract, hr);
   PLUS(_Sat _Fract, r);
   PLUS(_Sat long _Fract, lr);
-  LLFRACT_TEST (PLUS(_Sat long long _Fract, llr));
+  PLUS(_Sat long long _Fract, llr);
   PLUS(_Sat unsigned short _Fract, uhr);
   PLUS(_Sat unsigned _Fract, ur);
   PLUS(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (PLUS(_Sat unsigned long long _Fract, ullr));
+  PLUS(_Sat unsigned long long _Fract, ullr);
   PLUS(short _Accum, hk);
   PLUS(_Accum, k);
   PLUS(long _Accum, lk);
-  LLACCUM_TEST (PLUS(long long _Accum, llk));
+  PLUS(long long _Accum, llk);
   PLUS(unsigned short _Accum, uhk);
   PLUS(unsigned _Accum, uk);
   PLUS(unsigned long _Accum, ulk);
-  ULLACCUM_TEST (PLUS(unsigned long long _Accum, ullk));
+  PLUS(unsigned long long _Accum, ullk);
   PLUS(_Sat short _Accum, hk);
   PLUS(_Sat _Accum, k);
   PLUS(_Sat long _Accum, lk);
-  LLACCUM_TEST (PLUS(_Sat long long _Accum, llk));
+  PLUS(_Sat long long _Accum, llk);
   PLUS(_Sat unsigned short _Accum, uhk);
   PLUS(_Sat unsigned _Accum, uk);
   PLUS(_Sat unsigned long _Accum, ulk);
-  ULLACCUM_TEST (PLUS(_Sat unsigned long long _Accum, ullk));
+  PLUS(_Sat unsigned long long _Accum, ullk);
 
   NEG(short _Fract, hr);
   NEG(_Fract, r);
   NEG(long _Fract, lr);
-  LLFRACT_TEST (NEG(long long _Fract, llr));
+  NEG(long long _Fract, llr);
   NEG(_Sat short _Fract, hr);
   NEG(_Sat _Fract, r);
   NEG(_Sat long _Fract, lr);
-  LLFRACT_TEST (NEG(_Sat long long _Fract, llr));
+  NEG(_Sat long long _Fract, llr);
   NEG(short _Accum, hk);
   NEG(_Accum, k);
   NEG(long _Accum, lk);
-  LLACCUM_TEST (NEG(long long _Accum, llk));
+  NEG(long long _Accum, llk);
   NEG(_Sat short _Accum, hk);
   NEG(_Sat _Accum, k);
   NEG(_Sat long _Accum, lk);
-  LLACCUM_TEST (NEG(_Sat long long _Accum, llk));
+  NEG(_Sat long long _Accum, llk);
 
   FRACT_SAT_NEG(_Sat short _Fract, hr);
   FRACT_SAT_NEG(_Sat _Fract, r);
   FRACT_SAT_NEG(_Sat long _Fract, lr);
-  LLFRACT_TEST (FRACT_SAT_NEG(_Sat long long _Fract, llr));
+  FRACT_SAT_NEG(_Sat long long _Fract, llr);
 
   UNS_NEG(short _Fract, hr);
   UNS_NEG(_Fract, r);
   UNS_NEG(long _Fract, lr);
-  LLFRACT_TEST (UNS_NEG(long long _Fract, llr));
+  UNS_NEG(long long _Fract, llr);
   UNS_NEG(_Sat short _Fract, hr);
   UNS_NEG(_Sat _Fract, r);
   UNS_NEG(_Sat long _Fract, lr);
-  LLFRACT_TEST (UNS_NEG(_Sat long long _Fract, llr));
+  UNS_NEG(_Sat long long _Fract, llr);
   UNS_NEG(short _Accum, hk);
   UNS_NEG(_Accum, k);
   UNS_NEG(long _Accum, lk);
-  LLACCUM_TEST (UNS_NEG(long long _Accum, llk));
+  UNS_NEG(long long _Accum, llk);
   UNS_NEG(_Sat short _Accum, hk);
   UNS_NEG(_Sat _Accum, k);
   UNS_NEG(_Sat long _Accum, lk);
-  LLACCUM_TEST (UNS_NEG(_Sat long long _Accum, llk));
+  UNS_NEG(_Sat long long _Accum, llk);
 
   FRACT_SAT_UNS_NEG(_Sat unsigned short _Fract, uhr);
   FRACT_SAT_UNS_NEG(_Sat unsigned _Fract, ur);
   FRACT_SAT_UNS_NEG(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (FRACT_SAT_UNS_NEG(_Sat unsigned long long _Fract, ullr));
+  FRACT_SAT_UNS_NEG(_Sat unsigned long long _Fract, ullr);
 
   LOGNEG(short _Fract, hr);
   LOGNEG(_Fract, r);
   LOGNEG(long _Fract, lr);
-  LLFRACT_TEST (LOGNEG(long long _Fract, llr));
+  LOGNEG(long long _Fract, llr);
   LOGNEG(unsigned short _Fract, uhr);
   LOGNEG(unsigned _Fract, ur);
   LOGNEG(unsigned long _Fract, ulr);
-  ULLFRACT_TEST (LOGNEG(unsigned long long _Fract, ullr));
+  LOGNEG(unsigned long long _Fract, ullr);
   LOGNEG(_Sat short _Fract, hr);
   LOGNEG(_Sat _Fract, r);
   LOGNEG(_Sat long _Fract, lr);
-  LLFRACT_TEST (LOGNEG(_Sat long long _Fract, llr));
+  LOGNEG(_Sat long long _Fract, llr);
   LOGNEG(_Sat unsigned short _Fract, uhr);
   LOGNEG(_Sat unsigned _Fract, ur);
   LOGNEG(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (LOGNEG(_Sat unsigned long long _Fract, ullr));
+  LOGNEG(_Sat unsigned long long _Fract, ullr);
   LOGNEG(short _Accum, hk);
   LOGNEG(_Accum, k);
   LOGNEG(long _Accum, lk);
-  LLACCUM_TEST (LOGNEG(long long _Accum, llk));
+  LOGNEG(long long _Accum, llk);
   LOGNEG(unsigned short _Accum, uhk);
   LOGNEG(unsigned _Accum, uk);
   LOGNEG(unsigned long _Accum, ulk);
-  ULLACCUM_TEST (LOGNEG(unsigned long long _Accum, ullk));
+  LOGNEG(unsigned long long _Accum, ullk);
   LOGNEG(_Sat short _Accum, hk);
   LOGNEG(_Sat _Accum, k);
   LOGNEG(_Sat long _Accum, lk);
-  LLACCUM_TEST (LOGNEG(_Sat long long _Accum, llk));
+  LOGNEG(_Sat long long _Accum, llk);
   LOGNEG(_Sat unsigned short _Accum, uhk);
   LOGNEG(_Sat unsigned _Accum, uk);
   LOGNEG(_Sat unsigned long _Accum, ulk);
-  ULLACCUM_TEST (LOGNEG(_Sat unsigned long long _Accum, ullk));
+  LOGNEG(_Sat unsigned long long _Accum, ullk);
 
   return 0;
 }

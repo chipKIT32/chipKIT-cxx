@@ -4,6 +4,6 @@
 
 Relocation section '\.rela\.text' .*:
 .*
-.* R_MIPS_LO16 * 4
+.* R_MIPS_LO16 * 0+04
  * Type2: R_MIPS_SUB *
  * Type3: R_MIPS_LO16 *

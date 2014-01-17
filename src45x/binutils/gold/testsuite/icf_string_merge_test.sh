@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # icf_string_merge_test.sh -- test --icf=all
 
 # Copyright 2010 Free Software Foundation, Inc.

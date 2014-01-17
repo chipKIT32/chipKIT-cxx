@@ -20,48 +20,15 @@
 
 fragment <<EOF
 
-#define TARGET_IS_${EMULATION_NAME}
-#ifndef TARGET_IS_PIC32
-#define TARGET_IS_PIC32
-#endif
-#ifndef PIC32
-#define PIC32
-#endif
-
 #include "ldctor.h"
 #include "elf/mips.h"
 #include "elfxx-mips.h"
 
-#include "bfd.h"
-#include "sysdep.h"
-#include "bfdlink.h"
-#include "getopt.h"
-#include "genlink.h"
-#include "ld.h"
-#include "ldmain.h"
-#include "ldmisc.h"
-
-#include "ldexp.h"
-#include "ldlang.h"
-#include "ldfile.h"
-
-#include "ldemul.h"
-#include "libbfd.h"
-#include "elf-bfd.h"
-
 #include "elf/pic32.h"
 #include "ctype.h"
 #include "../bfd/pic32-options.h"
-//#include "../bfd/pic32-options.c"
+#include "../bfd/pic32-options.c"
 #include "../bfd/pic32-utils.h"
-#include <stdint.h>
-
-/* defined in bfd/pic32-attributes.c */
-char * pic32_section_size_string
-  PARAMS ((asection *));
-char * pic32_section_attr_string
-  PARAMS ((asection *));
-
 
 #define is_mips_elf(bfd)				\
   (bfd_get_flavour (bfd) == bfd_target_elf_flavour	\
@@ -71,9 +38,6 @@ char * pic32_section_attr_string
 /* Fake input file for stubs.  */
 static lang_input_statement_type *stub_file;
 static bfd *stub_bfd;
-
-static bfd_boolean insn32;
-static int eh_reloc_type = R_MIPS_EH;
 
 struct traverse_hash_info
 {
@@ -95,16 +59,7 @@ struct magic_sections_tag
   unsigned int start;
 };
 
-/* Symbol Lists */
-struct pic32_symbol
-{
-  char    *name;
-  bfd_vma value;
-};
-
-bfd_boolean need_layout;
-
-void bfd_pic32_report_memory_usage
+static void bfd_pic32_report_memory_usage
   PARAMS ((FILE *));
 
 static void report_percent_used
@@ -113,123 +68,14 @@ static void report_percent_used
 static void pic32_build_section_list
   PARAMS ((bfd *, asection *, PTR));
 
-static void pic32_build_section_list_vma
-  PARAMS ((bfd *, asection *, PTR));
-
 static void pic32_init_section_list
   PARAMS ((struct pic32_section **));
-
-static void bfd_pic32_finish
-  PARAMS ((void));
-
-void pic32_create_data_init_template (void);
-
-void pic32_create_specific_fill_sections(void);
-
-static bfd * bfd_pic32_create_data_init_bfd
-  PARAMS ((bfd *));
-
-static void bfd_pic32_add_bfd_to_link
-  PARAMS ((bfd *, const char *));
-
-static void bfd_pic32_scan_data_section
-  PARAMS ((asection *, PTR));
-
-static void bfd_pic32_skip_data_section
-  PARAMS ((asection *, PTR));
-
-static void pic32_strip_sections
- PARAMS ((bfd *));
- 
-static asection * bfd_pic32_create_section
-  PARAMS ((bfd *, const char *, int, int));
-
-static void pic32_append_section_to_list
-  PARAMS ((struct pic32_section *, lang_input_statement_type *, asection *));
-
-static void pic32_free_section_list
-  PARAMS ((struct pic32_section **));
-
-static int pic32_section_list_length
-  PARAMS ((struct pic32_section *));
-
-static void pic32_print_section_list
-  PARAMS ((struct pic32_section *, const char *));
-
-static void pic32_remove_from_section_list
-  PARAMS ((struct pic32_section *, struct pic32_section *));
-
-static void pic32_remove_group_from_section_list
-  PARAMS ((struct pic32_section *));
-
-static struct pic32_memory * pic32_static_assign_memory
-  PARAMS ((struct pic32_memory *, bfd_vma, bfd_vma));
-
-static void pic32_add_to_memory_list
-  PARAMS ((struct pic32_memory *, bfd_vma, bfd_vma));
-
-static void pic32_remove_from_memory_list
-  PARAMS ((struct pic32_memory *, struct pic32_memory *));
-
-static void build_alloc_section_list
-  PARAMS ((unsigned int));
-
-static void allocate_memory
-  PARAMS ((void));
-
-static int allocate_program_memory
-  PARAMS ((void));
-
-static int allocate_data_memory
-  PARAMS ((void));
-
-static void build_free_block_list
-  PARAMS ((struct memory_region_struct *, unsigned int));
-
-static int locate_sections
-  PARAMS ((unsigned int, unsigned int, struct memory_region_struct *));
-
-static void update_section_info
-  PARAMS ((bfd_vma,
-           struct pic32_section *, struct memory_region_struct *));
-
-static void update_group_section_info
-  PARAMS ((bfd_vma alloc_addr,
-                    struct pic32_section *g,
-                    struct memory_region_struct *region));
-
-static struct pic32_memory * select_free_block
-  PARAMS ((struct pic32_section *, unsigned int));
-
-static void create_remainder_blocks
-  PARAMS ((struct pic32_memory *, struct pic32_memory *, unsigned int));
-
-static void remove_free_block
-  PARAMS ((struct pic32_memory *));
-
-static void pic32_free_memory_list
-  PARAMS ((struct pic32_memory **));
-
-static void pic32_init_memory_list
-  PARAMS ((struct pic32_memory **));
-
-static bfd_boolean pic32_unique_section
-  PARAMS ((const char *s));
-
-static void pic32_init_symbol_list
-  PARAMS ((struct pic32_symbol **));
-
-static void pic32_add_to_symbol_list
-  PARAMS ((struct pic32_symbol **, const char *, bfd_vma));
-
-static bfd_boolean bfd_pic32_process_bfd_after_open
-  PARAMS ((bfd *, struct bfd_link_info *));
 
 static lang_memory_region_type *region_lookup
   PARAMS ((char *));
 
 static bfd_size_type bfd_pic32_report_sections
-  PARAMS ((struct pic32_section *, const lang_memory_region_type *,
+  PARAMS ((asection *, const lang_memory_region_type *,
            struct magic_sections_tag *, FILE *));
 
 struct bfd_link_hash_entry *bfd_mchp_is_defined_global_symbol
@@ -247,76 +93,18 @@ static void bfd_mchp_remove_archive_module
 static const char * bfd_pic32_lookup_magic_section_description
   PARAMS ((const char *, struct magic_sections_tag *, const char **));
 
-struct bfd_link_hash_entry *bfd_pic32_is_defined_global_symbol
-  PARAMS ((const char *const));
-
-static void allocate_default_stack
-  PARAMS ((void));
-
-#ifdef TARGET_IS_PIC32MX
-  /* fill option definitions */
-static bfd * bfd_pic32_create_fill_bfd
-  PARAMS ((bfd *));
-
-void pic32_create_fill_templates
-  PARAMS ((void));
-
-static void pic32_create_unused_program_sections
-  PARAMS ((struct pic32_fill_option *));
-
-void pic32_report_crypto_sections
-  PARAMS((void));
-
-int fill_section_count = 0;
-int dinit_size = 0;
-#endif
-
-static void gldelf32pic32mx_after_allocation (void);
-static struct pic32_section *memory_region_list;
-struct pic32_section *unassigned_sections;
-static struct pic32_section *alloc_section_list;
-static struct pic32_section *pic32_section_list;
-extern unsigned int pic32_attribute_map
-    PARAMS ((asection *));
-extern void pic32_set_attributes(asection *,
-                                          unsigned int, unsigned char );
-extern void * bfd_alloc (bfd *, bfd_size_type);
-
-static struct pic32_symbol *pic32_symbol_list;
-int pic32_symbol_count;
-int pic32_max_symbols;
-#define PIC32_INIT_SYM_COUNT 20
-#define PIC32_GROW_SYM_COUNT 10
-
-/* defined in ldlang.c */
-extern lang_statement_list_type statement_list;
-
-/* Dynamic Memory Info */
-static unsigned int stack_base, stack_limit;
-static unsigned int heap_base, heap_limit;
-static bfd_boolean user_defined_stack = FALSE;
-static bfd_boolean heap_section_defined = FALSE;
-static ATTRIBUTE_UNUSED bfd_boolean stack_section_defined = FALSE;
-static bfd *heap_bfd, *stack_bfd ATTRIBUTE_UNUSED;
-
-extern bfd *init_bfd;
-static bfd *stack_bfd;
-extern unsigned char *init_data;
-extern asection *init_template;
-extern struct pic32_section *data_sections;
-
-/* Symbol Tables */
-static asymbol **symtab;
-static int symptr;
-
-static struct pic32_memory *free_blocks, *data_memory_free_blocks;
-
 static bfd_boolean elf_link_check_archive_element
   PARAMS ((char *, bfd *, struct bfd_link_info *));
 
 /* Declare functions used by various EXTRA_EM_FILEs.  */
-
+#if 0
+static void pic32_before_parse (void);
+static void gld${EMULATION_NAME}_before_allocation (void);
 static void pic32_after_open PARAMS ((void));
+static lang_output_section_statement_type pic32_place_orphan
+  (asection *, const char *, int);
+static void pic32_finish (void);
+#endif
 
 unsigned force_keep_symbol
   PARAMS ((char *symbol, char *module_name));
@@ -324,22 +112,22 @@ unsigned force_keep_symbol
 /* Memory Reporting Info */
 static const struct magic_section_description_tag magic_pmdescriptions[] =
    {{"", ""},
-   {".text", "App's exec code"},
-   {".rodata", "Read-only const"},
+   {".text", "Application's executable code"},
+   {".rodata", "Read-only constant data"},
    {".sdata2", "Small initialized, constant global and static data template"},
    {".sbss2", "Small uninitialized, constant global and static data"},
    {".eh_frame_hdr", "Stack unwind header"},
    {".eh_frame", "Stack unwind info"},
-   {".data", "Data-init template"},
+   {".data", "Data-initialization template"},
    {".got", "Global offset table"},
-   {".sdata", "Small data-init template"},
+   {".sdata", "Small data-initialization template"},
    {".lit8", "8-byte constants"},
    {".lit4", "4-byte constants"},
-   {".ramfunc", "RAM-funct template"},
+   {".ramfunc", "RAM-function template"},
    {".startup", "C startup code"},
-   {".app_excpt", "General-Exception"},
+   {".app_excpt", "General-Exception handler"},
    {".reset", "Reset handler"},
-   {".bev_excpt", "BEV-Exception"},
+   {".bev_excpt", "BEV-Exception handler"},
    {".vector_0", "Interrupt Vector 0"},
    {".vector_1", "Interrupt Vector 1"},
    {".vector_2", "Interrupt Vector 2"},
@@ -410,15 +198,14 @@ static const struct magic_section_description_tag magic_dmdescriptions[] =
    {{"", ""},
    {".data", "Initialized data"},
    {".got", "Global offset table"},
-   {".sdata", "Small init data"},
+   {".sdata", "Small initialized data"},
    {".lit8", "8-byte constants"},
    {".lit4", "4-byte constants"},
-   {".sbss", "Small uninit data"},
+   {".sbss", "Small uninitialized data"},
    {".bss", "Uninitialized data"},
    {".heap", "Dynamic Memory heap"},
-   {".stack", "Min reserved for stack"},
-   {".ramfunc", "RAM functions"},
-   {".dbg_data", "Memory reserved for debugger exec"}};
+   {".stack", "Minimum space reserved for stack"},
+   {".ramfunc", "RAM functions"}};
 
 struct magic_sections_tag magic_dm =
 {
@@ -590,8 +377,6 @@ struct function_pair_type function_pairs[] =
     { 0, 0, 0 },
   };
 
-#include "../bfd/pic32-options.c"
-
 static void
 mips_after_parse (void)
 {
@@ -612,7 +397,6 @@ struct hook_stub_info
   lang_statement_list_type add;
   asection *input_section;
 };
-
 
 /* Traverse the linker tree to find the spot where the stub goes.  */
 
@@ -698,11 +482,6 @@ mips_add_stub_section (const char *stub_sec_name, asection *input_section,
   lang_output_section_statement_type *os;
   struct hook_stub_info info;
 
-  /* PR 12845: If the input section has been garbage collected it will
-     not have its output section set to *ABS*.  */
-  if (bfd_is_abs_section (output_section))
-    return NULL;
-
   /* Create the stub file, if we haven't already.  */
   if (stub_file == NULL)
     {
@@ -740,7 +519,7 @@ mips_add_stub_section (const char *stub_sec_name, asection *input_section,
 
   /* Initialize a statement list that contains only the new statement.  */
   lang_list_init (&info.add);
-  lang_add_section (&info.add, stub_sec, NULL, os);
+  lang_add_section (&info.add, stub_sec, os);
   if (info.add.head == NULL)
     goto err_ret;
 
@@ -759,12 +538,6 @@ mips_add_stub_section (const char *stub_sec_name, asection *input_section,
 static void
 mips_create_output_section_statements (void)
 {
-  struct elf_link_hash_table *htab;
-
-  htab = elf_hash_table (&link_info);
-  if (is_elf_hash_table (htab) && is_mips_elf (link_info.output_bfd))
-    _bfd_mips_elf_linker_flags (&link_info, insn32, eh_reloc_type);
-
   if (is_mips_elf (link_info.output_bfd))
     _bfd_mips_elf_init_stubs (&link_info, mips_add_stub_section);
 }
@@ -810,7 +583,7 @@ mips_lang_for_each_input_file (void (*func) (lang_input_statement_type *))
 **
 ** - print a section chart to file *fp
 **/
-void
+static void
 bfd_pic32_report_memory_usage (fp)
      FILE *fp;
 {
@@ -839,13 +612,9 @@ bfd_pic32_report_memory_usage (fp)
       "         Total kseg1_boot_mem used"}};
 
   struct region_report_tag dmregions_to_report[] =
-    {{"kseg0_data_mem",
-      "kseg0 Data-Memory Usage",
-      "         Total kseg0_data_mem used"},
-      {"kseg1_data_mem",
+    {{"kseg1_data_mem",
       "kseg1 Data-Memory Usage",
-      "         Total kseg1_data_mem used"}
-    };
+      "         Total kseg1_data_mem used"}};
 
   /* clear the counters */
   actual_prog_memory_used = 0;
@@ -853,10 +622,12 @@ bfd_pic32_report_memory_usage (fp)
   region_prog_memory_used = 0;
   region_data_memory_used = 0;
   total_data_memory = total_prog_memory = 0;
-  
-  fflush (fp);
+  if (pic32_debug)
+    {
+      fprintf (stdout, "DEBUG: Generating Memory-Usage Report\n");
+    }
 
-  fprintf (fp, "\nMicrochip PIC32 Memory-Usage Report");
+  fprintf( fp, "\nMicrochip PIC32 Memory-Usage Report");
 
   /* build an ordered list of output sections */
   pic32_init_section_list(&pic32_section_list);
@@ -866,9 +637,7 @@ bfd_pic32_report_memory_usage (fp)
   magic_pm.count = sizeof(magic_pmdescriptions)/sizeof(magic_pmdescriptions[0]);
   magic_pm.start = magic_pm.index = 0;
   for (region_index = 0; region_index < region_count; region_index++)
-  {  
-     if (!lang_memory_region_exist(pmregions_to_report[region_index].name))
-       continue;
+  {
      region = region_lookup(pmregions_to_report[region_index].name);
 
      /* print code header */
@@ -879,7 +648,7 @@ bfd_pic32_report_memory_usage (fp)
      for (s = pic32_section_list; s != NULL; s = s->next)
        if (s->sec)
        {
-         region_prog_memory_used += bfd_pic32_report_sections (s, region, &magic_pm,fp);
+         region_prog_memory_used += bfd_pic32_report_sections (s->sec, region, &magic_pm,fp);
        }
      fprintf( fp, "%s  :  %#10lx  %10ld  ",
             pmregions_to_report[region_index].total,
@@ -896,7 +665,7 @@ bfd_pic32_report_memory_usage (fp)
 
   fprintf (fp, "\n        --------------------------------------------------------------------------\n");
   fprintf (fp,     "         Total Program Memory used  :  %#10lx  %10ld  ",
-         (unsigned long)actual_prog_memory_used, (unsigned long)actual_prog_memory_used);
+         actual_prog_memory_used, actual_prog_memory_used);
   report_percent_used (actual_prog_memory_used, total_prog_memory, fp);
   fprintf (fp, "\n        --------------------------------------------------------------------------\n");
 
@@ -907,19 +676,16 @@ bfd_pic32_report_memory_usage (fp)
   magic_dm.start = magic_dm.index = 0;
   for (region_index = 0; region_index < region_count; region_index++)
   {
-     if (!lang_memory_region_exist(dmregions_to_report[region_index].name))
-       continue;
-         
      region = region_lookup(dmregions_to_report[region_index].name);
-     /* print data header */
+     /* print code header */
      fprintf( fp, "\n\n%s\n", dmregions_to_report[region_index].title);
      fprintf( fp, "section                    address  length [bytes]      (dec)  Description\n");
      fprintf( fp, "-------                 ----------  -------------------------  -----------\n");
-     /* report data sections */
+     /* report code sections */
      for (s = pic32_section_list; s != NULL; s = s->next)
        if (s->sec)
        {
-         region_data_memory_used += bfd_pic32_report_sections (s, region, &magic_dm, fp);
+         region_data_memory_used += bfd_pic32_report_sections (s->sec, region, &magic_dm, fp);
        }
 
      fprintf( fp, "%s  :  %#10lx  %10ld  ",
@@ -937,54 +703,11 @@ bfd_pic32_report_memory_usage (fp)
 
   fprintf( fp, "\n        --------------------------------------------------------------------------\n");
   fprintf( fp,     "            Total Data Memory used  :  %#10lx  %10ld  ",
-         (unsigned long)data_memory_used, (unsigned long)data_memory_used);
+         data_memory_used, data_memory_used);
   report_percent_used (data_memory_used, total_data_memory, fp);
   fprintf( fp, "\n        --------------------------------------------------------------------------\n");
 
-
-  /* Dynamic Data Memory */
-#define NAME_MAX_LEN 23
-#define NAME_FIELD_LEN "24"
-  fprintf( fp, "\n\n%s\n", "Dynamic Data-Memory Reservation");
-  fprintf( fp, "section                    address  length [bytes]      (dec)  Description\n");
-  fprintf( fp, "-------                 ----------  -------------------------  -----------\n");
-  fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", "heap",
-             (unsigned long)heap_base, (unsigned long)(heap_limit-heap_base),
-             (unsigned long)(heap_limit-heap_base), "Reserved for heap");
-  fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", "stack",
-             (unsigned long)stack_base, (unsigned long)(stack_limit-stack_base),
-             (unsigned long)(stack_limit-stack_base), "Reserved for stack");
-  fprintf( fp, "\n        --------------------------------------------------------------------------\n");
-  
-  fflush (fp);
-#undef NAME_MAX_LEN
-#undef NAME_FIELD_LEN
 } /* static void bfd_pic32_report_memory_usage (...)*/
-
-
-void pic32_report_crypto_sections()
-{
-   FILE *crypto;
-   struct pic32_section *s;
-   char *c;
-   crypto = fopen(crypto_file, "w");
-   if (!crypto){
-     fprintf(stderr,"Error: crypto output file cannot be opened.\n");
-     xexit(1);
-   }
-     for (s = pic32_section_list; s != NULL; s = s->next)
-       if (s->sec && (strstr(s->sec->name,"XC32$_crypto") ||
-                      (strncmp(s->sec->name, ".dinit%", 7) == 0)))
-       {
-          c = strchr(s->sec->name, '%');
-          if (c) *c = (char) '\0';
-          fprintf( crypto, "%s \t%#X \t%#X  \n", s->sec->name,
-                 s->sec->vma, s->sec->size);
-
-       }
-    fclose(crypto);
-    free(crypto_file);
-}
 
 static void
 report_percent_used (used, max, fp)
@@ -1118,6 +841,10 @@ static void
 pic32_init_section_list(lst)
      struct pic32_section **lst;
 {
+  if (pic32_debug)
+    {
+      fprintf (stdout, "DEBUG: Init Section List\n");
+    }
   *lst = ((struct pic32_section *)
          xmalloc(sizeof(struct pic32_section)));
   if (NULL == lst) {
@@ -1138,54 +865,6 @@ pic32_init_section_list(lst)
 ** - this function is called via bfd_map_over_sections()
 */
 static void
-pic32_build_section_list_vma (abfd, sect, fp)
-     bfd *abfd ATTRIBUTE_UNUSED ;
-     asection *sect;
-     PTR fp ATTRIBUTE_UNUSED ;
-{
-  struct pic32_section *new, *s, *prev;
-  int done = 0;
-
-  /* Already added due to lma */
-  if (sect->lma == sect->vma)
-    return;
-
-  /* create a new element */
-  new = ((struct pic32_section *)
-         xmalloc(sizeof(struct pic32_section)));
-  if (NULL == new) {
-    fprintf( stderr, "Fatal Error: Could not build section list\n");
-    abort();
-  }
-  new->sec  = sect;
-  new->attributes = pic32_attribute_map(sect);
-  new->file = 0;
-  new->use_vma = 1;
-
-  /* insert it at the right spot */
-  prev = pic32_section_list;
-  for (s = prev; s != NULL; s = s->next)
-    {
-      if (s->sec && (new->sec->vma < s->sec->lma))
-        {
-          prev->next = new;
-          new->next = s;
-          if (pic32_debug)
-            printf("pic32_build_section_list_vma: Adding %s LMA:%x VMA:%x\n", new->sec->name, (unsigned int)new->sec->lma, (unsigned int)new->sec->vma);
-          done++;
-          break;
-        }
-      prev = s;
-    }
-
-  if (!done)
-    {
-      prev->next = new;
-      new->next = NULL;
-    }
-} /* static void pic32_build_section_list_vma (...) */
-
-static void
 pic32_build_section_list (abfd, sect, fp)
      bfd *abfd ATTRIBUTE_UNUSED ;
      asection *sect;
@@ -1193,7 +872,10 @@ pic32_build_section_list (abfd, sect, fp)
 {
   struct pic32_section *new, *s, *prev;
   int done = 0;
-
+  if (pic32_debug)
+    {
+      fprintf (stderr, "DEBUG: Add section to list\n");
+    }
   /* create a new element */
   new = ((struct pic32_section *)
          xmalloc(sizeof(struct pic32_section)));
@@ -1202,9 +884,7 @@ pic32_build_section_list (abfd, sect, fp)
     abort();
   }
   new->sec  = sect;
-  new->attributes = pic32_attribute_map(sect);
   new->file = 0;
-  new->use_vma = 0;
 
   /* insert it at the right spot */
   prev = pic32_section_list;
@@ -1214,8 +894,6 @@ pic32_build_section_list (abfd, sect, fp)
         {
           prev->next = new;
           new->next = s;
-          if (pic32_debug)
-            printf("pic32_build_section_list: Adding %s LMA:%x VMA:%x\n", new->sec->name, (unsigned int)new->sec->lma, (unsigned int)new->sec->vma);
           done++;
           break;
         }
@@ -1228,7 +906,6 @@ pic32_build_section_list (abfd, sect, fp)
       new->next = NULL;
     }
 } /* static void pic32_build_section_list (...) */
-
 
 /*
 ** region_lookup()
@@ -1255,6 +932,11 @@ region_lookup( name )
   lang_memory_region_type *region;
   bfd_vma upper_limit = 0;
   int use_default = 0;
+
+  if (pic32_debug)
+    {
+      fprintf (stdout, "DEBUG: Region lookup\n");
+    }
 
   region = lang_memory_region_lookup (name, FALSE);
   if (region->length == ~(bfd_size_type) 0) {
@@ -1288,12 +970,6 @@ region_lookup( name )
       region->length = 0x8000;
       upper_limit    = (region->origin + region->length)-1;
     }
-    else if (NAME_IS(kseg0_data_mem)) {
-      use_default = 1;
-      region->origin = 0x80000000;     /* works with 32MX320F512L */
-      region->length = 0x8000;
-      upper_limit    = (region->origin + region->length)-1;
-    }
     else
       einfo("Memory region %s does not exist\n", name);
 
@@ -1304,7 +980,6 @@ region_lookup( name )
       region->current = region->origin;
     }
   }
-
   return region;
 }
 
@@ -1314,77 +989,56 @@ region_lookup( name )
 ** - show memory usage of SEC_ALLOC-flagged sections in memory
 */
 static bfd_size_type
-bfd_pic32_report_sections (s, region, magic_sections, fp)
-     struct pic32_section *s;
+bfd_pic32_report_sections (sect, region, magic_sections, fp)
+     asection *sect;
      const lang_memory_region_type *region;
      struct magic_sections_tag *magic_sections;
      FILE *fp;
 {
   const char *description;
   bfd_size_type region_used = 0;
-  unsigned long start = s->sec->vma;
-  unsigned long load  = s->sec->lma;
-  unsigned long actual = s->sec->size;
-  size_t name_len = 0;
+  unsigned long start = sect->vma;
+  unsigned long load  = sect->lma;
+  unsigned long actual = sect->size;
 
-  if (PIC32_IS_COHERENT_ATTR(s->sec)) {
-    start &= 0xdfffffff;
-    load &= 0xdfffffff;
-  }
-    
   /*
   ** report SEC_ALLOC sections in memory
   */
-  if ((s->sec->flags & SEC_ALLOC)
-  &&  (s->sec->size > 0))
+  if ((sect->flags & SEC_ALLOC)
+  &&  (sect->size > 0))
     {
       char *name, *c;
-#define NAME_MAX_LEN 23
-#define NAME_FIELD_LEN "24"
-      if (strstr(s->sec->name, "fill$")) {
-        name = xmalloc(7);
-        if (PIC32_IS_ABSOLUTE_ATTR(s->sec))
-          strcpy(name, "FILLED");
-        else
-          strcpy(name, "UNUSED");
-      }
-      else {
+
       /* make a local copy of the name */
-      name_len = strlen(s->sec->name);
-      name = xmalloc(name_len + 1);
+      name = xmalloc(strlen(sect->name) + 1);
       if (NULL == name) {
         fprintf( stderr, "Fatal Error: Could not copy section name\n");
         abort();
       }
-      if (name_len > NAME_MAX_LEN)
-        name_len = NAME_MAX_LEN;
-      strncpy(name, s->sec->name, name_len);
-      name[name_len] = '\0';
-      }
+      strcpy(name, sect->name);
+
       /* clean the name of %n */
       c = strchr(name, '%');
       if (c) *c = (char) '\0';
 
-      if ((start >= region->origin) &&
-          ((start + actual) <= (region->origin + region->length)))
+      if ((start >= region->origin)
+        &&  ((start + actual) <= (region->origin + region->length)))
       {
          bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
-         fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", name,
+         fprintf( fp, "%-24s%#10lx     %#10lx  %10ld  %s \n", name,
                  start, actual, actual, description);
          region_used = actual;
       }
-      else if ((load >= region->origin) &&
-          ((load + actual) <= (region->origin + region->length)) &&
-           (s->sec->flags & (SEC_HAS_CONTENTS)))
+      else if ((load >= region->origin)
+        &&  ((load + actual) <= (region->origin + region->length))
+        && (sect->flags & (SEC_HAS_CONTENTS)))
       {
          bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
-         fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", name,
+         fprintf( fp, "%-24s%#10lx     %#10lx  %10ld  %s \n", name,
                   load, actual, actual, description);
          region_used = actual;
       }
       free(name);
-#undef NAME_MAX_LEN
-#undef NAME_FIELD_LEN
     }
   return region_used;
 } /* static bfd_size_type bfd_pic32_report_sections (...) */
@@ -1395,6 +1049,10 @@ static const char * bfd_pic32_lookup_magic_section_description (name, magic_sect
      struct magic_sections_tag *magic_sections;
      const char **description;
 {
+  if (pic32_debug)
+    {
+      fprintf (stdout, "DEBUG: Lookup section description\n");
+    }
       /* Assume that we don't have a description for the magic section name */
       *description = &empty_string[0];
       do
@@ -1502,17 +1160,6 @@ mchp_release_kept_symbols(char *symbol) {
     if (strncmp(fp->prefix, symbol, strlen(fp->prefix)) == 0) {
       for (rsl = fp->rsl; rsl; rsl = next) {
         next = rsl->next;
-        if (strcmp(&symbol[strlen(symbol)-2],"_s") == 0) {
-          /* _0 suffix == _s suffix, then don't remove the module because the
-             symbols are defined in the same object file */
-          if (strcmp(&rsl->reduced_set[strlen(rsl->reduced_set)-2],"_0") == 0)
-          {
-            if (pic32_debug)
-              fprintf(stderr,"*** Not removing %s\n", rsl->module_name);
-            continue;
-          }
-        }
-
         if (strcmp(rsl->reduced_set, symbol) != 0) {
           /* this symbol was not used, so release it */
           bfd_mchp_remove_archive_module(rsl->module_name);
@@ -1525,7 +1172,7 @@ mchp_release_kept_symbols(char *symbol) {
 }
 
 static void
-smartio_symbols(struct bfd_link_info *sec_info) {
+smartio_symbols(struct bfd_link_info *info) {
   int i = 0;
   struct bfd_link_hash_entry *undefs = 0;
 
@@ -1538,8 +1185,8 @@ smartio_symbols(struct bfd_link_info *sec_info) {
 
        char suffix[] = "_aAcdeEfFgGnopsuxX";
 
-       if (sec_info) {
-         undefs=sec_info->hash->undefs;
+       if (info) {
+         undefs=info->hash->undefs;
          if (undefs == 0) return;
        }
        mchp_smartio_symbol = function_pairs[i].prefix;
@@ -1585,7 +1232,7 @@ smartio_symbols(struct bfd_link_info *sec_info) {
          if (undefs) {
            /* in this mode we are adding undefined symbols to the end of
               the list so that the regular mechanism can pull them in */
-           if (bfd_link_hash_lookup(sec_info->hash, buffer_map_to, 0, 0, 0) == 0) {
+           if (bfd_link_hash_lookup(info->hash, buffer_map_to, 0, 0, 0) == 0) {
              struct bfd_link_hash_entry *new;
 
              if (pic32_debug) {
@@ -1594,9 +1241,9 @@ smartio_symbols(struct bfd_link_info *sec_info) {
                  fprintf(stderr,"  because of: %s\n", l->h->root.string);
              }
 
-             new = bfd_link_hash_lookup(sec_info->hash, buffer_map_to, 1, 1 , 1);
+             new = bfd_link_hash_lookup(info->hash, buffer_map_to, 1, 1 , 1);
              new->type =  bfd_link_hash_undefined;
-             bfd_link_add_undef(sec_info->hash, new);
+             bfd_link_add_undef(info->hash, new);
            }
          } else {
            full = bfd_mchp_is_defined_global_symbol(buffer_map_to);
@@ -1626,318 +1273,14 @@ smartio_symbols(struct bfd_link_info *sec_info) {
     }
 }
 
-/*
-** Create a new symbol list
-*/
-static void
-pic32_init_symbol_list(lst)
-     struct pic32_symbol **lst;
-{
-  *lst = ((struct pic32_symbol *)
-         xmalloc(sizeof(struct pic32_symbol) * PIC32_INIT_SYM_COUNT));
-  pic32_max_symbols = PIC32_INIT_SYM_COUNT;
-  pic32_symbol_count = 0;
-}
-
-/*
-** Append to a symbol list
-*/
-static void
-pic32_add_to_symbol_list(lst, name, value)
-     struct pic32_symbol **lst;
-     const char *name;
-     bfd_vma value;
-{
-  if (pic32_symbol_count >= pic32_max_symbols) {
-    pic32_max_symbols += PIC32_GROW_SYM_COUNT;
-    *lst = ((struct pic32_symbol *)
-            xrealloc( *lst, sizeof(struct pic32_symbol) * pic32_max_symbols));
-  }
-
-  (*lst)[pic32_symbol_count].name = (char *) name;
-  (*lst)[pic32_symbol_count].value = value;
-  ++pic32_symbol_count;
-}
-
-
-static bfd_boolean
-bfd_pic32_process_bfd_after_open (abfd, info)
-     bfd *abfd;
-     struct bfd_link_info *info ATTRIBUTE_UNUSED;
-{
-  asection *sec;
-  const char *sym_name;
-  asymbol **symbols = 0;
-  bfd_boolean has_extended_attributes = FALSE;
-
-  /*
-  ** check the input file name
-  */
-  if (!strcmp(abfd->filename, "sbrk.o"))
-  {
-      pic32_heap_required = 1;
-  }
-
-   /*
-  ** loop through the symbols in this bfd
-  */
-  {
-    long size, num,i;
-
-    size = bfd_get_symtab_upper_bound (abfd);
-    if (size < 0)
-      abort();
-
-    symbols = (asymbol **) xmalloc(size);
-    if (!symbols)
-      abort();
-
-    num = bfd_canonicalize_symtab (abfd, symbols);
-    if (num < 0)
-      abort();
-
-
-    for (i=0; i<num; i++) {
-
-      char *ext_attr_prefix = "__ext_attr_";
-
-      /*
-       * Look for extended section attributes. If we find any,
-       * store the info in a list for use below, where we loop
-       * through the sections in this bfd.
-       */
-      sym_name = bfd_asymbol_name(symbols[i]);
-      if (strstr(sym_name, ext_attr_prefix)) {
-        char *sec_name = (char *) &sym_name[strlen(ext_attr_prefix)];
-        bfd_vma attr = bfd_asymbol_value(symbols[i]);
-
-        if (!has_extended_attributes) {
-          pic32_init_symbol_list (&pic32_symbol_list);
-          has_extended_attributes = TRUE;
-        }
-
-        pic32_add_to_symbol_list(&pic32_symbol_list, sec_name, attr);
-        if (pic32_debug)
-          printf("    extended attributes for section %s: 0x%lx\n",
-                 sec_name, attr);
-      }
-  }
-
-   /*
-  ** loop through the sections in this bfd
-  */
-  for (sec = abfd->sections; sec != 0; sec = sec->next)
-  {
-    /* if section has extended attributes, apply them */
-   if (has_extended_attributes) {
-    int c;
-    for (c=0; c < pic32_symbol_count; c++) {
-      if (strcmp(sec->name, pic32_symbol_list[c].name) == 0)
-        pic32_set_attributes(sec, pic32_symbol_list[c].value, 0);
-     }
-   }
-
-    /* if section has HEAP attribute, record that fact */
-    if (PIC32_IS_HEAP_ATTR(sec) && (sec->size > 0)) {
-      if (heap_section_defined)
-        einfo(_("%P%X: Error: Multiple heap sections defined\n"));
-      else {
-        heap_section_defined = TRUE;
-        heap_bfd = sec->owner;
-        if ((pic32_heap_size > 0) &&
-            (pic32_heap_size != (sec->size)))
-          einfo(_("%P%X: Error: Size of heap requested (%d bytes)"
-                  " does not match heap defined in section \'%s\'"
-                  "  (%d bytes)\n"), pic32_heap_size, sec->name,
-                   sec->size );
-      }
-    }
- }
-  if (symbols) free(symbols);
-  return(TRUE);
- }
-}
-
-
 unsigned int (*mchp_force_keep_symbol)(char *, char *) = force_keep_symbol;
 void (*mchp_smartio_symbols)(struct bfd_link_info *) = smartio_symbols;
-
-/*
-** Create a bfd for the data init template
-**
-** Uses the following global variables:
-**   symtab
-**   symptr
-*/
-static bfd *
-bfd_pic32_create_data_init_bfd (parent)
-     bfd *parent ATTRIBUTE_UNUSED;
-{
-  bfd_size_type size;
-  bfd *abfd;
-  asection *sec;
-  char *oname;
-  int flags, align;
-
-  /* create a bare-bones bfd */
-  oname = (char *) bfd_alloc (link_info.output_bfd, 20);
-  snprintf (oname, 20, "data_init");
-  abfd = bfd_create (oname, parent);
-  bfd_find_target ("${OUTPUT_FORMAT}", abfd);
-  bfd_make_writable (abfd);
-
-  bfd_set_format (abfd, bfd_object);
-  bfd_set_arch_mach (abfd, bfd_arch_mips, 0);
-
-  /* create a symbol table (room for 1 entry) */
-  symptr = 0;
-  symtab = (asymbol **) bfd_alloc (link_info.output_bfd, 2 * sizeof (asymbol *));
-
-  /*
-  ** create a bare-bones section for .dinit
-  */
-  flags = SEC_CODE | SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_KEEP |
-          SEC_LINKER_CREATED | SEC_ALLOC;
-  align = 2; /* 2^2 */
-  sec = bfd_pic32_create_section (abfd, ".dinit", flags, align);
-  size = 0; /* will update later */
-  bfd_set_section_size (abfd, sec, size);
-
-  /* put in the symbol table */
-  bfd_set_symtab (abfd, symtab, symptr);
-
-  /* will add section contents later */
-
-  /* finish it */
-  if (!bfd_make_readable (abfd))
-    {
-      fprintf( stderr, "Link Error: can't make data init readable\n");
-      abort();
-    }
-
-  return abfd;
-} /* static bfd * bfd_pic32_create_data_init_bfd (...)*/
-
-void pic32_create_data_init_template(void)
-{
-  struct pic32_section *s;
-  int total_data = 0;
-  asection *sec;
-  /*
-  ** If data init support is enabled, create a BFD
-  ** for section .dinit and add it to the link.
-  */
-  if (pic32_data_init)
-    {
-      init_bfd = bfd_pic32_create_data_init_bfd (link_info.output_bfd);
-      bfd_pic32_add_bfd_to_link (init_bfd, init_bfd->filename);
-
-       /* Compute size of data init template */
-      for (s = data_sections; s != NULL; s = s->next)
-        if ((s->sec) && ((s->sec->flags & SEC_EXCLUDE) == 0))
-          bfd_pic32_scan_data_section(s->sec, &total_data);
-
-      total_data += 4; /* zero terminated */
-
-      if (total_data % 16)
-        total_data += 16 - (total_data % 16);
-
-      dinit_size = total_data;
-
-      /* allocate memory for the template */
-      init_data = (unsigned char *) bfd_alloc (link_info.output_bfd, total_data);
-      if (!init_data)
-        {
-          fprintf( stderr, "Link Error: not enough memory for data template\n");
-          abort();
-        }
-
-      /* fill the template with a default value */
-      init_data = memset( init_data, 0x11, total_data);
-
-      /* attach it to the input section */
-      sec = bfd_get_section_by_name(init_bfd, ".dinit");
-      if (sec)
-        {
-          sec->size = total_data;
-          sec->flags |= (SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_LOAD | SEC_CODE | SEC_KEEP);
-          sec->contents = init_data;
-          bfd_set_section_size (init_bfd, sec, total_data);
-          init_template = sec;  /* save a copy for later */
-        }
-     else
-        if (pic32_debug)
-          printf("after_open: section .dinit not found\n");
-
-    } /* if (pic32_data_init) */
-
-  else
-    {
-      /* warn if initial data values will be ignored */
-      for (s = data_sections; s != NULL; s = s->next)
-        if (s->sec)
-          bfd_pic32_skip_data_section(s->sec, &total_data);
-    }
-}
-
-/*
-** Create a bfd for the stack
-**
-** Uses the following global variables:
-**   symtab
-**   symptr
-**   pic32_stack_size
-*/
-static bfd *
-bfd_pic32_create_stack_bfd (bfd *parent) {
-  bfd_size_type size;
-  bfd *abfd;
-  asection *sec;
-  char *oname;
-  int flags, align;
-
-  /* create a bare-bones bfd */
-  oname = (char *) xmalloc (20);
-  sprintf (oname, "stack");
-  abfd = bfd_create (oname, parent);
-  bfd_find_target ("${OUTPUT_FORMAT}", abfd);
-  bfd_make_writable (abfd);
-
-  bfd_set_format (abfd, bfd_object);
-  bfd_set_arch_mach (abfd, bfd_arch_mips, 0);
-
-  /* create a symbol table (room for 1 entry) */
-  symptr = 0;
-  symtab = (asymbol **) xmalloc (2 * sizeof (asymbol *));
-
-  /* create a bare-bones section */
-  flags = SEC_LINKER_CREATED | SEC_KEEP;
-  align = 1;
-  sec = bfd_pic32_create_section (abfd, ".stack", flags, align);
-  bfd_set_section_flags (abfd, sec, flags);
-  size = 8;
-  bfd_set_section_size (abfd, sec, size);
-
-  /* put in the symbol table */
-  bfd_set_symtab (abfd, symtab, symptr);
-
-  /* finish it */
-  if (!bfd_make_readable (abfd)) {
-      fprintf( stderr, "Link Error: can't make stack readable\n");
-      abort();
-    }
-  /* set section flags & attributes again, because the call to
-     bfd_make_readable() loses them */
-     sec = abfd->sections;
-     flags = SEC_LINKER_CREATED | SEC_KEEP;
-     bfd_set_section_flags (abfd, sec, flags);
-  return abfd;
-} /* static bfd * bfd_pic32_create_stack_bfd (...)*/
 
 /* This is called after all the input files have been opened.  */
 static void
 pic32_after_open(void)
 {
+
   /*
   ** Merge full- and reduced-set I/O functions
   */
@@ -1951,69 +1294,6 @@ pic32_after_open(void)
     } /* pic32_smart_io */
 
     gld${EMULATION_NAME}_after_open();
-
-  {
-    /* loop through all of the input bfds */
-    LANG_FOR_EACH_INPUT_STATEMENT (is)
-      {
-        if (!bfd_pic32_process_bfd_after_open(is->the_bfd, &link_info))
-          {
-            einfo("Errors encountered processing file %s\n", is->filename);
-          }
-      }
-  }
-
-   /* init list of input data sections */
-  pic32_init_section_list(&data_sections);
-
-  /*
-   * Loop through all input sections and
-   * build a list of DATA or BSS type.
-   */
-  {
-    asection * sec;
-    LANG_FOR_EACH_INPUT_STATEMENT (f)
-      {
-        for (sec = f->the_bfd->sections;
-             sec != (asection *) NULL;
-             sec = sec->next)
-          if (((sec->size > 0) && (PIC32_IS_DATA_ATTR(sec)))
-              || (PIC32_IS_BSS_ATTR(sec)) || PIC32_IS_RAMFUNC_ATTR(sec)) {
-            /* fix for xc32-146 */
-            if (PIC32_IS_DATA_ATTR(sec) &&
-                (strcmp(sec->name, ".rodata") == 0)) {
-              sec->flags &= ~SEC_DATA;
-              PIC32_SET_CODE_ATTR(sec);
-              if (sec->owner->my_archive) {
-                einfo(_("%P: Warning: %s of %s needs to be compiled"
-                        " with MPLAB XC32.\n"), 
-                        sec->owner->filename, sec->owner->my_archive->filename);
-              }
-              else {
-                einfo(_("%P: Warning: %s needs to be compiled"
-                        " with MPLAB XC32.\n"), sec->owner->filename);
-              }
-            }
-            else
-              pic32_append_section_to_list(data_sections, f, sec);
-          }
-      }
-  }
-
-  /*
-  ** If a heap is required, but not provided
-  ** as an input section, create one.
-  **
-  ** FIXME: may want to test pic32_stack_required
-  ** and create a default size stack
-  */
-  if (!stack_section_defined && (pic32_stack_size > 0)) {
-    if (pic32_debug)
-      printf("\nCreating stack of size %x\n", pic32_stack_size);
-    stack_bfd = bfd_pic32_create_stack_bfd (link_info.output_bfd);
-    bfd_pic32_add_bfd_to_link (stack_bfd, stack_bfd->filename);
-    stack_section_defined = TRUE;
-  }
 }
 
 /*
@@ -2025,13 +1305,9 @@ pic32_after_open(void)
 static void
 pic32_finish(void)
 {
-  need_layout = bfd_elf_discard_info (link_info.output_bfd,
-  				      &link_info);
-  /* We need to map segments here so that we determine file positions for 
-     sections added by best-fit-allocator */
-  gld${EMULATION_NAME}_map_segments (need_layout);
 
-  bfd_pic32_finish();
+  bfd_boolean need_layout = bfd_elf_discard_info (link_info.output_bfd,
+						  &link_info);
 
   if (config.map_file != NULL) {
     bfd_pic32_report_memory_usage (config.map_file);
@@ -2039,1135 +1315,317 @@ pic32_finish(void)
   if (pic32_report_mem)
     bfd_pic32_report_memory_usage (stdout);
 
-  if (pic32_has_crypto_option)
-    pic32_report_crypto_sections();
-
+  gld${EMULATION_NAME}_map_segments (need_layout);
 
   finish_default();
 } /* static void pic32_finish ()*/
 
+
+/* A variant of lang_output_section_find used by place_orphan.  */
+
+static lang_output_section_statement_type *
+output_rel_find (asection *sec, int isdyn)
+{
+  lang_output_section_statement_type *lookup;
+  lang_output_section_statement_type *last = NULL;
+  lang_output_section_statement_type *last_alloc = NULL;
+  lang_output_section_statement_type *last_ro_alloc = NULL;
+  lang_output_section_statement_type *last_rel = NULL;
+  lang_output_section_statement_type *last_rel_alloc = NULL;
+  int rela = sec->name[4] == 'a';
+
+  for (lookup = &lang_output_section_statement.head->output_section_statement;
+       lookup != NULL;
+       lookup = lookup->next)
+    {
+      if (lookup->constraint >= 0
+	  && CONST_STRNEQ (lookup->name, ".rel"))
+	{
+	  int lookrela = lookup->name[4] == 'a';
+
+	  /* .rel.dyn must come before all other reloc sections, to suit
+	     GNU ld.so.  */
+	  if (isdyn)
+	    break;
+
+	  /* Don't place after .rel.plt as doing so results in wrong
+	     dynamic tags.  */
+	  if (strcmp (".plt", lookup->name + 4 + lookrela) == 0)
+	    break;
+
+	  if (rela == lookrela || last_rel == NULL)
+	    last_rel = lookup;
+	  if ((rela == lookrela || last_rel_alloc == NULL)
+	      && lookup->bfd_section != NULL
+	      && (lookup->bfd_section->flags & SEC_ALLOC) != 0)
+	    last_rel_alloc = lookup;
+	}
+
+      last = lookup;
+      if (lookup->bfd_section != NULL
+	  && (lookup->bfd_section->flags & SEC_ALLOC) != 0)
+	{
+	  last_alloc = lookup;
+	  if ((lookup->bfd_section->flags & SEC_READONLY) != 0)
+	    last_ro_alloc = lookup;
+	}
+    }
+
+  if (last_rel_alloc)
+    return last_rel_alloc;
+
+  if (last_rel)
+    return last_rel;
+
+  if (last_ro_alloc)
+    return last_ro_alloc;
+
+  if (last_alloc)
+    return last_alloc;
+
+  return last;
+}
+
 /* Place an orphan section.  We use this to put random SHF_ALLOC
    sections in the right segment.  */
 
-static int
-gldelf32pic32mx_place_orphan (lang_input_statement_type *file,
-                              asection *sec,
-                              const char *secname ATTRIBUTE_UNUSED,
-                              int constraint ATTRIBUTE_UNUSED)
+static lang_output_section_statement_type *
+gldelf32pic32mx_place_orphan (asection *s,
+				   const char *secname,
+				   int constraint)
 {
-  int was_placed = 0;
-
-  if (pic32_allocate) {  /* if best-fit allocator enabled */
-
-   if (((sec->flags & SEC_DEBUGGING) == SEC_DEBUGGING)
-        || ((sec->flags & SEC_ALLOC) == 0))
-      return 0; /* let the base code handle non-alloc sections */
-
-    if (!unassigned_sections)
-      pic32_init_section_list(&unassigned_sections);
-
-    pic32_append_section_to_list(unassigned_sections, file, sec);
-
-    return 1;  /* and exit */
-  }
-
-   return was_placed;
-} /*static int gldelf32pic32mx_place_orphan () */
-
-/*
-** Append a section to a list
-*/
-static void
-pic32_append_section_to_list (struct pic32_section *lst,
-                              lang_input_statement_type *file,
-                              asection *sec)
-{
-  struct pic32_section *s, *tail, *new;
-
-  if (!(lst))
-    return;
-  /* create a new element */
-  new = ((struct pic32_section *)
-         xmalloc(sizeof(struct pic32_section)));
-  new->next  = 0;
-  new->sec  = sec;
-  new->attributes = pic32_attribute_map(sec);
-  new->file = (PTR) file;
-
-  /* find the tail */
-  for (s = lst; s != NULL; s = s->next)
-    tail = s;
-
-  tail->next = new;  /* add it */
-}
-
-/*
- * See if a section name matches
- * the unique section list. Truncate
- * section names at the % char, which
- * is used to differentiate orphan sections
- * with the same names.
- */
-static bfd_boolean
-pic32_unique_section(const char *s)
-{
-  struct unique_sections *unam;
-  const char *us;
-
-  for (unam = unique_section_list; unam; unam = unam->next) {
-    us = unam->name;
-    while (*us) {
-      if (*us++ != *s++) continue;
-      if ((*s == '%') || (*s == '0'))  return TRUE;
-    }
-  }
-  return FALSE;
-}
-
-/*
-** Free a section list
-*/
-static void
-pic32_free_section_list(lst)
-     struct pic32_section **lst;
-{
-  struct pic32_section *s, *next;
-
-  if (!(*lst))
-    return;
-
-  for (s = *lst; s != NULL; s = next)
+  static struct orphan_save hold[] =
     {
-      next = s->next;
-      free(s);
-    }
-
-  *lst = NULL;
-} /* static void pic32_free_section_list (...) */
-
-/*
-** Length of a section list
-*/
-static int
-pic32_section_list_length (lst)
-     struct pic32_section *lst;
-{
-  struct pic32_section *s;
-  int count = -1; /* first element is null */
-
-  for (s = lst; s != NULL; s = s->next)
-      count++;
-
-  return count;
-
-} /* pic32_section_list_length (..) */
-
-/*
-** Print a section list
-*/
-static void
-pic32_print_section_list (lst, name)
-     struct pic32_section *lst;
-      const char *name;
-{
-  unsigned int opb = bfd_octets_per_byte (link_info.output_bfd);
-  struct pic32_section *s, *prev, *next;
-
-  printf("\nContents of %s section list at %lx:\n", name, (bfd_vma) lst);
-  prev = lst;
-  for (s = prev; s != NULL; s = next)
+      { ".text",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_CODE,
+	0, 0, 0, 0 },
+      { ".rodata",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_DATA,
+	0, 0, 0, 0 },
+      { ".persist",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_DATA,
+	0, 0, 0, 0 },
+      { ".data",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_DATA,
+	0, 0, 0, 0 },
+      { ".bss",
+	SEC_ALLOC,
+	0, 0, 0, 0 },
+      { 0,
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_DATA,
+	0, 0, 0, 0 },
+      { ".interp",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_READONLY | SEC_DATA,
+	0, 0, 0, 0 },
+      { ".persist",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_DATA | SEC_SMALL_DATA,
+	0, 0, 0, 0 },
+      { ".sdata",
+	SEC_HAS_CONTENTS | SEC_ALLOC | SEC_LOAD | SEC_DATA | SEC_SMALL_DATA,
+	0, 0, 0, 0 },
+      { 0,
+	SEC_HAS_CONTENTS,
+	0, 0, 0, 0 },
+    };
+  enum orphan_save_index
     {
-      next = s->next;
-      printf("  name = %s, addr = %lx, len = %lx, attr = %x\n",
-             s->sec ? s->sec->name : "(none)",
-             s->sec ? s->sec->lma : 0,
-             s->sec ? s->sec->rawsize / opb : 0,
-             s->attributes);
-      prev = s;
-    }
-  printf("\n");
-
-} /* pic32_print_section_list (..) */
-
-/*
-** Add a node to a memory list
-**  in order of increasing size
-*/
-static void
-pic32_add_to_memory_list (lst, addr, size)
-     struct pic32_memory *lst;
-     bfd_vma addr, size;
-{
-  struct pic32_memory *new, *b, *prev;
-  int done = 0;
-
-  /* create a new element */
-  new = ((struct pic32_memory *)
-         xmalloc(sizeof(struct pic32_memory)));
-  new->addr  = addr;
-  new->size  = size;
-  new->offset = 0;
-
-  /* insert it at the right spot */
-  prev = lst;
-  for (b = prev; b != NULL; b = b->next)
-    {
-      if (new->size < b->size)
-        {
-          prev->next = new;
-          new->next = b;
-          done++;
-          break;
-        }
-      prev = b;
-    }
-
-  if (!done)
-    {
-      prev->next = new;
-      new->next = NULL;
-    }
-} /* static void pic32_add_to_memory_list (..) */
-
-/*
-** Remove an element from a section list
-*/
-static void
-pic32_remove_from_section_list (lst, sec)
-     struct pic32_section *lst;
-     struct pic32_section *sec;
-{
-  struct pic32_section *s, *prev, *next;
-  int done = 0;
-
-  prev = lst;
-  for (s = prev; s != NULL; s = next)
-    {
-      next = s->next;
-      if (s == sec)
-        {
-          prev->next = next;
-          free(s);
-          done = 1;
-          break;
-        }
-      prev = s;
-    }
-
-  /*
-   * If we didn't find it, search for element->section.
-   * This enables us to remove an element that was
-   * identified from another list.
-   *
-   * Example: Remove a member of "unassigned sections"
-   * that was identified from an allocation list.
-   */
-  if (!done)
-    {
-      prev = lst;
-      for (s = prev; s != NULL; s = next)
-        {
-          next = s->next;
-          if (s->sec == sec->sec)
-            {
-              prev->next = next;
-              free(s);
-              done = 1;
-              break;
-            }
-          prev = s;
-        }
-    }
-
-  if (pic32_debug && (done == 0))
-    printf("    !Could not remove section \"%s\" from list at %lx\n",
-           sec->sec->name, (long unsigned int) &lst);
-
-} /* pic32_remove_from_section_list (..) */
-
-
-/*
-** Remove a group from a section list
-**
-** Sections in a group are related by name.
-** We can't delete them, so we clear the
-** attributes field so they won't match
-** any more allocation stages.
-*/
-static void
-pic32_remove_group_from_section_list (lst)
-     struct pic32_section *lst;
-{
-  struct pic32_section *s, *prev, *next;
-
-  prev = lst;
-  for (s = prev; s != NULL; s = next)
-    {
-      next = s->next;
-      if (s->sec && (PIC32_IS_RAMFUNC_ATTR(s->sec))) {
-          s->attributes = 0;
-        }
-      prev = s;
-    }
-} /* pic32_remove_group_from_section_list() */
-
-
-/*
-** Find a suitable free block - static
-**
-** This function scans the free memory list
-** looking for a buffer that will accomodate
-** a static section (fixed address).
-**
-** If a suitable block is found, fill in the
-** offset field to reflect the section starting
-** address and return the block.
-**
-** If a suitable block can not be found, return NULL.
-*/
-static struct pic32_memory *
-pic32_static_assign_memory (lst, size, sec_address)
-     struct pic32_memory *lst;
-     bfd_vma size, sec_address;
-{
-  struct pic32_memory *b, *prev;
-  bfd_vma offset;
-
-  prev = lst;
-  for (b = prev; b != NULL; b = b->next)
-    {
-      if ((b->size < size) || (b->addr > sec_address))
-        continue;
-
-      offset = sec_address - b->addr;
-      if (b->size >= (offset + size))
-        {
-          b->offset = offset;
-          return b;
-        }
-    }
-
-  /*
-  ** if we get here, a suitable block could not be found
-  */
-  return (struct pic32_memory *) NULL;
-} /* static struct pic32_memory * pic32_static_assign_memory (...) */
-
-/*
-** Remove a block from a memory list
-*/
-static void
-pic32_remove_from_memory_list (lst, block)
-     struct pic32_memory *lst;
-     struct pic32_memory *block;
-{
-  struct pic32_memory *b, *prev, *next;
-
-  prev = lst;
-  for (b = prev; b != NULL; b = next)
-    {
-      next = b->next;
-      if (b == block)
-        {
-          prev->next = next;
-          free(b);
-          break;
-        }
-      prev = b;
-    }
-
-} /* static void pic32_remove_from_memory_list(..) */
-
-/*
-** Free a memory list
-*/
-static void
-pic32_free_memory_list(lst)
-     struct pic32_memory **lst;
-{
-  struct pic32_memory *s, *next;
-
-  if (!(*lst))
-    return;
-
-  for (s = *lst; s != NULL; s = next)
-    {
-      next = s->next;
-      free(s);
-    }
-
-  *lst = NULL;
-} /* static void pic32_free_memory_list (...) */
-
-/*
-** Create a list of free memory blocks
-**
-** - first item is null
-*/
-static void
-pic32_init_memory_list(lst)
-     struct pic32_memory **lst;
-{
-  *lst = ((struct pic32_memory *)
-         xmalloc(sizeof(struct pic32_memory)));
-  (*lst)->next = 0;
-  (*lst)->addr = 0;
-  (*lst)->size = 0;
-  (*lst)->offset = 0;
-}
-
-/*
-** Add a new bfd to the link
-*/
-static void
-bfd_pic32_add_bfd_to_link (abfd, name)
-     bfd *abfd;
-     const char *name;
-{
-  lang_input_statement_type *fake_file;
-  fake_file = lang_add_input_file (name,
-                                   lang_input_file_is_fake_enum,
-                                   NULL);
-  fake_file->the_bfd = abfd;
-  ldlang_add_file (fake_file);
-  if (! bfd_link_add_symbols (abfd, &link_info))
-    einfo (_("%F%B: could not add symbols: %E\n"), abfd);
-
-  return;
-} /* static void bfd_pic32_add_bfd_to_link (...)*/
-
-/*
-** This routine is called by before_allocation().
-**
-** Scan a DATA or BSS section and accumulate
-** the data template size.
-*/
-static void
-bfd_pic32_scan_data_section (sect, p)
-     asection *sect;
-     PTR p;
-{
-#define DATA_RECORD_HEADER_SIZE 12
-
-   int *data_size = (int *) p;
-
-  if (p == (int *) NULL)
-    return;
-
-  /*
-  ** skip persistent or noload data sections
-  */
-  if (PIC32_IS_PERSIST_ATTR(sect) || PIC32_IS_NOLOAD_ATTR(sect))
-  {
-      /*
-      ** issue a warning if DATA values are present
-      */
-      if ((sect->flags & SEC_DATA) && (sect->size > 0))
-        einfo(_("%P: Warning: initial values were specified for a non-loadable"
-                " data section (%s). These values will be ignored.\n"),
-              sect->name);
-
-      if (pic32_debug)
-        printf("  %s (skipped), size = %x bytes\n",
-               sect->name, (unsigned int) sect->size);
-      return;
-  }
-
-   /*
-  ** process BSS-type sections
-  */
-  if (PIC32_SECTION_IS_BSS_TYPE(sect) &&
-      (sect->size > 0))
-  {
-      *data_size += DATA_RECORD_HEADER_SIZE;
-      if (pic32_debug)
-        printf("  %s (bss), size = %x bytes, template += %x bytes\n",
-               sect->name, (unsigned int) sect->size,
-               DATA_RECORD_HEADER_SIZE);
-  }
-
-  /*
-  ** process DATA-type sections
-  */
-  if ((PIC32_IS_DATA_ATTR(sect) || PIC32_IS_RAMFUNC_ATTR(sect)) && (sect->size > 0))
-  {
-    /* Analyze initialization data now and find out what the after compression
-       size of the data initialization template */
-          /* account for 0-padding so that new dinit records always start at a 
-          ** new memory location 
-          */
-	  int count = (sect->size % 4) ? (sect->size + (4 - sect->size % 4)) \
-                                       : sect->size;
-          int delta = DATA_RECORD_HEADER_SIZE + count;
-          *data_size += delta;
-      /*
-      ** make section not LOADable
-      */
-      sect->flags &= ~ SEC_LOAD;
-
-      if (pic32_debug)
-        printf("  %s (data), size = %x bytes, template += %x bytes\n",
-               sect->name, (unsigned int) sect->size, delta);
-  }
-} /*static void bfd_pic32_scan_data_section (...)*/
-
-/*
-** This routine is called by before_allocation()
-** when the --no-data-init option is specified.
-**
-** Scan for loadable DATA sections...if found,
-** mark them NEVER_LOAD and issue a warning.
-*/
-static void
-bfd_pic32_skip_data_section (sect, p)
-     asection *sect;
-     PTR p ATTRIBUTE_UNUSED ;
-{
-  /*
-  ** process DATA-type sections
-  */
-  if (((sect->flags & SEC_DATA) == SEC_DATA) && (sect->size > 0))
-  {
-      /*
-      ** make section not LOADable
-      */
-      sect->flags &= ~ SEC_LOAD;
-      sect->flags |= SEC_NEVER_LOAD;
-
-      /*
-      ** issue a warning
-      */
-      einfo(_("%P: Warning: data initialization has been turned off,"
-              " therefore section %s will not be initialized using .dinit template.\n"), sect->name);
-
-      if (pic32_debug)
-        printf("  %s (skipped), size = %x\n",
-               sect->name, (unsigned int) sect->size);
-  }
-}
-
-/*
-** Create a new section
-*/
-static asection *
-bfd_pic32_create_section (abfd, name, flags, align)
-     bfd *abfd;
-     const char *name;
-     int flags;
-     int align;
-{
-  asection *sec;
-  asymbol *sym;
-
-  if (pic32_debug)
-    printf("\nCreating input section \"%s\"\n", name);
-
-  /* do NOT call bfd_make_section_old_way(), its buggy! */
-  sec = bfd_make_section_anyway (abfd, name);
-  bfd_set_section_flags (abfd, sec, flags | SEC_ALLOC | SEC_KEEP | SEC_LINKER_CREATED);
-  bfd_set_section_alignment (abfd, sec, align);
-  /* Set the gc mark to prevent the section from being removed by garbage
-     collection, despite the fact that no relocs refer to this section.  */
-  sec->gc_mark = 1;
-  sec->output_section = sec;
-
-  /* add a symbol for the section name */
-  sym = bfd_make_empty_symbol (abfd);
-  symtab[symptr++] = sym;
-  sym->name = sec->name;
-  sym->section = sec;
-  sym->flags = BSF_LOCAL;
-  sym->value = 0;
-
-  return sec;
-} /* static asection * bfd_pic32_create_section (...)*/
-
-/*
-** Strip zero-length sections
-*/
-static void
-pic32_strip_sections (abfd)
-     bfd *abfd;
-{
-  asection *sec, *prev;
-
-  if (pic32_debug)
-    printf("\nLooking for zero-length sections:\n");
-
-  sec = abfd->sections;
-  if ((sec == NULL) || (sec->next == NULL))
-    return;
-
-  prev = sec;
-  sec = sec->next; /* never strip the first section */
-
-  /* loop through the sections in this bfd */
-  for (; sec != NULL; sec = sec->next)
-    {
-      /* remove sections with size = 0 */
-      if (sec->size == 0)
-        {
-        prev->next = sec->next;
-        if (sec->next)
-          sec->next->prev = prev; 
-        else
-          abfd->section_last = prev; /*update the bfd->section_last field
-                                       if the removed section is the 
-                                       last section.*/
-        abfd->section_count -= 1;
-        if (pic32_debug)
-          printf("  Stripping section %s\n", sec->name);
-        }
-      else
-        prev = sec;
-    }
-  return;
-} /* static void pic32_strip_sections (...)*/
-
-void
-bfd_pic32_finish(void)
-{
-  struct bfd_link_hash_entry *h;
-  asection *stack_sec;
+      orphan_text = 0,
+      orphan_rodata,
+      orphan_persist,
+      orphan_data,
+      orphan_bss,
+      orphan_rel,
+      orphan_interp,
+      orphan_spersist,
+      orphan_sdata,
+      orphan_nonalloc
+    };
+  static int orphan_init_done = 0;
+  struct orphan_save *place;
+  lang_output_section_statement_type *after;
   lang_output_section_statement_type *os;
-  lang_memory_region_type *region;
-  bfd_vma end_data_mem;
+  lang_output_section_statement_type *match_by_name = NULL;
+  int isdyn = 0;
+  int iself = s->owner->xvec->flavour == bfd_target_elf_flavour;
+  unsigned int sh_type = iself ? elf_section_type (s) : SHT_NULL;
 
- /*
-  ** remove output sections with size = 0
-  */
-  pic32_strip_sections(link_info.output_bfd);
-  
-  /* if we've encountered a fatal error, stop here */
-  if (config.make_executable == FALSE)
-    einfo("%P%F: Link terminated due to previous error(s).\n");
-
-  /* check for _min_stack_size symbol -- this is an old way to specify
-     a stack, and is really not preferred */
-  if ((h = bfd_pic32_is_defined_global_symbol("_min_stack_size"))) {
-    if (pic32_has_stack_option && (h->u.def.value != pic32_stack_size))
-      fprintf (stderr, "Warning: --stack option overrides _min_stack_size symbol\n");
-    else
-      pic32_stack_size = h->u.def.value;
-  }
-
-
-   /* if heap is required, make sure one is specified */
-  if (pic32_heap_required && !heap_section_defined && !pic32_has_heap_option &&
-      !bfd_pic32_is_defined_global_symbol("_min_heap_size"))
-      einfo("%P%X Error: A heap is required, but has not been specified\n");
-
-  /* check for _min_stack_size symbol -- this is an old way to specify
-     a stack, and is really not preferred */
-  if ((h = bfd_pic32_is_defined_global_symbol("_min_heap_size"))) {
-    if (pic32_has_heap_option && (h->u.def.value != pic32_heap_size))
-      fprintf (stderr, "Warning: --heap option overrides _min_heap_size symbol\n");
-    else
-      pic32_heap_size = h->u.def.value;
-  }
-
-  /*
-  ** Check for user-defined stack
-  **
-  ** note: symbol (_stack) must be defined
-  */
-  if ((h = bfd_pic32_is_defined_global_symbol("_stack"))) {
-    user_defined_stack = TRUE;
-    stack_base = h->u.def.value;
-    /* if defined value is relative, add in the section base address */
-    if (h->u.def.section && (h->u.def.section != bfd_abs_section_ptr))
-      stack_base += h->u.def.section->vma;
-  }
-  else
-    user_defined_stack = FALSE;
-
-  /* If a stack was not defined as a section, or by symbols,
-     allocate one from remaining memory */
-  if (!user_defined_stack) {
-    allocate_default_stack();
-
-  /*
-  ** Set stack symbols for the runtime library
-  */
-      if (pic32_debug)
-        printf("Creating _heap = %x\n", heap_base);
-      _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_heap",
-                                        BSF_GLOBAL, bfd_abs_section_ptr,
-                                        heap_base, "_heap", 1, 0, 0);
-      if (pic32_debug)
-        printf("Creating _eheap = %x\n", heap_limit);
-      _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_eheap",
-                                        BSF_GLOBAL, bfd_abs_section_ptr,
-                                        heap_limit, "_eheap", 1, 0, 0);
-
-      if (pic32_debug)
-        printf("Creating _splim = %x\n", stack_base);
-      _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_splim",
-                                        BSF_GLOBAL, bfd_abs_section_ptr,
-                                        stack_base, "_splim", 1, 0, 0);
-      _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_SPLIM",
-                                        BSF_GLOBAL, bfd_abs_section_ptr,
-                                        stack_base, "_SPLIM", 1, 0, 0);
-
-      stack_sec = bfd_get_section_by_name(stack_bfd, ".stack");
-      if (stack_sec)
-        {
-          etree_type *addr_tree;
-          os = lang_output_section_statement_lookup (".stack", 0, TRUE);
-          stack_sec->size = pic32_stack_size;
-          if (os->bfd_section != NULL)
-          {
-            bfd_set_section_size (stack_bfd, stack_sec, pic32_stack_size);
-            bfd_set_section_vma (stack_bfd, stack_sec, stack_base);
-            os->bfd_section->vma = stack_sec->vma;
-            os->bfd_section->lma = stack_sec->lma;
-            os->bfd_section->size = stack_sec->size;
-            stack_sec->flags |= SEC_LINKER_CREATED;
-            os->bfd_section->flags = stack_sec->flags;
-            addr_tree = xmalloc(sizeof(etree_type));
-            addr_tree->value.type.node_class = etree_value;
-            addr_tree->value.value = stack_sec->vma;
-            os->addr_tree = addr_tree;
-          }
-          else
-            fprintf( stderr, "Link Error: Unable to allocate stack\n");
-        }
-
-      if (pic32_debug)
-        printf("Creating _stack = %x\n", stack_limit);
-      _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_stack",
-                                        BSF_GLOBAL, bfd_abs_section_ptr,
-                                        stack_limit, "_stack", 1, 0, 0);
-
-  }
-
-  /* Range check the stack, no matter how it was created */
-  if ( (int) (stack_limit - stack_base) < (int) pic32_stack_size)
+  if (! link_info.relocatable
+      && link_info.combreloc
+      && (s->flags & SEC_ALLOC))
     {
-      einfo("%P%X Error: Not enough memory for stack"
-            " (%d bytes needed, %d bytes available)\n",
-            pic32_stack_size + pic32_stackguard_size,
-            (int) (stack_limit - stack_base) + pic32_stackguard_size);
+      if (iself)
+	switch (sh_type)
+	  {
+	  case SHT_RELA:
+	    secname = ".rela.dyn";
+	    isdyn = 1;
+	    break;
+	  case SHT_REL:
+	    secname = ".rel.dyn";
+	    isdyn = 1;
+	    break;
+	  default:
+	    break;
+	  }
+      else if (CONST_STRNEQ (secname, ".rel"))
+	{
+	  secname = secname[4] == 'a' ? ".rela.dyn" : ".rel.dyn";
+	  isdyn = 1;
+	}
     }
 
-  if (pic32_debug)
-    printf("Creating __MIN_STACK_SIZE = %x\n", pic32_stack_size);
-  _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "__MIN_STACK_SIZE",
-                                    BSF_GLOBAL, bfd_abs_section_ptr,
-                                    pic32_stack_size, "__MIN_STACK_SIZE", 1, 0, 0);
-  if (pic32_debug)
-    printf("Creating _min_stack_size = %x\n", pic32_stack_size);
-  _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_min_stack_size",
-                                    BSF_GLOBAL, bfd_abs_section_ptr,
-                                    pic32_stack_size, "_min_stack_size", 1, 0, 0);
+  /* Look through the script to see where to place this section.  */
+  if (constraint == 0)
+    for (os = lang_output_section_find (secname);
+	 os != NULL;
+	 os = next_matching_output_section_statement (os, 0))
+      {
+	/* If we don't match an existing output section, tell
+	   lang_insert_orphan to create a new output section.  */
+	constraint = SPECIAL;
 
-  if (pic32_debug)
-    printf("Creating __MIN_HEAP_SIZE = %x\n", pic32_heap_size);
-  _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "__MIN_HEAP_SIZE",
-                                    BSF_GLOBAL, bfd_abs_section_ptr,
-                                    pic32_heap_size, "__MIN_HEAP_SIZE", 1, 0, 0);
-  if (pic32_debug)
-    printf("Creating _min_heap_size = %x\n", pic32_heap_size);
-  _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_min_heap_size",
-                                    BSF_GLOBAL, bfd_abs_section_ptr,
-                                    pic32_heap_size, "_min_heap_size", 1, 0, 0);
+	if (os->bfd_section != NULL
+	    && (os->bfd_section->flags == 0
+		|| (_bfd_elf_match_sections_by_type (link_info.output_bfd,
+						     os->bfd_section,
+						     s->owner, s)
+		    && ((s->flags ^ os->bfd_section->flags)
+			& (SEC_LOAD | SEC_ALLOC)) == 0)))
+	  {
+	    /* We already have an output section statement with this
+	       name, and its bfd section has compatible flags.
+	       If the section already exists but does not have any flags
+	       set, then it has been created by the linker, probably as a
+	       result of a --section-start command line switch.  */
+	    lang_add_section (&os->children, s, os);
+	    return os;
+	  }
 
-  end_data_mem = stack_limit;
+	/* Save unused output sections in case we can match them
+	   against orphans later.  */
+	if (os->bfd_section == NULL)
+	  match_by_name = os;
+      }
 
-  if (pic32_is_l1cache_machine(global_PROCESSOR))
-    region = region_lookup("kseg0_data_mem");
-  else
-    region = region_lookup("kseg1_data_mem");
-
-  if (region) {
-    end_data_mem = region->origin + region->length;
-  }
-
-  if (!bfd_pic32_is_defined_global_symbol("_ramfunc_begin"))
-  {
-    /* If there are no ram fumctions, add the _ramfunc_begin symbol with value 0 */
-    _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_ramfunc_begin",
-    BSF_GLOBAL, bfd_abs_section_ptr,
-    0, "_ramfunc_begin", 1, 0, 0);
-  }
-  if (!bfd_pic32_is_defined_global_symbol("_bmxdkpba_address"))
-  {
-    _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_bmxdkpba_address",
-        BSF_GLOBAL, bfd_abs_section_ptr,
-        end_data_mem - region->origin, "_bmxdkpba_address", 1, 0, 0);
-  }
-  if (!bfd_pic32_is_defined_global_symbol("_bmxdudba_address"))
-  {
-    _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_bmxdudba_address",
-    BSF_GLOBAL, bfd_abs_section_ptr,
-    region->length, "_bmxdudba_address", 1, 0, 0);
-
-    _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_bmxdupba_address",
-    BSF_GLOBAL, bfd_abs_section_ptr,
-    region->length, "_bmxdupba_address", 1, 0, 0);
-  }
-  if (!bfd_pic32_is_defined_global_symbol("_bmxdupba_address"))
-  {
-    _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_bmxdupba_address",
-    BSF_GLOBAL, bfd_abs_section_ptr,
-    region->length, "_bmxdupba_address", 1, 0, 0);
-  }
-
-  /*
-  ** Set _dinit_addr symbol for data init template
-  **   so the C startup module can find it.
-  */
-
-  if (pic32_data_init)
+  /* If we didn't match an active output section, see if we matched an
+     unused one and use that.  */
+  if (match_by_name)
     {
-      asection *sec;
-      sec = init_template->output_section;  /* find the template's output sec */
-
-      if (sec)
-        {
-          bfd_vma dinit_addr = sec->lma + init_template->output_offset;
-          unsigned int dinit_address = dinit_addr & 0xFFFFFFFFul;
-
-          if (pic32_debug)
-            printf("Creating _dinit_addr= %x\n", dinit_address);
-          _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd,
-                                            "_dinit_addr", BSF_GLOBAL,
-                                            bfd_abs_section_ptr, dinit_address,
-                                            "_dinit_addr", 1, 0, 0);
-          if (pic32_debug)
-            printf("Creating _dinit_size= %x\n", dinit_size);
-          _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd,
-                                            "_dinit_size", BSF_GLOBAL,
-                                            bfd_abs_section_ptr, dinit_size,
-                                            "_dinit_size", 1, 0, 0);
-        }
+      lang_add_section (&match_by_name->children, s, match_by_name);
+      return match_by_name;
     }
+
+  if (!orphan_init_done)
+    {
+      lang_output_section_statement_type *lookup;
+      struct orphan_save *ho;
+
+      for (ho = hold; ho < hold + sizeof (hold) / sizeof (hold[0]); ++ho)
+	if (ho->name != NULL)
+	  {
+	    ho->os = lang_output_section_find (ho->name);
+	    if (ho->os != NULL && ho->os->flags == 0)
+	      ho->os->flags = ho->flags;
+	  }
+      lookup = hold[orphan_bss].os;
+      if (lookup == NULL)
+	lookup = &lang_output_section_statement.head->output_section_statement;
+      for (; lookup != NULL; lookup = lookup->next)
+	if ((lookup->bfd_section != NULL
+	     && (lookup->bfd_section->flags & SEC_DEBUGGING) != 0)
+	    || strcmp (lookup->name, ".comment") == 0)
+	  break;
+      hold[orphan_nonalloc].os = lookup ? lookup->prev : NULL;
+      hold[orphan_nonalloc].name = ".comment";
+      orphan_init_done = 1;
+    }
+
+  /* If this is a final link, then always put .gnu.warning.SYMBOL
+     sections into the .text section to get them out of the way.  */
+  if (link_info.executable
+      && ! link_info.relocatable
+      && CONST_STRNEQ (s->name, ".gnu.warning.")
+      && hold[orphan_text].os != NULL)
+    {
+      os = hold[orphan_text].os;
+      lang_add_section (&os->children, s, os);
+      return os;
+    }
+
+  /* Decide which segment the section should go in based on the
+     section name and section flags.  We put loadable .note sections
+     right after the .interp section, so that the PT_NOTE segment is
+     stored right after the program headers where the OS can read it
+     in the first page.  */
+
+  place = NULL;
+  if ((s->flags & (SEC_ALLOC | SEC_DEBUGGING)) == 0)
+    place = &hold[orphan_nonalloc];
+  else if ((s->flags & SEC_ALLOC) == 0)
+    ;
+  else if ((s->flags & SEC_LOAD) != 0
+	   && ((iself && sh_type == SHT_NOTE)
+	       || (!iself && CONST_STRNEQ (secname, ".note"))))
+    place = &hold[orphan_interp];
+  else if ((s->flags & (SEC_LOAD | SEC_HAS_CONTENTS)) == 0)
+    place = &hold[orphan_bss];
+  else if ((s->flags & SEC_SMALL_DATA) != 0)
+    place = &hold[orphan_spersist];
+  else if ((s->flags & SEC_READONLY) == 0)
+    place = &hold[orphan_persist];
+  else if (((iself && (sh_type == SHT_RELA || sh_type == SHT_REL))
+	    || (!iself && CONST_STRNEQ (secname, ".rel")))
+	   && (s->flags & SEC_LOAD) != 0)
+    place = &hold[orphan_rel];
+  else if ((s->flags & SEC_CODE) == 0)
+    place = &hold[orphan_rodata];
+  else
+    place = &hold[orphan_text];
+
+  after = NULL;
+  if (place != NULL)
+    {
+      if (place->os == NULL)
+	{
+	  if (place->name != NULL)
+	    place->os = lang_output_section_find (place->name);
+	  else
+	    place->os = output_rel_find (s, isdyn);
+	}
+      after = place->os;
+      if (after == NULL)
+	after = lang_output_section_find_by_flags
+	  (s, &place->os, _bfd_elf_match_sections_by_type);
+      if (after == NULL)
+	/* *ABS* is always the first output section statement.  */
+	after = &lang_output_section_statement.head->output_section_statement;
+    }
+
+  return lang_insert_orphan (s, secname, constraint, after, place, NULL, NULL);
 }
 
-/* include the improved memory allocation functions */
-#include "../bfd/pic32-allocate.c"
-
 static bfd_boolean
-elf_link_check_archive_element (name, abfd, sec_info)
+elf_link_check_archive_element (name, abfd, info)
      char *name;
      bfd *abfd;
-     struct bfd_link_info *sec_info;
+     struct bfd_link_info *info;
 {
   /* we may need to pull this symbol in because it is a SMARTIO fn */
   if (mchp_force_keep_symbol)
       (void) mchp_force_keep_symbol(name, (char*)abfd->filename);
 
-  sec_info = sec_info;
+  info = info;
 
   return TRUE;
-}
-
-static void
-gldelf32pic32mx_after_allocation (void)
-{
-#ifdef TARGET_IS_PIC32MX
-   /* If any sections are discarded then relocations of symbols referenced
-      in sections like .eh_frame, .stab, .pdr will be removed. Also entries 
-      these sections may be removed to eleminate duplication. 
-      So the size will change. If we don't map_segments before 
-      best-fit-allocation overlapping may occur. */
-   need_layout = bfd_elf_discard_info (link_info.output_bfd,
-                                                  &link_info);
-
-   gld${EMULATION_NAME}_map_segments (need_layout);
-#endif
-/*
-** Invoke the best-fit allocator
-*/
-  if (pic32_allocate) {
-    allocate_memory();
-  }
-
-#ifdef TARGET_IS_PIC32MX
-  if (pic32_has_fill_option)
-    pic32_create_fill_templates();
-#endif
-}
-
-/*
-** Return a pointer to bfd_link_hash_entry
-** if a global symbol is defined;
-** else return zero.
-*/
-struct bfd_link_hash_entry *
-bfd_pic32_is_defined_global_symbol (name)
-     const char *const name;
-{
-    struct bfd_link_hash_entry *h;
-    h = bfd_link_hash_lookup (link_info.hash, name, FALSE, FALSE, TRUE);
-
-    if ((h != (struct bfd_link_hash_entry *) NULL) &&
-        (h->type == bfd_link_hash_defined))
-      return h;
-    else
-      return (struct bfd_link_hash_entry *) NULL;
 }
 
 bfd_boolean (*mchp_elf_link_check_archive_element)(char *name, bfd *abfd,
                                                     struct bfd_link_info *) =
   elf_link_check_archive_element;
 
-/*
-** Create a bfd for the fill templates
-**
-** Uses the following global variables:
-**   symtab
-**   symptr
-*/
-static bfd *
-bfd_pic32_create_fill_bfd (parent)
-     bfd *parent ATTRIBUTE_UNUSED;
-{
-  bfd_size_type size;
-  bfd *abfd;
-  asection *sec;
-  char *oname;
-  int flags, sec_align;
-  const char *sname;
-
-  /* create a bare-bones bfd */
-  oname = (char *) bfd_alloc (link_info.output_bfd, 20);
-  sprintf (oname, "fill%d", fill_section_count);
-  abfd = bfd_create (oname, parent);
-  bfd_find_target ("${OUTPUT_FORMAT}", abfd);
-  bfd_make_writable (abfd);
-
-  bfd_set_format (abfd, bfd_object);
-  bfd_set_arch_mach (abfd, bfd_arch_mips, 0);
-
-  /* create a symbol table (room for 1 entry) */
-  symptr = 0;
-  symtab = (asymbol **) bfd_alloc (link_info.output_bfd, 2 * sizeof (asymbol *));
-
-  /*
-  ** create a bare-bones section for
-  */
-  /* get unique section name */
-  sname = bfd_get_unique_section_name (abfd, "fill$", &fill_section_count);
-  flags = SEC_CODE | SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_KEEP |
-          SEC_LINKER_CREATED;
-  sec_align = 0; 
-  sec = bfd_pic32_create_section (abfd, sname, flags, sec_align);
-  size = 0; /* will update later */
-  bfd_set_section_size (abfd, sec, size);
-
-  /* put in the symbol table */
-  bfd_set_symtab (abfd, symtab, symptr);
-  /* finish it */
-  if (!bfd_make_readable (abfd))
-    {
-      fprintf( stderr, "Link Error: can't make fill readable\n");
-      abort();
-    }
-  return abfd;
-} /* static bfd * bfd_pic32_create_fill_bfd (...)*/
-
-void pic32_create_fill_templates(void)
-{
-  struct pic32_fill_option *o;
-  if (program_memory_free_blocks)
-    {
-      if (pic32_fill_option_list)
-        {
-         for (o = pic32_fill_option_list; o != NULL; o = o->next)
-            {
-              if (o == pic32_fill_option_list)
-                continue;
-
-              if (o->loc.unused)
-                pic32_create_unused_program_sections(o);
-            }
-
-        }
-     }
-   else
-     einfo(_("%P: Warning: There is not any free program memory to fill.\n"));
-}
-
-static void pic32_create_unused_program_sections
-                      (struct pic32_fill_option *opt)
-{
-  asection * sec;
-  struct pic32_memory *b, *next;
-  bfd *fill_bfd;
-  unsigned char *fill_data;
-  struct pic32_section *s;
-  struct memory_region_struct *region;
-  bfd_vma size = 0;
-  bfd_vma addr = 0;
-  int sec_align = 2;
-
-  for (b = program_memory_free_blocks; b != NULL; b = next)
-    {
-     next = b->next;
-     if ((b->addr == 0) && (b->size == 0))
-      continue;
-     fill_bfd = bfd_pic32_create_fill_bfd(link_info.output_bfd);
-     bfd_pic32_add_bfd_to_link (fill_bfd, fill_bfd->filename);
-     
-     addr = align_power(b->addr, sec_align); /*align to an instruction word*/
-     size = b->size - (addr - b->addr);
-    
-
-     fill_bfd->sections->vma = fill_bfd->sections->lma = addr;
-     fill_bfd->sections->rawsize = size;
-     fill_bfd->sections->size = size;
-
-       /* create a pic32_section */
-     pic32_init_section_list(&s);
-     s->sec = fill_bfd->sections;
-     LANG_FOR_EACH_INPUT_STATEMENT (file)
-      {
-       if (strcmp(file->filename, fill_bfd->filename) == 0)
-        s->file = (PTR) file;
-      }
-       /* allocate memory for the template */
-     fill_data = (unsigned char *) bfd_alloc (link_info.output_bfd, size);
-     if (!fill_data)
-      {
-       fprintf( stderr, "Link Error: not enough memory for fill template\n");
-       abort();
-      }
-
-       /* fill the template with a default value */
-     fill_data = memset(fill_data, 0x11, size);
-
-       /* attach it to the input section */
-     sec = bfd_get_section_by_name(fill_bfd, fill_bfd->sections->name);
-     if (sec)
-      {
-       sec->rawsize = size;
-       sec->flags |= (SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_LOAD | SEC_CODE);
-       sec->contents = fill_data;
-       bfd_set_section_alignment(fill_bfd, sec, sec_align); /*align to an insn word*/
-       bfd_set_section_size (fill_bfd, sec, size);
-       fill_bfd->sections = sec;  /* save a copy for later */
-      }
- else
-       if (pic32_debug)
-         printf("after_open: section %s not found\n", sec->name);
-
-     region = region_lookup ("kseg0_program_mem");
-
-     update_section_info(addr, s, region);
-
-     pic32_append_section_to_list(opt->fill_section_list, 
-                                  (lang_input_statement_type *)s->file, sec);
-     pic32_remove_from_memory_list(program_memory_free_blocks, b);
-    }
-
-}
-
-void pic32_create_specific_fill_sections(void)
-{
-  asection * sec;
-  bfd *fill_bfd;
-  unsigned char *fill_data;
-  bfd_vma size;
-  bfd_vma addr;
-  struct pic32_fill_option *o;
-
-  for (o = pic32_fill_option_list->next; o != NULL; o = o->next)
-    {
-       if (o->loc.unused)
-         continue;
-
-       addr = o->loc.address;
-
-       if (o->loc.end_address)
-        size = (o->loc.end_address - o->loc.address) + 1;
-       else if (o->fill_width == 1)
-        size = 1;
-       else if (o->fill_width == 2)
-        size = 2;
-       else if (o->fill_width == 8)
-        size = 8;
-       else
-        size = 4;
-
-       fill_bfd = bfd_pic32_create_fill_bfd(link_info.output_bfd);
-       bfd_pic32_add_bfd_to_link (fill_bfd, fill_bfd->filename);
-
-       fill_bfd->sections->vma = fill_bfd->sections->lma = o->loc.address;
-       fill_bfd->sections->rawsize = size;
-       fill_bfd->sections->size = size;
-
-        /* allocate memory for the template */
-       fill_data = (unsigned char *) bfd_alloc (link_info.output_bfd, size);
-       if (!fill_data)
-        {
-         fprintf( stderr, "Link Error: not enough memory for fill template\n");
-         abort();
-        }
-
-        /* fill the template with a default value */
-       fill_data = memset(fill_data, 0x11, size);
-
-        /* attach it to the input section */
-       sec = bfd_get_section_by_name(fill_bfd,fill_bfd->sections->name );
-       if (sec)
-       {
-        sec->rawsize = size;
-        sec->flags |= (SEC_HAS_CONTENTS | SEC_IN_MEMORY | SEC_LOAD | SEC_CODE);
-        PIC32_SET_ABSOLUTE_ATTR(sec);
-        sec->contents = fill_data;
-        bfd_set_section_size (fill_bfd, sec, size);
-        fill_bfd->sections = sec;  /* save a copy for later */
-       }
-      else
-        if (pic32_debug)
-          printf("after_open: section %s not found\n", sec->name);
-
-      pic32_append_section_to_list(o->fill_section_list,
-                                 (lang_input_statement_type *)NULL, sec);
-   }
-}
 
 EOF
 
-
-# Define some shell vars to insert bits of code into the standard elf
-# parse_args and list_options functions.
-#
-PARSE_AND_LIST_PROLOGUE='
-#define OPTION_INSN32			301
-#define OPTION_NO_INSN32		(OPTION_INSN32 + 1)
-#define OPTION_PCREL_EH_RELOC		303
-'
-
-PARSE_AND_LIST_LONGOPTS='
-  { "insn32", no_argument, NULL, OPTION_INSN32 },
-  { "no-insn32", no_argument, NULL, OPTION_NO_INSN32 },
-  { "pcrel-eh-reloc", no_argument, NULL, OPTION_PCREL_EH_RELOC },
-'
-
-PARSE_AND_LIST_OPTIONS='
-  fprintf (file, _("\
-  --insn32                    Only generate 32-bit microMIPS instructions\n"
-		   ));
-  fprintf (file, _("\
-  --no-insn32                 Generate all microMIPS instructions\n"
-		   ));
-'
-
-PARSE_AND_LIST_ARGS_CASES='
-    case OPTION_INSN32:
-      insn32 = TRUE;
-      break;
-
-    case OPTION_NO_INSN32:
-      insn32 = FALSE;
-      break;
-
-    case OPTION_PCREL_EH_RELOC:
-      eh_reloc_type = R_MIPS_PC32;
-      break;
-'
 
 LDEMUL_AFTER_OPEN=pic32_after_open
 LDEMUL_FINISH=pic32_finish
@@ -3177,5 +1635,4 @@ LDEMUL_AFTER_PARSE=mips_after_parse
 LDEMUL_BEFORE_ALLOCATION=mips_before_allocation
 LDEMUL_PLACE_ORPHAN=gldelf32pic32mx_place_orphan
 LDEMUL_CREATE_OUTPUT_SECTION_STATEMENTS=mips_create_output_section_statements
-LDEMUL_AFTER_ALLOCATION=gldelf32pic32mx_after_allocation
 

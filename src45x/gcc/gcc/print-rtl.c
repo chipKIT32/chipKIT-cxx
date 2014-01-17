@@ -118,19 +118,6 @@ print_rtx (const_rtx in_rtx)
 
   is_insn = INSN_P (in_rtx);
 
-#ifndef GENERATOR_FILE
-#ifdef _BUILD_MCHP_
-  /* its really handy to know what the address of the rtx being
-     dumped is!  This saves me having to work it out by following the chain */
-#ifdef _BUILD_C30_ 
-   if ((indent == 0) || pic30_trace_all_addresses())
-#else
-   if (indent == 0)
-#endif
-     fprintf(outfile, "(%p) ",in_rtx);
-#endif
-#endif
-
   /* When printing in VCG format we write INSNs, NOTE, LABEL, and BARRIER
      in separate nodes and therefore have to handle them special here.  */
   if (dump_for_graph
@@ -321,16 +308,9 @@ print_rtx (const_rtx in_rtx)
 	      }
 	  }
 	else if (i == 8 && JUMP_P (in_rtx) && JUMP_LABEL (in_rtx) != NULL)
-	  {
-	    /* Output the JUMP_LABEL reference.  */
-	    fprintf (outfile, "\n%s%*s -> ", print_rtx_head, indent * 2, "");
-	    if (GET_CODE (JUMP_LABEL (in_rtx)) == RETURN)
-	      fprintf (outfile, "return");
-	    else if (GET_CODE (JUMP_LABEL (in_rtx)) == SIMPLE_RETURN)
-	      fprintf (outfile, "simple_return");
-	    else
-	      fprintf (outfile, "%d", INSN_UID (JUMP_LABEL (in_rtx)));
-	  }
+	  /* Output the JUMP_LABEL reference.  */
+	  fprintf (outfile, "\n%s%*s -> %d", print_rtx_head, indent * 2, "",
+		   INSN_UID (JUMP_LABEL (in_rtx)));
 	else if (i == 0 && GET_CODE (in_rtx) == VALUE)
 	  {
 #ifndef GENERATOR_FILE

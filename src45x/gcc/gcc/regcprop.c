@@ -39,7 +39,6 @@
 #include "timevar.h"
 #include "tree-pass.h"
 #include "df.h"
-#include "dce.h"
 
 /* The following code does forward propagation of hard register copies.
    The object is to eliminate as many dependencies as possible, so that
@@ -959,15 +958,8 @@ copyprop_hardreg_forward_1 (basic_block bb, struct value_data *vd)
       note_stores (PATTERN (insn), kill_set_value, vd);
 
       /* Notice copies.  */
-      if (set && REG_P (SET_DEST (set)) && REG_P (SET_SRC (set))) 
-        {
-#ifdef _BUILD_C30_
-          /* why record registers that have died, we can't use them
-             in the future wihtout clearing the DEAD notice */
-          if (find_regno_note(insn, REG_DEAD, REGNO(SET_SRC(set))) == 0)
-#endif
-	  copy_value (SET_DEST (set), SET_SRC (set), vd);
-        }
+      if (set && REG_P (SET_DEST (set)) && REG_P (SET_SRC (set)))
+	copy_value (SET_DEST (set), SET_SRC (set), vd);
 
       if (insn == BB_END (bb))
 	break;
@@ -1167,28 +1159,12 @@ validate_value_data (struct value_data *vd)
 }
 #endif
 
-/* An early cprop pass, intended to make it easier for prepare_shrink_wrap
-   to move register moves downwards through the CFG.  */
 static bool
 gate_handle_cprop (void)
 {
-#ifdef HAVE_simple_return
-  return (optimize > 0 && flag_cprop_registers && HAVE_simple_return);
-#else
-  return 0;
-#endif
+  return (optimize > 0 && (flag_cprop_registers));
 }
 
-static unsigned int
-early_copyprop_hardreg_forward (void)
-{
-  unsigned int retval;
-
-  split_all_insns ();
-  retval = copyprop_hardreg_forward ();
-  run_fast_dce ();
-  return retval;
-}
 
 struct rtl_opt_pass pass_cprop_hardreg =
 {
@@ -1196,33 +1172,6 @@ struct rtl_opt_pass pass_cprop_hardreg =
   RTL_PASS,
   "cprop_hardreg",                      /* name */
   gate_handle_cprop,                    /* gate */
-  early_copyprop_hardreg_forward,       /* execute */
-  NULL,                                 /* sub */
-  NULL,                                 /* next */
-  0,                                    /* static_pass_number */
-  TV_CPROP_REGISTERS,                   /* tv_id */
-  0,                                    /* properties_required */
-  0,                                    /* properties_provided */
-  0,                                    /* properties_destroyed */
-  0,                                    /* todo_flags_start */
-  TODO_dump_func | TODO_df_finish
-  | TODO_verify_rtl_sharing		/* todo_flags_finish */
- }
-};
-
-static bool
-gate_handle_cprop2 (void)
-{
-  return (optimize > 0 && (flag_cprop_registers));
-}
-
-
-struct rtl_opt_pass pass_cprop_hardreg2 =
-{
- {
-  RTL_PASS,
-  "cprop_hardreg2",                     /* name */
-  gate_handle_cprop2,                   /* gate */
   copyprop_hardreg_forward,             /* execute */
   NULL,                                 /* sub */
   NULL,                                 /* next */

@@ -110,7 +110,7 @@ class Workqueue_threader_single : public Workqueue_threader
   { gold_assert(thread_count > 0); }
 
   bool
-  should_cancel_thread(int)
+  should_cancel_thread()
   { return false; }
 };
 
@@ -202,9 +202,9 @@ Workqueue::queue_next(Task* t)
 // Return whether to cancel the current thread.
 
 inline bool
-Workqueue::should_cancel_thread(int thread_number)
+Workqueue::should_cancel_thread()
 {
-  return this->threader_->should_cancel_thread(thread_number);
+  return this->threader_->should_cancel_thread();
 }
 
 // Find a runnable task in TASKS.  Return NULL if none could be found.
@@ -264,7 +264,7 @@ Workqueue::find_runnable_or_wait(int thread_number)
 	  return NULL;
 	}
 
-      if (this->should_cancel_thread(thread_number))
+      if (this->should_cancel_thread())
 	return NULL;
 
       gold_debug(DEBUG_TASK, "%3d sleeping", thread_number);

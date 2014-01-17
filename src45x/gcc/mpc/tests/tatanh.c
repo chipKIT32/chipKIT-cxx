@@ -1,6 +1,6 @@
 /* test file for mpc_atanh.
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 
 This file is part of the MPC Library.
 

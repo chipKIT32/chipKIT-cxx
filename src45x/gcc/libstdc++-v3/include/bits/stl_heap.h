@@ -62,7 +62,7 @@
 _GLIBCXX_BEGIN_NAMESPACE(std)
 
   /**
-   * @defgroup heap_algorithms Heap
+   * @defgroup heap_algorithms Heap Algorithms
    * @ingroup sorting_algorithms
    */
 

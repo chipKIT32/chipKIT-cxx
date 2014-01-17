@@ -152,7 +152,7 @@
 
 /* Horrible hack: We want to prevent some libgcc routines being included
    for some multilibs.  */
-#if !(defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6SM__))
+#ifndef __ARM_ARCH_6M__
 #undef L_fixdfsi
 #undef L_fixunsdfsi
 #undef L_truncdfsf2

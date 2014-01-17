@@ -905,10 +905,8 @@ decode_options (unsigned int argc, const char **argv)
   flag_tree_builtin_call_dce = opt2;
   flag_tree_pre = opt2;
   flag_tree_switch_conversion = opt2;
-  flag_tree_if_to_switch_conversion = opt2;
   flag_ipa_cp = opt2;
   flag_ipa_sra = opt2;
-  flag_ee = opt2;
 
   /* Track fields in field-sensitive alias analysis.  */
   set_param_value ("max-fields-for-field-sensitive",
@@ -1312,7 +1310,7 @@ print_filtered_help (unsigned int include_flags,
 		    {
 		      if (* (const char **) option->flag_var != NULL)
 			snprintf (new_help + strlen (new_help),
-				  sizeof (new_help) - strlen (new_help), "%s",
+				  sizeof (new_help) - strlen (new_help),
 				  * (const char **) option->flag_var);
 		    }
 		  else

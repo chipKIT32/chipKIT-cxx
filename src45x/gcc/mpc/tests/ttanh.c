@@ -1,6 +1,6 @@
 /* test file for mpc_tanh.
 
-Copyright (C) INRIA, 2008
+Copyright (C) 2008 Andreas Enge, Philippe Th\'eveny
 
 This file is part of the MPC Library.
 

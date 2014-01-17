@@ -1,7 +1,6 @@
-#objdump: -dr --prefix-addresses --show-raw-insn
+#objdump: -dr --prefix-addresses --show-raw-insn -m mips:isa32r2
 #name: MIPS32r2 sync instructions
-#as: -32
-#source: mips32r2-sync.s
+#as: -32 -march=mips32r2
 
 # Check MIPS32r2 sync instructions assembly and disassembly
 
@@ -26,4 +25,4 @@ Disassembly of section \.text:
 [0-9a-f]+ <[^>]*> 0000048f 	sync_release
 [0-9a-f]+ <[^>]*> 000004cf 	sync_rmb
 [0-9a-f]+ <[^>]*> 0000060f 	sync	0x18
-	\.\.\.
+	...

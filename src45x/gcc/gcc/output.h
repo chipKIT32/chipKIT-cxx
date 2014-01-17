@@ -484,13 +484,9 @@ enum section_category
 };
 
 /* Information that is provided by all instances of the section type.  */
-struct GTY((skip)) section_common {
+struct GTY(()) section_common {
   /* The set of SECTION_* flags that apply to this section.  */
-#ifdef _BUILD_MCHP_
-  unsigned long long flags;
-#else
   unsigned int flags;
-#endif
 };
 
 /* Information about a SECTION_NAMED section.  */
@@ -575,15 +571,9 @@ extern GTY(()) section *bss_noswitch_section;
 extern GTY(()) section *in_section;
 extern GTY(()) bool in_cold_section_p;
 
-#ifdef _BUILD_MCHP_
-extern section *get_unnamed_section (SECTION_FLAGS_INT, void (*) (const void *),
-				     const void *);
-extern section *get_section (const char *, SECTION_FLAGS_INT, tree);
-#else
 extern section *get_unnamed_section (unsigned int, void (*) (const void *),
 				     const void *);
 extern section *get_section (const char *, unsigned int, tree);
-#endif
 extern section *get_named_section (tree, const char *, int);
 extern void place_block_symbol (rtx);
 extern rtx get_section_anchor (struct object_block *, HOST_WIDE_INT,

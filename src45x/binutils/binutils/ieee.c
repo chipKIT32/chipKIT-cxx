@@ -1,6 +1,6 @@
 /* ieee.c -- Read and write IEEE-695 debugging information.
    Copyright 1996, 1998, 1999, 2000, 2001, 2002, 2003, 2005, 2006, 2007,
-   2008, 2009, 2010, 2011  Free Software Foundation, Inc.
+   2008, 2009, 2010  Free Software Foundation, Inc.
    Written by Ian Lance Taylor <ian@cygnus.com>.
 
    This file is part of GNU Binutils.
@@ -4938,7 +4938,7 @@ ieee_finish_compilation_unit (struct ieee_handle *info)
       if (! ieee_change_buffer (info, &info->linenos)
 	  || ! ieee_write_byte (info, (int) ieee_be_record_enum))
 	return FALSE;
-      if (filename_cmp (info->filename, info->lineno_filename) != 0)
+      if (strcmp (info->filename, info->lineno_filename) != 0)
 	{
 	  /* We were not in the main file.  We just closed the
              included line number block, and now we must close the
@@ -5125,10 +5125,7 @@ ieee_add_bb11 (struct ieee_handle *info, asection *sec, bfd_vma low,
 	  || ! ieee_write_id (info, "")
 	  || ! ieee_write_number (info, 0)
 	  || ! ieee_write_id (info, "GNU objcopy"))
-	{
-	  free (c);
-	  return FALSE;
-	}
+	return FALSE;
 
       free (c);
     }
@@ -5532,10 +5529,7 @@ ieee_function_type (void *p, int argcount, bfd_boolean varargs)
       || ! ieee_write_number (info, 0)
       || ! ieee_write_number (info, retindx)
       || ! ieee_write_number (info, (bfd_vma) argcount + (varargs ? 1 : 0)))
-    {
-      free (args);
-      return FALSE;
-    }
+    return FALSE;
   if (argcount > 0)
     {
       for (i = 0; i < argcount; i++)
@@ -6241,10 +6235,7 @@ ieee_class_baseclass (void *p, bfd_vma bitpos, bfd_boolean is_virtual,
 	  || ! ieee_write_id (info, fname)
 	  || ! ieee_write_number (info, bindx)
 	  || ! ieee_write_number (info, bitpos / 8))
-	{
-	  free (fname);
-	  return FALSE;
-	}
+	return FALSE;
       flags = 0;
     }
 
@@ -6259,10 +6250,7 @@ ieee_class_baseclass (void *p, bfd_vma bitpos, bfd_boolean is_virtual,
       || ! ieee_write_atn65 (info, nindx, bname)
       || ! ieee_write_asn (info, nindx, 0)
       || ! ieee_write_atn65 (info, nindx, fname))
-    {
-      free (fname);
-      return FALSE;
-    }
+    return FALSE;
   info->type_stack->type.classdef->pmisccount += 5;
 
   free (fname);
@@ -7351,17 +7339,15 @@ ieee_lineno (void *p, const char *filename, unsigned long lineno, bfd_vma addr)
 	  info->lineno_filename = info->filename;
 	}
 
-      if (filename_cmp (info->pending_lineno_filename,
-			info->lineno_filename) != 0)
+      if (strcmp (info->pending_lineno_filename, info->lineno_filename) != 0)
 	{
-	  if (filename_cmp (info->filename, info->lineno_filename) != 0)
+	  if (strcmp (info->filename, info->lineno_filename) != 0)
 	    {
 	      /* We were not in the main file.  Close the block for the
 		 included file.  */
 	      if (! ieee_write_byte (info, (int) ieee_be_record_enum))
 		return FALSE;
-	      if (filename_cmp (info->filename,
-				info->pending_lineno_filename) == 0)
+	      if (strcmp (info->filename, info->pending_lineno_filename) == 0)
 		{
 		  /* We need a new NN record, and we aren't about to
 		     output one.  */
@@ -7373,8 +7359,7 @@ ieee_lineno (void *p, const char *filename, unsigned long lineno, bfd_vma addr)
 		    return FALSE;
 		}
 	    }
-	  if (filename_cmp (info->filename,
-			    info->pending_lineno_filename) != 0)
+	  if (strcmp (info->filename, info->pending_lineno_filename) != 0)
 	    {
 	      /* We are not changing to the main file.  Open a block for
 		 the new included file.  */

@@ -1614,7 +1614,7 @@ namespace std
    */
 
   /**
-   * @addtogroup random_distributions_uniform Uniform
+   * @addtogroup random_distributions_uniform Uniform Distributions
    * @ingroup random_distributions
    * @{
    */
@@ -1972,7 +1972,7 @@ namespace std
   /* @} */ // group random_distributions_uniform
 
   /**
-   * @addtogroup random_distributions_normal Normal
+   * @addtogroup random_distributions_normal Normal Distributions
    * @ingroup random_distributions
    * @{
    */
@@ -3226,7 +3226,7 @@ namespace std
   /* @} */ // group random_distributions_normal
 
   /**
-   * @addtogroup random_distributions_bernoulli Bernoulli
+   * @addtogroup random_distributions_bernoulli Bernoulli Distributions
    * @ingroup random_distributions
    * @{
    */
@@ -3957,7 +3957,7 @@ namespace std
   /* @} */ // group random_distributions_bernoulli
 
   /**
-   * @addtogroup random_distributions_poisson Poisson
+   * @addtogroup random_distributions_poisson Poisson Distributions
    * @ingroup random_distributions
    * @{
    */

@@ -935,10 +935,7 @@ handle_pragma_target(cpp_reader *ARG_UNUSED(dummy))
 }
 
 /* Handle #pragma GCC optimize to set optimization options.  */
-#ifndef _BUILD_MCHP_
-static 
-#endif
-void
+static void
 handle_pragma_optimize (cpp_reader *ARG_UNUSED(dummy))
 {
   enum cpp_ttype token;

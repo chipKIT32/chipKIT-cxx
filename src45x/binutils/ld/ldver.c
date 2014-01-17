@@ -1,6 +1,6 @@
 /* ldver.c -- Print linker version.
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 2000, 2001, 2002,
-   2003, 2005, 2007, 2008, 2009, 2010, 2011, 2012
+   2003, 2005, 2007, 2008, 2009, 2010
    Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
@@ -31,19 +31,16 @@
 #include "ldfile.h"
 #include "ldemul.h"
 #include "ldmain.h"
+
 void
 ldversion (int noisy)
 {
   /* Output for noisy == 2 is intended to follow the GNU standards.  */
-  fprintf (stdout, _("GNU ld %s" " Build date: " __DATE__ "\n"), BFD_VERSION_STRING);
-#ifdef TARGET_IS_PIC32MX
-  if (pic32_has_processor_option) {
-    fprintf (stdout, _("%s" "\n"), pic32_resource_version);
-  }
-#endif
+  fprintf (stdout, _("GNU ld %s\n"), BFD_VERSION_STRING);
+
   if (noisy & 2)
     {
-      printf (_("Copyright 2012 Free Software Foundation, Inc.\n"));
+      printf (_("Copyright 2010 Free Software Foundation, Inc.\n"));
       printf (_("\
 This program is free software; you may redistribute it under the terms of\n\
 the GNU General Public License version 3 or (at your option) a later version.\n\

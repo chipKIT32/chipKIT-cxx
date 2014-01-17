@@ -11,8 +11,6 @@
 
    Check binary operators + - * / << >> < <= >= > == != += -= *= /= <<= >>=.  */
 
-#include "longlong-support.h"
-
 extern void abort (void);
 
 #define BINARY(TYPE,POSTFIX) \
@@ -116,45 +114,45 @@ int main ()
   BINARY(short _Fract, hr);
   BINARY(_Fract, r);
   BINARY(long _Fract, lr);
-  LLFRACT_TEST (BINARY(long long _Fract, llr));
+  BINARY(long long _Fract, llr);
   BINARY(unsigned short _Fract, uhr);
   BINARY(unsigned _Fract, ur);
   BINARY(unsigned long _Fract, ulr);
-  ULLFRACT_TEST (BINARY(unsigned long long _Fract, ullr));
+  BINARY(unsigned long long _Fract, ullr);
   BINARY(_Sat short _Fract, hr);
   BINARY(_Sat _Fract, r);
   BINARY(_Sat long _Fract, lr);
-  LLFRACT_TEST (BINARY(_Sat long long _Fract, llr));
+  BINARY(_Sat long long _Fract, llr);
   BINARY(_Sat unsigned short _Fract, uhr);
   BINARY(_Sat unsigned _Fract, ur);
   BINARY(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (BINARY(_Sat unsigned long long _Fract, ullr));
+  BINARY(_Sat unsigned long long _Fract, ullr);
   BINARY(short _Accum, hk);
   BINARY(_Accum, k);
   BINARY(long _Accum, lk);
-  LLACCUM_TEST (BINARY(long long _Accum, llk));
+  BINARY(long long _Accum, llk);
   BINARY(unsigned short _Accum, uhk);
   BINARY(unsigned _Accum, uk);
   BINARY(unsigned long _Accum, ulk);
-  ULLACCUM_TEST (BINARY(unsigned long long _Accum, ullk));
+  BINARY(unsigned long long _Accum, ullk);
   BINARY(_Sat short _Accum, hk);
   BINARY(_Sat _Accum, k);
   BINARY(_Sat long _Accum, lk);
-  LLACCUM_TEST (BINARY(_Sat long long _Accum, llk));
+  BINARY(_Sat long long _Accum, llk);
   BINARY(_Sat unsigned short _Accum, uhk);
   BINARY(_Sat unsigned _Accum, uk);
   BINARY(_Sat unsigned long _Accum, ulk);
-  ULLACCUM_TEST (BINARY(_Sat unsigned long long _Accum, ullk));
+  BINARY(_Sat unsigned long long _Accum, ullk);
 
   FRACT_SAT_BINARY(_Sat short _Fract, hr);
   FRACT_SAT_BINARY(_Sat _Fract, r);
   FRACT_SAT_BINARY(_Sat long _Fract, lr);
-  LLFRACT_TEST (FRACT_SAT_BINARY(_Sat long long _Fract, llr));
+  FRACT_SAT_BINARY(_Sat long long _Fract, llr);
 
   FRACT_SAT_UNS_BINARY(_Sat unsigned short _Fract, uhr);
   FRACT_SAT_UNS_BINARY(_Sat unsigned _Fract, ur);
   FRACT_SAT_UNS_BINARY(_Sat unsigned long _Fract, ulr);
-  ULLFRACT_TEST (FRACT_SAT_UNS_BINARY(_Sat unsigned long long _Fract, ullr));
+  FRACT_SAT_UNS_BINARY(_Sat unsigned long long _Fract, ullr);
 
   return 0;
 }

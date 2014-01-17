@@ -1,6 +1,6 @@
 /* test file for mpc_exp.
 
-Copyright (C) INRIA, 2002, 2008
+Copyright (C) 2002, 2008 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
 
 This file is part of the MPC Library.
 

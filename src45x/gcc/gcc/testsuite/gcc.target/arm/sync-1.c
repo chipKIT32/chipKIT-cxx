@@ -1,5 +1,5 @@
-/* { dg-do run { target sync_int_long } } */
-/* { dg-options "-O2" } */
+/* { dg-do run } */
+/* { dg-options "-O2 -march=armv7-a" } */
 
 volatile int mem;
 

@@ -28,7 +28,6 @@
 
 %union {
   char *id;
-  const char *id_const;
   int number;
 };
 
@@ -41,8 +40,7 @@
 %token <number> NUMBER
 %type  <number> opt_base opt_ordinal opt_NONAME opt_CONSTANT opt_DATA opt_PRIVATE
 %type  <number> attr attr_list opt_number
-%type  <id> opt_name opt_name2 opt_equal_name opt_import_name
-%type  <id_const> keyword_as_name
+%type  <id> opt_name opt_equal_name opt_import_name
 
 %%
 
@@ -152,64 +150,13 @@ opt_PRIVATE:
 	|		{ $$ = 0; }
 	;
 
-keyword_as_name: NAME { $$ = "NAME"; }
-/*  Disabled LIBRARY keyword for a quirk in libtool. It places LIBRARY
-    command after EXPORTS list, which is illegal by specification.
-    See PR binutils/13710
-	| LIBRARY { $$ = "LIBRARY"; } */
-	| DESCRIPTION { $$ = "DESCRIPTION"; }
-	| STACKSIZE { $$ = "STACKSIZE"; }
-	| HEAPSIZE { $$ = "HEAPSIZE"; }
-	| CODE { $$ = "CODE"; }
-	| DATA { $$ = "DATA"; }
-	| SECTIONS { $$ = "SECTIONS"; }
-	| EXPORTS { $$ = "EXPORTS"; }
-	| IMPORTS { $$ = "IMPORTS"; }
-	| VERSIONK { $$ = "VERSION"; }
-	| BASE { $$ = "BASE"; }
-	| CONSTANT { $$ = "CONSTANT"; }
-	| NONAME { $$ = "NONAME"; }
-	| PRIVATE { $$ = "PRIVATE"; }
-	| READ { $$ = "READ"; }
-	| WRITE { $$ = "WRITE"; }
-	| EXECUTE { $$ = "EXECUTE"; }
-	| SHARED { $$ = "SHARED"; }
-	| NONSHARED { $$ = "NONSHARED"; }
-	| SINGLE { $$ = "SINGLE"; }
-	| MULTIPLE { $$ = "MULTIPLE"; }
-	| INITINSTANCE { $$ = "INITINSTANCE"; }
-	| INITGLOBAL { $$ = "INITGLOBAL"; }
-	| TERMINSTANCE { $$ = "TERMINSTANCE"; }
-	| TERMGLOBAL { $$ = "TERMGLOBAL"; }
-	;
-
-opt_name2: ID { $$ = $1; }
-	| '.' keyword_as_name
-	  {
-	    char *name = xmalloc (strlen ($2) + 2);
-	    sprintf (name, ".%s", $2);
-	    $$ = name;
-	  }
-	| '.' opt_name2
-	  { 
-	    char *name = xmalloc (strlen ($2) + 2);
-	    sprintf (name, ".%s", $2);
-	    $$ = name;
-	  }
-	| keyword_as_name '.' opt_name2
+opt_name: ID		{ $$ =$1; }
+	| ID '.' ID	
 	  { 
 	    char *name = xmalloc (strlen ($1) + 1 + strlen ($3) + 1);
 	    sprintf (name, "%s.%s", $1, $3);
 	    $$ = name;
 	  }
-	| ID '.' opt_name2
-	  { 
-	    char *name = xmalloc (strlen ($1) + 1 + strlen ($3) + 1);
-	    sprintf (name, "%s.%s", $1, $3);
-	    $$ = name;
-	  }
-	;
-opt_name: opt_name2 { $$ =$1; }
 	|		{ $$=""; }
 	;
 
@@ -219,12 +166,18 @@ opt_ordinal:
 	;
 
 opt_import_name:
-	  EQUAL opt_name2	{ $$ = $2; }
+	  EQUAL ID	{ $$ = $2; }
 	|		{ $$ = 0; }
 	;
 
 opt_equal_name:
-          '=' opt_name2	{ $$ = $2; }
+          '=' ID	{ $$ = $2; }
+	| '=' ID '.' ID	
+	  { 
+	    char *name = xmalloc (strlen ($2) + 1 + strlen ($4) + 1);
+	    sprintf (name, "%s.%s", $2, $4);
+	    $$ = name;
+	  }
         | 		{ $$ =  0; }			 
 	;
 

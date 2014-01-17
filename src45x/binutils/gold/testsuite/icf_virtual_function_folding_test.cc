@@ -36,7 +36,6 @@ namespace
 class Bar
 {
  public:
-  virtual ~Bar() { }
   virtual int fn1();
 };
 

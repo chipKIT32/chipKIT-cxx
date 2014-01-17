@@ -38,8 +38,7 @@ enum s390_opcode_cpu_val
     S390_OPCODE_Z990,
     S390_OPCODE_Z9_109,
     S390_OPCODE_Z9_EC,
-    S390_OPCODE_Z10,
-    S390_OPCODE_Z196
+    S390_OPCODE_Z10
   };
 
 struct op_struct
@@ -335,7 +334,7 @@ main (void)
       char  opcode[16];
       char  mnemonic[16];
       char  format[16];
-      char  description[80];
+      char  description[64];
       char  cpu_string[16];
       char  modes_string[16];
       int   min_cpu;
@@ -345,7 +344,7 @@ main (void)
       if (currentLine[0] == '#')
         continue;
       memset (opcode, 0, 8);
-      if (sscanf (currentLine, "%15s %15s %15s \"%79[^\"]\" %15s %15s",
+      if (sscanf (currentLine, "%15s %15s %15s \"%[^\"]\" %15s %15s",
 		  opcode, mnemonic, format, description,
 		  cpu_string, modes_string) == 6)
 	{
@@ -363,8 +362,6 @@ main (void)
 	    min_cpu = S390_OPCODE_Z9_EC;
 	  else if (strcmp (cpu_string, "z10") == 0)
 	    min_cpu = S390_OPCODE_Z10;
-	  else if (strcmp (cpu_string, "z196") == 0)
-	    min_cpu = S390_OPCODE_Z196;
 	  else {
 	    fprintf (stderr, "Couldn't parse cpu string %s\n", cpu_string);
 	    exit (1);
@@ -393,10 +390,7 @@ main (void)
 	  insertExpandedMnemonic (opcode, mnemonic, format, min_cpu, mode_bits);
 	}
       else
-	{
-	  fprintf (stderr, "Couldn't scan line %s\n", currentLine);
-	  exit (1);
-	}
+        fprintf (stderr, "Couldn't scan line %s\n", currentLine);
     }
 
   dumpTable ();

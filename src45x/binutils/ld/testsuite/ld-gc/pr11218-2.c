@@ -1,5 +1,4 @@
 extern void foo_in_so(void);
-extern void unresolved_detected_at_runtime_not_at_linktime (void);
 
 void call_unresolved(void)
 {

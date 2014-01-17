@@ -1,7 +1,6 @@
-/* mpc_ui_ui_sub -- Subtract a complex number from another one given
-implicitly by its real and imaginary parts of type unsigned long int.
+/* mpc_ui_ui_sub -- Subtract a complex number from two unsigned long ints.
 
-Copyright (C) INRIA, 2011
+Copyright (C) 2005, 2009 Marc Helbling, Paul Zimmermann, Philippe Th\'eveny
 
 This file is part of the MPC Library.
 
@@ -23,13 +22,13 @@ MA 02111-1307, USA. */
 #include "mpc-impl.h"
 
 int
-mpc_ui_ui_sub (mpc_ptr rop, unsigned long int re, unsigned long int im,
-               mpc_srcptr op, mpc_rnd_t rnd)
+mpc_ui_ui_sub (mpc_ptr a, unsigned long int b, unsigned long int c,
+               mpc_srcptr d, mpc_rnd_t rnd)
 {
-   int inex_re, inex_im;
+  int inex_re, inex_im;
+  
+  inex_re = mpfr_ui_sub (MPC_RE (a), b, MPC_RE (d), MPC_RND_RE (rnd));
+  inex_im = mpfr_ui_sub (MPC_IM (a), c, MPC_IM (d), MPC_RND_IM (rnd));
 
-   inex_re = mpfr_ui_sub (MPC_RE (rop), re, MPC_RE (op), MPC_RND_RE (rnd));
-   inex_im = mpfr_ui_sub (MPC_IM (rop), im, MPC_IM (op), MPC_RND_IM (rnd));
-
-   return MPC_INEX (inex_re, inex_im);
+  return MPC_INEX (inex_re, inex_im);
 }

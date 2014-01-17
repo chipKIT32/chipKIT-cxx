@@ -36,6 +36,5 @@ const bfd_arch_info_type bfd_tic6x_arch =
     TRUE, /* Default machine for this architecture.  */
     bfd_default_compatible,
     bfd_default_scan,
-    bfd_arch_default_fill,
     0,
   };

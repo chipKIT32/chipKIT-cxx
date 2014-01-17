@@ -1,6 +1,5 @@
 /* BFD library support routines for the MSP architecture.
-   Copyright (C) 2002, 2003, 2005, 2007, 2012
-   Free Software Foundation, Inc.
+   Copyright (C) 2002, 2003, 2005, 2007 Free Software Foundation, Inc.
    Contributed by Dmitry Diky <diwil@mail.ru>
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -24,23 +23,8 @@
 #include "bfd.h"
 #include "libbfd.h"
 
-/* This routine is provided two arch_infos and works out which MSP
-   machine which would be compatible with both and returns a pointer
-   to its info structure.  */
-
-static const bfd_arch_info_type *
-compatible (const bfd_arch_info_type * a,
-	    const bfd_arch_info_type * b)
-{
-  /* If a & b are for different architectures we can do nothing.  */
-  if (a->arch != b->arch)
-    return NULL;
-
-  if (a->mach <= b->mach)
-    return b;
-
-  return a;
-}
+static const bfd_arch_info_type *compatible
+  PARAMS ((const bfd_arch_info_type *, const bfd_arch_info_type *));
 
 #define N(addr_bits, machine, print, default, next)		\
 {								\
@@ -55,7 +39,6 @@ compatible (const bfd_arch_info_type * a,
   default,			/* The default machine.  */	\
   compatible,							\
   bfd_default_scan,						\
-  bfd_arch_default_fill,					\
   next								\
 }
 
@@ -110,3 +93,21 @@ static const bfd_arch_info_type arch_info_struct[] =
 const bfd_arch_info_type bfd_msp430_arch =
   N (16, bfd_mach_msp14, "msp:14", TRUE, & arch_info_struct[0]);
 
+/* This routine is provided two arch_infos and works out which MSP
+   machine which would be compatible with both and returns a pointer
+   to its info structure.  */
+
+static const bfd_arch_info_type *
+compatible (a,b)
+     const bfd_arch_info_type * a;
+     const bfd_arch_info_type * b;
+{
+  /* If a & b are for different architectures we can do nothing.  */
+  if (a->arch != b->arch)
+    return NULL;
+
+  if (a->mach <= b->mach)
+    return b;
+
+  return a;
+}

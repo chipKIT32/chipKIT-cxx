@@ -27,7 +27,6 @@
    (set (match_operand:SI 2 "register_operand" "")
         (match_operand:SI 3 "memory_operand" ""))]
   "TARGET_MICROMIPS
-   && REG_P (operands[0]) && REG_P (operands[2])
    && REGNO (operands[0]) <= GP_REG_LAST
    && REGNO (operands[2]) <= GP_REG_LAST
    && ((REGNO (operands[0]) + 1 == REGNO (operands[2])
@@ -45,7 +44,6 @@
 		   (match_operand:SI 3 "memory_operand"))])]
 
   "TARGET_MICROMIPS
-   && REG_P (operands[0]) && REG_P (operands[2])
    && REGNO (operands[0]) <= GP_REG_LAST
    && REGNO (operands[2]) <= GP_REG_LAST
    && ((REGNO (operands[0]) + 1 == REGNO (operands[2])
@@ -69,7 +67,6 @@
    (set (match_operand:SI 2 "memory_operand" "")
         (match_operand:SI 3 "register_operand" ""))]
   "TARGET_MICROMIPS
-   && REG_P (operands[1]) && REG_P (operands[3])
    && REGNO (operands[1]) <= GP_REG_LAST
    && REGNO (operands[3]) <= GP_REG_LAST
    && ((REGNO (operands[1]) + 1 == REGNO (operands[3])
@@ -87,7 +84,6 @@
 		   (match_operand:SI 3 "register_operand"))])]
 
   "TARGET_MICROMIPS
-   && REG_P (operands[1]) && REG_P (operands[3])
    && REGNO (operands[1]) <= GP_REG_LAST
    && REGNO (operands[3]) <= GP_REG_LAST
    && ((REGNO (operands[1]) + 1 == REGNO (operands[3])
@@ -126,17 +122,15 @@
   "TARGET_MICROMIPS
    && micromips_movep_target_p (operands[0], operands[2])
    && (operands[1] == CONST0_RTX (SImode)
-       || (REG_P (operands[1])
-           && (REGNO (operands[1]) == 0
-               || REGNO (operands[1]) == 2
-               || REGNO (operands[1]) == 3
-               || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))))
+       || REGNO (operands[1]) == 0
+       || REGNO (operands[1]) == 2
+       || REGNO (operands[1]) == 3
+       || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))
    && (operands[3] == CONST0_RTX (SImode)
-       || (REG_P (operands[3])
-           && (REGNO (operands[3]) == 0
-               || REGNO (operands[3]) == 2
-               || REGNO (operands[3]) == 3
-               || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))))"
+       || REGNO (operands[3]) == 0
+       || REGNO (operands[3]) == 2
+       || REGNO (operands[3]) == 3
+       || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))"
   [(parallel [(set (match_dup 0) (match_dup 1))
               (set (match_dup 2) (match_dup 3))])]
 )
@@ -149,11 +143,10 @@
   "TARGET_MICROMIPS
    && micromips_movep_target_p (operands[0], operands[2])
    && (operands[1] == CONST0_RTX (SImode)
-       || (REG_P (operands[1])
-           && (REGNO (operands[1]) == 0
-               || REGNO (operands[1]) == 2
-               || REGNO (operands[1]) == 3
-               || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))))
+       || REGNO (operands[1]) == 0
+       || REGNO (operands[1]) == 2
+       || REGNO (operands[1]) == 3
+       || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))
    && operands[3] == CONST0_RTX (SFmode)"
   [(parallel [(set (match_dup 0) (match_dup 1))
               (set (match_dup 2) (match_dup 3))])]
@@ -168,11 +161,10 @@
    && micromips_movep_target_p (operands[0], operands[2])
    && operands[1] == CONST0_RTX (SFmode)
    && (operands[3] == CONST0_RTX (SImode)
-       || (REG_P (operands[3])
-           && (REGNO (operands[3]) == 0
-               || REGNO (operands[3]) == 2
-               || REGNO (operands[3]) == 3
-               || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))))"
+       || REGNO (operands[3]) == 0
+       || REGNO (operands[3]) == 2
+       || REGNO (operands[3]) == 3
+       || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))"
   [(parallel [(set (match_dup 0) (match_dup 1))
               (set (match_dup 2) (match_dup 3))])]
 )
@@ -198,17 +190,15 @@
   "TARGET_MICROMIPS
    && micromips_movep_target_p (operands[0], operands[2])
    && (operands[1] == CONST0_RTX (SImode)
-       || (REG_P (operands[1])
-           && (REGNO (operands[1]) == 0
-               || REGNO (operands[1]) == 2
-               || REGNO (operands[1]) == 3
-               || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))))
+       || REGNO (operands[1]) == 0
+       || REGNO (operands[1]) == 2
+       || REGNO (operands[1]) == 3
+       || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))
    && (operands[3] == CONST0_RTX (SImode)
-       || (REG_P (operands[3])
-           && (REGNO (operands[3]) == 0
-               || REGNO (operands[3]) == 2
-               || REGNO (operands[3]) == 3
-               || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))))"
+       || REGNO (operands[3]) == 0
+       || REGNO (operands[3]) == 2
+       || REGNO (operands[3]) == 3
+       || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))"
 {
   if (REGNO (operands[0]) < REGNO (operands[2]))
     return "movep\t%0,%2,%z1,%z3";
@@ -227,11 +217,10 @@
   "TARGET_MICROMIPS
    && micromips_movep_target_p (operands[0], operands[2])
    && (operands[1] == CONST0_RTX (SImode)
-       || (REG_P (operands[1])
-           && (REGNO (operands[1]) == 0
-               || REGNO (operands[1]) == 2
-               || REGNO (operands[1]) == 3
-               || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))))
+       || REGNO (operands[1]) == 0
+       || REGNO (operands[1]) == 2
+       || REGNO (operands[1]) == 3
+       || (REGNO (operands[1]) >= 16 && REGNO (operands[1]) <= 20))
    && operands[3] == CONST0_RTX (SFmode)"
 {
   if (REGNO (operands[0]) < REGNO (operands[2]))
@@ -252,11 +241,10 @@
    && micromips_movep_target_p (operands[0], operands[2])
    && operands[1] == CONST0_RTX (SFmode)
    && (operands[3] == CONST0_RTX (SImode)
-       || (REG_P (operands[3])
-           && (REGNO (operands[3]) == 0
-               || REGNO (operands[3]) == 2
-               || REGNO (operands[3]) == 3
-               || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))))"
+       || REGNO (operands[3]) == 0
+       || REGNO (operands[3]) == 2
+       || REGNO (operands[3]) == 3
+       || (REGNO (operands[3]) >= 16 && REGNO (operands[3]) <= 20))"
 {
   if (REGNO (operands[0]) < REGNO (operands[2]))
     return "movep\t%0,%2,%z1,%z3";

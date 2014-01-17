@@ -1,7 +1,7 @@
 /* { dg-options "-O2 -mrelax-pic-calls -mshared" } */
-/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,normal\n1:\tjalrs?\t" } } */
-/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,normal2\n1:\tjalrs?\t" } } */
-/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,staticfunc\n1:\tjalrs?\t" } } */
+/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,normal\n1:\tjalr\t" } } */
+/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,normal2\n1:\tjalr\t" } } */
+/* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,staticfunc\n1:\tjalr\t" } } */
 /* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,tail\n1:\tjr\t" } } */
 /* { dg-final { scan-assembler "\\.reloc\t1f,R_MIPS_JALR,tail2\n1:\tjr\t" } } */
 

@@ -18,9 +18,11 @@
    Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
    02110-1301, USA.  */
 
-#include "config.h"
 #include <stdio.h>
+
 #include "ansidecl.h"
+
+#include "config.h"
 #include "compress-debug.h"
 
 #ifdef HAVE_ZLIB_H

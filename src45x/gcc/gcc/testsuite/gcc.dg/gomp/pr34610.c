@@ -26,3 +26,5 @@ foo (int k)
   for (i = 0; i < 10; ++i)
     bar (i);
 }
+
+/* { dg-final { cleanup-coverage-files } } */

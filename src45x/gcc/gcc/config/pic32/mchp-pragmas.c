@@ -62,13 +62,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "bitmap.h"
 #include "diagnostic.h"
 
-#ifndef _BUILD_MCHP_
-#define _BUILD_MCHP_
-#endif
-#ifndef _BUILD_C32_
-#define _BUILD_C32_
-#endif
-
 #include <stdio.h>
 #include "cpplib.h"
 #include "mchp-pragmas.h"
@@ -77,82 +70,139 @@ along with GCC; see the file COPYING3.  If not see
 #include "c-pragma.h"
 #include "c-tree.h"
 #include "config/mips/mips-machine-function.h"
-
-#define MCHP_DONT_DEFINE_RESOURCES
-#include "../../../../c30_resource/src/xc32/resource_info.h"
-#undef MCHP_DONT_DEFINE_RESOURCES
- 
 #ifdef __MINGW32__
 void *alloca(size_t);
 #else
 #include <alloca.h>
 #endif
 
-#include "config/mchp-cci/cci.c"  /* ack */
-
-#ifndef CLEAR_REST_OF_INPUT_LINE
 #define CLEAR_REST_OF_INPUT_LINE() do{int t;tree tv;do{t=pragma_lex(&tv);}while(t!=CPP_EOF);}while(0);
-#endif
 
-/* parse the vector pragma */
+#if 1 /* TODO */
+
+/* handler function for the config pragma */
 void
-mchp_handle_vector_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
+mchp_handle_config_pragma (struct cpp_reader *pfile)
 {
-  int tok;
+  enum cpp_ttype tok;
   tree tok_value;
-  const char *fname;
+  static int shown_no_config_warning = 0;
 
-  /* syntax:
-     vector-pragma: # pragma vector target-name irq-num [ , irq-num ]...
-   */
-
-  /* Recognize the syntax. */
-  /* First we have the name of the function which is an interrupt handler */
-  tok = pragma_lex (&tok_value);
-  if (tok != CPP_NAME)
+  /* If we're compiling for the default device, we don't process
+     configuration words */
+  if (!mchp_processor_string)
     {
-      error ("function name not found in vector #pragma");
+      error ("#pragma config directive not available for the default generic device, %s", mchp_processor_string);
+      CLEAR_REST_OF_INPUT_LINE();
       return;
     }
-  fname = IDENTIFIER_POINTER (tok_value);
-  gcc_assert (fname);
 
-  /* The first address is mandatory since we have a vector clause */
-  tok = pragma_lex (&tok_value);
-  if (tok != CPP_NUMBER ||
-      ((int)TREE_INT_CST_LOW (tok_value) < 0 ||
-       (int)TREE_INT_CST_LOW (tok_value) > 255))
+  if (!mchp_config_data_dir)
     {
-      error ("IRQ number must be an integer between 0 and 255");
+      error ("Configuration-word data directory not specified "
+             "but required for #pragma config directive");
+      CLEAR_REST_OF_INPUT_LINE();
       return;
     }
-  /* add the vector to the list of dispatch functions to emit */
-  mchp_add_vector_dispatch_entry (fname, (int)TREE_INT_CST_LOW (tok_value),
-                                  false, pic32_isa_unknown, 1);
 
-  /* There are optionally more addresses, comma separated */
-  tok = pragma_lex (&tok_value);
-  while (tok == CPP_COMMA)
+  /* the first time we see a config pragma, we need to load the
+     configuration word data from the definition file. */
+  if (!mchp_configuration_values)
     {
-      tok = pragma_lex (&tok_value);
-      if (tok != CPP_NUMBER)
+      /* alloc space for the filename: directory + '/' + "configuration.data"
+       */
+      char *fname = (char*)alloca (strlen (mchp_config_data_dir) + 1 +
+                            strlen (MCHP_CONFIGURATION_DATA_FILENAME));
+      strcpy (fname, mchp_config_data_dir);
+      if (fname [strlen (fname) - 1] != '/'
+          && fname [strlen (fname) - 1] != '\\')
+        strcat (fname, "/");
+      strcat (fname, MCHP_CONFIGURATION_DATA_FILENAME);
+
+      if (mchp_load_configuration_definition (fname))
         {
-          error ("address constant expected for vector function specifier");
+          if (!shown_no_config_warning)
+            {
+              shown_no_config_warning = 1;
+              warning (0, "configuration word information not available for "
+                       "this processor. #pragma config is ignored.");
+            }
+          CLEAR_REST_OF_INPUT_LINE();
           return;
         }
-      /* add the vector to the list of dispatch functions to emit */
-      mchp_add_vector_dispatch_entry (fname,
-                                      (int)TREE_INT_CST_LOW (tok_value),
-                                      false, pic32_isa_unknown, 1);
-
-      tok = pragma_lex (&tok_value);
     }
 
-  /* No further input is valid. We should have end of line here. */
-  if (tok != CPP_EOF)
+  /* The payload for the config pragma is a comma delimited list of
+     "setting = value" pairs. Both the setting and the value must
+     be valid C identifiers. */
+  tok = pragma_lex (&tok_value);
+  while (1)
     {
-      error ("extraneous data at end of line of #pragma vector");
+      const cpp_token *raw_token;
+      const char *setting_name;
+      const char *value_name;
+
+      /* the current token should be the setting name */
+      if (tok != CPP_NAME)
+        {
+          error ("configuration setting name expected in configuration pragma");
+          break;
+        }
+
+      setting_name = IDENTIFIER_POINTER (tok_value);
+      /* the next token should be the '=' */
+      tok = pragma_lex (&tok_value);
+      if (tok != CPP_EQ)
+        {
+          error ("'=' expected in configuration pragma");
+          break;
+        }
+      /* now we have the value name. We don't use pragma_lex() to get this one
+         since we don't want the additional interpretation going on there.
+         i.e., converting integers from the string. */
+      raw_token = cpp_get_token (pfile);
+
+      if (raw_token->type == CPP_NAME)
+        {
+        /*
+          value_name = IDENTIFIER_POINTER (
+                         HT_IDENT_TO_GCC_IDENT (
+                         HT_NODE (raw_token->val.node)));
+           space?              */
+          value_name = cpp_token_as_text (pfile, raw_token);
+
+        }
+      else if (raw_token->type == CPP_NUMBER)
+        {
+          value_name = (char*)raw_token->val.str.text;
+        }
+      else
+        {
+          error ("configuration value name expected in configuration pragma");
+          break;
+        }
+
+      mchp_handle_configuration_setting (setting_name, value_name);
+
+      /* if the next token is ',' then we have another setting. */
+      tok = pragma_lex (&tok_value);
+      if (tok == CPP_COMMA)
+        tok = pragma_lex (&tok_value);
+      /* if it's EOF, we're done */
+      else if (tok == CPP_EOF)
+        break;
+      /* otherwise, we have spurious input */
+      else
+        {
+          error ("',' or end of line expected in configuration pragma");
+          break;
+        }
     }
+  /* if we ended for any reason other than end of line, we have an error.
+     Any needed diagnostic should have already been issued, so just
+     clear the rest of the data on the line. */
+  if (tok != CPP_EOF)
+    CLEAR_REST_OF_INPUT_LINE();
 }
 
 
@@ -212,7 +262,7 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
   ipl = tok_value;
 
   /* add the interrupt designation to the list of interrupt pragmas */
-  p = (struct interrupt_pragma_spec *)ggc_alloc (sizeof (struct interrupt_pragma_spec));
+  p = ggc_alloc (sizeof (struct interrupt_pragma_spec));
   p->next = interrupt_pragma_list_head;
   p->name = fname;
   p->ipl = ipl;
@@ -235,16 +285,15 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
       return;
     }
   /* The first address is mandatory since we have a vector clause */
-
   /* We need to recognize the '@' sign here, but the pragma_lex function
      will issue an error if it sees it ('@' is only a valid token in
      Objective-C. So we need to use the lower-level functions to get
      this token in order to be able to see the '@' sign if it's there. */
-  tok = pragma_lex (&tok_value);
-
-  if (tok == CPP_ATSIGN)
+  do
+    raw_tok = cpp_get_token (parse_in);
+  while (raw_tok->type == CPP_PADDING);
+  if (raw_tok->type == CPP_ATSIGN)
     {
-      char scn_name[12];
       /* '@' found */
       tok = pragma_lex (&tok_value);
 
@@ -253,9 +302,9 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
          address. */
       if (tok != CPP_NUMBER ||
           ((int)TREE_INT_CST_LOW (tok_value) < 0 ||
-           (int)TREE_INT_CST_LOW (tok_value) > 255))
+           (int)TREE_INT_CST_LOW (tok_value) > 63))
         {
-          error ("Vector number must be an integer between 0 and 255");
+          error ("Vector number must be an integer between 0 and 63");
           return;
         }
       /* if this is a "single" handler, the only valid vector is zero */
@@ -268,22 +317,20 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
         }
 
       p->vect_number = (unsigned)TREE_INT_CST_LOW (tok_value);
-      /* add the vector to the list of dispatch functions */
-      mchp_add_vector_dispatch_entry (fname,
-                                      (int)TREE_INT_CST_LOW (tok_value),
-                                      false, pic32_isa_unknown,
-                                      0);
     }
   else
     {
       /* it wasn't an '@' sign, so it's either a number or an error.
-       */
+         handle that by backing up a token and re-lexing it with the
+         normal pragma_lex() function. */
+      _cpp_backup_tokens (parse_in, 1);
+      tok = pragma_lex (&tok_value);
 
       if (tok != CPP_NUMBER ||
           ((int)TREE_INT_CST_LOW (tok_value) < 0 ||
-           (int)TREE_INT_CST_LOW (tok_value) > 255))
+           (int)TREE_INT_CST_LOW (tok_value) > 63))
         {
-          error ("Vector number must be an integer between 0 and 255");
+          error ("Vector number must be an integer between 0 and 63");
           return;
         }
       /* if this is a "single" handler, the only valid vector is zero */
@@ -296,9 +343,7 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
         }
       /* add the vector to the list of dispatch functions to emit */
       mchp_add_vector_dispatch_entry (fname,
-                                      (int)TREE_INT_CST_LOW (tok_value),
-                                      false, pic32_isa_unknown,
-                                      1);
+                                      (int)TREE_INT_CST_LOW (tok_value));
     }
 
   /* There are optionally more addresses, comma separated */
@@ -308,16 +353,14 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
       tok = pragma_lex (&tok_value);
       if (tok != CPP_NUMBER ||
           ((int)TREE_INT_CST_LOW (tok_value) < 0 ||
-           (int)TREE_INT_CST_LOW (tok_value) > 255))
+           (int)TREE_INT_CST_LOW (tok_value) > 63))
         {
-          error ("Vector number must be an integer between 0 and 255");
+          error ("Vector number must be an integer between 0 and 63");
           return;
         }
       /* add the vector to the list of dispatch functions to emit */
       mchp_add_vector_dispatch_entry (fname,
-                                      (int)TREE_INT_CST_LOW (tok_value),
-                                      false, pic32_isa_unknown,
-                                      1);
+                                      (int)TREE_INT_CST_LOW (tok_value));
       tok = pragma_lex (&tok_value);
     }
 
@@ -327,207 +370,5 @@ mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
       error ("extraneous data at end of line of #pragma interrupt");
     }
 }
-
-
-/*
- * #pragma align <alignment>
- * #pragam align = <alignment>
- *
- * Not quite the same as #pragma pack, this aligns the start of the variable
- *   as #pragma pack only affeects structures
- *
- */
-
-void mchp_handle_align_pragma(struct cpp_reader *pfile) {
-  int c;
-  tree x;
-
-  c = pragma_lex(&x);
-  if (c == CPP_EOF) {
-    /* reset to default */
-    mchp_pragma_align = 0;
-    return;
-  }
-  if (c == CPP_EQ) c = pragma_lex(&x);
-  if (c == CPP_NUMBER) {
-    if (TREE_CODE(x) != INTEGER_CST) {
-      warning(OPT_Wpragmas, "requested alignment is not a constant");
-      mchp_pragma_align = 0;
-      return;
-    }
-    mchp_pragma_align = TREE_INT_CST_LOW(x);
-    if (mchp_pragma_align != 0) {
-      if ((mchp_pragma_align & (mchp_pragma_align - 1)) != 0) {
-        warning(OPT_Wpragmas, "requested alignment is not a power of 2");
-        mchp_pragma_align = 0;
-        return;
-      }
-    }
-  }
-}
-
-void mchp_handle_section_pragma (struct cpp_reader *pfile) {
-  int c;
-  tree x;
-  char *name;
-
-  c = pragma_lex(&x);
-  if (c == CPP_EOF) {
-    /* reset to default */
-    mchp_pragma_section = NULL_TREE;
-    return;
-  }
-  if (c == CPP_EQ) c = pragma_lex(&x);
-  if (c != CPP_STRING) {
-    warning(OPT_Wpragmas, "malformed section pragma, string literal expected");
-    mchp_pragma_section = NULL_TREE;
-    return;
-  }
-  name = TREE_STRING_POINTER(x);
-  mchp_pragma_section = build_string(strlen(name), name);
-  c = pragma_lex(&x);
-  if (c == CPP_NUMBER) {
-    // section alignment/
-  }
-}
-
-void mchp_handle_printf_args_pragma (struct cpp_reader *pfile) {
-  mchp_pragma_printf_args = 1;
-}
-
-void mchp_handle_scanf_args_pragma (struct cpp_reader *pfile) {
-  mchp_pragma_scanf_args = 1;
-}
-
-void mchp_handle_inline_pragma (struct cpp_reader *pfile) {
-  int c;
-  tree x;
-
-  mchp_pragma_inline = 1;
-  c = pragma_lex(&x);
-  if (c == EOF) {
-    return;
-  } else if (c == CPP_EQ) {
-    /* forced is not yet supported */
-    warning(OPT_Wpragmas, "arguments to inline pragma are not supported.");
-    return;
-  }
-}
-
-void mchp_handle_keep_pragma (struct cpp_reader *pfile) {
-  mchp_pragma_keep = 1;
-}
-
-void mchp_handle_coherent_pragma (struct cpp_reader *pfile) {
-  mchp_pragma_coherent = 1;
-}
-
-void mchp_handle_required_pragma(struct cpp_reader *pfile) {
-  int c;
-  tree x;
-
-  c = pragma_lex(&x);
-  if (c == CPP_EOF) {
-    /* behave just like #pragma keep */
-    mchp_pragma_keep = 1;
-    return;
-  } else if (c == CPP_EQ) {
-    c = pragma_lex(&x);
-  }
-
-  if (c == CPP_NAME) {
-    char *identifier;
-    tree sym;
-
-    identifier = IDENTIFIER_POINTER(x);
-    sym = maybe_get_identifier(identifier);
-    if (sym) {
-      sym = lookup_name(sym);
-      if (sym) {
-        switch (TREE_CODE(sym)) {
-          default:  warning(OPT_Wpragmas,"malformed required pragma; "
-                                         "unknown identifier '%s'", identifier);
-                    return;
-          case VAR_DECL:
-          case FUNCTION_DECL: {
-            tree attrib;
-            attrib = build_tree_list(get_identifier("keep"), NULL_TREE);
-            decl_attributes(&sym, attrib, 0);
-            return;
-          }
-        }
-      } else {
-        warning(OPT_Wpragmas, "malformed required pragma; "
-                              "identifier '%s' must be declared", identifier);
-        return;
-      }
-    }
-  }
-  warning(OPT_Wpragmas, "malformed required pragma; '= symbol' expected ");
-}
-
-void mchp_handle_optimize_pragma (struct cpp_reader *pfile) {
-  /* almost the same as the GCC optimize pragma, just more 'friendly' */
-  int c;
-  tree x;
-  tree args = NULL_TREE;
-  tree optimization_previous_node = optimization_current_node;
-
-  c = pragma_lex(&x);
-  if (c == CPP_EQ) c = pragma_lex(&x);  // options =
-
-  do {
-    switch (c) {
-      case CPP_STRING:
-        if (TREE_STRING_LENGTH(x) > 0)
-          args = tree_cons(NULL_TREE,x,args);
-        break;
-
-      case CPP_NUMBER:
-        args = tree_cons(NULL_TREE,x,args);
-        break;
-
-      case CPP_NAME: {
-        char *keyword;
-        char *equivalent=0;
-
-        keyword = IDENTIFIER_POINTER(x);
-        if (!strcmp(keyword,"balanced")) {
-          equivalent = "-O2";
-        } else if (!strcmp(keyword,"size")) {
-          equivalent = "-Os";
-        } else if (!strcmp(keyword,"speed")) {
-          equivalent = "-O3";
-        } else if (!strcmp(keyword,"none")) {
-          equivalent = "-O0";
-        } else if (!strcmp(keyword,"low")) {
-          equivalent = "-O1";
-        } else if (!strcmp(keyword,"medium")) {
-          equivalent = "-O2";
-        } else if (!strcmp(keyword,"high")) {
-          equivalent = "-O3";
-        } else {
-          warning(OPT_Wpragmas, "ignoring optimize setting: %s", keyword);
-        }
-
-        args = tree_cons(NULL_TREE,
-                         build_string(strlen(equivalent), equivalent), args);
-        break;
-      }
-
-      default:  warning(OPT_Wpragmas, "malformed optimize pragma");
-                return;
-    }
-    c = pragma_lex(&x);
-  } while (c != CPP_EOF);
-
-  /* put arguments in the order the user typed them.  */
-  args = nreverse (args);
-
-  parse_optimize_options (args, false);
-  current_optimize_pragma = chainon (current_optimize_pragma, args);
-  optimization_current_node = build_optimization_node ();
-  c_cpp_builtins_optimize_pragma (parse_in,
-                                      optimization_previous_node,
-                                      optimization_current_node);
-}
+#endif /* TODO */
+

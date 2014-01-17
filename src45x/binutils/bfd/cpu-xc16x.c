@@ -37,7 +37,6 @@ const bfd_arch_info_type xc16xs_info_struct =
   TRUE,				/* The default ?  */
   bfd_default_compatible,	/* Architecture comparison fn.  */
   bfd_default_scan,		/* String to architecture convert fn.  */
-  bfd_arch_default_fill,	/* Default fill.  */
   NULL				/* Next in list.  */
 };
 
@@ -54,7 +53,6 @@ const bfd_arch_info_type xc16xl_info_struct =
   TRUE,				/* The default ?  */
   bfd_default_compatible,	/* Architecture comparison fn.  */
   bfd_default_scan,		/* String to architecture convert fn.  */
-  bfd_arch_default_fill,	/* Default fill.  */
   & xc16xs_info_struct		/* Next in list.  */
 };
 
@@ -71,6 +69,5 @@ const bfd_arch_info_type bfd_xc16x_arch =
   TRUE,				/* The default ?  */
   bfd_default_compatible,	/* Architecture comparison fn.  */
   bfd_default_scan,		/* String to architecture convert fn.  */
-  bfd_arch_default_fill,	/* Default fill.  */
   & xc16xl_info_struct		/* Next in list.  */
 };

@@ -767,25 +767,23 @@
 ;; Division insns
 
 (define_insn "*divsf3_vfp"
-  [(set (match_operand:SF	  0 "s_register_operand" "+t,&t")
-	(div:SF (match_operand:SF 1 "s_register_operand" "t,t")
-		(match_operand:SF 2 "s_register_operand" "t,t")))]
+  [(set (match_operand:SF	  0 "s_register_operand" "+t")
+	(div:SF (match_operand:SF 1 "s_register_operand" "t")
+		(match_operand:SF 2 "s_register_operand" "t")))]
   "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP"
   "fdivs%?\\t%0, %1, %2"
   [(set_attr "predicable" "yes")
-   (set_attr "type" "fdivs")
-   (set_attr "alt_tune" "notvfp9,vfp9")]
+   (set_attr "type" "fdivs")]
 )
 
 (define_insn "*divdf3_vfp"
-  [(set (match_operand:DF	  0 "s_register_operand" "+w,&w")
-	(div:DF (match_operand:DF 1 "s_register_operand" "w,w")
-		(match_operand:DF 2 "s_register_operand" "w,w")))]
+  [(set (match_operand:DF	  0 "s_register_operand" "+w")
+	(div:DF (match_operand:DF 1 "s_register_operand" "w")
+		(match_operand:DF 2 "s_register_operand" "w")))]
   "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP_DOUBLE"
   "fdivd%?\\t%P0, %P1, %P2"
   [(set_attr "predicable" "yes")
-   (set_attr "type" "fdivd")
-   (set_attr "alt_tune" "notvfp9,vfp9")]
+   (set_attr "type" "fdivd")]
 )
 
 
@@ -1048,23 +1046,21 @@
 ;; Sqrt insns.
 
 (define_insn "*sqrtsf2_vfp"
-  [(set (match_operand:SF	   0 "s_register_operand" "=t,&t")
-	(sqrt:SF (match_operand:SF 1 "s_register_operand" "t,t")))]
+  [(set (match_operand:SF	   0 "s_register_operand" "=t")
+	(sqrt:SF (match_operand:SF 1 "s_register_operand" "t")))]
   "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP"
   "fsqrts%?\\t%0, %1"
   [(set_attr "predicable" "yes")
-   (set_attr "type" "fdivs")
-   (set_attr "alt_tune" "notvfp9,vfp9")]
+   (set_attr "type" "fdivs")]
 )
 
 (define_insn "*sqrtdf2_vfp"
-  [(set (match_operand:DF	   0 "s_register_operand" "=w,&w")
-	(sqrt:DF (match_operand:DF 1 "s_register_operand" "w,w")))]
+  [(set (match_operand:DF	   0 "s_register_operand" "=w")
+	(sqrt:DF (match_operand:DF 1 "s_register_operand" "w")))]
   "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP_DOUBLE"
   "fsqrtd%?\\t%P0, %P1"
   [(set_attr "predicable" "yes")
-   (set_attr "type" "fdivd")
-   (set_attr "alt_tune" "notvfp9,vfp9")]
+   (set_attr "type" "fdivd")]
 )
 
 

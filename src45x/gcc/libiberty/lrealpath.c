@@ -56,6 +56,15 @@ components will be simplified.  The returned value will be allocated using
 extern char *canonicalize_file_name (const char *);
 #endif
 
+#if defined (_WIN32) && defined (CHIPKIT_PIC32)
+# ifndef WINVER
+#   define WINVER 0x501
+# endif
+# ifndef _WIN32_WINNT
+#   define _WIN32_WINNT 0x0501
+# endif
+#endif
+
 #if defined(HAVE_REALPATH)
 # if defined (PATH_MAX)
 #  define REALPATH_LIMIT PATH_MAX
@@ -65,7 +74,7 @@ extern char *canonicalize_file_name (const char *);
 #  endif
 # endif
 #else
-  /* cygwin has realpath, so it won't get here.  */ 
+  /* cygwin has realpath, so it won't get here.  */
 # if defined (_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h> /* for GetFullPathName */
@@ -151,6 +160,7 @@ lrealpath (const char *filename)
 	if (cygpath (filename, cygbuf) && _access (cygbuf, F_OK) == 0)
 	  filename = cygbuf;
       }
+
 #if defined (CHIPKIT_PIC32)
     DWORD len = GetFullPathName (filename, MAX_PATH, bufShort, &basename);
     len = GetLongPathName (bufShort, buf, MAX_PATH);

@@ -1,6 +1,6 @@
 /* targ.c -- test file for mpc_arg.
 
-Copyright (C) INRIA, 2008
+Copyright (C) 2008 Philippe Th\'eveny, Andreas Enge
 
 This file is part of the MPC Library.
 

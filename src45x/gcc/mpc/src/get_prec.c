@@ -1,6 +1,7 @@
-/* mpc_get_prec -- returns the common precision of real and imaginary part, or 0 if they differ
+/* mpc_get_prec -- returns the common precision of real and imaginary part, or 0
+if they differ
 
-Copyright (C) INRIA, 2007, 2009, 2010
+Copyright (C) 2007, 2009 Andreas Enge, Philippe Th\'eveny
 
 This file is part of the MPC Library.
 
@@ -21,9 +22,9 @@ MA 02111-1307, USA. */
 
 #include "mpc-impl.h"
 
-mpfr_prec_t
+mp_prec_t
 mpc_get_prec (mpc_srcptr x)
 {
-  mpfr_prec_t precre = MPC_PREC_RE (x);
-  return (MPC_PREC_IM (x) == precre ? precre : 0);
+  mp_prec_t precre = MPFR_PREC (MPC_RE (x));
+  return (MPFR_PREC (MPC_IM (x)) == precre ? precre : 0);
 }

@@ -424,10 +424,7 @@ change_scope (rtx orig_insn, tree s1, tree s2)
   tree ts1 = s1, ts2 = s2;
   tree s;
 
-#ifdef _BUILD_C30_
-  if ((ts1) && (ts2)) {
-#endif
-    while (ts1 != ts2)
+  while (ts1 != ts2)
     {
       gcc_assert (ts1 && ts2);
       if (BLOCK_NUMBER (ts1) > BLOCK_NUMBER (ts2))
@@ -440,17 +437,10 @@ change_scope (rtx orig_insn, tree s1, tree s2)
 	  ts2 = BLOCK_SUPERCONTEXT (ts2);
 	}
     }
-    com = ts1;
-#ifdef _BUILD_C30_
-  } else if (ts1) com = BLOCK_SUPERCONTEXT(ts1);
-  else if (ts2) com = BLOCK_SUPERCONTEXT(ts2);
-#endif
+  com = ts1;
 
   /* Close scopes.  */
   s = s1;
-#ifdef _BUILD_C30_
-  if (s1)
-#endif
   while (s != com)
     {
       rtx note = emit_note_before (NOTE_INSN_BLOCK_END, insn);
@@ -460,9 +450,6 @@ change_scope (rtx orig_insn, tree s1, tree s2)
 
   /* Open scopes.  */
   s = s2;
-#ifdef _BUILD_C30_
-  if (s2)
-#endif
   while (s != com)
     {
       insn = emit_note_before (NOTE_INSN_BLOCK_BEG, insn);
@@ -603,11 +590,6 @@ reemit_insn_block_notes (void)
   insn = get_insns ();
   if (!active_insn_p (insn))
     insn = next_active_insn (insn);
-#ifdef _BUILD_C30_
-  /* dump block scope for functions with only one scope */
-  if (write_symbols == SDB_DEBUG)
-    change_scope (insn, 0, DECL_INITIAL (cfun->decl));
-#endif
   for (; insn; insn = next_active_insn (insn))
     {
       tree this_block;
@@ -626,14 +608,8 @@ reemit_insn_block_notes (void)
 
 	  this_block = NULL;
 	  for (i = 0; i < XVECLEN (body, 0); i++)
-	    {
-	      rtx subinsn = XVECEXP (body, 0, i);
-	      if (LABEL_P (subinsn) || DELETED_NOTE_P (subinsn))
-		continue;
-
-	      this_block
-		= choose_inner_scope (this_block, insn_scope (subinsn));
-	    }
+	    this_block = choose_inner_scope (this_block,
+					 insn_scope (XVECEXP (body, 0, i)));
 	}
       if (! this_block)
 	continue;
@@ -649,14 +625,6 @@ reemit_insn_block_notes (void)
   note = emit_note (NOTE_INSN_DELETED);
   change_scope (note, cur_block, DECL_INITIAL (cfun->decl));
   delete_insn (note);
-
-#ifdef _BUILD_C30_
-  if (write_symbols == SDB_DEBUG) {
-    note = emit_note(NOTE_INSN_DELETED);
-    change_scope(note,DECL_INITIAL (cfun->decl), 0);
-    delete_insn(note);
-  }
-#endif
 
   reorder_blocks ();
 }
@@ -798,7 +766,6 @@ fixup_reorder_chain (void)
     {
       edge e_fall, e_taken, e;
       rtx bb_end_insn;
-      rtx ret_label = NULL_RTX;
       basic_block nb;
       edge_iterator ei;
 
@@ -818,7 +785,6 @@ fixup_reorder_chain (void)
       bb_end_insn = BB_END (bb);
       if (JUMP_P (bb_end_insn))
 	{
-	  ret_label = JUMP_LABEL (bb_end_insn);
 	  if (any_condjump_p (bb_end_insn))
 	    {
 	      /* This might happen if the conditional jump has side
@@ -933,7 +899,7 @@ fixup_reorder_chain (void)
 	}
 
       /* We got here if we need to add a new jump insn.  */
-      nb = force_nonfallthru_and_redirect (e_fall, e_fall->dest, ret_label);
+      nb = force_nonfallthru (e_fall);
       if (nb)
 	{
 	  nb->il.rtl->visited = 1;
@@ -1152,30 +1118,24 @@ extern bool cfg_layout_can_duplicate_bb_p (const_basic_block);
 bool
 cfg_layout_can_duplicate_bb_p (const_basic_block bb)
 {
-  rtx insn;
-
   /* Do not attempt to duplicate tablejumps, as we need to unshare
      the dispatch table.  This is difficult to do, as the instructions
      computing jump destination may be hoisted outside the basic block.  */
   if (tablejump_p (BB_END (bb), NULL, NULL))
     return false;
 
-  insn = BB_HEAD (bb);
-  while (1)
+  /* Do not duplicate blocks containing insns that can't be copied.  */
+  if (targetm.cannot_copy_insn_p)
     {
-      /* Do not duplicate blocks containing insns that can't be copied.  */
-      if (INSN_P (insn) && targetm.cannot_copy_insn_p
-	  && targetm.cannot_copy_insn_p (insn))
-	return false;
-      /* dwarf2out expects that these notes are always paired with a
-	 returnjump or sibling call.  */
-      if (NOTE_P (insn) && NOTE_KIND (insn) == NOTE_INSN_EPILOGUE_BEG
-	  && !returnjump_p (BB_END (bb))
-	  && (!CALL_P (BB_END (bb)) || !SIBLING_CALL_P (BB_END (bb))))
-	return false;
-      if (insn == BB_END (bb))
-	break;
-      insn = NEXT_INSN (insn);
+      rtx insn = BB_HEAD (bb);
+      while (1)
+	{
+	  if (INSN_P (insn) && targetm.cannot_copy_insn_p (insn))
+	    return false;
+	  if (insn == BB_END (bb))
+	    break;
+	  insn = NEXT_INSN (insn);
+	}
     }
 
   return true;
@@ -1205,24 +1165,8 @@ duplicate_insn_chain (rtx from, rtx to)
 	     moved far from original jump.  */
 	  if (GET_CODE (PATTERN (insn)) == ADDR_VEC
 	      || GET_CODE (PATTERN (insn)) == ADDR_DIFF_VEC)
-	    {
-	      /* Avoid copying following barrier as well if any
-		 (and debug insns in between).  */
-	      rtx next;
-
-	      for (next = NEXT_INSN (insn);
-		   next != NEXT_INSN (to);
-		   next = NEXT_INSN (next))
-		if (!DEBUG_INSN_P (next))
-		  break;
-	      if (next != NEXT_INSN (to) && BARRIER_P (next))
-		insn = next;
-	      break;
-	    }
+	    break;
 	  copy = emit_copy_of_insn_after (insn, get_last_insn ());
-	  if (JUMP_P (insn) && JUMP_LABEL (insn) != NULL_RTX
-	      && ANY_RETURN_P (JUMP_LABEL (insn)))
-	    JUMP_LABEL (copy) = JUMP_LABEL (insn);
           maybe_copy_epilogue_insn (insn, copy);
 	  break;
 

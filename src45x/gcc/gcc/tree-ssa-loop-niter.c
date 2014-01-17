@@ -95,10 +95,10 @@ split_to_var_and_offset (tree expr, tree *var, mpz_t offset)
       *var = op0;
       /* Always sign extend the offset.  */
       off = tree_to_double_int (op1);
+      if (negate)
+	off = double_int_neg (off);
       off = double_int_sext (off, TYPE_PRECISION (type));
       mpz_set_double_int (offset, off, false);
-      if (negate)
-	mpz_neg (offset, offset);
       break;
 
     case INTEGER_CST:
@@ -2021,16 +2021,9 @@ chain_of_csts_start (struct loop *loop, tree x)
 {
   gimple stmt = SSA_NAME_DEF_STMT (x);
   tree use;
-#ifdef _BUILD_C30_
-  basic_block bb = NULL;
-#else
   basic_block bb = gimple_bb (stmt);
-#endif
   enum tree_code code;
 
-#ifdef _BUILD_C30_
-  if (stmt) bb = gimple_bb(stmt);
-#endif
   if (!bb
       || !flow_bb_inside_loop_p (loop, bb))
     return NULL;

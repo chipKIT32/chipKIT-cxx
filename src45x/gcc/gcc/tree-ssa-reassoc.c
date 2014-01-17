@@ -1732,15 +1732,13 @@ linearize_expr_tree (VEC(operand_entry_t, heap) **ops, gimple stmt,
   if (TREE_CODE (binlhs) == SSA_NAME)
     {
       binlhsdef = SSA_NAME_DEF_STMT (binlhs);
-      binlhsisreassoc = (is_reassociable_op (binlhsdef, rhscode, loop)
-			 && !stmt_could_throw_p (binlhsdef));
+      binlhsisreassoc = is_reassociable_op (binlhsdef, rhscode, loop);
     }
 
   if (TREE_CODE (binrhs) == SSA_NAME)
     {
       binrhsdef = SSA_NAME_DEF_STMT (binrhs);
-      binrhsisreassoc = (is_reassociable_op (binrhsdef, rhscode, loop)
-			 && !stmt_could_throw_p (binrhsdef));
+      binrhsisreassoc = is_reassociable_op (binrhsdef, rhscode, loop);
     }
 
   /* If the LHS is not reassociable, but the RHS is, we need to swap
@@ -1929,8 +1927,7 @@ reassociate_bb (basic_block bb)
     {
       gimple stmt = gsi_stmt (gsi);
 
-      if (is_gimple_assign (stmt)
-	  && !stmt_could_throw_p (stmt))
+      if (is_gimple_assign (stmt))
 	{
 	  tree lhs, rhs1, rhs2;
 	  enum tree_code rhs_code = gimple_assign_rhs_code (stmt);

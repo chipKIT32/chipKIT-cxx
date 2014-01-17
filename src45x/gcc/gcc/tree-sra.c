@@ -276,9 +276,6 @@ static bool encountered_apply_args;
    arguments than formal parameters..  */
 static bool encountered_unchangable_recursive_call;
 
-/* Set by scan_function when it changes the control flow graph.  */
-static bool cfg_changed;
-
 /* This is a table in which for each basic block and parameter there is a
    distance (offset + size) in that parameter which is dereferenced and
    accessed in that BB.  */
@@ -573,7 +570,6 @@ sra_initialize (void)
   memset (&sra_stats, 0, sizeof (sra_stats));
   encountered_apply_args = false;
   encountered_unchangable_recursive_call = false;
-  cfg_changed = false;
 }
 
 /* Hook fed to pointer_map_traverse, deallocate stored vectors.  */
@@ -1121,6 +1117,8 @@ scan_function (bool (*scan_expr) (tree *, gimple_stmt_iterator *, bool, void *),
 
   FOR_EACH_BB (bb)
     {
+      bool bb_changed = false;
+
       if (handle_ssa_defs)
 	for (gsi = gsi_start_phis (bb); !gsi_end_p (gsi); gsi_next (&gsi))
 	  ret |= handle_ssa_defs (gsi_stmt (gsi), data);
@@ -1225,15 +1223,21 @@ scan_function (bool (*scan_expr) (tree *, gimple_stmt_iterator *, bool, void *),
 
 	      if (!analysis_stage)
 		{
+		  bb_changed = true;
 		  update_stmt (stmt);
-		  if (maybe_clean_eh_stmt (stmt)
-		      && gimple_purge_dead_eh_edges (bb))
-		    cfg_changed = true;
+		  maybe_clean_eh_stmt (stmt);
 		}
 	    }
-	  if (!deleted)
-	    gsi_next (&gsi);
+	  if (deleted)
+	    bb_changed = true;
+	  else
+	    {
+	      gsi_next (&gsi);
+	      ret = true;
+	    }
 	}
+      if (!analysis_stage && bb_changed && sra_mode == SRA_MODE_EARLY_IPA)
+	gimple_purge_dead_eh_edges (bb);
     }
 
   return ret;
@@ -2870,10 +2874,7 @@ perform_intra_sra (void)
   statistics_counter_event (cfun, "Separate LHS and RHS handling",
 			    sra_stats.separate_lhs_rhs_handling);
 
-  if (cfg_changed)
-    ret = TODO_update_ssa | TODO_cleanup_cfg;
-  else
-    ret = TODO_update_ssa;
+  ret = TODO_update_ssa;
 
  out:
   sra_deinitialize ();
@@ -3235,7 +3236,7 @@ dump_dereferences_table (FILE *f, const char *str, HOST_WIDE_INT *table)
 {
   basic_block bb;
 
-  fprintf (dump_file, "%s", str);
+  fprintf (dump_file, str);
   FOR_BB_BETWEEN (bb, ENTRY_BLOCK_PTR, EXIT_BLOCK_PTR, next_bb)
     {
       fprintf (f, "%4i  %i   ", bb->index, bitmap_bit_p (final_bbs, bb->index));
@@ -4238,10 +4239,7 @@ ipa_early_sra (void)
 
   modify_function (node, adjustments);
   VEC_free (ipa_parm_adjustment_t, heap, adjustments);
-  if (cfg_changed)
-    ret = TODO_update_ssa | TODO_cleanup_cfg;
-  else
-    ret = TODO_update_ssa;
+  ret = TODO_update_ssa;
 
   statistics_counter_event (cfun, "Unused parameters deleted",
 			    sra_stats.deleted_unused_parameters);

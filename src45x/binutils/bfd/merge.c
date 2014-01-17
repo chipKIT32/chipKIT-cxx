@@ -348,7 +348,6 @@ _bfd_add_merge_section (bfd *abfd, void **psinfo, asection *sec,
   struct sec_merge_sec_info *secinfo;
   unsigned int align;
   bfd_size_type amt;
-  bfd_byte *contents;
 
   if ((abfd->flags & DYNAMIC) != 0
       || (sec->flags & SEC_MERGE) == 0)
@@ -433,8 +432,8 @@ _bfd_add_merge_section (bfd *abfd, void **psinfo, asection *sec,
   sec->rawsize = sec->size;
   if (sec->flags & SEC_STRINGS)
     memset (secinfo->contents + sec->size, 0, sec->entsize);
-  contents = secinfo->contents;
-  if (! bfd_get_full_section_contents (sec->owner, sec, &contents))
+  if (! bfd_get_section_contents (sec->owner, sec, secinfo->contents,
+				  0, sec->size))
     goto error_return;
 
   return TRUE;

@@ -15,8 +15,7 @@ _backward_target:
 	.size	_backward_target, .-_backward_target
 	
 	.text
-# Use 256-byte alignment so that we know where the stubs start.
-	.align	8
+	.align	2
 
 # Define _start so that linker does not complain.
 	.global	_start

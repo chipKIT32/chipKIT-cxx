@@ -4,32 +4,23 @@
 # instuction won't work across the divide (no jx instruction).
 # Compile libraries with -mcode-xonly, so that they are link-compatible
 # with both -mcode-readable=pcrel and -mcode-readable=yes.
-TARGET_LIBGCC2_CFLAGS = -G 0 -fno-optimize-sibling-calls -mcode-xonly -fno-common -msmart-io=0 -mmips16-exceptions -minterlink-compressed -D_BUILD_C32_
+TARGET_LIBGCC2_CFLAGS = -G 0 -fno-optimize-sibling-calls -mcode-xonly -O2
 
 # Don't let CTOR_LIST end up in sdata section.
-CRTSTUFF_T_CFLAGS = -G 0 -D_BUILD_C32_ -minterlink-compressed
+CRTSTUFF_T_CFLAGS = -G 0
 
-# Build the multilibs.
-LIBGCC = stmp-multilib
-INSTALL_LIBGCC = install-multilib
-
+# TODO: Restore full multilib permutations
 MULTILIB_OPTIONS = mips16
 MULTILIB_DIRNAMES = mips16
 MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e
 MULTILIB_EXCLUSIONS = mcode-readable=no/!mips16
-MULTILIB_EXCEPTIONS = *mpic32mxlibs*/*mmicromips* 
-MULTILIB_EXCEPTIONS += *mpic32mzlibs*/*mips16* 
-MULTILIB_EXCEPTIONS += *mprocessor=32MX*/*mmicromips* 
-MULTILIB_EXCEPTIONS += *mprocessor=32MZ*/*mips16*
-MULTILIB_EXCEPTIONS += !mprocessor=*/*msmall-isa*
+MULTILIB_EXCEPTIONS =
 
-EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
-
-MULTILIB_EXTRA_OPTS = mno-jals
+# For chipKIT only
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o #crti.o crtn.o
 
 # Microchip PIC32-specific format checking and pragmas
 mchp.o: $(srcdir)/config/pic32/mchp.c $(srcdir)/config/pic32/mchp.h \
-  $(srcdir)/config/mchp-cci/cci.h \
   $(CONFIG_H) $(SYSTEM_H) coretypes.h \
   tree.h c-format.h intl.h $(CPPLIB_H) c-pragma.h $(TM_H) $(TM_P_H) \
   toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
@@ -38,8 +29,6 @@ mchp.o: $(srcdir)/config/pic32/mchp.c $(srcdir)/config/pic32/mchp.h \
 	  $(srcdir)/config/pic32/mchp.c
 
 mchp-pragmas.o: $(srcdir)/config/pic32/mchp-pragmas.c \
-  $(srcdir)/config/mchp-cci/cci.c \
-  $(srcdir)/config/mchp-cci/cci.h \
   $(srcdir)/config/pic32/mchp-pragmas.h \
   $(CONFIG_H) $(SYSTEM_H) coretypes.h \
   tree.h c-format.h intl.h $(CPPLIB_H) c-pragma.h $(TM_H) $(TM_P_H) \
@@ -48,11 +37,6 @@ mchp-pragmas.o: $(srcdir)/config/pic32/mchp-pragmas.c \
 	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
 	  $(srcdir)/config/pic32/mchp-pragmas.c
 
-cci-backend.o: $(srcdir)/config/mchp-cci/cci-backend.c \
-  $(srcdir)/config/mchp-cci/cci-backend.h \
-  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
-  tree.h c-format.h intl.h $(CPPLIB_H) $(TM_H) $(TM_P_H) \
-  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H)
-	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
-	  $(srcdir)/config/mchp-cci/cci-backend.c
-
+# Build the multilibs.
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib

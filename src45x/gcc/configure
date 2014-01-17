@@ -3097,7 +3097,7 @@ if test "${ENABLE_GOLD}" = "yes"; then
     # Check for target supported by gold.
     case "${target}" in
       i?86-*-* | x86_64-*-* | sparc*-*-* | powerpc*-*-* | arm*-*-*)
-        configdirs=`echo " ${configdirs} " | sed -e 's/ ld / gold /'`
+        configdirs="`echo " ${configdirs} " | sed -e 's/ ld / gold /'`"
         ;;
     esac
   fi
@@ -3591,14 +3591,6 @@ case "${target}" in
     ;;
   mn10300-*-*)
     noconfigdirs="$noconfigdirs ${libgcj}"
-    ;;
-  pic30-*-*)
-    extra_host_args="${extra_host_args} --program-prefix=${program_prefix}"
-    noconfigdirs="${noconfigdirs} ${target_libs}"
-    CC_FOR_TARGET="xc16-gcc"
-    AS_FOR_TARGET="xc16-as"
-    LD_FOR_TARGET="xc16-ld"
-    AR_FOR_TARGET="xc16-ar"
     ;;
   mt-*-*)
     noconfigdirs="$noconfigdirs sim"
@@ -5469,7 +5461,7 @@ fi
 if test "x$with_gmp$with_gmp_include$with_gmp_lib" = x && test -d ${srcdir}/gmp; then
   gmplibs='-L$$r/$(HOST_SUBDIR)/gmp/'"$lt_cv_objdir $gmplibs"
   gmpinc='-I$$r/$(HOST_SUBDIR)/gmp -I$$s/gmp '"$gmpinc"
-  extra_mpfr_configure_flags='--with-gmp-include=$$r/$(HOST_SUBDIR)/gmp --with-gmp-lib=$$r/$(HOST_SUBDIR)/gmp/'"$lt_cv_objdir"
+  extra_mpfr_configure_flags='--with-gmp-build=$$r/$(HOST_SUBDIR)/gmp'
   extra_mpc_gmp_configure_flags='--with-gmp-include=$$r/$(HOST_SUBDIR)/gmp --with-gmp-lib=$$r/$(HOST_SUBDIR)/gmp/'"$lt_cv_objdir"
   # Do not test the gmp version.  Assume that it is sufficient, since
   # it is in the source tree, and the library has not been built yet
@@ -7381,9 +7373,6 @@ case "${target}" in
     ;;
   mips*-*-*linux* | mips*-*-gnu*)
     target_makefile_frag="config/mt-mips-gnu"
-    ;;
-  pic32mx-mchp-elf)
-    target_makefile_frag="config/mt-pic32"
     ;;
   *-*-netware*)
     target_makefile_frag="config/mt-netware"
@@ -14205,7 +14194,7 @@ else
 
   if test $ok = yes; then
     # An in-tree tool is available and we can use it
-    STRIP_FOR_TARGET='$$r/$(HOST_SUBDIR)/binutils/strip-new'
+    STRIP_FOR_TARGET='$$r/$(HOST_SUBDIR)/binutils/strip'
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: just compiled" >&5
 $as_echo "just compiled" >&6; }
   elif expr "x$STRIP_FOR_TARGET" : "x/" > /dev/null; then

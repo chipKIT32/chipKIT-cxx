@@ -73,7 +73,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "match.h"
 #include "parse.h" /* FIXME */
 #include "md5.h"
-#include "cpp.h"
 
 #define MODULE_EXTENSION ".mod"
 
@@ -5100,9 +5099,6 @@ gfc_dump_module (const char *name, int dump_flag)
       unlink (filename);
       return;
     }
-
-  if (gfc_cpp_makedep ())
-    gfc_cpp_add_target (filename);
 
   /* Write the module to the temporary file.  */
   module_fp = fopen (filename_tmp, "w");

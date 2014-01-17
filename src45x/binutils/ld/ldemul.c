@@ -1,6 +1,6 @@
 /* ldemul.c -- clearing house for ld emulation states
    Copyright 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000,
-   2001, 2002, 2003, 2005, 2007, 2008, 2009, 2010, 2011, 2012
+   2001, 2002, 2003, 2005, 2007, 2008, 2009
    Free Software Foundation, Inc.
 
    This file is part of the GNU Binutils.
@@ -119,15 +119,6 @@ ldemul_open_dynamic_archive (const char *arch, search_dirs_type *search,
   return FALSE;
 }
 
-#ifdef TARGET_IS_PIC32MX
-lang_output_section_statement_type *
-ldemul_place_orphan (lang_input_statement_type *file, asection *s, const char *name, int constraint)
-{
-  if (ld_emulation->place_orphan)
-    return (*ld_emulation->place_orphan) (file, s, name, constraint);
-  return NULL;
-}
-#else
 lang_output_section_statement_type *
 ldemul_place_orphan (asection *s, const char *name, int constraint)
 {
@@ -135,7 +126,6 @@ ldemul_place_orphan (asection *s, const char *name, int constraint)
     return (*ld_emulation->place_orphan) (s, name, constraint);
   return NULL;
 }
-#endif
 
 void
 ldemul_add_options (int ns, char **shortopts, int nl,
@@ -229,7 +219,7 @@ after_parse_default (void)
 	  is_vma = *send == '\0';
 	}
       if (!is_vma)
-	ldlang_add_undef (entry_symbol.name, entry_from_cmdline);
+	ldlang_add_undef (entry_symbol.name);
     }
 }
 
@@ -272,13 +262,13 @@ set_output_arch_default (void)
 void
 syslib_default (char *ignore ATTRIBUTE_UNUSED)
 {
-  info_msg (_("%S SYSLIB ignored\n"), NULL);
+  info_msg (_("%S SYSLIB ignored\n"));
 }
 
 void
 hll_default (char *ignore ATTRIBUTE_UNUSED)
 {
-  info_msg (_("%S HLL ignored\n"), NULL);
+  info_msg (_("%S HLL ignored\n"));
 }
 
 ld_emulation_xfer_type *ld_emulations[] = { EMULATION_LIST };
@@ -360,4 +350,3 @@ ldemul_new_vers_pattern (struct bfd_elf_version_expr *entry)
     entry = (*ld_emulation->new_vers_pattern) (entry);
   return entry;
 }
-

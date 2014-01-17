@@ -1,6 +1,6 @@
 /* test file for mpc_asin.
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Philippe Th\'eveny
 
 This file is part of the MPC Library.
 

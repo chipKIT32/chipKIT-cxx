@@ -60,7 +60,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "except.h"
 #include "debug.h"
 #include "intl.h"
-#include "ssaexpand.h"
 
 /* Tree code classes.  */
 
@@ -207,10 +206,7 @@ static GTY ((if_marked ("tree_priority_map_marked_p"),
 	     param_is (struct tree_priority_map)))
   htab_t init_priority_for_decl;
 
-#ifndef _BUILD_C30_
-static 
-#endif
-void set_type_quals (tree, int);
+static void set_type_quals (tree, int);
 static int type_hash_eq (const void *, const void *);
 static hashval_t type_hash_hash (const void *);
 static hashval_t int_cst_hash_hash (const void *);
@@ -3680,14 +3676,9 @@ build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
 		&& TREE_CODE (arg1) == INTEGER_CST);
 
   if (code == POINTER_PLUS_EXPR && arg0 && arg1 && tt)
-#if _BUILD_C30_
-    gcc_assert (POINTER_TYPE_P (tt) && POINTER_TYPE_P (TREE_TYPE (arg0))
-		&& INTEGRAL_TYPE_P (TREE_TYPE (arg1)));
-#else
     gcc_assert (POINTER_TYPE_P (tt) && POINTER_TYPE_P (TREE_TYPE (arg0))
 		&& INTEGRAL_TYPE_P (TREE_TYPE (arg1))
 		&& useless_type_conversion_p (sizetype, TREE_TYPE (arg1)));
-#endif
 
   t = make_node_stat (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
@@ -5440,10 +5431,7 @@ handle_dll_attribute (tree * pnode, tree name, tree args, int flags,
 /* Set the type qualifiers for TYPE to TYPE_QUALS, which is a bitmask
    of the various TYPE_QUAL values.  */
 
-#ifndef _BUILD_C30_
-static
-#endif
-void
+static void
 set_type_quals (tree type, int type_quals)
 {
   TYPE_READONLY (type) = (type_quals & TYPE_QUAL_CONST) != 0;
@@ -5501,13 +5489,8 @@ build_qualified_type (tree type, int type_quals)
   /* If not, build it.  */
   if (!t)
     {
-#ifdef _BUILD_C30_
-      /* new targetm ? */
-      t = TARGET_BUILD_VARIANT_TYPE_COPY(type, type_quals);
-#else
       t = build_variant_type_copy (type);
       set_type_quals (t, type_quals);
-#endif
 
       if (TYPE_STRUCTURAL_EQUALITY_P (type))
 	/* Propagate structural equality. */
@@ -8189,7 +8172,6 @@ decl_type_context (const_tree decl)
 tree
 get_callee_fndecl (const_tree call)
 {
-  gimple def;
   tree addr;
 
   if (call == error_mark_node)
@@ -8202,14 +8184,6 @@ get_callee_fndecl (const_tree call)
   /* The first operand to the CALL is the address of the function
      called.  */
   addr = CALL_EXPR_FN (call);
-
-  /* For SSA_NAMEs during expansion, try to expose the original decl by TER.
-     This is needed for proper expansion of calls to overloaded builtins in
-     certain cases.  */
-  if (TREE_CODE (addr) == SSA_NAME
-      && (def = get_gimple_for_ssa_name (addr))
-      && (gimple_assign_single_p (def) || gimple_assign_unary_nop_p (def)))
-    addr = gimple_assign_rhs1 (def);
 
   STRIP_NOPS (addr);
 
@@ -9656,13 +9630,7 @@ needs_to_live_in_memory (const_tree t)
     t = SSA_NAME_VAR (t);
 
   return (TREE_ADDRESSABLE (t)
-#ifdef _BUILD_C30_
-          || (is_global_var (t) &&
-              (!(DECL_REGISTER(t) && TREE_CODE (t) != FIELD_DECL &&
-                 TREE_CODE(t) != FUNCTION_DECL && TREE_CODE(t) != LABEL_DECL)))
-#else
 	  || is_global_var (t)
-#endif
 	  || (TREE_CODE (t) == RESULT_DECL
 	      && aggregate_value_p (t, current_function_decl)));
 }
@@ -9781,12 +9749,6 @@ signed_or_unsigned_type_for (int unsignedp, tree type)
       if (!TYPE_ADDR_SPACE (TREE_TYPE (t)))
 	t = size_type_node;
       else
-#ifdef _BUILD_C30_
-        /* C30 extended pointer types don't behave like integers
-           and this is a bad assumption to make, they have different modes
-           for a reason */
-        return type;
-#endif
 	return lang_hooks.types.type_for_size (TYPE_PRECISION (t), unsignedp);
     }
 

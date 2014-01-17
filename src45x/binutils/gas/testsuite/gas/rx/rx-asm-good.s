@@ -1,7 +1,7 @@
 
 	.INCLUDE ..FILE@.inc
 	
-	.SECTION P,CODE,ALIGN
+	.SECTION .text,CODE,ALIGN
 
 	.ORG 100H
 	
@@ -42,7 +42,7 @@ mem:
 	bra ?-
 
 	
-	.SECTION D_1,DATA
+	.SECTION .data,DATA
 	.GLB dmem
 dmem:
 	size .EQU 2

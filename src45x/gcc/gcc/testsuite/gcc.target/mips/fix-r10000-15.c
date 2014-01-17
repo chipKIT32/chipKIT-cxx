@@ -1,6 +1,6 @@
 /* { dg-do compile } */
 /* { dg-options "-O2 -mfix-r10000" } */
-/* { dg-final { scan-assembler-times "\tbeql\t|\tswapw\t|\tswapd\t" 3 } } */
+/* { dg-final { scan-assembler-times "\tbeql\t" 3 } } */
 
 NOMIPS16 int
 f1 (int *z)

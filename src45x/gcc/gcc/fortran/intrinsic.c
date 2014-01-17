@@ -112,8 +112,6 @@ gfc_get_intrinsic_sub_symbol (const char *name)
   sym->attr.flavor = FL_PROCEDURE;
   sym->attr.proc = PROC_INTRINSIC;
 
-  gfc_commit_symbol (sym);
-
   return sym;
 }
 

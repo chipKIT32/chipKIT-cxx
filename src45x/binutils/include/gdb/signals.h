@@ -1,5 +1,7 @@
 /* Target signal numbers for GDB and the GDB remote protocol.
-   Copyright 1986, 1988-2002, 2007-2012 Free Software Foundation, Inc.
+   Copyright 1986, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997,
+   1998, 1999, 2000, 2001, 2002, 2007, 2008, 2009, 2010
+   Free Software Foundation, Inc.
 
    This file is part of GDB.
 
@@ -45,13 +47,16 @@
    etc. are doing to address these issues.  */
 
 /* For an explanation of what each signal means, see
-   gdb_signal_to_string.  */
+   target_signal_to_string.  */
 
-enum gdb_signal
+enum target_signal
   {
 #define SET(symbol, constant, name, string) \
     symbol = constant,
+#define ANY(symbol, name, string) \
+    symbol,
 #include "gdb/signals.def"
+#undef ANY
 #undef SET
   };
 

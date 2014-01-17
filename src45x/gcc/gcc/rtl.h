@@ -411,10 +411,6 @@ struct GTY(()) rtvec_def {
   (JUMP_P (INSN) && (GET_CODE (PATTERN (INSN)) == ADDR_VEC || \
 		     GET_CODE (PATTERN (INSN)) == ADDR_DIFF_VEC))
 
-/* Predicate yielding nonzero iff X is a return or simple_preturn.  */
-#define ANY_RETURN_P(X) \
-  (GET_CODE (X) == RETURN || GET_CODE (X) == SIMPLE_RETURN)
-
 /* 1 if X is a unary operator.  */
 
 #define UNARY_P(X)   \
@@ -971,11 +967,6 @@ enum insn_note
 extern const char * const note_insn_name[NOTE_INSN_MAX];
 #define GET_NOTE_INSN_NAME(NOTE_CODE) \
   (note_insn_name[(NOTE_CODE)])
-
-/* Predicate yielding nonzero iff X is a deleted insn note.  */
-#define DELETED_NOTE_P(X)					\
-  (NOTE_P (X) && (NOTE_KIND (X) == NOTE_INSN_DELETED		\
-		  || NOTE_KIND (X) == NOTE_INSN_DELETED_LABEL))
 
 /* The name of a label, in case it corresponds to an explicit label
    in the input source code.  */
@@ -1718,8 +1709,6 @@ extern rtx next_nonnote_insn (rtx);
 extern rtx next_nonnote_insn_bb (rtx);
 extern rtx prev_nondebug_insn (rtx);
 extern rtx next_nondebug_insn (rtx);
-extern rtx prev_nonnote_nondebug_insn (rtx);
-extern rtx next_nonnote_nondebug_insn (rtx);
 extern rtx prev_real_insn (rtx);
 extern rtx next_real_insn (rtx);
 extern rtx prev_active_insn (rtx);
@@ -1821,10 +1810,6 @@ typedef struct replace_label_data
   bool update_label_nuses;
 } replace_label_data;
 
-#ifdef _BUILD_C30_
-extern int rtx_uses_mem_p  (rtx);
-#endif
-
 extern int rtx_addr_can_trap_p (const_rtx);
 extern bool nonzero_address_p (const_rtx);
 extern int rtx_unstable_p (const_rtx);
@@ -1867,7 +1852,6 @@ extern rtx alloc_reg_note (enum reg_note, rtx, rtx);
 extern void add_reg_note (rtx, enum reg_note, rtx);
 extern void remove_note (rtx, const_rtx);
 extern void remove_reg_equal_equiv_notes (rtx);
-extern void remove_reg_equal_equiv_notes_for_regno (unsigned int);
 extern int side_effects_p (const_rtx);
 extern int volatile_refs_p (const_rtx);
 extern int volatile_insn_p (const_rtx);
@@ -2011,8 +1995,6 @@ enum global_rtl_index
 {
   GR_PC,
   GR_CC0,
-  GR_RETURN,
-  GR_SIMPLE_RETURN,
   GR_STACK_POINTER,
   GR_FRAME_POINTER,
 /* For register elimination to work properly these hard_frame_pointer_rtx,
@@ -2047,8 +2029,6 @@ extern GTY(()) rtx global_rtl[GR_MAX];
 
 /* Standard pieces of rtx, to be substituted directly into things.  */
 #define pc_rtx                  (global_rtl[GR_PC])
-#define ret_rtx                 (global_rtl[GR_RETURN])
-#define simple_return_rtx       (global_rtl[GR_SIMPLE_RETURN])
 #define cc0_rtx                 (global_rtl[GR_CC0])
 
 /* All references to certain hard regs, except those created

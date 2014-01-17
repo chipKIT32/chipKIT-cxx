@@ -350,17 +350,7 @@ web_main (void)
     FOR_BB_INSNS (bb, insn)
     {
       unsigned int uid = INSN_UID (insn);
-
-      if (NONDEBUG_INSN_P (insn)
-	  /* Ignore naked clobber.  For example, reg 134 in the second insn
-	     of the following sequence will not be replaced.
-
-	       (insn (clobber (reg:SI 134)))
-
-	       (insn (set (reg:SI 0 r0) (reg:SI 134)))
-
-	     Thus the later passes can optimize them away.  */
-	  && GET_CODE (PATTERN (insn)) != CLOBBER)
+      if (NONDEBUG_INSN_P (insn))
 	{
 	  df_ref *use_rec;
 	  df_ref *def_rec;

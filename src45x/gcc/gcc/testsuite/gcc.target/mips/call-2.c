@@ -1,6 +1,6 @@
 /* See through some simple data-flow.  */
 /* { dg-options "-O2 -mrelax-pic-calls" } */
-/* { dg-final { scan-assembler-times "\\.reloc\t1f,R_MIPS_JALR,g\n1:\tjalrs?\t" 3 } } */
+/* { dg-final { scan-assembler-times "\\.reloc\t1f,R_MIPS_JALR,g\n1:\tjalr\t" 3 } } */
 
 NOMIPS16 f (int i)
 {

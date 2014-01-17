@@ -2539,8 +2539,7 @@ data_transfer_init (st_parameter_dt *dtp, int read_flag)
     }
 
   /* Bugware for badly written mixed C-Fortran I/O.  */
-  if (!is_internal_unit (dtp))
-    flush_if_preconnected(dtp->u.p.current_unit->s);
+  flush_if_preconnected(dtp->u.p.current_unit->s);
 
   dtp->u.p.current_unit->mode = dtp->u.p.mode;
 

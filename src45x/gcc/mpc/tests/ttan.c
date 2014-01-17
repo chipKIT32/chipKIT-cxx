@@ -1,6 +1,6 @@
 /* test file for mpc_tan.
 
-Copyright (C) INRIA, 2008, 2011
+Copyright (C) 2008 Philippe Th\'eveny, Paul Zimmermann, Andreas Enge
 
 This file is part of the MPC Library.
 
@@ -21,6 +21,17 @@ MA 02111-1307, USA. */
 
 #include <stdlib.h>
 #include "mpc-tests.h"
+
+static void
+test_failed (mpc_t op, mpc_t get, mpc_t expected)
+{
+  printf ("mpc_tan(op) failed\n with ");
+  OUT (op);
+  printf ("     ");
+  OUT (get);
+  OUT (expected);
+  exit (1);
+}
 
 static void
 pure_real_argument (void)
@@ -120,7 +131,7 @@ pure_imaginary_argument (void)
   mpfr_t tanh_y;
   mpc_t z;
   mpc_t tan_z;
-  mpfr_prec_t prec = (mpfr_prec_t) 111;
+  mp_prec_t prec = (mp_prec_t) 111;
 
   mpfr_init2 (y, 2);
   mpfr_init2 (tanh_y, prec);
@@ -141,7 +152,7 @@ pure_imaginary_argument (void)
       mpfr_set_ui (MPC_RE (c99), 0, GMP_RNDN);
       mpfr_set (MPC_IM (c99), tanh_y, GMP_RNDN);
 
-      TEST_FAILED ("mpc_tan", z, tan_z, c99, MPC_RNDNN);
+      test_failed (z, tan_z, c99);
     }
 
   /* tan(0 -i) = +0 +i*tanh(-1) */
@@ -157,7 +168,7 @@ pure_imaginary_argument (void)
       mpfr_set_ui (MPC_RE (c99), 0, GMP_RNDN);
       mpfr_set (MPC_IM (c99), tanh_y, GMP_RNDN);
 
-      TEST_FAILED ("mpc_tan", z, tan_z, c99, MPC_RNDNN);
+      test_failed (z, tan_z, c99);
     }
 
   /* tan(-0 +i) = -0 +i*tanh(1) */
@@ -173,7 +184,7 @@ pure_imaginary_argument (void)
       mpfr_set_ui (MPC_RE (c99), 0, GMP_RNDN);
       mpfr_set (MPC_IM (c99), tanh_y, GMP_RNDN);
 
-      TEST_FAILED ("mpc_tan", z, tan_z, c99, MPC_RNDNN);
+      test_failed (z, tan_z, c99);
     }
 
   /* tan(-0 -i) = -0 +i*tanh(-1) */
@@ -189,7 +200,7 @@ pure_imaginary_argument (void)
       mpfr_set_ui (MPC_RE (c99), 0, GMP_RNDN);
       mpfr_set (MPC_IM (c99), tanh_y, GMP_RNDN);
 
-      TEST_FAILED ("mpc_tan", z, tan_z, c99, MPC_RNDNN);
+      test_failed (z, tan_z, c99);
     }
 
   mpc_clear (tan_z);
@@ -218,17 +229,17 @@ check_53 (void)
   mpfr_set_str (MPC_IM (t), "1D02967C31CDB5", 16, GMP_RNDN);
   mpc_tan (tan_z, z, MPC_RNDNN);
   if (mpc_cmp (tan_z, t) != 0)
-    TEST_FAILED ("mpc_tan", z, tan_z, t, MPC_RNDNN);
+    test_failed (z, tan_z, t);
 
   mpfr_set_str (MPC_RE (t), "1D02967C31CDB4", 16, GMP_RNDN);
   mpc_tan (tan_z, z, MPC_RNDDU);
   if (mpc_cmp (tan_z, t) != 0)
-    TEST_FAILED ("mpc_tan", z, tan_z, t, MPC_RNDDU);
+    test_failed (z, tan_z, t);
 
   mpfr_set_str (MPC_IM (t), "1D02967C31CDB4", 16, GMP_RNDN);
   mpc_tan (tan_z, z, MPC_RNDZD);
   if (mpc_cmp (tan_z, t) != 0)
-    TEST_FAILED ("mpc_tan", z, tan_z, t, MPC_RNDZD);
+    test_failed (z, tan_z, t);
 
   /* Re(z) = x + 2^(-52) */
   /* Im(z) = y - 2^(-52) */
@@ -238,7 +249,7 @@ check_53 (void)
   mpfr_set_str (MPC_IM (t), "-B0BD0AA4A3B3D", 16, GMP_RNDN);
   mpc_tan (tan_z, z, MPC_RNDNN);
   if (mpc_cmp (tan_z, t) != 0)
-    TEST_FAILED ("mpc_tan", z, tan_z, t, MPC_RNDNN);
+    test_failed (z, tan_z, t);
 
   mpc_clear (t);
   mpc_clear (tan_z);

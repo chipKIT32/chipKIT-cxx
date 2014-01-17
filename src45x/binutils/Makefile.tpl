@@ -6,7 +6,7 @@ in
 #
 # Makefile for directory with subdirs to build.
 #   Copyright (C) 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-#   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
+#   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
 #   Free Software Foundation
 #
 # This file is free software; you can redistribute it and/or modify
@@ -103,6 +103,8 @@ TOPLEVEL_CONFIGURE_ARGUMENTS=@TOPLEVEL_CONFIGURE_ARGUMENTS@
 tooldir = @tooldir@
 build_tooldir = @build_tooldir@
 
+GDB_NLM_DEPS = 
+
 # This is the name of the environment variable used for the path to
 # the libraries.
 RPATH_ENVVAR = @RPATH_ENVVAR@
@@ -158,8 +160,6 @@ BUILD_EXPORTS = \
 	CXXFLAGS="$(CXXFLAGS_FOR_BUILD)"; export CXXFLAGS; \
 	GCJ="$(GCJ_FOR_BUILD)"; export GCJ; \
 	GFORTRAN="$(GFORTRAN_FOR_BUILD)"; export GFORTRAN; \
-	GOC="$(GOC_FOR_BUILD)"; export GOC; \
-	GOCFLAGS="$(GOCFLAGS_FOR_BUILD)"; export GOCFLAGS; \
 	DLLTOOL="$(DLLTOOL_FOR_BUILD)"; export DLLTOOL; \
 	LD="$(LD_FOR_BUILD)"; export LD; \
 	LDFLAGS="$(LDFLAGS_FOR_BUILD)"; export LDFLAGS; \
@@ -196,7 +196,6 @@ HOST_EXPORTS = \
 	CXXFLAGS="$(CXXFLAGS)"; export CXXFLAGS; \
 	GCJ="$(GCJ)"; export GCJ; \
 	GFORTRAN="$(GFORTRAN)"; export GFORTRAN; \
-	GOC="$(GOC)"; export GOC; \
 	AR="$(AR)"; export AR; \
 	AS="$(AS)"; export AS; \
 	CC_FOR_BUILD="$(CC_FOR_BUILD)"; export CC_FOR_BUILD; \
@@ -209,7 +208,6 @@ HOST_EXPORTS = \
 	WINDMC="$(WINDMC)"; export WINDMC; \
 	OBJCOPY="$(OBJCOPY)"; export OBJCOPY; \
 	OBJDUMP="$(OBJDUMP)"; export OBJDUMP; \
-	READELF="$(READELF)"; export READELF; \
 	AR_FOR_TARGET="$(AR_FOR_TARGET)"; export AR_FOR_TARGET; \
 	AS_FOR_TARGET="$(AS_FOR_TARGET)"; export AS_FOR_TARGET; \
 	GCC_FOR_TARGET="$(GCC_FOR_TARGET)"; export GCC_FOR_TARGET; \
@@ -217,12 +215,12 @@ HOST_EXPORTS = \
 	NM_FOR_TARGET="$(NM_FOR_TARGET)"; export NM_FOR_TARGET; \
 	OBJDUMP_FOR_TARGET="$(OBJDUMP_FOR_TARGET)"; export OBJDUMP_FOR_TARGET; \
 	RANLIB_FOR_TARGET="$(RANLIB_FOR_TARGET)"; export RANLIB_FOR_TARGET; \
-	READELF_FOR_TARGET="$(READELF_FOR_TARGET)"; export READELF_FOR_TARGET; \
 	TOPLEVEL_CONFIGURE_ARGUMENTS="$(TOPLEVEL_CONFIGURE_ARGUMENTS)"; export TOPLEVEL_CONFIGURE_ARGUMENTS; \
 	HOST_LIBS="$(STAGE1_LIBS)"; export HOST_LIBS; \
 	GMPLIBS="$(HOST_GMPLIBS)"; export GMPLIBS; \
 	GMPINC="$(HOST_GMPINC)"; export GMPINC; \
-	ISLINC="$(HOST_ISLINC)"; export ISLINC; \
+	PPLLIBS="$(HOST_PPLLIBS)"; export PPLLIBS; \
+	PPLINC="$(HOST_PPLINC)"; export PPLINC; \
 	CLOOGLIBS="$(HOST_CLOOGLIBS)"; export CLOOGLIBS; \
 	CLOOGINC="$(HOST_CLOOGINC)"; export CLOOGINC; \
 	LIBELFLIBS="$(HOST_LIBELFLIBS)" ; export LIBELFLIBS; \
@@ -241,13 +239,10 @@ POSTSTAGE1_CXX_EXPORT = \
 	CXX="$(STAGE_CC_WRAPPER) $$r/$(HOST_SUBDIR)/prev-gcc/g++$(exeext) \
 	  -B$$r/$(HOST_SUBDIR)/prev-gcc/ -B$(build_tooldir)/bin/ -nostdinc++ \
 	  -B$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/src/.libs \
-	  -B$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/libsupc++/.libs \
 	  -I$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/include/$(TARGET_SUBDIR) \
 	  -I$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/include \
 	  -I$$s/libstdc++-v3/libsupc++ \
-	  -L$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/src/.libs \
-	  -L$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/libsupc++/.libs"; \
-	  export CXX; \
+	  -L$$r/prev-$(TARGET_SUBDIR)/libstdc++-v3/src/.libs"; export CXX; \
 	CXX_FOR_BUILD="$$CXX"; export CXX_FOR_BUILD;
 @endif target-libstdc++-v3-bootstrap
 
@@ -281,7 +276,6 @@ BASE_TARGET_EXPORTS = \
 	CXXFLAGS="$(CXXFLAGS_FOR_TARGET)"; export CXXFLAGS; \
 	GCJ="$(GCJ_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export GCJ; \
 	GFORTRAN="$(GFORTRAN_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export GFORTRAN; \
-	GOC="$(GOC_FOR_TARGET) $(XGCC_FLAGS_FOR_TARGET) $$TFLAGS"; export GOC; \
 	DLLTOOL="$(DLLTOOL_FOR_TARGET)"; export DLLTOOL; \
 	LD="$(COMPILER_LD_FOR_TARGET)"; export LD; \
 	LDFLAGS="$(LDFLAGS_FOR_TARGET)"; export LDFLAGS; \
@@ -289,7 +283,6 @@ BASE_TARGET_EXPORTS = \
 	NM="$(COMPILER_NM_FOR_TARGET)"; export NM; \
 	OBJDUMP="$(OBJDUMP_FOR_TARGET)"; export OBJDUMP; \
 	RANLIB="$(RANLIB_FOR_TARGET)"; export RANLIB; \
-	READELF="$(READELF_FOR_TARGET)"; export READELF; \
 	STRIP="$(STRIP_FOR_TARGET)"; export STRIP; \
 	WINDRES="$(WINDRES_FOR_TARGET)"; export WINDRES; \
 	WINDMC="$(WINDMC_FOR_TARGET)"; export WINDMC; \
@@ -312,8 +305,9 @@ NORMAL_TARGET_EXPORTS = \
 HOST_GMPLIBS = @gmplibs@
 HOST_GMPINC = @gmpinc@
 
-# Where to find ISL
-HOST_ISLINC = @islinc@
+# Where to find PPL
+HOST_PPLLIBS = @ppllibs@
+HOST_PPLINC = @pplinc@
 
 # Where to find CLOOG
 HOST_CLOOGLIBS = @clooglibs@
@@ -323,13 +317,11 @@ HOST_CLOOGINC = @clooginc@
 HOST_LIBELFLIBS = @libelflibs@
 HOST_LIBELFINC = @libelfinc@
 
-EXTRA_CONFIGARGS_LIBJAVA = @EXTRA_CONFIGARGS_LIBJAVA@
-
 # ----------------------------------------------
 # Programs producing files for the BUILD machine
 # ----------------------------------------------
 
-SHELL = @SHELL@
+SHELL = @config_shell@
 
 # pwd command to use.  Allow user to override default by setting PWDCMD in
 # the environment to account for automounters.  The make variable must not
@@ -350,7 +342,6 @@ CXX_FOR_BUILD = @CXX_FOR_BUILD@
 DLLTOOL_FOR_BUILD = @DLLTOOL_FOR_BUILD@
 GCJ_FOR_BUILD = @GCJ_FOR_BUILD@
 GFORTRAN_FOR_BUILD = @GFORTRAN_FOR_BUILD@
-GOC_FOR_BUILD = @GOC_FOR_BUILD@
 LDFLAGS_FOR_BUILD = @LDFLAGS_FOR_BUILD@
 LD_FOR_BUILD = @LD_FOR_BUILD@
 NM_FOR_BUILD = @NM_FOR_BUILD@
@@ -401,7 +392,6 @@ LIPO = @LIPO@
 NM = @NM@
 OBJDUMP = @OBJDUMP@
 RANLIB = @RANLIB@
-READELF = @READELF@
 STRIP = @STRIP@
 WINDRES = @WINDRES@
 WINDMC = @WINDMC@
@@ -414,7 +404,6 @@ LDFLAGS = @LDFLAGS@
 LIBCFLAGS = $(CFLAGS)
 CXXFLAGS = @CXXFLAGS@
 LIBCXXFLAGS = $(CXXFLAGS) -fno-implicit-templates
-GOCFLAGS = $(CFLAGS)
 
 TFLAGS =
 
@@ -471,8 +460,6 @@ AR_FOR_TARGET=@AR_FOR_TARGET@
 AS_FOR_TARGET=@AS_FOR_TARGET@
 CC_FOR_TARGET=$(STAGE_CC_WRAPPER) @CC_FOR_TARGET@
 
-CFLAGS_FOR_TARGET = -O2 $(CFLAGS) -DTARGET_IS_PIC32MX
-
 # If GCC_FOR_TARGET is not overriden on the command line, then this
 # variable is passed down to the gcc Makefile, where it is used to
 # build libgcc2.a.  We define it here so that it can itself be
@@ -482,7 +469,6 @@ CXX_FOR_TARGET=$(STAGE_CC_WRAPPER) @CXX_FOR_TARGET@
 RAW_CXX_FOR_TARGET=$(STAGE_CC_WRAPPER) @RAW_CXX_FOR_TARGET@
 GCJ_FOR_TARGET=$(STAGE_CC_WRAPPER) @GCJ_FOR_TARGET@
 GFORTRAN_FOR_TARGET=$(STAGE_CC_WRAPPER) @GFORTRAN_FOR_TARGET@
-GOC_FOR_TARGET=$(STAGE_CC_WRAPPER) @GOC_FOR_TARGET@
 DLLTOOL_FOR_TARGET=@DLLTOOL_FOR_TARGET@
 LD_FOR_TARGET=@LD_FOR_TARGET@
 
@@ -490,7 +476,6 @@ LIPO_FOR_TARGET=@LIPO_FOR_TARGET@
 NM_FOR_TARGET=@NM_FOR_TARGET@
 OBJDUMP_FOR_TARGET=@OBJDUMP_FOR_TARGET@
 RANLIB_FOR_TARGET=@RANLIB_FOR_TARGET@
-READELF_FOR_TARGET=@READELF_FOR_TARGET@
 STRIP_FOR_TARGET=@STRIP_FOR_TARGET@
 WINDRES_FOR_TARGET=@WINDRES_FOR_TARGET@
 WINDMC_FOR_TARGET=@WINDMC_FOR_TARGET@
@@ -504,8 +489,7 @@ CXXFLAGS_FOR_TARGET = @CXXFLAGS_FOR_TARGET@
 
 LIBCFLAGS_FOR_TARGET = $(CFLAGS_FOR_TARGET)
 LIBCXXFLAGS_FOR_TARGET = $(CXXFLAGS_FOR_TARGET) -fno-implicit-templates
-LDFLAGS_FOR_TARGET = @LDFLAGS_FOR_TARGET@
-GOCFLAGS_FOR_TARGET = -O2 -g
+LDFLAGS_FOR_TARGET = 
 
 FLAGS_FOR_TARGET = @FLAGS_FOR_TARGET@
 SYSROOT_CFLAGS_FOR_TARGET = @SYSROOT_CFLAGS_FOR_TARGET@
@@ -529,7 +513,7 @@ all:
 ###
 
 # This is the list of directories that may be needed in RPATH_ENVVAR
-# so that programs built for the target machine work.
+# so that prorgams built for the target machine work.
 TARGET_LIB_PATH = [+ FOR target_modules +][+
   IF lib_path +]$(TARGET_LIB_PATH_[+module+])[+ ENDIF lib_path +][+
   ENDFOR target_modules +]$(HOST_LIB_PATH_gcc)
@@ -559,26 +543,6 @@ HOST_LIB_PATH_[+module+] = \
 @endif [+module+]
 [+ ENDIF lib_path +][+ ENDFOR host_modules +]
 
-CXX_FOR_TARGET_FLAG_TO_PASS = \
-	"CXX_FOR_TARGET=$(CXX_FOR_TARGET)"
-@if target-libstdc++-v3
-# CXX_FOR_TARGET is tricky to get right for target libs that require a
-# functional C++ compiler.  When we recurse, if we expand
-# CXX_FOR_TARGET before configuring libstdc++-v3, we won't get
-# libstdc++ include flags from the script.  Instead, we get an
-# -funconfigured-* word, so that we'll get errors if this invalid C++
-# command line is used for anything, but also so that we can use the
-# word to decide whether or not to pass on this CXX_FOR_TARGET.  If we
-# don't pass it on, sub-make will use the default definition, that
-# re-expands it at the time of use, so we'll get it right when we need
-# it.  One potential exception is the expansion of CXX_FOR_TARGET
-# passed down as part of CXX within TARGET_FLAGS, but this wouldn't
-# really work, for C++ host programs can't depend on the current-stage
-# C++ target library.
-CXX_FOR_TARGET_FLAG_TO_PASS = \
-	$(shell if echo "$(CXX_FOR_TARGET)" | grep " -funconfigured-" > /dev/null; then :; else echo '"CXX_FOR_TARGET=$(CXX_FOR_TARGET)"'; fi)
-@endif target-libstdc++-v3
-
 # Flags to pass down to all sub-makes.
 BASE_FLAGS_TO_PASS =[+ FOR flags_to_pass +][+ IF optional +] \
 	"`echo '[+flag+]=$([+flag+])' | sed -e s'/[^=][^=]*=$$/XFOO=/'`"[+ ELSE optional +] \
@@ -586,7 +550,6 @@ BASE_FLAGS_TO_PASS =[+ FOR flags_to_pass +][+ IF optional +] \
 	"STAGE[+id+]_CFLAGS=$(STAGE[+id+]_CFLAGS)" \
 	"STAGE[+id+]_CXXFLAGS=$(STAGE[+id+]_CXXFLAGS)" \
 	"STAGE[+id+]_TFLAGS=$(STAGE[+id+]_TFLAGS)"[+ ENDFOR bootstrap-stage +] \
-	$(CXX_FOR_TARGET_FLAG_TO_PASS) \
 	"TFLAGS=$(TFLAGS)" \
 	"CONFIG_SHELL=$(SHELL)" \
 	"MAKEINFO=$(MAKEINFO) $(MAKEINFOFLAGS)" 
@@ -604,18 +567,28 @@ EXTRA_HOST_FLAGS = \
 	'DLLTOOL=$(DLLTOOL)' \
 	'GCJ=$(GCJ)' \
 	'GFORTRAN=$(GFORTRAN)' \
-	'GOC=$(GOC)' \
 	'LD=$(LD)' \
 	'LIPO=$(LIPO)' \
 	'NM=$(NM)' \
 	'OBJDUMP=$(OBJDUMP)' \
 	'RANLIB=$(RANLIB)' \
-	'READELF=$(READELF)' \
 	'STRIP=$(STRIP)' \
 	'WINDRES=$(WINDRES)' \
 	'WINDMC=$(WINDMC)'
 
 FLAGS_TO_PASS = $(BASE_FLAGS_TO_PASS) $(EXTRA_HOST_FLAGS)
+
+# Flags that are concerned with the location of the X11 include files
+# and library files
+#
+# NOTE: until the top-level is getting the values via autoconf, it only
+# causes problems to have this top-level Makefile overriding the autoconf-set
+# values in child directories.  Only variables that don't conflict with
+# autoconf'ed ones should be passed by X11_FLAGS_TO_PASS for now.
+#
+X11_FLAGS_TO_PASS = \
+	'X11_EXTRA_CFLAGS=$(X11_EXTRA_CFLAGS)' \
+	'X11_EXTRA_LIBS=$(X11_EXTRA_LIBS)'
 
 # Flags to pass to stage2 and later makes.
 
@@ -642,8 +615,6 @@ EXTRA_TARGET_FLAGS = \
 	'DLLTOOL=$$(DLLTOOL_FOR_TARGET)' \
 	'GCJ=$$(GCJ_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
 	'GFORTRAN=$$(GFORTRAN_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
-	'GOC=$$(GOC_FOR_TARGET) $$(XGCC_FLAGS_FOR_TARGET) $$(TFLAGS)' \
-	'GOCFLAGS=$$(GOCFLAGS_FOR_TARGET)' \
 	'LD=$(COMPILER_LD_FOR_TARGET)' \
 	'LDFLAGS=$$(LDFLAGS_FOR_TARGET)' \
 	'LIBCFLAGS=$$(LIBCFLAGS_FOR_TARGET)' \
@@ -651,7 +622,6 @@ EXTRA_TARGET_FLAGS = \
 	'NM=$(COMPILER_NM_FOR_TARGET)' \
 	'OBJDUMP=$$(OBJDUMP_FOR_TARGET)' \
 	'RANLIB=$$(RANLIB_FOR_TARGET)' \
-	'READELF=$$(READELF_FOR_TARGET)' \
 	'WINDRES=$$(WINDRES_FOR_TARGET)' \
 	'WINDMC=$$(WINDMC_FOR_TARGET)' \
 	'XGCC_FLAGS_FOR_TARGET=$(XGCC_FLAGS_FOR_TARGET)' \
@@ -668,7 +638,10 @@ TARGET_FLAGS_TO_PASS = $(BASE_FLAGS_TO_PASS) $(EXTRA_TARGET_FLAGS)
 EXTRA_GCC_FLAGS = \
 	"GCC_FOR_TARGET=$(GCC_FOR_TARGET)" \
 	"`echo 'STMP_FIXPROTO=$(STMP_FIXPROTO)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`" \
-	"`echo 'LIMITS_H_TEST=$(LIMITS_H_TEST)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`"
+	"`echo 'LIMITS_H_TEST=$(LIMITS_H_TEST)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`" \
+	"`echo 'LIBGCC2_CFLAGS=$(LIBGCC2_CFLAGS)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`" \
+	"`echo 'LIBGCC2_DEBUG_CFLAGS=$(LIBGCC2_DEBUG_CFLAGS)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`" \
+	"`echo 'LIBGCC2_INCLUDES=$(LIBGCC2_INCLUDES)' | sed -e s'/[^=][^=]*=$$/XFOO=/'`"
 
 GCC_FLAGS_TO_PASS = $(BASE_FLAGS_TO_PASS) $(EXTRA_HOST_FLAGS) $(EXTRA_GCC_FLAGS)
 
@@ -899,32 +872,11 @@ install.all: install-no-fixedincludes
 		true ; \
 	fi
 
-# install-no-fixedincludes is used to allow the elaboration of binary packages
-# suitable for distribution, where we cannot include the fixed system header
-# files.
+# install-no-fixedincludes is used because Cygnus can not distribute
+# the fixed header files.
 .PHONY: install-no-fixedincludes
 install-no-fixedincludes: installdirs install-host-nogcc \
-	install-target gcc-install-no-fixedincludes
-
-.PHONY: install-strip
-install-strip:
-	@: $(MAKE); $(unstage)
-	@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
-	$(MAKE) $(RECURSE_FLAGS_TO_PASS) installdirs install-strip-host install-strip-target
-
-.PHONY: install-strip-host
-install-strip-host: [+
-  FOR host_modules +] \
-    maybe-install-strip-[+module+][+
-  ENDFOR host_modules +]
-
-.PHONY: install-strip-target
-install-strip-target: [+
-  FOR target_modules +] \
-    maybe-install-strip-target-[+module+][+
-  ENDFOR target_modules +]
-
+	install-target gcc-no-fixedincludes
 
 ### other supporting targets
 
@@ -1211,23 +1163,6 @@ install-[+module+]: installdirs
 [+ ENDIF no_install +]
 @endif [+module+]
 
-.PHONY: install-strip-[+module+] maybe-install-strip-[+module+]
-maybe-install-strip-[+module+]:
-@if [+module+]
-maybe-install-strip-[+module+]: install-strip-[+module+]
-[+ IF no_install +]
-install-strip-[+module+]:
-[+ ELSE install +]
-install-strip-[+module+]: installdirs
-	@: $(MAKE); $(unstage)
-	@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
-	$(HOST_EXPORTS) \
-	(cd $(HOST_SUBDIR)/[+module+] && \
-	  $(MAKE) $(FLAGS_TO_PASS) [+extra_make_flags+] install-strip)
-[+ ENDIF no_install +]
-@endif [+module+]
-
 # Other targets (info, dvi, pdf, etc.)
 [+ FOR recursive_targets +]
 .PHONY: maybe-[+make_target+]-[+module+] [+make_target+]-[+module+]
@@ -1340,28 +1275,6 @@ ENDIF raw_cxx +]
 [+ ENDIF no_install +]
 @endif target-[+module+]
 
-.PHONY: install-strip-target-[+module+] maybe-install-strip-target-[+module+]
-maybe-install-strip-target-[+module+]:
-@if target-[+module+]
-maybe-install-strip-target-[+module+]: install-strip-target-[+module+]
-[+ IF no_install +]
-# Dummy target for uninstallable.
-install-strip-target-[+module+]:
-[+ ELSE install +]
-install-strip-target-[+module+]: installdirs
-	@: $(MAKE); $(unstage)
-	@r=`${PWD_COMMAND}`; export r; \
-	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \[+
-IF raw_cxx +]
-	$(RAW_CXX_TARGET_EXPORTS) \[+
-ELSE normal_cxx +]
-	$(NORMAL_TARGET_EXPORTS) \[+
-ENDIF raw_cxx +]
-	(cd $(TARGET_SUBDIR)/[+module+] && \
-	  $(MAKE) $(TARGET_FLAGS_TO_PASS) [+extra_make_flags+] install-strip)
-[+ ENDIF no_install +]
-@endif target-[+module+]
-
 # Other targets (info, dvi, pdf, etc.)
 [+ FOR recursive_targets +]
 .PHONY: maybe-[+make_target+]-target-[+module+] [+make_target+]-target-[+module+]
@@ -1401,27 +1314,6 @@ ENDIF raw_cxx +]
 [+ ENDFOR recursive_targets +]
 [+ ENDFOR target_modules +]
 
-@if target-libmudflap
-.PHONY: check-target-libmudflap-c++
-check-target-libmudflap-c++:
-	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS) c++frags.exp" check-target-libmudflap
-
-@endif target-libmudflap
-
-@if target-libgomp
-.PHONY: check-target-libgomp-c++
-check-target-libgomp-c++:
-	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS) c++.exp" check-target-libgomp
-
-@endif target-libgomp
-
-@if target-libitm
-.PHONY: check-target-libitm-c++
-check-target-libitm-c++:
-	$(MAKE) RUNTESTFLAGS="$(RUNTESTFLAGS) c++.exp" check-target-libitm
-
-@endif target-libitm
-
 # ----------
 # GCC module
 # ----------
@@ -1448,19 +1340,28 @@ check-gcc-[+language+]:
 	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
 	$(HOST_EXPORTS) \
 	(cd gcc && $(MAKE) $(GCC_FLAGS_TO_PASS) [+gcc-check-target+]);
-check-[+language+]: check-gcc-[+language+][+ FOR lib-check-target +] [+ lib-check-target +][+ ENDFOR lib-check-target +]
+check-[+language+]: check-gcc-[+language+][+ IF lib-check-target +] [+ lib-check-target +][+ ENDIF lib-check-target +]
 [+ ENDFOR languages +]
 
-# The gcc part of install-no-fixedincludes, which relies on an intimate
-# knowledge of how a number of gcc internal targets (inter)operate.  Delegate.
-.PHONY: gcc-install-no-fixedincludes
-gcc-install-no-fixedincludes:
+# Install the gcc headers files, but not the fixed include files,
+# which Cygnus is not allowed to distribute.  This rule is very
+# dependent on the workings of the gcc Makefile.in.
+.PHONY: gcc-no-fixedincludes
+gcc-no-fixedincludes:
 	@if [ -f ./gcc/Makefile ]; then \
+	  rm -rf gcc/tmp-include; \
+	  mv gcc/include gcc/tmp-include 2>/dev/null; \
+	  mkdir gcc/include; \
+	  cp $(srcdir)/gcc/gsyslimits.h gcc/include/syslimits.h; \
+	  touch gcc/stmp-fixinc gcc/include/fixed; \
+	  rm -f gcc/stmp-headers gcc/stmp-int-hdrs; \
 	  r=`${PWD_COMMAND}`; export r; \
-	  s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	  s=`cd $(srcdir); ${PWD_COMMAND}` ; export s; \
 	  $(HOST_EXPORTS) \
-	  (cd ./gcc \
-	   && $(MAKE) $(GCC_FLAGS_TO_PASS) install-no-fixedincludes); \
+	  (cd ./gcc && \
+	   $(MAKE) $(GCC_FLAGS_TO_PASS) install); \
+	  rm -rf gcc/include; \
+	  mv gcc/tmp-include gcc/include 2>/dev/null; \
 	else true; fi
 @endif gcc
 

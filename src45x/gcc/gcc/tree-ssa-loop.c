@@ -218,9 +218,7 @@ struct gimple_opt_pass pass_predcom =
 static unsigned int
 tree_vectorize (void)
 {
-#ifndef _BUILD_C30_
   if (number_of_loops () <= 1)
-#endif
     return 0;
 
   return vectorize_loops ();

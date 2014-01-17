@@ -1,6 +1,6 @@
-Main authors:
-   Andreas Enge
-   Philipe Théveny
-   Paul Zimmermann
+ Andreas Enge       Main authors
+ Paul Zimmermann    Main authors 
+ Philipe Théveny
 
-Mickaël Gastineau has contributed the file Makefile.vc.
+ Patrick Pelissier has cleaned up the code.
+ Marc Helbling contributed the mpc_ui_sub and mpc_ui_ui_sub functions.

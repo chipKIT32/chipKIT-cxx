@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # icf_sht_rel_addend_test.sh -- test --icf=all
 
 # Copyright 2010 Free Software Foundation, Inc.

@@ -1,5 +1,4 @@
 /* { dg-timeout-factor 4.0 } */
-/* { dg-require-effective-target run_expensive_tests } */
 
 #define PAR1 int, int, int, int, int, int, int, int, int, int
 #define PAR2 PAR1, PAR1, PAR1, PAR1, PAR1, PAR1, PAR1, PAR1, PAR1, PAR1

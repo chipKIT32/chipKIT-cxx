@@ -10,14 +10,15 @@
 @include bfdver.texi
 @c man end
 
-@ifnottex
+@ifinfo
 @c This is a dir.info fragment to support semi-automated addition of
 @c manuals to an info tree.  zoo@cygnus.com is developing this facility.
-@dircategory Software development
-@direntry
+@format
+START-INFO-DIR-ENTRY
 * gprof: (gprof).                Profiling your program's execution
-@end direntry
-@end ifnottex
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
 
 @copying
 This file documents the gprof profiler of the GNU system.
@@ -784,9 +785,9 @@ number, and then exit.
 @node Deprecated Options
 @section Deprecated Options
 
-These options have been replaced with newer versions that use symspecs.
-
 @table @code
+
+These options have been replaced with newer versions that use symspecs.
 
 @item -e @var{function_name}
 The @samp{-e @var{function}} option tells @code{gprof} to not print

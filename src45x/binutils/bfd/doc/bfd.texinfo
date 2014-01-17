@@ -6,12 +6,13 @@
 @c 
 @synindex fn cp
 
-@ifnottex
-@dircategory Software development
-@direntry
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
 * Bfd: (bfd).                   The Binary File Descriptor library.
-@end direntry
-@end ifnottex
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
 
 @copying
 This file documents the BFD library.

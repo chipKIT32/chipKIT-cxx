@@ -3450,7 +3450,7 @@ fi
 if test "${with_demangler_in_ld+set}" = set; then :
   withval=$with_demangler_in_ld; demangler_in_ld="$with_demangler_in_ld"
 else
-  demangler_in_ld=yes
+  demangler_in_ld=no
 fi
 
 
@@ -22585,18 +22585,6 @@ if test $gcc_cv_as_tls = yes; then
   set_have_as_tls=yes
 fi
 fi
-case "$target" in
-  *-*-irix6*)
-    # IRIX 6.5 rld and libc.so lack TLS support, so even if gas and gld
-    # with TLS support are in use, native TLS cannot work.
-    set_have_as_tls=no
-    ;;
-  *-*-osf*)
-    # Tru64 UNIX loader and libc.so lack TLS support, so even if gas and
-    # gld with TLS support are in use, native TLS cannot work.
-    set_have_as_tls=no
-    ;;
-esac
 if test $set_have_as_tls = yes ; then
 
 $as_echo "#define HAVE_AS_TLS 1" >>confdefs.h
@@ -24328,45 +24316,6 @@ $as_echo "#define HAVE_AS_DTPRELWORD 1" >>confdefs.h
 
 fi
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for DSPR1 mult with four accumulators support" >&5
-$as_echo_n "checking assembler for DSPR1 mult with four accumulators support... " >&6; }
-if test "${gcc_cv_as_mips_dspr1_mult+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  gcc_cv_as_mips_dspr1_mult=no
-  if test x$gcc_cv_as != x; then
-    echo '	.set	mips32r2
-	.set	nodspr2
-	.set	dsp
-	madd	$ac3,$4,$5
-	maddu	$ac3,$4,$5
-	msub	$ac3,$4,$5
-	msubu	$ac3,$4,$5
-	mult	$ac3,$4,$5
-	multu	$ac3,$4,$5' > conftest.s
-    if { ac_try='$gcc_cv_as $gcc_cv_as_flags  -o conftest.o conftest.s >&5'
-  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; }
-    then
-	gcc_cv_as_mips_dspr1_mult=yes
-    else
-      echo "configure: failed program was" >&5
-      cat conftest.s >&5
-    fi
-    rm -f conftest.o conftest.s
-  fi
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_as_mips_dspr1_mult" >&5
-$as_echo "$gcc_cv_as_mips_dspr1_mult" >&6; }
-if test $gcc_cv_as_mips_dspr1_mult = yes; then
-
-$as_echo "#define HAVE_AS_DSPR1_MULT 1" >>confdefs.h
-
-fi
-
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler and linker for explicit JALR relocation" >&5
 $as_echo_n "checking assembler and linker for explicit JALR relocation... " >&6; }
     gcc_cv_as_ld_jalr_reloc=no
@@ -25665,147 +25614,29 @@ else
   enable_plugin=yes; default_plugin=yes
 fi
 
+
 pluginlibs=
-
-case "${host}" in
-  *-*-darwin*)
-    if test x$build = x$host; then
-      export_sym_check="nm${exeext} -g"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_nm -g"
-    else
-      export_sym_check=
-    fi
-  ;;
-  *)
-    if test x$build = x$host; then
-      export_sym_check="objdump${exeext} -T"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_objdump -T"
-    else
-      export_sym_check=
-    fi
-  ;;
-esac
-
-
-case "${host}" in
-  *-*-darwin*)
-    if test x$build = x$host; then
-      export_sym_check="nm${exeext} -g"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_nm -g"
-    else
-      export_sym_check=
-    fi
-  ;;
-  *)
-    if test x$build = x$host; then
-      export_sym_check="objdump${exeext} -T"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_objdump -T"
-    else
-      export_sym_check=
-    fi
-  ;;
-esac
-
-
-case "${host}" in
-  *-*-darwin*)
-    if test x$build = x$host; then
-      export_sym_check="nm${exeext} -g"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_nm -g"
-    else
-      export_sym_check=
-    fi
-  ;;
-  *)
-    if test x$build = x$host; then
-      export_sym_check="objdump${exeext} -T"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_objdump -T"
-    else
-      export_sym_check=
-    fi
-  ;;
-esac
-
-
-case "${host}" in
-  *-*-darwin*)
-    if test x$build = x$host; then
-      export_sym_check="nm${exeext} -g"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_nm -g"
-    else
-      export_sym_check=
-    fi
-  ;;
-  *)
-    if test x$build = x$host; then
-      export_sym_check="objdump${exeext} -T"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_objdump -T"
-    else
-      export_sym_check=
-    fi
-  ;;
-esac
-
-
-case "${host}" in
-  *-*-darwin*)
-    if test x$build = x$host; then
-      export_sym_check="nm${exeext} -g"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_nm -g"
-    else
-      export_sym_check=
-    fi
-  ;;
-  *)
-    if test x$build = x$host; then
-      export_sym_check="objdump${exeext} -T"
-    elif test x$host = x$target; then
-      export_sym_check="$gcc_cv_objdump -T"
-    else
-      export_sym_check=
-    fi
-  ;;
-esac
-
 if test x"$enable_plugin" = x"yes"; then
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for exported symbols" >&5
 $as_echo_n "checking for exported symbols... " >&6; }
-  if test "x$export_sym_check" != x; then
-    echo "int main() {return 0;} int foobar() {return 0;}" > conftest.c
-    ${CC} ${CFLAGS} ${LDFLAGS} conftest.c -o conftest > /dev/null 2>&1
-    if $export_sym_check conftest | grep foobar > /dev/null; then
-      : # No need to use a flag
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -rdynamic" >&5
-$as_echo_n "checking for -rdynamic... " >&6; }
-      ${CC} ${CFLAGS} ${LDFLAGS} -rdynamic conftest.c -o conftest > /dev/null 2>&1
-      if $export_sym_check conftest | grep foobar > /dev/null; then
-        plugin_rdynamic=yes
-        pluginlibs="-rdynamic"
-      else
-        plugin_rdynamic=no
-        enable_plugin=no
-      fi
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $plugin_rdynamic" >&5
-$as_echo "$plugin_rdynamic" >&6; }
-    fi
+  echo "int main() {return 0;} int foobar() {return 0;}" > conftest.c
+  ${CC} ${CFLAGS} ${LDFLAGS} conftest.c -o conftest > /dev/null 2>&1
+  if $gcc_cv_objdump -T conftest | grep foobar > /dev/null; then
+    : # No need to use a flag
   else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: unable to check" >&5
-$as_echo "unable to check" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -rdynamic" >&5
+$as_echo_n "checking for -rdynamic... " >&6; }
+    ${CC} ${CFLAGS} ${LDFLAGS} -rdynamic conftest.c -o conftest > /dev/null 2>&1
+    if $gcc_cv_objdump -T conftest | grep foobar > /dev/null; then
+      plugin_rdynamic=yes
+      pluginlibs="-rdynamic"
+    else
+      plugin_rdynamic=no
+      enable_plugin=no
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $plugin_rdynamic" >&5
+$as_echo "$plugin_rdynamic" >&6; }
   fi
 
   # Check -ldl
@@ -25873,14 +25704,7 @@ fi
 
   # Check that we can build shared objects with -fPIC -shared
   saved_LDFLAGS="$LDFLAGS"
-  case "${host}" in
-    *-*-darwin*)
-      LDFLAGS="$LDFLAGS -fPIC -shared -undefined dynamic_lookup"
-    ;;
-    *)
-      LDFLAGS="$LDFLAGS -fPIC -shared"
-    ;;
-  esac
+  LDFLAGS="$LDFLAGS -fPIC -shared"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -fPIC -shared" >&5
 $as_echo_n "checking for -fPIC -shared... " >&6; }
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext

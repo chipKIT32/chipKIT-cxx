@@ -31,17 +31,16 @@ fragment <<EOF
 
 #define TARGET_IS_${EMULATION_NAME}
 
-/* The Solaris 2 ABI requires some global symbols to be present in the
-   .dynsym table of executables and shared objects.  If generating a
-   versioned shared object, they must always be bound to the base version.
+/* The Solaris 2 ABI requires some symbols to always be bound to the base
+   version in a shared object.
 
    Cf. Linker and Libraries Guide, Ch. 2, Link-Editor, Generating the Output
    File, p.63.  */
 static void
 elf_solaris2_before_allocation (void)
 {
-  /* Global symbols required by the Solaris 2 ABI.  */
-  static const char *global_syms[] = {
+  /* Symbols required to be bound to the base version.  */
+  static const char *basever_syms[] = {
     "_DYNAMIC",
     "_GLOBAL_OFFSET_TABLE_",
     "_PROCEDURE_LINKAGE_TABLE_",
@@ -52,38 +51,15 @@ elf_solaris2_before_allocation (void)
   };
   const char **sym;
 
-  /* Do this for both executables and shared objects.  */
-  if (!link_info.relocatable)
-    {
-      for (sym = global_syms; *sym != NULL; sym++)
-	{
-	  struct elf_link_hash_entry *h;
-
-	  /* Lookup symbol.  */
-	  h = elf_link_hash_lookup (elf_hash_table (&link_info), *sym,
-				    FALSE, FALSE, FALSE);
-	  if (h == NULL)
-	    continue;
-
-	  /* Undo the hiding done by _bfd_elf_define_linkage_sym.  */
-	  h->forced_local = 0;
-	  h->other &= ~STV_HIDDEN;
-
-	  /* Emit it into the .dynamic section, too.  */
-	  bfd_elf_link_record_dynamic_symbol (&link_info, h);
-	}
-    }
-
   /* Only do this if emitting a shared object and versioning is in place. */
   if (link_info.shared
-      && (link_info.version_info != NULL
-	  || link_info.create_default_symver))
+      && (lang_elf_version_info != NULL || link_info.create_default_symver))
     {
       struct bfd_elf_version_expr *globals = NULL, *locals = NULL;
       struct bfd_elf_version_tree *basever;
       const char *soname;
 
-      for (sym = global_syms; *sym != NULL; sym++)
+      for (sym = basever_syms; *sym != NULL; sym++)
 	{
 	  /* Create a version pattern for this symbol.  Some of them start
 	     off as local, others as global, so try both.  */
@@ -104,32 +80,8 @@ elf_solaris2_before_allocation (void)
       lang_register_vers_node (soname, basever, NULL);
       /* Enforce base version.  The encoded vd_ndx is vernum + 1.  */
       basever->vernum = 0;
-    }
 
-  gld${EMULATION_NAME}_before_allocation ();
-}
-
-/* The Solaris 2 ABI requires two local symbols to be emitted for every
-   executable and shared object.
-
-   Cf. Linker and Libraries Guide, Ch. 2, Link-Editor, Generating the Output
-   File, p.63.  */
-static void
-elf_solaris2_after_allocation (void)
-{
-  /* Local symbols required by the Solaris 2 ABI.  Already emitted by
-     emulparams/solaris2.sh.  */
-  static const char *local_syms[] = {
-    "_START_",
-    "_END_",
-    NULL
-  };
-  const char **sym;
-
-  /* Do this for both executables and shared objects.  */
-  if (!link_info.relocatable)
-    {
-      for (sym = local_syms; *sym != NULL; sym++)
+      for (sym = basever_syms; *sym != NULL; sym++)
 	{
 	  struct elf_link_hash_entry *h;
 
@@ -139,17 +91,18 @@ elf_solaris2_after_allocation (void)
 	  if (h == NULL)
 	    continue;
 
-	  /* Turn it local.  */
-	  h->forced_local = 1;
-	  /* Type should be STT_OBJECT, not STT_NOTYPE.  */
-	  h->type = STT_OBJECT;
+	  /* Undo the hiding done by _bfd_elf_define_linkage_sym.  */
+	  h->forced_local = 0;
+	  h->other &= ~STV_HIDDEN;
+
+	  /* Emit it into the .dynamic section, too.  */
+	  bfd_elf_link_record_dynamic_symbol (&link_info, h);
 	}
     }
 
-  gld${EMULATION_NAME}_after_allocation ();
+  gld${EMULATION_NAME}_before_allocation ();
 }
 
 EOF
 
 LDEMUL_BEFORE_ALLOCATION=elf_solaris2_before_allocation
-LDEMUL_AFTER_ALLOCATION=elf_solaris2_after_allocation

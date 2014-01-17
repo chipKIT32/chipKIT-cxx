@@ -1,6 +1,6 @@
 /* tprec.c -- Test file for mpc_set_prec, mpc_get_prec and mpc_get_prec2.
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Philippe Th\'eveny
 
 This file is part of the MPC Library.
 
@@ -26,7 +26,7 @@ int
 main (void)
 {
   mpc_t z;
-  mpfr_prec_t prec, pr, pi;
+  mp_prec_t prec, pr, pi;
 
   mpc_init2 (z, 1000);
 

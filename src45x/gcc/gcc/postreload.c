@@ -1098,14 +1098,6 @@ reload_combine_recognize_pattern (rtx insn)
      ...
      ... (MEM (PLUS (REGZ) (REGY)))... .
 
-#ifdef _BUILD_C30_
-         This was converted from the non-cannonical to start with (by reload)
-         which means that it is out of order, now.  re-order it because
-         this architecture cares about the order of base + offset
-
-         ... (MEM (PLUS (REGY) (REGZ)))... .
-#endif
-
      First, check that we have (set (REGX) (PLUS (REGX) (REGY)))
      and that we know all uses of REGX before it dies.
      Also, explicitly check that REGX != REGY; our life information
@@ -1123,7 +1115,7 @@ reload_combine_recognize_pattern (rtx insn)
     {
       enum reg_class index_regs = index_reg_class (VOIDmode);
       rtx base = XEXP (src, 1);
-      rtx prev = prev_nonnote_nondebug_insn (insn);
+      rtx prev = prev_nonnote_insn (insn);
       rtx prev_set = prev ? single_set (prev) : NULL_RTX;
       rtx index_reg = NULL_RTX;
       rtx reg_sum = NULL_RTX;
@@ -1139,11 +1131,7 @@ reload_combine_recognize_pattern (rtx insn)
 				REGNO (base)))
 	{
 	  index_reg = reg;
-#ifdef _BUILD_C30_
-          reg_sum = gen_rtx_PLUS(GET_MODE(reg), XEXP(src,1), XEXP(src,0));
-#else
 	  reg_sum = src;
-#endif
 	}
       else
 	{
@@ -1163,11 +1151,7 @@ reload_combine_recognize_pattern (rtx insn)
 		  && targetm.hard_regno_scratch_ok (i))
 		{
 		  index_reg = gen_rtx_REG (GET_MODE (reg), i);
-#ifdef _BUILD_C30_
-		  reg_sum = gen_rtx_PLUS (GET_MODE (reg), base, index_reg);
-#else
 		  reg_sum = gen_rtx_PLUS (GET_MODE (reg), index_reg, base);
-#endif
 		  break;
 		}
 	    }
@@ -1236,50 +1220,6 @@ reload_combine_recognize_pattern (rtx insn)
     }
   return false;
 }
-
-#ifdef _BUILD_C30_
-      /* according to auto_inc_p() stack_pointer rtx's don't get REG_INC's
-         so this code will miss increments of the stack pointer (which would
-         be a problem if we are trying to coalesce SP/FP additions later */
-      /* borrow from add_auto_inc_notes and auto_inc_p */
-static int auto_inc_postreload_p(rtx x) {
-  enum rtx_code code = GET_CODE (x);
-  const char *fmt;
-  int i, j;
-  int result = -1;
-
-  if (code == MEM) 
-    {
-      switch (GET_CODE(XEXP(x,0))) {
-        case PRE_INC:
-        case POST_INC:
-        case PRE_DEC:
-        case POST_DEC:
-        case PRE_MODIFY:
-        case POST_MODIFY:
-            return REGNO(XEXP(XEXP(x,0),0));
-        default:
-          break;
-      }
-      return -1;
-    }
-
-  /* Scan all the operand sub-expressions.  */
-  fmt = GET_RTX_FORMAT (code);
-  for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
-    {
-      if (fmt[i] == 'e')
-        result = auto_inc_postreload_p (XEXP (x, i));
-      else if (fmt[i] == 'E')
-        for (j = XVECLEN (x, i) - 1; j >= 0; j--) {
-          result = auto_inc_postreload_p(XVECEXP (x, i, j));
-          if (result > -1) break;
-        }
-      if (result > -1) break;
-    }
-  return result;
-}
-#endif
 
 static void
 reload_combine (void)
@@ -1437,19 +1377,6 @@ reload_combine (void)
 
       reload_combine_note_use (&PATTERN (insn), insn,
 			       reload_combine_ruid, NULL_RTX);
-#ifdef _BUILD_C30_
-      /* according to auto_inc_p() stack_pointer rtx's don't get REG_INC's
-         so this code will miss increments of the stack pointer (which would
-         be a problem if we are trying to coalesce SP/FP additions later */
-      {
-         int regno = auto_inc_postreload_p(PATTERN(insn));
-         if (regno > -1 ) {
-           reg_state[regno].store_ruid = reload_combine_ruid;
-           reg_state[regno].real_store_ruid = reload_combine_ruid;
-           reg_state[regno].use_index = -1;
-         }
-      }
-#endif
       for (note = REG_NOTES (insn); note; note = XEXP (note, 1))
 	{
 	  if (REG_NOTE_KIND (note) == REG_INC
@@ -1929,7 +1856,7 @@ reload_cse_move2add (rtx first)
 		       && MODES_OK_FOR_MOVE2ADD (GET_MODE (reg),
 						 reg_mode[REGNO (src)]))
 		{
-		  rtx next = next_nonnote_nondebug_insn (insn);
+		  rtx next = next_nonnote_insn (insn);
 		  rtx set = NULL_RTX;
 		  if (next)
 		    set = single_set (next);

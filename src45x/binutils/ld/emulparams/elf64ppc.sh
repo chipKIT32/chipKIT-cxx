@@ -1,4 +1,3 @@
-. ${srcdir}/emulparams/plt_unwind.sh
 TEMPLATE_NAME=elf32
 EXTRA_EM_FILE=ppc64elf
 ELFSIZE=64

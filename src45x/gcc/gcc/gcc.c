@@ -84,18 +84,11 @@ compilation is specified by a string called a "spec".  */
 #include "gcc.h"
 #include "flags.h"
 #include "opts.h"
-#ifdef _BUILD_C30_
-#include "resource_info.h"
-const char *pic30_resource_file;
-char *pic30_resource_file_f;  /* stoopid options.c always makes this const */
-#elif defined(_BUILD_C32_)
-#include "../../c30_resource/src/xc32/resource_info.h"
-extern const char *mchp_resource_file;
-extern char *mchp_resource_file_f;  /* stoopid options.c always makes this const */
-#endif
 #ifdef CSL_LICENSE_FEATURE
 #  include <csl/license.h>
 #else
+   /* TARGET_FLEXLM requires the CodeSourcery license library be
+      present.  */
 #  undef TARGET_FLEXLM
 #endif
 
@@ -131,44 +124,11 @@ extern char *mchp_resource_file_f;  /* stoopid options.c always makes this const
 #define TARGET_OBJECT_SUFFIX ".o"
 #endif
 
-#ifdef _BUILD_MCHP_
-/* By default, the GCC_EXEC_PREFIX_ENV prefix is "GCC_EXEC_PREFIX", however
-   in a cross compiler, another environment variable might want to be used
-   to avoid conflicts with the host any host GCC_EXEC_PREFIX */
-#ifndef GCC_EXEC_PREFIX_ENV
-#define GCC_EXEC_PREFIX_ENV "GCC_EXEC_PREFIX"
-#endif
-
-/* By default, the COMPILER_PATH_ENV is "COMPILER_PATH", however
-   in a cross compiler, another environment variable might want to be used
-   to avoid conflicts with the host any host COMPILER_PATH */
-#ifndef COMPILER_PATH_ENV
-#define COMPILER_PATH_ENV "COMPILER_PATH"
-#endif
-#endif
-
 static const char dir_separator_str[] = { DIR_SEPARATOR, 0 };
-#ifdef _BUILD_C30_
-static const char path_separator_str[] = { PATH_SEPARATOR, 0 };
-#endif
-
-#ifndef GET_ENV_PATH_LIST
-#define GET_ENV_PATH_LIST(VAR,NAME)     do { (VAR) = getenv (NAME); } while (0)
-#endif
 
 /* Most every one is fine with LIBRARY_PATH.  For some, it conflicts.  */
-#ifdef _BUILD_C30_
-/*   May also define DEFAULT_LIB_PATH to set LIBRARY_PATH_ENV if this variable
-     is not set */
 #ifndef LIBRARY_PATH_ENV
 #define LIBRARY_PATH_ENV "LIBRARY_PATH"
-#else
-#define NON_DEFAULT_LIBRARY_PATH 1
-#endif
-#else
-#ifndef LIBRARY_PATH_ENV
-#define LIBRARY_PATH_ENV "LIBRARY_PATH"
-#endif
 #endif
 
 #ifndef HAVE_KILL
@@ -747,10 +707,6 @@ proper position among the other output files.  */
   "%{!shared:%{pg:gcrt0%O%s}%{!pg:%{p:mcrt0%O%s}%{!p:crt0%O%s}}}"
 #endif
 
-#ifndef STARTFILECXX_SPEC
-#define STARTFILECXX_SPEC  STARTFILE_SPEC
-#endif
-
 /* config.h can define SWITCHES_NEED_SPACES to control which options
    require spaces between the option and the argument.
 
@@ -766,10 +722,6 @@ proper position among the other output files.  */
 /* config.h can define ENDFILE_SPEC to override the default crtn files.  */
 #ifndef ENDFILE_SPEC
 #define ENDFILE_SPEC ""
-#endif
-
-#ifndef ENDFILECXX_SPEC
-#define ENDFILECXX_SPEC ""
 #endif
 
 #ifndef LINKER_NAME
@@ -868,9 +820,8 @@ proper position among the other output files.  */
     %{static:} %{L*} %(mfwrap) %(link_libgcc) %o\
     %{fopenmp|ftree-parallelize-loops=*:%:include(libgomp.spec)%(link_gomp)} %(mflib)\
     %{fprofile-arcs|fprofile-generate*|coverage:-lgcov}\
-    %{T*} \
     %{!nostdlib:%{!nodefaultlibs:%(link_ssp) %(link_gcc_c_sequence)}}\
-    %{!A:%{!nostdlib:%{!nostartfiles:%E}}} }}}}}}"
+    %{!A:%{!nostdlib:%{!nostartfiles:%E}}} %{T*} }}}}}}"
 #endif
 
 #ifndef LINK_LIBGCC_SPEC
@@ -909,9 +860,7 @@ static const char *mflib_spec = MFLIB_SPEC;
 static const char *link_gomp_spec = "";
 static const char *libgcc_spec = LIBGCC_SPEC;
 static const char *endfile_spec = ENDFILE_SPEC;
-static const char *endfilecxx_spec = ENDFILECXX_SPEC;
 static const char *startfile_spec = STARTFILE_SPEC;
-static const char *startfilecxx_spec = STARTFILECXX_SPEC;
 static const char *switches_need_spaces = SWITCHES_NEED_SPACES;
 static const char *linker_name_spec = LINKER_NAME;
 static const char *linker_plugin_file_spec = "";
@@ -924,10 +873,6 @@ static const char *startfile_prefix_spec = STARTFILE_PREFIX_SPEC;
 static const char *sysroot_spec = SYSROOT_SPEC;
 static const char *sysroot_suffix_spec = SYSROOT_SUFFIX_SPEC;
 static const char *sysroot_hdrs_suffix_spec = SYSROOT_HEADERS_SUFFIX_SPEC;
-
-#if defined (TARGET_MCHP_PIC32MX)
-static unsigned int use_custom_linker_script = 0;
-#endif
 
 /* Standard options to cpp, cc1, and as, to reduce duplication in specs.
    There should be no need to override these in target dependent files,
@@ -1276,9 +1221,6 @@ static const struct option_map option_map[] =
    {"--entry", "-e", 0},
    {"--extra-warnings", "-W", 0},
    {"--extdirs", "-fextdirs=", "aj"},
-#if defined(_BUILD_MCHP_)
-   {"--fill", "-fill=", "aj"},
-#endif
    {"--for-assembler", "-Wa", "a"},
    {"--for-linker", "-Xlinker", "a"},
    {"--force-link", "-u", "a"},
@@ -1530,18 +1472,6 @@ translate_options (int *argcp, const char *const **argvp)
 	  i++;
 	}
 
-#ifdef _BUILD_MCHP_
-      else if (strcmp(argv[i],"-legacy-libc") == 0) {
-        newv[newindex++] = "-mlegacy-libc";
-        i++;
-      }
-#endif
-#if defined(TARGET_MCHP_PIC32MX) 
-      else if (strcmp(argv[i],"-relaxed-math") == 0) {
-        newv[newindex++] = "-mrelaxed-math";
-        i++;
-      }
-#endif
       /* Handle old-fashioned options--just copy them through,
 	 with their arguments.  */
       else if (argv[i][0] == '-')
@@ -1763,7 +1693,6 @@ static struct spec_list static_specs[] =
   INIT_STATIC_SPEC ("link_gcc_c_sequence",	&link_gcc_c_sequence_spec),
   INIT_STATIC_SPEC ("link_ssp",			&link_ssp_spec),
   INIT_STATIC_SPEC ("endfile",			&endfile_spec),
-  INIT_STATIC_SPEC ("endfilecxx",		&endfilecxx_spec),
   INIT_STATIC_SPEC ("link",			&link_spec),
   INIT_STATIC_SPEC ("lib",			&lib_spec),
   INIT_STATIC_SPEC ("mfwrap",			&mfwrap_spec),
@@ -1771,7 +1700,6 @@ static struct spec_list static_specs[] =
   INIT_STATIC_SPEC ("link_gomp",		&link_gomp_spec),
   INIT_STATIC_SPEC ("libgcc",			&libgcc_spec),
   INIT_STATIC_SPEC ("startfile",		&startfile_spec),
-  INIT_STATIC_SPEC ("startfilecxx",		&startfilecxx_spec),
   INIT_STATIC_SPEC ("switches_need_spaces",	&switches_need_spaces),
   INIT_STATIC_SPEC ("cross_compile",		&cross_compile),
   INIT_STATIC_SPEC ("version",			&compiler_version),
@@ -2986,18 +2914,7 @@ find_a_file (const struct path_prefix *pprefix, const char *name, int mode,
       return NULL;
     }
 
-#ifdef _BUILD_C30_
-#define STRINGIZE2(X) #X
-#define STRINGIZE(X) STRINGIZE2(X)
-
-  /* transform executables using PROGRAM_PREFIX */
-  info.name = xmalloc(sizeof("xc16-")+strlen(name)+1);
-  if (info.name) 
-    sprintf(info.name, "xc16-%s", name);
-  else info.name = name;
-#else
   info.name = name;
-#endif
   info.suffix = (mode & X_OK) != 0 ? HOST_EXECUTABLE_SUFFIX : "";
   info.name_len = strlen (info.name);
   info.suffix_len = strlen (info.suffix);
@@ -3111,7 +3028,6 @@ execute (void)
 
   gcc_assert (!processing_spec_function);
 
-#if 0
   if (executing_linker && using_libgcc)
     {
       const char *libgcc_a_filename;
@@ -3134,7 +3050,6 @@ execute (void)
 	    pfatal_with_name (libgcc_a_filename);
 	}
     }
-#endif
 
   if (wrapper_string)
     {
@@ -3587,19 +3502,6 @@ display_help (void)
   fputs (_("  -print-file-name=<lib>   Display the full path to library <lib>\n"), stdout);
   fputs (_("  -print-prog-name=<prog>  Display the full path to compiler component <prog>\n"), stdout);
   fputs (_("  -print-multi-directory   Display the root directory for versions of libgcc\n"), stdout);
-#if defined(_PIC30_H_)
-  fputs (_("\
-  -fast-math               Use alternative floating point support routines\n"), stdout);
-  fputs (_("\
-  -relaxed-math            Use alternative floating point support routines\n"), stdout);
-  fputs (_("\
-  -legacy-libc             Use legacy (pre C30 v3.25) lib C routines\n"),stdout);
-#elif !defined (CHIPKIT_PIC32) && defined(TARGET_MCHP_PIC32MX)
-  fputs (_("\
-  -relaxed-math            Use alternative floating-point support routines\n"), stdout);
-  fputs (_("\
-  -legacy-libc             Use legacy (pre v1.12) lib C routines\n"), stdout);
-#endif
   fputs (_("\
   -print-multi-lib         Display the mapping between command line options and\n\
                            multiple library search directories\n"), stdout);
@@ -3640,13 +3542,6 @@ display_help (void)
                            'none' means revert to the default behavior of\n\
                            guessing the language based on the file's extension\n\
 "), stdout);
-
-#ifdef _BUILD_C30_
-  fputs (_("\
-  -fast-math               Use alternative floating point support routines\n"), stdout);
-  fputs (_("\
-  -legacy-libc             Use legacy (pre v3.25) lib C routines\n"), stdout);
-#endif
 
   printf (_("\
 \nOptions starting with -g, -f, -m, -O, -W, or --param are automatically\n\
@@ -3719,31 +3614,8 @@ process_command (int argc, const char **argv)
   const char *tooldir_prefix;
   char *(*get_relative_prefix) (const char *, const char *,
 				const char *) = NULL;
-#ifdef _BUILD_C30_
-  enum pic30_lib_specs {
-    pls_default,
-    pls_fast_math = 1,
-    pls_legacy_libc = 2,
-    pls_relaxed_math = 4
-  } pic30_which_spec = pls_default;
 
-  char *libspecs[] = {
-    LIB_SPEC,         // 0 default
-    ALT_FM_LIB_SPEC,  // 1 pls_fast_math
-    ALT_LC_LIB_SPEC,  // 2 pls_legacy_libc
-    ALT_FMLC_LIB_SPEC // 3 pls_fast_math | pls_legacy_libc
-    ALT_RM_LIB_SPEC,  // 4 pls_relaxed_math
-    ALT_RM_LIB_SPEC,  // 5 pls_relaxed_math, relaxed overrides fast
-    ALT_RMLC_LIB_SPEC,// 6 pls_relaxed_math | pls_legacy_libc
-    ALT_RMLC_LIB_SPEC,// 7 pls_relaxed_math | pls_legacy_libc
-  };
-#endif
-
-#ifdef _BUILD_MCHP_
-  GET_ENVIRONMENT (gcc_exec_prefix, GCC_EXEC_PREFIX_ENV);
-#else
   GET_ENVIRONMENT (gcc_exec_prefix, "GCC_EXEC_PREFIX");
-#endif
 
   n_switches = 0;
   n_infiles = 0;
@@ -3872,11 +3744,7 @@ process_command (int argc, const char **argv)
 					     standard_bindir_prefix,
 					     standard_libexec_prefix);
       if (gcc_exec_prefix)
-#ifdef _BUILD_MCHP_
-	xputenv (concat (GCC_EXEC_PREFIX_ENV "=", gcc_exec_prefix, NULL));
-#else
 	xputenv (concat ("GCC_EXEC_PREFIX=", gcc_exec_prefix, NULL));
-#endif
     }
   else
     {
@@ -3924,7 +3792,7 @@ process_command (int argc, const char **argv)
 
       set_std_prefix (gcc_exec_prefix, len);
       add_prefix (&exec_prefixes, gcc_libexec_prefix, "GCC",
-                  PREFIX_PRIORITY_LAST, 0, 0);
+		  PREFIX_PRIORITY_LAST, 0, 0);
       add_prefix (&startfile_prefixes, gcc_exec_prefix, "GCC",
 		  PREFIX_PRIORITY_LAST, 0, 0);
     }
@@ -3932,11 +3800,7 @@ process_command (int argc, const char **argv)
   /* COMPILER_PATH and LIBRARY_PATH have values
      that are lists of directory names with colons.  */
 
-#ifdef _BUILD_MCHP_
-  GET_ENVIRONMENT (temp, COMPILER_PATH_ENV);
-#else
   GET_ENVIRONMENT (temp, "COMPILER_PATH");
-#endif
   if (temp)
     {
       const char *startp, *endp;
@@ -3970,76 +3834,6 @@ process_command (int argc, const char **argv)
 	}
     }
 
-#ifdef _BUILD_C30_
-  {
-    const char *library_paths[] = { LIBRARY_PATH_ENV, "LPATH",
-                                    (const char *)-1 };
-    char *base_path;
-
-    int pathNo = 0;
-
-    base_path = make_relative_prefix(argv[0], standard_bindir_prefix,
-                                              standard_exec_prefix);
-    while ((int) library_paths[pathNo] != -1)
-    {
-      GET_ENV_PATH_LIST (temp, library_paths[pathNo]);
-#ifdef DEFAULT_LIB_PATH
-      if ((temp == 0) && (pathNo == 0))
-        {
-          for (i = 1; i < argc; i++)
-            {
-              if (!strncmp(argv[i], "-merrata=", sizeof("-merrata=")-1))
-                {
-                   temp = DEFAULT_ERRATA_LIB_PATH;
-                }
-            }
-           if (temp == 0) temp = DEFAULT_LIB_PATH;
-        }
-#endif
-#if defined(DEFAULT_LIB_PATH) || defined(NON_DEFAULT_LIBRARY_PATH)
-      /* If the default LIBRARY_PATH environment variable has been modified */
-      /* for a particular target, use its value even if cross compiling */
-      /* or if cross compiling scan the DEFAULT_LIB_PATH iff set */
-      if (temp)
-#else
-      if (temp && *cross_compile == '0')
-#endif
-        {
-          const char *startp, *endp;
-          char *nstore = (char *) alloca (strlen (temp) + 3);
-
-          startp = endp = temp;
-          while (1)
-            {
-              if (*endp == PATH_SEPARATOR || *endp == 0)
-                {
-                  if (endp == startp)
-                    strcpy (nstore, concat (".", dir_separator_str, NULL));
-                  else if (IS_DIR_SEPARATOR(*startp)) {
-                    strncpy (nstore, startp, endp - startp);
-                  } else {
-                    nstore[0] = 0;
-                    strcat(nstore, base_path);
-                    strncat(nstore, startp, endp-startp);
-                  }
-                  if (!IS_DIR_SEPARATOR (endp[-1]))
-                  {
-                    strcat(nstore, dir_separator_str);
-                  }
-                  add_prefix (&startfile_prefixes, nstore, NULL,
-                              PREFIX_PRIORITY_LAST, 0, 1);
-                  if (*endp == 0)
-                    break;
-                  endp = startp = endp + 1;
-                  }
-            else
-                endp++;
-            }
-        }
-      pathNo++;
-    }
-  }
-#else
   GET_ENVIRONMENT (temp, LIBRARY_PATH_ENV);
   if (temp && *cross_compile == '0')
     {
@@ -4104,7 +3898,6 @@ process_command (int argc, const char **argv)
 	    endp++;
 	}
     }
-#endif
 
   /* Scan argv twice.  Here, the first time, just count how many switches
      there will be in their vector, and how many input files in theirs.
@@ -4132,21 +3925,6 @@ process_command (int argc, const char **argv)
 	  printf ("%s\n", spec_machine);
 	  exit (0);
 	}
-#ifdef _BUILD_C30_
-#if defined(MCHP_VERSION) && defined(ALT_LIB_SPECS)
-      else if (strcmp (argv[i], "-fast-math") == 0) {
-        pic30_which_spec |= pls_fast_math;
-        lib_spec = libspecs[pic30_which_spec];
-      } else if (strcmp (argv[i], "-relaxed-math") == 0) {
-        pic30_which_spec |= pls_relaxed_math;
-        lib_spec = libspecs[pic30_which_spec];
-      } else if (strcmp (argv[i], "-mlegacy-libc") == 0) {
-        n_switches++;
-        pic30_which_spec |= pls_legacy_libc;
-        lib_spec = libspecs[pic30_which_spec];
-      }
-#endif
-#endif
       else if (strcmp (argv[i], "-fversion") == 0)
 	{
 	  /* translate_options () has turned --version into -fversion.  */
@@ -4186,12 +3964,6 @@ process_command (int argc, const char **argv)
 	  n_infiles++;
 	  n_switches++;
 	}
-#if defined(_BUILD_MCHP_)
-      else if (! strncmp (argv[i], "-fill=", 6))
-        {
-          n_infiles++;
-        }
-#endif
       else if (strcmp (argv[i], "-ftarget-help") == 0)
 	{
 	  /* translate_options() has turned --target-help into -ftarget-help.  */
@@ -4771,12 +4543,6 @@ process_command (int argc, const char **argv)
 #endif
       if (! strncmp (argv[i], "-Wa,", 4))
 	;
-#ifdef _BUILD_C30_
-      else if (! strcmp (argv[i], "-fast-math"))
-        ;
-      else if (! strcmp (argv[i], "-relaxed-math"))
-        ;
-#endif
       else if (! strncmp (argv[i], "-Wp,", 4))
 	;
       else if (! strcmp (argv[i], "-no-canonical-prefixes"))
@@ -4838,35 +4604,12 @@ process_command (int argc, const char **argv)
 		infiles[n_infiles].language = "*";
 		infiles[n_infiles++].name
 		  = save_string (argv[i] + prev, j - prev);
-#if defined(TARGET_MCHP_PIC32MX)
-		/* If we use the --script option, don't add the default script to the 
-		   LIB_COMMAND_SPEC */
-		if (strstr (infiles[n_infiles-1].name, "--script") != NULL)
-		  use_custom_linker_script++;
-		if (strstr (infiles[n_infiles-1].name, "-T") != NULL)
-		  use_custom_linker_script++;
-#endif
 		prev = j + 1;
 	      }
 	  /* Record the part after the last comma.  */
 	  infiles[n_infiles].language = "*";
 	  infiles[n_infiles++].name = argv[i] + prev;
-#if defined(TARGET_MCHP_PIC32MX)
-		if (strstr (infiles[n_infiles-1].name, "--script") != NULL)
-		  use_custom_linker_script++;
-#endif
 	}
-#if defined(_BUILD_MCHP_)
-      else if (strncmp (argv[i], "-fill=", 6) == 0)
-        {
-          char *fillopt;
-          fillopt = (char*)xmalloc(strlen("--fill=") + strlen(argv[i]+6) + 1);
-          strcpy (fillopt, "--fill=");
-          strcat (fillopt, argv[i]+6);
-          infiles[n_infiles].language = "*";
-          infiles[n_infiles++].name = fillopt;
-        }
-#endif
       else if (strcmp (argv[i], "-Xlinker") == 0)
 	{
 	  infiles[n_infiles].language = "*";
@@ -5929,8 +5672,10 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 		    int j;
 
 		    for (i = 0; i < n_infiles; i++)
+		    {
 		      if (compile_input_file_p (&infiles[i]))
 			n_files++;
+			}
 
 		    argv = (char **) alloca (sizeof (char *) * (n_files + 1));
 
@@ -5948,10 +5693,12 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 		  }
 		else
 		  for (i = 0; (int) i < n_infiles; i++)
+		  {
 		    if (compile_input_file_p (&infiles[i]))
 		      {
 			store_arg (infiles[i].name, 0, 0);
 			infiles[i].compiled = true;
+		      }
 		      }
 	      }
 	    else
@@ -5964,27 +5711,6 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 	  case 'I':
 	    {
 	      struct spec_path_info info;
-
-#ifdef _BUILD_C30_
-              if (*p == '-') {
-                 /* just print out gcc_exec_prefix, adjusting if needed */
-                 char *prefix = xstrdup(gcc_exec_prefix);
-
-                 p++;
-                 while (strncmp(p,"../", 3) == 0) {
-                   char *c = prefix + strlen(prefix);
-
-                   while (*c == 0) c--;
-                   while (IS_DIR_SEPARATOR(*c) && (c > prefix)) c--;
-                   while (!IS_DIR_SEPARATOR(*c) && (c > prefix)) c--;
-                   c[1] = 0;
-                   p+=3;
-                 }
-                 do_spec_1(prefix,1,NULL);
-                 free(prefix);
-                 break;
-              }
-#endif
 
 	      if (multilib_dir)
 		{
@@ -6214,12 +5940,7 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 	    break;
 
 	  case 'E':
-	    if (strstr (programname,"-gcc") != NULL)
-	      value = do_spec_1 (endfile_spec, 0, NULL);
-	    else if (strstr (programname,"-g++") != NULL)
-	      value = do_spec_1 (endfilecxx_spec, 0, NULL);
-	    else
-	      value = do_spec_1 (endfilecxx_spec, 0, NULL);
+	    value = do_spec_1 (endfile_spec, 0, NULL);
 	    if (value != 0)
 	      return value;
 	    break;
@@ -6256,12 +5977,7 @@ do_spec_1 (const char *spec, int inswitch, const char *soft_matched_part)
 	    break;
 
 	  case 'S':
-	    if (strstr (programname,"-gcc") != NULL)
-	      value = do_spec_1 (startfile_spec, 0, NULL);
-	    else if (strstr (programname,"-g++") != NULL)
-	      value = do_spec_1 (startfilecxx_spec, 0, NULL);
-	    else
-	      value = do_spec_1 (startfilecxx_spec, 0, NULL);
+	    value = do_spec_1 (startfile_spec, 0, NULL);
 	    if (value != 0)
 	      return value;
 	    break;
@@ -7257,22 +6973,6 @@ compare_files (char *cmpfile[])
   return ret;
 }
 
-#if defined(TARGET_MCHP_PIC32MX)
-/* get a line, and remove any line-ending \n or \r\n */
-static char *get_line (char *buf, size_t n, FILE *fptr);
-static char *
-get_line (char *buf, size_t n, FILE *fptr)
-{
-  if (fgets (buf, n, fptr) == NULL)
-    return NULL;
-  while (buf [strlen (buf) - 1] == '\n'
-         || buf [strlen (buf) - 1] == '\r')
-    buf [strlen (buf) - 1] = '\0';
-  return buf;
-}
-char **save_argv;
-#endif
-
 extern int main (int, char **);
 
 int
@@ -7291,11 +6991,6 @@ main (int argc, char **argv)
 #ifdef CSL_LICENSE_FEATURE
   csl_license_impl *license_impl = csl_license_subproc;
   csl_license *license = NULL;
-#endif
-
-#if defined(TARGET_MCHP_PIC32MX)
-  char *partsupportversion = NULL;
-  save_argv = argv;
 #endif
 
   /* Initialize here, not in definition.  The IRIX 6 O32 cc sometimes chokes
@@ -7732,128 +7427,8 @@ main (int argc, char **argv)
 
   if (print_version)
     {
-#if defined(TARGET_MCHP_PIC32MX)
-#if defined(MCHP_PIC32_PART_SUPPORT_VERSION)
-#define LTSFILENAME ".LanguageToolSuite"
-#define PARTSUPPORTVERSION_MARKER "partsupportversion"
-#define LTI_LINE_LENGTH 256
-#define xstr(s) str(s) 
-#define str(s) #s
-      {
-        const char *bindir_path = NULL;
-        char *lts_filepath = NULL;
-        int max_pathlength = 0;
-        FILE *fptr;
-        char line [LTI_LINE_LENGTH] = {0};
-          
-        bindir_path = make_relative_prefix(argv[0],
-                                  "/bin",
-                                  "/bin");
-        max_pathlength = strlen((const char*)bindir_path) + 1 + strlen((const char*)LTSFILENAME) + 1;
-        lts_filepath = (char*)alloca(max_pathlength);
-        strncpy (lts_filepath, bindir_path, max_pathlength);
-        strncat (lts_filepath, LTSFILENAME, max_pathlength);
-      if ((fptr = fopen (lts_filepath, "rb")) != NULL)
-        {
-          while (get_line (line, sizeof (line), fptr) != NULL)
-            {
-              char *pch0, *pch1;
-              /* Find the line with the license directory */
-              if (strstr (line, PARTSUPPORTVERSION_MARKER))
-                {
-                  /* Find the quoted string on that line */
-                  pch0 = strchr (line,'"') +1;
-                  pch1 = strrchr (line,'"');
-                  if ((pch1-pch0) >= 1)
-                    {
-                      partsupportversion = (char*)alloca((pch1-pch0)+2);
-                      memset (partsupportversion, 0, (pch1-pch0)+2);
-                      strncpy (partsupportversion, pch0, pch1-pch0);
-
-                    }
-                  break;
-                }
-            }
-        }
-    }
-#undef LTSFILENAME
-#undef PARTSUPPORTVERSION_MARKER
-#undef str
-#undef xstr
-#endif
-#endif
-
-#if defined(TARGET_MCHP_PIC32MX)
-      if (partsupportversion) {
-        printf (_("%s %s%s(%s) Build date: %s\n"), programname, pkgversion_string,
-	        version_string, partsupportversion, __DATE__);
-      }
-      else {
-        printf (_("%s %s%s Build date: %s\n"), programname, pkgversion_string,
-	        version_string, __DATE__);
-      }
-#elif defined(_BUILD_C30_) && defined(MCHP_VERSION)
-          { int vid;
-            struct resource_introduction_block *rib;
-            char *Microchip;
-            char *new_version = xstrdup(version_string);
-            char *version_part1;
-            char *version_part2;
-
-            SET_MCHP_VERSION(vid);
-            if (pic30_resource_file) {
-              rib = read_rib(pic30_resource_file);
-              if (rib) {
-                Microchip = strstr(new_version,"Microchip");
-                if (Microchip) {
-                  int i;
-                  int mismatch;
-
-                  for (; (*Microchip) &&
-                         ((*Microchip <= '0') || (*Microchip >= '9'));
-                       Microchip++);
-                  if (*Microchip) {
-                    i = strtol(Microchip, &Microchip, 0);
-                    if ((*Microchip) &&
-                        ((*Microchip == '_') || (*Microchip == '.'))) {
-                      Microchip++;
-                      i = strtol(Microchip, &Microchip, 0);
-                      for (; *Microchip && *Microchip != ' '; Microchip++);
-                    }
-                    version_part1 = new_version;
-                    *Microchip = 0;
-                    version_part2 = Microchip+1;
-                    /* version part located */
-                    version_string = xmalloc(strlen(version_part1) +
-                                             strlen(version_part2) + 40);
-                    mismatch = (vid != (rib->version.major*1000 +
-                                        rib->version.minor));
-                    if (mismatch) {
-                      sprintf(version_string,
-                              "%s, resource version %d.%.2d (%c), %s",
-                              version_part1, rib->version.major,
-                              rib->version.minor,
-                              rib->resource_version_increment,version_part2);
-                    } else {
-                      sprintf(version_string,"%s (%c) %s",
-                              version_part1,
-                              rib->resource_version_increment,version_part2);
-                    }
-                  }
-                }
-                close_rib();
-              }
-            }
-            free(new_version);
-            printf (_("%s %s%s\n"), programname, pkgversion_string,
-	            version_string);
-            printf (_("__XC16_VERSION__ == %d\n"), vid);
-          }
-#else
       printf (_("%s %s%s\n"), programname, pkgversion_string,
 	      version_string);
-#endif
-
       printf ("Copyright %s 2010 Free Software Foundation, Inc.\n",
 	      _("(C)"));
       fputs (_("This is free software; see the source for copying conditions.  There is NO\n\
@@ -7983,12 +7558,6 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
 	    {
 	      if (input_file_compiler->spec[0] == '#')
 		{
-#ifdef _BUILD_MCHP_
-                  if (input_file_compiler->spec[1] != 'c')
-                     error ("%s: %s compiler not supported on this system",
-                            input_filename, &input_file_compiler->spec[1]);
-                  else
-#endif
 		  error ("%s: %s compiler not installed on this system",
 			 input_filename, &input_file_compiler->spec[1]);
 		  this_file_error = 1;
@@ -8274,11 +7843,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
 
       /* Rebuild the COMPILER_PATH and LIBRARY_PATH environment variables
 	 for collect.  */
-#ifdef _BUILD_MCHP_
-      putenv_from_prefixes (&exec_prefixes, COMPILER_PATH_ENV, false);
-#else
       putenv_from_prefixes (&exec_prefixes, "COMPILER_PATH", false);
-#endif
       putenv_from_prefixes (&startfile_prefixes, LIBRARY_PATH_ENV, true);
 
       if (print_subprocess_help == 1)
@@ -8289,10 +7854,6 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
 	  fflush (stdout);
 	}
       executing_linker = 1;
-#if defined(TARGET_MCHP_PIC32MX) && defined(LINK_COMMAND_SPEC_SUPPRESS_DEFAULT_SCRIPT)
-      if (use_custom_linker_script)
-        link_command_spec = LINK_COMMAND_SPEC_SUPPRESS_DEFAULT_SCRIPT;
-#endif
       value = do_spec (link_command_spec);
       executing_linker = 0;
       if (value < 0)

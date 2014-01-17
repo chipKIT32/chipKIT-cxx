@@ -1,7 +1,6 @@
 #source: eh3.s
 #source: eh3a.s
-#as: --64
-#ld: -melf_x86_64 -Ttext 0x400078
+#ld:
 #readelf: -wf
 #target: x86_64-*-*
 

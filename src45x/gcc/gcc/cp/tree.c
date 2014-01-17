@@ -72,8 +72,7 @@ lvalue_p_1 (const_tree ref)
 	  == REFERENCE_TYPE)
     return lvalue_p_1 (TREE_OPERAND (ref, 0));
 
-  if (TREE_TYPE (ref)
-      && TREE_CODE (TREE_TYPE (ref)) == REFERENCE_TYPE)
+  if (TREE_CODE (TREE_TYPE (ref)) == REFERENCE_TYPE)
     {
       /* unnamed rvalue references are rvalues */
       if (TYPE_REF_IS_RVALUE (TREE_TYPE (ref))
@@ -152,12 +151,9 @@ lvalue_p_1 (const_tree ref)
 	return clk_ordinary;
       break;
 
-      /* A scope ref in a template, left as SCOPE_REF to support later
-	 access checking.  */
+      /* A currently unresolved scope ref.  */
     case SCOPE_REF:
-      gcc_assert (!type_dependent_expression_p (CONST_CAST_TREE(ref)));
-      return lvalue_p_1 (TREE_OPERAND (ref, 1));
-
+      gcc_unreachable ();
     case MAX_EXPR:
     case MIN_EXPR:
       /* Disallow <? and >? as lvalues if either argument side-effects.  */
@@ -814,7 +810,7 @@ cp_build_qualified_type_real (tree type,
       /* See if we already have an identically qualified type.  Tests
 	 should be equivalent to those in check_qualified_type.  */
       for (t = TYPE_MAIN_VARIANT (type); t; t = TYPE_NEXT_VARIANT (t))
-	if (TREE_TYPE (t) == element_type
+	if (cp_type_quals (t) == type_quals
 	    && TYPE_NAME (t) == TYPE_NAME (type)
 	    && TYPE_CONTEXT (t) == TYPE_CONTEXT (type)
 	    && attribute_list_equal (TYPE_ATTRIBUTES (t),
@@ -1042,11 +1038,6 @@ strip_typedefs (tree t)
 	  result = build_exception_variant (result,
 					    TYPE_RAISES_EXCEPTIONS (t));
       }
-      break;
-    case TYPENAME_TYPE:
-      result = make_typename_type (strip_typedefs (TYPE_CONTEXT (t)),
-				   TYPENAME_TYPE_FULLNAME (t),
-				   typename_type, tf_none);
       break;
     default:
       break;

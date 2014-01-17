@@ -1,4 +1,4 @@
-#source: cs-octeon2.s
+#source: octeon2.s
 #as: -march=octeon -mno-octeon-useun
 #objdump: -dr -Mno-octeon-useun
 

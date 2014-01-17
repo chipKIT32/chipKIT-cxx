@@ -1,6 +1,6 @@
 /* Definitions of target machine for GNU compiler,
    for ATMEL AVR at90s8515, ATmega103/103L, ATmega603/603L microcontrollers.
-   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 
+   Copyright (C) 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007,
    2008, 2009, 2010
    Free Software Foundation, Inc.
    Contributed by Denis Chertykov (chertykov@gmail.com)
@@ -50,17 +50,17 @@ struct base_arch_s {
 
   /* Reserved for xmega architecture.  */
   int reserved2;
-  
+
   /* Default start of data section address for architecture.  */
   int default_data_section_start;
 
   const char *const macro;
-  
+
   /* Architecture name.  */
-  const char *const arch_name;  
+  const char *const arch_name;
 };
 
-/* These names are used as the index into the avr_arch_types[] table 
+/* These names are used as the index into the avr_arch_types[] table
    above.  */
 
 enum avr_arch
@@ -81,21 +81,21 @@ enum avr_arch
 struct mcu_type_s {
   /* Device name.  */
   const char *const name;
-  
+
   /* Index in avr_arch_types[].  */
-  int arch; 
-  
+  int arch;
+
   /* Must lie outside user's namespace.  NULL == no macro.  */
   const char *const macro;
-  
+
   /* Stack pointer have 8 bits width.  */
   int short_sp;
-  
+
   /* Start of data section.  */
   int data_section_start;
-  
+
   /* Name of device library.  */
-  const char *const library_name; 
+  const char *const library_name;
 };
 
 /* Preprocessor macros to define depending on MCU type.  */
@@ -372,7 +372,7 @@ enum reg_class {
 
 #define RETURN_ADDR_RTX(count, tem) avr_return_addr_rtx (count, tem)
 
-/* Don't use Push rounding. expr.c: emit_single_push_insn is broken 
+/* Don't use Push rounding. expr.c: emit_single_push_insn is broken
    for POST_DEC targets (PR27386).  */
 /*#define PUSH_ROUNDING(NPUSHED) (NPUSHED)*/
 
@@ -418,7 +418,7 @@ extern int avr_reg_order[];
 /* LEGITIMIZE_RELOAD_ADDRESS will allow register R26/27 to be used, where it
    is no worse than normal base pointers R28/29 and R30/31. For example:
    If base offset is greater than 63 bytes or for R++ or --R addressing.  */
-   
+
 #define LEGITIMIZE_RELOAD_ADDRESS(X, MODE, OPNUM, TYPE, IND_LEVELS, WIN)    \
 do {									    \
   if (1&&(GET_CODE (X) == POST_INC || GET_CODE (X) == PRE_DEC))	    \
@@ -834,22 +834,22 @@ struct GTY(()) machine_function
   /* 'true' - if current function is a naked function.  */
   int is_naked;
 
-  /* 'true' - if current function is an interrupt function 
+  /* 'true' - if current function is an interrupt function
      as specified by the "interrupt" attribute.  */
   int is_interrupt;
 
-  /* 'true' - if current function is a signal function 
+  /* 'true' - if current function is a signal function
      as specified by the "signal" attribute.  */
   int is_signal;
-  
-  /* 'true' - if current function is a 'task' function 
+
+  /* 'true' - if current function is a 'task' function
      as specified by the "OS_task" attribute.  */
   int is_OS_task;
 
-  /* 'true' - if current function is a 'main' function 
+  /* 'true' - if current function is a 'main' function
      as specified by the "OS_main" attribute.  */
   int is_OS_main;
-  
+
   /* Current function stack size.  */
   int stack_usage;
 };

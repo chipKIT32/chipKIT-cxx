@@ -432,9 +432,7 @@
 
 #define TARGET_DEFAULT_TARGET_FLAGS 0
 
-#ifndef TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE
 #define TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE hook_void_void
-#endif
 
 #define TARGET_HANDLE_OPTION hook_bool_size_t_constcharptr_int_true
 #define TARGET_HELP NULL
@@ -676,7 +674,6 @@
 
 #define TARGET_FUNCTION_VALUE default_function_value
 #define TARGET_LIBCALL_VALUE default_libcall_value
-#define TARGET_PROMOTE_LIBCALL_MODE default_promote_libcall_mode
 #define TARGET_INTERNAL_ARG_POINTER default_internal_arg_pointer
 #define TARGET_UPDATE_STACK_BOUNDARY NULL
 #define TARGET_GET_DRAP_RTX NULL
@@ -703,7 +700,6 @@
    TARGET_INVALID_ARG_FOR_UNPROTOTYPED_FN,			\
    TARGET_FUNCTION_VALUE,					\
    TARGET_LIBCALL_VALUE,					\
-   TARGET_PROMOTE_LIBCALL_MODE,					\
    TARGET_INTERNAL_ARG_POINTER,					\
    TARGET_UPDATE_STACK_BOUNDARY,				\
    TARGET_GET_DRAP_RTX,						\
@@ -832,7 +828,7 @@
     TARGET_CXX_LIBRARY_RTTI_COMDAT,	        \
     TARGET_CXX_USE_AEABI_ATEXIT,		\
     TARGET_CXX_USE_ATEXIT_FOR_CXA_ATEXIT,	\
-    TARGET_CXX_ADJUST_CLASS_AT_DEFINITION \
+    TARGET_CXX_ADJUST_CLASS_AT_DEFINITION	\
   }
 
 /* EMUTLS specific */
@@ -925,15 +921,6 @@
     TARGET_OPTION_PRAGMA_PARSE,			\
     TARGET_CAN_INLINE_P,			\
   }
-
-#ifndef TARGET_ALIGN_INSNS
-#define TARGET_ALIGN_INSNS hook_int_void_0
-#endif
-
-#define TARGET_ALIGN_HOOKS                      \
-  {                                             \
-    TARGET_ALIGN_INSNS                          \
-  }                                             \
 
 /* The whole shebang.  */
 #define TARGET_INITIALIZER			\
@@ -1046,7 +1033,6 @@
   TARGET_CXX,					\
   TARGET_EMUTLS,				\
   TARGET_OPTION_HOOKS,				\
-  TARGET_ALIGN_HOOKS,				\
   TARGET_EXTRA_LIVE_ON_ENTRY,			\
   TARGET_WARN_FUNC_RESULT,			\
   TARGET_UNWIND_TABLES_DEFAULT,			\

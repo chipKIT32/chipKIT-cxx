@@ -39,9 +39,8 @@ Disassembly of section \.text:
 .*:	a9 49 00 00 	lha     r10,0\(r9\)
 Disassembly of section \.got:
 
-.* <_GLOBAL_OFFSET_TABLE_-0x28>:
-#...
+.* <\.got>:
+	\.\.\.
 .*:	4e 80 00 21 	blrl
-.* <_GLOBAL_OFFSET_TABLE_>:
-.*:	00 01 03 ec .*
-#pass
+.*:	00 01 03 ec 	.*
+	\.\.\.

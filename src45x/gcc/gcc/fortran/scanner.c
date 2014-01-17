@@ -390,8 +390,7 @@ gfc_release_include_path (void)
 
 
 static FILE *
-open_included_file (const char *name, gfc_directorylist *list,
-		    bool module, bool system)
+open_included_file (const char *name, gfc_directorylist *list, bool module)
 {
   char *fullname;
   gfc_directorylist *p;
@@ -408,12 +407,7 @@ open_included_file (const char *name, gfc_directorylist *list,
 
       f = gfc_open_file (fullname);
       if (f != NULL)
-	{
-	  if (gfc_cpp_makedep ())
-	    gfc_cpp_add_dep (fullname, system);
-
-	  return f;
-	}
+	return f;
     }
 
   return NULL;
@@ -427,37 +421,28 @@ open_included_file (const char *name, gfc_directorylist *list,
 FILE *
 gfc_open_included_file (const char *name, bool include_cwd, bool module)
 {
-  FILE *f = NULL;
+  FILE *f;
 
-  if (IS_ABSOLUTE_PATH (name) || include_cwd)
+  if (IS_ABSOLUTE_PATH (name))
+    return gfc_open_file (name);
+
+  if (include_cwd)
     {
       f = gfc_open_file (name);
-      if (f && gfc_cpp_makedep ())
-	gfc_cpp_add_dep (name, false);
+      if (f != NULL)
+	return f;
     }
 
-  if (!f)
-    f = open_included_file (name, include_dirs, module, false);
-
-  return f;
+  return open_included_file (name, include_dirs, module);
 }
 
 FILE *
 gfc_open_intrinsic_module (const char *name)
 {
-  FILE *f = NULL;
-
   if (IS_ABSOLUTE_PATH (name))
-    {
-      f = gfc_open_file (name);
-      if (f && gfc_cpp_makedep ())
-	gfc_cpp_add_dep (name, true);
-    }
+    return gfc_open_file (name);
 
-  if (!f)
-    f = open_included_file (name, intrinsic_modules_dirs, true, true);
-
-  return f;
+  return open_included_file (name, intrinsic_modules_dirs, true);
 }
 
 
@@ -1840,9 +1825,7 @@ include_line (gfc_char_t *line)
 		   read by anything else.  */
 
   filename = gfc_widechar_to_char (begin, -1);
-  if (load_file (filename, NULL, false) == FAILURE)
-    exit (1);
-
+  load_file (filename, NULL, false);
   gfc_free (filename);
   return true;
 }

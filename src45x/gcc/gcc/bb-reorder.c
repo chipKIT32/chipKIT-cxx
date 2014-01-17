@@ -1292,9 +1292,7 @@ add_labels_and_missing_jumps (edge *crossing_edges, int n_crossing_edges)
 
 	      if (src && (src != ENTRY_BLOCK_PTR))
 		{
-		  if (!JUMP_P (BB_END (src))
-		      && !block_ends_with_call_p (src)
-		      && !can_throw_internal (BB_END (src)))
+		  if (!JUMP_P (BB_END (src)) && !block_ends_with_call_p (src))
 		    /* bb just falls through.  */
 		    {
 		      /* make sure there's only one successor */
@@ -1311,9 +1309,9 @@ add_labels_and_missing_jumps (edge *crossing_edges, int n_crossing_edges)
 		      src->il.rtl->footer = unlink_insn_chain (barrier, barrier);
 		      /* Mark edge as non-fallthru.  */
 		      crossing_edges[i]->flags &= ~EDGE_FALLTHRU;
-		    } /* end: 'if (!JUMP_P ... '  */
-		} /* end: 'if (src && src !=...'  */
-	    } /* end: 'if (dest && dest !=...'  */
+		    } /* end: 'if (GET_CODE ... '  */
+		} /* end: 'if (src && src->index...'  */
+	    } /* end: 'if (dest && dest->index...'  */
 	} /* end: 'if (crossing_edges[i]...'  */
     } /* end for loop  */
 }
@@ -1370,21 +1368,19 @@ fix_up_fall_thru_edges (void)
 	  fall_thru = succ2;
 	  cond_jump = succ1;
 	}
-      else if (succ1
-	       && (block_ends_with_call_p (cur_bb)
-		   || can_throw_internal (BB_END (cur_bb))))
-	{
-	  edge e;
-	  edge_iterator ei;
+      else if (!fall_thru && succ1 && block_ends_with_call_p (cur_bb))
+      {
+        edge e;
+        edge_iterator ei;
 
-	  /* Find EDGE_CAN_FALLTHRU edge.  */
-	  FOR_EACH_EDGE (e, ei, cur_bb->succs)
-	    if (e->flags & EDGE_CAN_FALLTHRU)
-	      {
-		fall_thru = e;
-		break;
-	      }
-	}
+        /* Find EDGE_CAN_FALLTHRU edge.  */
+        FOR_EACH_EDGE (e, ei, cur_bb->succs)
+          if (e->flags & EDGE_CAN_FALLTHRU)
+          {
+            fall_thru = e;
+            break;
+          }
+      }
 
       if (fall_thru && (fall_thru->dest != EXIT_BLOCK_PTR))
 	{

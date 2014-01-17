@@ -1,6 +1,6 @@
 /* mpc_asinh -- inverse hyperbolic sine of a complex number.
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
 
 This file is part of the MPC Library.
 

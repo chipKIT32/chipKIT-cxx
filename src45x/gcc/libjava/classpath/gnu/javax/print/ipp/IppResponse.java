@@ -302,14 +302,11 @@ public class IppResponse
             // out-of-band values
             case IppValueTag.UNSUPPORTED:
             case IppValueTag.UNKNOWN:
-              // TODO implement out-of-band handling
-              // We currently throw an exception to see when it occurs - not yet :-)
-	      throw new IppException(
-                    "Unexpected name value for out-of-band value tag " + tag);
             case IppValueTag.NO_VALUE:
-	      attribute = null;
-
-	      break;
+              // TODO implement out-of-band handling
+              // We currently throw an exception to see when it occurs - not yet :-)              
+              throw new IppException(
+                    "Unexpected name value for out-of-band value tag");
             case IppValueTag.INTEGER:
               int intValue = IppUtilities.convertToInt(value);
               attribute = IppUtilities.getIntegerAttribute(name, intValue);

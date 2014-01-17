@@ -1,6 +1,6 @@
 /* mpc_swap -- Swap two complex numbers.
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Paul Zimmermann
 
 This file is part of the MPC Library.
 

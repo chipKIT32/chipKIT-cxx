@@ -228,8 +228,7 @@ is_constant_array_expr (gfc_expr *e)
     return false;
 
   for (c = e->value.constructor; c; c = c->next)
-    if (c->expr->expr_type != EXPR_CONSTANT
-	  && c->expr->expr_type != EXPR_STRUCTURE)
+    if (c->expr->expr_type != EXPR_CONSTANT)
       return false;
 
   return true;
@@ -4024,8 +4023,6 @@ gfc_simplify_pack (gfc_expr *array, gfc_expr *mask, gfc_expr *vector)
 
   if (array->ts.type == BT_CHARACTER)
     result->ts.u.cl = array->ts.u.cl;
-  else if (array->ts.type == BT_DERIVED)
-    result->ts.u.derived = array->ts.u.derived;
 
   return result;
 }
@@ -4474,11 +4471,6 @@ inc:
 
   e->ts = source->ts;
   e->rank = rank;
-
-  if (source->ts.type == BT_CHARACTER)
-    e->ts.u.cl = source->ts.u.cl;
-  else if (source->ts.type == BT_DERIVED)
-    e->ts.u.derived = source->ts.u.derived;
 
   return e;
 }
@@ -5166,8 +5158,6 @@ gfc_simplify_spread (gfc_expr *source, gfc_expr *dim_expr, gfc_expr *ncopies_exp
 
   if (source->ts.type == BT_CHARACTER)
     result->ts.u.cl = source->ts.u.cl;
-  else if (source->ts.type == BT_DERIVED)
-    result->ts.u.derived = source->ts.u.derived;
 
   return result;
 }
@@ -5430,8 +5420,6 @@ gfc_simplify_transpose (gfc_expr *matrix)
 
   if (matrix->ts.type == BT_CHARACTER)
     result->ts.u.cl = matrix->ts.u.cl;
-  else if (matrix->ts.type == BT_DERIVED)
-    result->ts.u.derived = matrix->ts.u.derived;
 
   matrix_rows = mpz_get_si (matrix->shape[0]);
   matrix_ctor = matrix->value.constructor;
@@ -5515,8 +5503,6 @@ gfc_simplify_unpack (gfc_expr *vector, gfc_expr *mask, gfc_expr *field)
 
   if (vector->ts.type == BT_CHARACTER)
     result->ts.u.cl = vector->ts.u.cl;
-  else if (vector->ts.type == BT_DERIVED)
-    result->ts.u.derived = vector->ts.u.derived;
 
   vector_ctor = vector->value.constructor;
   mask_ctor = mask->value.constructor;

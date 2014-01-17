@@ -392,8 +392,8 @@ static rtx try_combine (rtx, rtx, rtx, int *);
 static void undo_all (void);
 static void undo_commit (void);
 static rtx *find_split_point (rtx *, rtx);
-static rtx subst (rtx, rtx, rtx, int, int, int);
-static rtx combine_simplify_rtx (rtx, enum machine_mode, int, int);
+static rtx subst (rtx, rtx, rtx, int, int);
+static rtx combine_simplify_rtx (rtx, enum machine_mode, int);
 static rtx simplify_if_then_else (rtx);
 static rtx simplify_set (rtx);
 static rtx simplify_logical (rtx);
@@ -2362,25 +2362,7 @@ update_cfg_for_uncondjump (rtx insn)
 
   delete_insn (insn);
   if (at_end && EDGE_COUNT (bb->succs) == 1)
-    {
-      rtx insn;
-
-      single_succ_edge (bb)->flags |= EDGE_FALLTHRU;
-
-      /* Remove barriers from the footer if there are any.  */
-      for (insn = bb->il.rtl->footer; insn; insn = NEXT_INSN (insn))
-	if (BARRIER_P (insn))
-	  {
-	    if (PREV_INSN (insn))
-	      NEXT_INSN (PREV_INSN (insn)) = NEXT_INSN (insn);
-	    else
-	      bb->il.rtl->footer = NEXT_INSN (insn);
-	    if (NEXT_INSN (insn))
-	      PREV_INSN (NEXT_INSN (insn)) = PREV_INSN (insn);
-	  }
-	else if (LABEL_P (insn))
-	  break;
-    }
+    single_succ_edge (bb)->flags |= EDGE_FALLTHRU;
 }
 
 
@@ -2962,12 +2944,12 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
 	  if (i1)
 	    {
 	      subst_low_luid = DF_INSN_LUID (i1);
-	      i1src = subst (i1src, pc_rtx, pc_rtx, 0, 0, 0);
+	      i1src = subst (i1src, pc_rtx, pc_rtx, 0, 0);
 	    }
 	  else
 	    {
 	      subst_low_luid = DF_INSN_LUID (i2);
-	      i2src = subst (i2src, pc_rtx, pc_rtx, 0, 0, 0);
+	      i2src = subst (i2src, pc_rtx, pc_rtx, 0, 0);
 	    }
 	}
 
@@ -2978,7 +2960,7 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
 	 to avoid self-referential rtl.  */
 
       subst_low_luid = DF_INSN_LUID (i2);
-      newpat = subst (PATTERN (i3), i2dest, i2src, 0, 0,
+      newpat = subst (PATTERN (i3), i2dest, i2src, 0,
 		      ! i1_feeds_i3 && i1dest_in_i1src);
       substed_i2 = 1;
 
@@ -3009,7 +2991,7 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
 
       n_occurrences = 0;
       subst_low_luid = DF_INSN_LUID (i1);
-      newpat = subst (newpat, i1dest, i1src, 0, 0, 0);
+      newpat = subst (newpat, i1dest, i1src, 0, 0);
       substed_i1 = 1;
     }
 
@@ -3071,7 +3053,7 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
 	  else
 	    /* See comment where i2pat is assigned.  */
 	    XVECEXP (newpat, 0, --total_sets)
-	      = subst (i2pat, i1dest, i1src, 0, 0, 0);
+	      = subst (i2pat, i1dest, i1src, 0, 0);
 	}
     }
 
@@ -3560,12 +3542,6 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
 #ifdef HAVE_cc0
       if (reg_referenced_p (cc0_rtx, XVECEXP (newpat, 0, 0)))
 	{
-	  if (use_crosses_set_p (SET_SRC (XVECEXP (newpat, 0, 0)),
-				 DF_INSN_LUID (i2)))
-	    {
-	      undo_all ();
-	      return 0;
-	    }
 	  newi2pat = XVECEXP (newpat, 0, 0);
 	  newpat = XVECEXP (newpat, 0, 1);
 	}
@@ -3579,25 +3555,7 @@ try_combine (rtx i3, rtx i2, rtx i1, int *new_direct_jump_p)
       i2_code_number = recog_for_combine (&newi2pat, i2, &new_i2_notes);
 
       if (i2_code_number >= 0)
-	{
-	  /* recog_for_combine might have added CLOBBERs to newi2pat.
-	     Make sure NEWPAT does not depend on the clobbered regs.  */
-	  if (GET_CODE (newi2pat) == PARALLEL)
-	    {
-	      for (i = XVECLEN (newi2pat, 0) - 1; i >= 0; i--)
-		if (GET_CODE (XVECEXP (newi2pat, 0, i)) == CLOBBER)
-		  {
-		    rtx reg = XEXP (XVECEXP (newi2pat, 0, i), 0);
-		    if (reg_overlap_mentioned_p (reg, newpat))
-		      {
-			undo_all ();
-			return 0;
-		      }
-		  }
-	    }
-
-	  insn_code_number = recog_for_combine (&newpat, i3, &new_i3_notes);
-	}
+	insn_code_number = recog_for_combine (&newpat, i3, &new_i3_notes);
     }
 
   /* If it still isn't recognized, fail and change things back the way they
@@ -4623,13 +4581,11 @@ find_split_point (rtx *loc, rtx insn)
 
    IN_DEST is nonzero if we are processing the SET_DEST of a SET.
 
-   IN_COND is nonzero if we are on top level of the condition.
-
    UNIQUE_COPY is nonzero if each substitution must be unique.  We do this
    by copying if `n_occurrences' is nonzero.  */
 
 static rtx
-subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
+subst (rtx x, rtx from, rtx to, int in_dest, int unique_copy)
 {
   enum rtx_code code = GET_CODE (x);
   enum machine_mode op0_mode = VOIDmode;
@@ -4690,7 +4646,7 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
       && GET_CODE (XVECEXP (x, 0, 0)) == SET
       && GET_CODE (SET_SRC (XVECEXP (x, 0, 0))) == ASM_OPERANDS)
     {
-      new_rtx = subst (XVECEXP (x, 0, 0), from, to, 0, 0, unique_copy);
+      new_rtx = subst (XVECEXP (x, 0, 0), from, to, 0, unique_copy);
 
       /* If this substitution failed, this whole thing fails.  */
       if (GET_CODE (new_rtx) == CLOBBER
@@ -4707,7 +4663,7 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
 	      && GET_CODE (dest) != CC0
 	      && GET_CODE (dest) != PC)
 	    {
-	      new_rtx = subst (dest, from, to, 0, 0, unique_copy);
+	      new_rtx = subst (dest, from, to, 0, unique_copy);
 
 	      /* If this substitution failed, this whole thing fails.  */
 	      if (GET_CODE (new_rtx) == CLOBBER
@@ -4753,8 +4709,8 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
 		    }
 		  else
 		    {
-		      new_rtx = subst (XVECEXP (x, i, j), from, to, 0, 0,
-				       unique_copy);
+		      new_rtx = subst (XVECEXP (x, i, j), from, to, 0,
+				   unique_copy);
 
 		      /* If this substitution failed, this whole thing
 			 fails.  */
@@ -4831,9 +4787,7 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
 				&& (code == SUBREG || code == STRICT_LOW_PART
 				    || code == ZERO_EXTRACT))
 			       || code == SET)
-			      && i == 0),
-				 code == IF_THEN_ELSE && i == 0,
-				 unique_copy);
+			      && i == 0), unique_copy);
 
 	      /* If we found that we will have to reject this combination,
 		 indicate that by returning the CLOBBER ourselves, rather than
@@ -4890,7 +4844,7 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
       /* If X is sufficiently simple, don't bother trying to do anything
 	 with it.  */
       if (code != CONST_INT && code != REG && code != CLOBBER)
-	x = combine_simplify_rtx (x, op0_mode, in_dest, in_cond);
+	x = combine_simplify_rtx (x, op0_mode, in_dest);
 
       if (GET_CODE (x) == code)
 	break;
@@ -4910,12 +4864,10 @@ subst (rtx x, rtx from, rtx to, int in_dest, int in_cond, int unique_copy)
    expression.
 
    OP0_MODE is the original mode of XEXP (x, 0).  IN_DEST is nonzero
-   if we are inside a SET_DEST.  IN_COND is nonzero if we are on the top level
-   of a condition.  */
+   if we are inside a SET_DEST.  */
 
 static rtx
-combine_simplify_rtx (rtx x, enum machine_mode op0_mode, int in_dest,
-		      int in_cond)
+combine_simplify_rtx (rtx x, enum machine_mode op0_mode, int in_dest)
 {
   enum rtx_code code = GET_CODE (x);
   enum machine_mode mode = GET_MODE (x);
@@ -4970,8 +4922,8 @@ combine_simplify_rtx (rtx x, enum machine_mode op0_mode, int in_dest,
 	     false arms to store-flag values.  Be careful to use copy_rtx
 	     here since true_rtx or false_rtx might share RTL with x as a
 	     result of the if_then_else_cond call above.  */
-	  true_rtx = subst (copy_rtx (true_rtx), pc_rtx, pc_rtx, 0, 0, 0);
-	  false_rtx = subst (copy_rtx (false_rtx), pc_rtx, pc_rtx, 0, 0, 0);
+	  true_rtx = subst (copy_rtx (true_rtx), pc_rtx, pc_rtx, 0, 0);
+	  false_rtx = subst (copy_rtx (false_rtx), pc_rtx, pc_rtx, 0, 0);
 
 	  /* If true_rtx and false_rtx are not general_operands, an if_then_else
 	     is unlikely to be simpler.  */
@@ -5315,7 +5267,7 @@ combine_simplify_rtx (rtx x, enum machine_mode op0_mode, int in_dest,
 	{
 	  /* Try to simplify the expression further.  */
 	  rtx tor = simplify_gen_binary (IOR, mode, XEXP (x, 0), XEXP (x, 1));
-	  temp = combine_simplify_rtx (tor, mode, in_dest, 0);
+	  temp = combine_simplify_rtx (tor, mode, in_dest);
 
 	  /* If we could, great.  If not, do not go ahead with the IOR
 	     replacement, since PLUS appears in many special purpose
@@ -5408,16 +5360,7 @@ combine_simplify_rtx (rtx x, enum machine_mode op0_mode, int in_dest,
 	     ZERO_EXTRACT is indeed appropriate, it will be placed back by
 	     the call to make_compound_operation in the SET case.  */
 
-	  if (in_cond)
-	    /* Don't apply below optimizations if the caller would
-	       prefer a comparison rather than a value.
-	       E.g., for the condition in an IF_THEN_ELSE most targets need
-	       an explicit comparison.  */
-	    {
-	      ;
-	    }
-
-	  else if (STORE_FLAG_VALUE == 1
+	  if (STORE_FLAG_VALUE == 1
 	      && new_code == NE && GET_MODE_CLASS (mode) == MODE_INT
 	      && op1 == const0_rtx
 	      && mode == GET_MODE (op0)
@@ -5661,11 +5604,11 @@ simplify_if_then_else (rtx x)
       if (reg_mentioned_p (from, true_rtx))
 	true_rtx = subst (known_cond (copy_rtx (true_rtx), true_code,
 				      from, true_val),
-			  pc_rtx, pc_rtx, 0, 0, 0);
+		      pc_rtx, pc_rtx, 0, 0);
       if (reg_mentioned_p (from, false_rtx))
 	false_rtx = subst (known_cond (copy_rtx (false_rtx), false_code,
 				   from, false_val),
-			   pc_rtx, pc_rtx, 0, 0, 0);
+		       pc_rtx, pc_rtx, 0, 0);
 
       SUBST (XEXP (x, 1), swapped ? false_rtx : true_rtx);
       SUBST (XEXP (x, 2), swapped ? true_rtx : false_rtx);
@@ -5882,11 +5825,11 @@ simplify_if_then_else (rtx x)
 	{
 	  temp = subst (simplify_gen_relational (true_code, m, VOIDmode,
 						 cond_op0, cond_op1),
-			pc_rtx, pc_rtx, 0, 0, 0);
+			pc_rtx, pc_rtx, 0, 0);
 	  temp = simplify_gen_binary (MULT, m, temp,
 				      simplify_gen_binary (MULT, m, c1,
 							   const_true_rtx));
-	  temp = subst (temp, pc_rtx, pc_rtx, 0, 0, 0);
+	  temp = subst (temp, pc_rtx, pc_rtx, 0, 0);
 	  temp = simplify_gen_binary (op, m, gen_lowpart (m, z), temp);
 
 	  if (extend_op != UNKNOWN)
@@ -5966,18 +5909,10 @@ simplify_set (rtx x)
       enum rtx_code new_code;
       rtx op0, op1, tmp;
       int other_changed = 0;
-      rtx inner_compare = NULL_RTX;
       enum machine_mode compare_mode = GET_MODE (dest);
 
       if (GET_CODE (src) == COMPARE)
-	{
-	  op0 = XEXP (src, 0), op1 = XEXP (src, 1);
-	  if (GET_CODE (op0) == COMPARE && op1 == const0_rtx)
-	    {
-	      inner_compare = op0;
-	      op0 = XEXP (inner_compare, 0), op1 = XEXP (inner_compare, 1);
-	    }
-	}
+	op0 = XEXP (src, 0), op1 = XEXP (src, 1);
       else
 	op0 = src, op1 = CONST0_RTX (GET_MODE (src));
 
@@ -6019,12 +5954,6 @@ simplify_set (rtx x)
 	 need to use a different CC mode here.  */
       if (GET_MODE_CLASS (GET_MODE (op0)) == MODE_CC)
 	compare_mode = GET_MODE (op0);
-      else if (inner_compare
-	       && GET_MODE_CLASS (GET_MODE (inner_compare)) == MODE_CC
-	       && new_code == old_code
-	       && op0 == XEXP (inner_compare, 0)
-	       && op1 == XEXP (inner_compare, 1))
-	compare_mode = GET_MODE (inner_compare);
       else
 	compare_mode = SELECT_CC_MODE (new_code, op0, op1);
 
@@ -9587,9 +9516,7 @@ simplify_shift_const_1 (enum rtx_code code, enum machine_mode result_mode,
 		  > GET_MODE_SIZE (GET_MODE (varop)))
 	      && (unsigned int) ((GET_MODE_SIZE (GET_MODE (SUBREG_REG (varop)))
 				  + (UNITS_PER_WORD - 1)) / UNITS_PER_WORD)
-		 == mode_words
-	      && GET_MODE_CLASS (GET_MODE (varop)) == MODE_INT
-	      && GET_MODE_CLASS (GET_MODE (SUBREG_REG (varop))) == MODE_INT)
+		 == mode_words)
 	    {
 	      varop = SUBREG_REG (varop);
 	      if (GET_MODE_SIZE (GET_MODE (varop)) > GET_MODE_SIZE (mode))
@@ -12764,6 +12691,29 @@ reg_bitfield_target_p (rtx x, rtx body)
 
   return 0;
 }
+
+/* Return the next insn after INSN that is neither a NOTE nor a
+   DEBUG_INSN.  This routine does not look inside SEQUENCEs.  */
+
+static rtx
+next_nonnote_nondebug_insn (rtx insn)
+{
+  while (insn)
+    {
+      insn = NEXT_INSN (insn);
+      if (insn == 0)
+	break;
+      if (NOTE_P (insn))
+	continue;
+      if (DEBUG_INSN_P (insn))
+	continue;
+      break;
+    }
+
+  return insn;
+}
+
+
 
 /* Given a chain of REG_NOTES originally from FROM_INSN, try to place them
    as appropriate.  I3 and I2 are the insns resulting from the combination
@@ -13033,15 +12983,7 @@ distribute_notes (rtx notes, rtx from_insn, rtx i3, rtx i2, rtx elim_i2,
 	    {
 	      basic_block bb = this_basic_block;
 
-#if defined(_BUILD_C30_) && 0
-              /* You might think you could search back from FROM_INSN
-                 rather than from I3, but combine tries to split invalid
-                 combined instructions.  This can result in the old I2
-                 or I1 moving later in the insn sequence.  */
-              for (tem = PREV_INSN (i3); place == 0; tem = PREV_INSN (tem))
-#else
 	      for (tem = PREV_INSN (tem); place == 0; tem = PREV_INSN (tem))
-#endif
 		{
 		  if (!NONDEBUG_INSN_P (tem))
 		    {

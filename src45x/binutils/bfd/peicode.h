@@ -1,7 +1,6 @@
 /* Support for the generic parts of PE/PEI, for BFD.
    Copyright 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
-   Free Software Foundation, Inc.
+   2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
    Written by Cygnus Solutions.
 
    This file is part of BFD, the Binary File Descriptor library.
@@ -546,7 +545,7 @@ pe_ILF_make_a_symbol (pe_ILF_vars *  vars,
   sprintf (vars->string_ptr, "%s%s", prefix, symbol_name);
 
   if (section == NULL)
-    section = bfd_und_section_ptr;
+    section = (asection_ptr) & bfd_und_section;
 
   /* Initialise the external symbol.  */
   H_PUT_32 (vars->abfd, vars->string_ptr - vars->string_table,
@@ -885,11 +884,7 @@ pe_ILF_build_a_bfd (bfd *           abfd,
       if (import_name_type != IMPORT_NAME)
 	{
 	  char c = symbol[0];
-	  
-	  /* Check that we don't remove for targets with empty
-	     USER_LABEL_PREFIX the leading underscore.  */
-	  if ((c == '_' && abfd->xvec->symbol_leading_char != 0)
-	      || c == '@' || c == '?')
+	  if (c == '_' || c == '@' || c == '?')
 	    symbol++;
 	}
       

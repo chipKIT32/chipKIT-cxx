@@ -1169,15 +1169,4 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define CONSTANT_ADDRESS_P(X)   (CONSTANT_P (X) && GET_CODE (X) != CONST_DOUBLE)
 #endif
 
-/* Type of section type flags */
-#ifdef _BUILD_C30_
-#ifndef SECTION_FLAGS_INT
-#define SECTION_FLAGS_INT unsigned int
-#endif
-#elif _BUILD_C32_
-#ifndef SECTION_FLAGS_INT
-#define SECTION_FLAGS_INT unsigned long long
-#endif
-#endif
-
 #endif  /* ! GCC_DEFAULTS_H */

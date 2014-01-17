@@ -1,8 +1,6 @@
 /* TI C6X disassembler.
    Copyright 2010
    Free Software Foundation, Inc.
-   Contributed by Joseph Myers <joseph@codesourcery.com>
-   		  Bernd Schmidt  <bernds@codesourcery.com>
 
    This file is part of libopcodes.
 

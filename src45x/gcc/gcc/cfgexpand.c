@@ -751,7 +751,7 @@ static void
 expand_one_stack_var_at (tree decl, HOST_WIDE_INT offset)
 {
   /* Alignment is unsigned.   */
-  unsigned HOST_WIDE_INT align, max_align;
+  unsigned HOST_WIDE_INT align;
   rtx x;
 
   /* If this fails, we've overflowed the stack frame.  Error nicely?  */
@@ -768,9 +768,10 @@ expand_one_stack_var_at (tree decl, HOST_WIDE_INT offset)
       offset -= frame_phase;
       align = offset & -offset;
       align *= BITS_PER_UNIT;
-      max_align = crtl->max_used_stack_slot_alignment;
-      if (align == 0 || align > max_align)
-	align = max_align;
+      if (align == 0)
+	align = STACK_BOUNDARY;
+      else if (align > MAX_SUPPORTED_STACK_ALIGNMENT)
+	align = MAX_SUPPORTED_STACK_ALIGNMENT;
 
       DECL_ALIGN (decl) = align;
       DECL_USER_ALIGN (decl) = 0;
@@ -987,11 +988,6 @@ expand_one_var (tree var, bool toplevel, bool really_expand)
 	}
     }
 
-#ifndef _BUILD_C30_
-  /* Don't really get this - it seems to complain about things that are
-     ignored by the rest of the code; of course the (useless) SVN log doesn't 
-     say a thing */
-  
   if (TREE_CODE (origvar) == SSA_NAME)
     {
       gcc_assert (TREE_CODE (var) != VAR_DECL
@@ -1002,9 +998,6 @@ expand_one_var (tree var, bool toplevel, bool really_expand)
 		      && !DECL_HARD_REGISTER (var)
 		      && really_expand));
     }
-#endif
-
-
   if (TREE_CODE (var) != VAR_DECL && TREE_CODE (origvar) != SSA_NAME)
     ;
   else if (DECL_EXTERNAL (var))
@@ -1627,14 +1620,7 @@ maybe_cleanup_end_of_block (edge e, rtx last)
 	{
 	  insn = PREV_INSN (insn);
 	  if (JUMP_P (NEXT_INSN (insn)))
-	    {
-	      if (!any_condjump_p (NEXT_INSN (insn)))
-		{
-		  gcc_assert (BARRIER_P (NEXT_INSN (NEXT_INSN (insn))));
-		  delete_insn (NEXT_INSN (NEXT_INSN (insn)));
-		}
-	      delete_insn (NEXT_INSN (insn));
-	    }
+	    delete_insn (NEXT_INSN (insn));
 	}
     }
 }
@@ -3876,14 +3862,6 @@ gimple_expand_cfg (void)
       if (TREE_CODE (var) != VAR_DECL
 	  && !SA.partition_to_pseudo[i])
 	SA.partition_to_pseudo[i] = DECL_RTL_IF_SET (var);
-#ifdef _BUILD_C30_
-      /* Not sure why DECL_REGISTERS crash this pass, but this is a global
-         asm register variable, it already has RTL - there seems to be a hack
-         above for other 'odd' conditions a new one shouldn't hurt */
-      if ((TREE_CODE (var) == VAR_DECL) && DECL_REGISTER(var) &&
-          DECL_RTL_SET_P(var) && !SA.partition_to_pseudo[i])
-        SA.partition_to_pseudo[i] = DECL_RTL(var);
-#endif
       gcc_assert (SA.partition_to_pseudo[i]);
 
       /* If this decl was marked as living in multiple places, reset

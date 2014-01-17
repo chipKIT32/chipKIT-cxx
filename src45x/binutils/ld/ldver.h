@@ -20,8 +20,3 @@
    MA 02110-1301, USA.  */
 
 void ldversion (int);
-
-#ifdef TARGET_IS_PIC32MX
-extern char *pic32_resource_version;
-extern bfd_boolean pic32_has_processor_option;
-#endif

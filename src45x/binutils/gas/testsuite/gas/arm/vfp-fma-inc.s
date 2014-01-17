@@ -1,6 +1,4 @@
 	.syntax unified
-	.arch armv7-a
-	.fpu neon-vfpv4
 
 	.include "itblock.s"
 

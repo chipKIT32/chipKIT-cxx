@@ -1,6 +1,6 @@
 /* tmul -- test file for mpc_mul_si.
 
-Copyright (C) INRIA, 2002, 2005, 2008
+Copyright (C) 2002, 2005, 2008 Andreas Enge, Paul Zimmermann
 
 This file is part of the MPC Library.
 

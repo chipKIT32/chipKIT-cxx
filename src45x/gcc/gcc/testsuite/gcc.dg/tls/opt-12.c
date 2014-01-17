@@ -2,7 +2,6 @@
 /* { dg-do run } */
 /* { dg-options "-O2 -fpic" } */
 /* { dg-require-effective-target tls_runtime } */
-/* { dg-add-options tls } */
 /* { dg-require-effective-target fpic } */
 
 extern void abort (void);

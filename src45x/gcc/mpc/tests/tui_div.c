@@ -1,6 +1,6 @@
 /* test file for mpc_ui_div.
 
-Copyright (C) INRIA, 2008
+Copyright (C) 2008 Philippe Th\'eveny, Andreas Enge, Paul Zimmermann
 
 This file is part of the MPC Library.
 
@@ -21,7 +21,7 @@ MA 02111-1307, USA. */
 
 #include "mpc-tests.h"
 
-static void
+void
 special (void)
 {
   mpc_t a, b;

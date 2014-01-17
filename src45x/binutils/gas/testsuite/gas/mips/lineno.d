@@ -1,6 +1,6 @@
 #objdump: -d -l -mmips:4000
 #name: assembly line numbers
-#as: --gstabs -32 -march=r4000
+#as: --gstabs -march=r4000
 
 
 .*: +file format .*mips.*
@@ -17,9 +17,9 @@ main\(\):
 .*lineno.s:16
 .*10:.*addiu.*
 .*lineno.s:17
-.*14:.*sw.*
+.*14:.*sd.*
 .*lineno.s:18
-.*18:.*sw.*
+.*18:.*sd.*
 .*lineno.s:19
 .*1c:.*move.*
 .*lineno.s:20
@@ -59,9 +59,9 @@ main\(\):
 .*lineno.s:34
 .*60:.*move.*
 .*lineno.s:35
-.*64:.*lw.*
+.*64:.*ld.*
 .*lineno.s:36
-.*68:.*lw.*
+.*68:.*ld.*
 .*lineno.s:37
 .*6c:.*addiu.*
 .*lineno.s:38
@@ -73,7 +73,7 @@ g\(\):
 .*lineno.s:47
 .*78:.*addiu.*
 .*lineno.s:48
-.*7c:.*sw.*
+.*7c:.*sd.*
 .*lineno.s:49
 .*80:.*move.*
 .*lineno.s:50
@@ -92,7 +92,7 @@ g\(\):
 .*lineno.s:56
 .*9c:.*move.*
 .*lineno.s:57
-.*a0:.*lw.*
+.*a0:.*ld.*
 .*lineno.s:58
 .*a4:.*addiu.*
 .*lineno.s:59

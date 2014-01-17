@@ -147,6 +147,9 @@ extern tree debug_find_var_in_block_tree (tree, tree);
    can always export `prologue_epilogue_contains'.  */
 static void record_insns (rtx, rtx, htab_t *) ATTRIBUTE_UNUSED;
 static bool contains (const_rtx, htab_t);
+#ifdef HAVE_return
+static void emit_return_into_block (basic_block);
+#endif
 static void prepare_function_start (void);
 static void do_clobber_return_reg (rtx, void *);
 static void do_use_return_reg (rtx, void *);
@@ -1520,9 +1523,8 @@ instantiate_virtual_regs_in_insn (rtx insn)
   /* In the general case, we expect virtual registers to appear only in
      operands, and then only as either bare registers or inside memories.  */
   for (i = 0; i < recog_data.n_operands; ++i)
-    { 
+    {
       x = recog_data.operand[i];
-      
       switch (GET_CODE (x))
 	{
 	case MEM:
@@ -3424,10 +3426,12 @@ gimplify_parameters (void)
 		  DECL_IGNORED_P (local) = 0;
 		  /* If PARM was addressable, move that flag over
 		     to the local copy, as its address will be taken,
-		     not the PARMs.  Keep the parms address taken
-		     as we'll query that flag during gimplification.  */
+		     not the PARMs.  */
 		  if (TREE_ADDRESSABLE (parm))
-		    TREE_ADDRESSABLE (local) = 1;
+		    {
+		      TREE_ADDRESSABLE (parm) = 0;
+		      TREE_ADDRESSABLE (local) = 1;
+		    }
 		}
 	      else
 		{
@@ -4988,329 +4992,38 @@ prologue_epilogue_contains (const_rtx insn)
   return 0;
 }
 
-#ifdef HAVE_simple_return
-/* This collects sets and clobbers of hard registers in a HARD_REG_SET,
-   which is pointed to by DATA.  */
-static void
-record_hard_reg_sets (rtx x, const_rtx pat ATTRIBUTE_UNUSED, void *data)
-{
-  HARD_REG_SET *pset = (HARD_REG_SET *)data;
-  if (REG_P (x) && REGNO (x) < FIRST_PSEUDO_REGISTER)
-    {
-      int nregs = hard_regno_nregs[REGNO (x)][GET_MODE (x)];
-      while (nregs-- > 0)
-	SET_HARD_REG_BIT (*pset, REGNO (x) + nregs);
-    }
-}
-
-/* A subroutine of requires_stack_frame_p, called via for_each_rtx.
-   If any change is made, set CHANGED
-   to true.  */
-
-static int
-frame_required_for_rtx (rtx *loc, void *data ATTRIBUTE_UNUSED)
-{
-  rtx x = *loc;
-  if (x == stack_pointer_rtx || x == hard_frame_pointer_rtx
-      || x == arg_pointer_rtx || x == pic_offset_table_rtx
-#ifdef RETURN_ADDR_REGNUM
-      || (REG_P (x) && REGNO (x) == RETURN_ADDR_REGNUM)
-#endif
-      )
-    return 1;
-  return 0;
-}
-
-static bool
-requires_stack_frame_p (rtx insn)
-{
-  HARD_REG_SET hardregs;
-  unsigned regno;
-
-  if (!INSN_P (insn) || DEBUG_INSN_P (insn))
-    return false;
-  if (CALL_P (insn))
-    return !SIBLING_CALL_P (insn);
-  if (for_each_rtx (&PATTERN (insn), frame_required_for_rtx, NULL))
-    return true;
-  CLEAR_HARD_REG_SET (hardregs);
-  note_stores (PATTERN (insn), record_hard_reg_sets, &hardregs);
-  AND_COMPL_HARD_REG_SET (hardregs, call_used_reg_set);
-  for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
-    if (TEST_HARD_REG_BIT (hardregs, regno)
-	&& df_regs_ever_live_p (regno))
-      return true;
-  return false;
-}
-
-/* Look for sets of call-saved registers in the first block of the
-   function, and move them down into successor blocks if the register
-   is used only on one path.  This exposes more opportunities for
-   shrink-wrapping.
-   These kinds of sets often occur when incoming argument registers are
-   moved to call-saved registers because their values are live across
-   one or more calls during the function.  */
-
-static void
-prepare_shrink_wrap (basic_block entry_block)
-{
-  rtx insn, curr;
-  FOR_BB_INSNS_SAFE (entry_block, insn, curr)
-    {
-      basic_block next_bb;
-      edge e, live_edge;
-      edge_iterator ei;
-      rtx set, scan;
-      unsigned destreg, srcreg;
-
-      if (!NONDEBUG_INSN_P (insn))
-	continue;
-      set = single_set (insn);
-      if (!set)
-	continue;
-
-      if (!REG_P (SET_SRC (set)) || !REG_P (SET_DEST (set)))
-	continue;
-      srcreg = REGNO (SET_SRC (set));
-      destreg = REGNO (SET_DEST (set));
-      if (hard_regno_nregs[srcreg][GET_MODE (SET_SRC (set))] > 1
-	  || hard_regno_nregs[destreg][GET_MODE (SET_DEST (set))] > 1)
-	continue;
-
-      next_bb = entry_block;
-      scan = insn;
-
-      for (;;)
-	{
-	  live_edge = NULL;
-	  FOR_EACH_EDGE (e, ei, next_bb->succs)
-	    {
-	      if (REGNO_REG_SET_P (df_get_live_in (e->dest), destreg))
-		{
-		  if (live_edge)
-		    {
-		      live_edge = NULL;
-		      break;
-		    }
-		  live_edge = e;
-		}
-	    }
-	  if (!live_edge)
-	    break;
-	  /* We can sometimes encounter dead code.  Don't try to move it
-	     into the exit block.  */
-	  if (live_edge->dest == EXIT_BLOCK_PTR)
-	    break;
-	  if (EDGE_COUNT (live_edge->dest->preds) > 1)
-	    break;
-	  while (scan != BB_END (next_bb))
-	    {
-	      scan = NEXT_INSN (scan);
-	      if (NONDEBUG_INSN_P (scan))
-		{
-		  rtx link;
-		  HARD_REG_SET set_regs;
-
-		  CLEAR_HARD_REG_SET (set_regs);
-		  note_stores (PATTERN (scan), record_hard_reg_sets,
-			       &set_regs);
-		  if (CALL_P (scan))
-		    IOR_HARD_REG_SET (set_regs, call_used_reg_set);
-		  for (link = REG_NOTES (scan); link; link = XEXP (link, 1))
-		    if (REG_NOTE_KIND (link) == REG_INC)
-		      record_hard_reg_sets (XEXP (link, 0), NULL, &set_regs);
-
-		  if (TEST_HARD_REG_BIT (set_regs, srcreg)
-		      || TEST_HARD_REG_BIT (set_regs, destreg)
-		      || reg_referenced_p (SET_DEST (set),
-					   PATTERN (scan)))
-		    {
-		      scan = NULL_RTX;
-		      break;
-		    }
-		  if (CALL_P (scan))
-		    {
-		      rtx link = CALL_INSN_FUNCTION_USAGE (scan);
-		      while (link)
-			{
-			  rtx tmp = XEXP (link, 0);
-			  if (GET_CODE (tmp) == USE
-			      && reg_referenced_p (SET_DEST (set), tmp))
-			    break;
-			  link = XEXP (link, 1);
-			}
-		      if (link)
-			{
-			  scan = NULL_RTX;
-			  break;
-			}
-		    }
-		}
-	    }
-	  if (!scan)
-	    break;
-	  next_bb = live_edge->dest;
-	}
-
-      if (next_bb != entry_block)
-	{
-	  rtx after = BB_HEAD (next_bb);
-	  while (!NOTE_P (after)
-		 || NOTE_KIND (after) != NOTE_INSN_BASIC_BLOCK)
-	    after = NEXT_INSN (after);
-	  emit_insn_after (PATTERN (insn), after);
-	  delete_insn (insn);
-	}
-    }
-}
-
-#endif
-
 #ifdef HAVE_return
-
-static rtx
-gen_return_pattern (bool simple_p)
-{
-#ifdef HAVE_simple_return
-  return simple_p ? gen_simple_return () : gen_return ();
-#else
-  gcc_assert (!simple_p);
-  return gen_return ();
-#endif
-}
-
-/* Insert an appropriate return pattern at the end of block BB.  This
-   also means updating block_for_insn appropriately.  */
+/* Insert gen_return at the end of block BB.  This also means updating
+   block_for_insn appropriately.  */
 
 static void
-emit_return_into_block (bool simple_p, basic_block bb)
+emit_return_into_block (basic_block bb)
 {
-  rtx jump;
-  jump = emit_jump_insn_after (gen_return_pattern (simple_p), BB_END (bb));
-  JUMP_LABEL (jump) = simple_p ? simple_return_rtx : ret_rtx;
+  emit_jump_insn_after (gen_return (), BB_END (bb));
 }
-#endif
-
-/* Return true if BB has any active insns.  */
-static bool
-bb_active_p (basic_block bb)
-{
-  rtx label;
-
-  /* Test whether there are active instructions in the last block.  */
-  label = BB_END (bb);
-  while (label && !LABEL_P (label))
-    {
-      if (active_insn_p (label))
-	break;
-      label = PREV_INSN (label);
-    }
-  return BB_HEAD (bb) != label || !LABEL_P (label);
-}
+#endif /* HAVE_return */
 
 /* Generate the prologue and epilogue RTL if the machine supports it.  Thread
    this into place with notes indicating where the prologue ends and where
-   the epilogue begins.  Update the basic block information when possible.
-
-   Notes on epilogue placement:
-   There are several kinds of edges to the exit block:
-   * a single fallthru edge from LAST_BB
-   * possibly, edges from blocks containing sibcalls
-   * possibly, fake edges from infinite loops
-
-   The epilogue is always emitted on the fallthru edge from the last basic
-   block in the function, LAST_BB, into the exit block.
-
-   If LAST_BB is empty except for a label, it is the target of every
-   other basic block in the function that ends in a return.  If a
-   target has a return or simple_return pattern (possibly with
-   conditional variants), these basic blocks can be changed so that a
-   return insn is emitted into them, and their target is adjusted to
-   the real exit block.
-
-   Notes on shrink wrapping: We implement a fairly conservative
-   version of shrink-wrapping rather than the textbook one.  We only
-   generate a single prologue and a single epilogue.  This is
-   sufficient to catch a number of interesting cases involving early
-   exits.
-
-   First, we identify the blocks that require the prologue to occur before
-   them.  These are the ones that modify a call-saved register, or reference
-   any of the stack or frame pointer registers.  To simplify things, we then
-   mark everything reachable from these blocks as also requiring a prologue.
-   This takes care of loops automatically, and avoids the need to examine
-   whether MEMs reference the frame, since it is sufficient to check for
-   occurrences of the stack or frame pointer.
-
-   We then compute the set of blocks for which the need for a prologue
-   is anticipatable (borrowing terminology from the shrink-wrapping
-   description in Muchnick's book).  These are the blocks which either
-   require a prologue themselves, or those that have only successors
-   where the prologue is anticipatable.  The prologue needs to be
-   inserted on all edges from BB1->BB2 where BB2 is in ANTIC and BB1
-   is not.  For the moment, we ensure that only one such edge exists.
-
-   The epilogue is placed as described above, but we make a
-   distinction between inserting return and simple_return patterns
-   when modifying other blocks that end in a return.  Blocks that end
-   in a sibcall omit the sibcall_epilogue if the block is not in
-   ANTIC.  */
+   the epilogue begins.  Update the basic block information when possible.  */
 
 static void
 thread_prologue_and_epilogue_insns (void)
 {
   int inserted = 0;
-  basic_block last_bb;
-  bool last_bb_active;
-#ifdef HAVE_simple_return
-  bool unconverted_simple_returns = false;
-  basic_block simple_return_block = NULL;
-#endif
-  rtx returnjump ATTRIBUTE_UNUSED;
-  rtx seq ATTRIBUTE_UNUSED, epilogue_end ATTRIBUTE_UNUSED;
-  rtx prologue_seq ATTRIBUTE_UNUSED, split_prologue_seq ATTRIBUTE_UNUSED;
-  edge entry_edge, orig_entry_edge, exit_fallthru_edge;
   edge e;
+#if defined (HAVE_sibcall_epilogue) || defined (HAVE_epilogue) || defined (HAVE_return) || defined (HAVE_prologue)
+  rtx seq;
+#endif
+#if defined (HAVE_epilogue) || defined(HAVE_return)
+  rtx epilogue_end = NULL_RTX;
+#endif
   edge_iterator ei;
-  bitmap_head bb_flags;
-
-  prologue_seq = NULL_RTX;
-
-  df_analyze ();
 
   rtl_profile_for_bb (ENTRY_BLOCK_PTR);
-
-  epilogue_end = NULL_RTX;
-  returnjump = NULL_RTX;
-
-  /* Can't deal with multiple successors of the entry block at the
-     moment.  Function should always have at least one entry
-     point.  */
-  gcc_assert (single_succ_p (ENTRY_BLOCK_PTR));
-  entry_edge = single_succ_edge (ENTRY_BLOCK_PTR);
-  orig_entry_edge = entry_edge;
-
-  exit_fallthru_edge = find_fallthru_edge (EXIT_BLOCK_PTR->preds);
-  if (exit_fallthru_edge != NULL)
-    {
-      last_bb = exit_fallthru_edge->src;
-      last_bb_active = bb_active_p (last_bb);
-    }
-  else
-    {
-      last_bb = NULL;
-      last_bb_active = false;
-    }
-
 #ifdef HAVE_prologue
   if (HAVE_prologue)
     {
-
-#ifdef _BUILD_C30_
-#ifdef PRE_PROLOGUE_FN
-      PRE_PROLOGUE_FN
-#endif
-#endif
       start_sequence ();
       seq = gen_prologue ();
       emit_insn (seq);
@@ -5332,174 +5045,19 @@ thread_prologue_and_epilogue_insns (void)
         emit_insn (gen_blockage ());
 #endif
 
-      prologue_seq = get_insns ();
+      seq = get_insns ();
       end_sequence ();
       set_insn_locators (seq, prologue_locator);
+
+      /* Can't deal with multiple successors of the entry block
+         at the moment.  Function should always have at least one
+         entry point.  */
+      gcc_assert (single_succ_p (ENTRY_BLOCK_PTR));
+
+      insert_insn_on_edge (seq, single_succ_edge (ENTRY_BLOCK_PTR));
+      inserted = 1;
     }
 #endif
-
-  bitmap_initialize (&bb_flags, &bitmap_default_obstack);
-
-#ifdef HAVE_simple_return
-  /* Try to perform a kind of shrink-wrapping, making sure the
-     prologue/epilogue is emitted only around those parts of the
-     function that require it.  */
-
-  if (flag_shrink_wrap && HAVE_simple_return && !flag_non_call_exceptions
-      && HAVE_prologue && !crtl->calls_eh_return)
-    {
-      HARD_REG_SET prologue_clobbered, live_on_edge;
-      rtx p_insn;
-      VEC(basic_block, heap) *vec;
-      basic_block bb;
-      bitmap_head bb_antic_flags;
-      bitmap_head bb_on_list;
-
-      prepare_shrink_wrap (entry_edge->dest);
-
-      /* That may have inserted instructions into the last block.  */
-      if (last_bb && !last_bb_active)
-	last_bb_active = bb_active_p (last_bb);
-
-      bitmap_initialize (&bb_antic_flags, &bitmap_default_obstack);
-      bitmap_initialize (&bb_on_list, &bitmap_default_obstack);
-
-      vec = VEC_alloc (basic_block, heap, n_basic_blocks);
-
-      FOR_EACH_BB (bb)
-	{
-	  rtx insn;
-	  FOR_BB_INSNS (bb, insn)
-	    {
-	      if (requires_stack_frame_p (insn))
-		{
-		  bitmap_set_bit (&bb_flags, bb->index);
-		  VEC_quick_push (basic_block, vec, bb);
-		  break;
-		}
-	    }
-	}
-
-      /* For every basic block that needs a prologue, mark all blocks
-	 reachable from it, so as to ensure they are also seen as
-	 requiring a prologue.  */
-      while (!VEC_empty (basic_block, vec))
-	{
-	  basic_block tmp_bb = VEC_pop (basic_block, vec);
-	  edge e;
-	  edge_iterator ei;
-	  FOR_EACH_EDGE (e, ei, tmp_bb->succs)
-	    {
-	      if (e->dest == EXIT_BLOCK_PTR
-		  || bitmap_bit_p (&bb_flags, e->dest->index))
-		continue;
-	      bitmap_set_bit (&bb_flags, e->dest->index);
-	      VEC_quick_push (basic_block, vec, e->dest);
-	    }
-	}
-      /* If the last basic block contains only a label, we'll be able
-	 to convert jumps to it to (potentially conditional) return
-	 insns later.  This means we don't necessarily need a prologue
-	 for paths reaching it.  */
-      if (last_bb)
-	{
-	  if (!last_bb_active)
-	    bitmap_clear_bit (&bb_flags, last_bb->index);
-	  else if (!bitmap_bit_p (&bb_flags, last_bb->index))
-	    goto fail_shrinkwrap;
-	}
-
-      /* Now walk backwards from every block that is marked as needing
-	 a prologue to compute the bb_antic_flags bitmap.  */
-      bitmap_copy (&bb_antic_flags, &bb_flags);
-      FOR_EACH_BB (bb)
-	{
-	  edge e;
-	  edge_iterator ei;
-	  if (!bitmap_bit_p (&bb_flags, bb->index))
-	    continue;
-	  FOR_EACH_EDGE (e, ei, bb->preds)
-	    if (!bitmap_bit_p (&bb_antic_flags, e->src->index))
-	      {
-		VEC_quick_push (basic_block, vec, e->src);
-		bitmap_set_bit (&bb_on_list, e->src->index);
-	      }
-	}
-      while (!VEC_empty (basic_block, vec))
-	{
-	  basic_block tmp_bb = VEC_pop (basic_block, vec);
-	  edge e;
-	  edge_iterator ei;
-	  bool all_set = true;
-	  
-	  bitmap_clear_bit (&bb_on_list, tmp_bb->index);
-	  FOR_EACH_EDGE (e, ei, tmp_bb->succs)
-	    {
-	      if (!bitmap_bit_p (&bb_antic_flags, e->dest->index))
-		{
-		  all_set = false;
-		  break;
-		}
-	    }
-	  if (all_set)
-	    {
-	      bitmap_set_bit (&bb_antic_flags, tmp_bb->index);
-	      FOR_EACH_EDGE (e, ei, tmp_bb->preds)
-		if (!bitmap_bit_p (&bb_antic_flags, e->src->index))
-		  {
-		    VEC_quick_push (basic_block, vec, e->src);
-		    bitmap_set_bit (&bb_on_list, e->src->index);
-		  }
-	    }
-	}
-      /* Find exactly one edge that leads to a block in ANTIC from
-	 a block that isn't.  */
-      if (!bitmap_bit_p (&bb_antic_flags, entry_edge->dest->index))
-	FOR_EACH_BB (bb)
-	  {
-	    if (!bitmap_bit_p (&bb_antic_flags, bb->index))
-	      continue;
-	    FOR_EACH_EDGE (e, ei, bb->preds)
-	      if (!bitmap_bit_p (&bb_antic_flags, e->src->index))
-		{
-		  if (entry_edge != orig_entry_edge)
-		    {
-		      entry_edge = orig_entry_edge;
-		      goto fail_shrinkwrap;
-		    }
-		  entry_edge = e;
-		}
-	  }
-
-      /* Test whether the prologue is known to clobber any register
-	 (other than FP or SP) which are live on the edge.  */
-      CLEAR_HARD_REG_SET (prologue_clobbered);
-      for (p_insn = prologue_seq; p_insn; p_insn = NEXT_INSN (p_insn))
-	if (NONDEBUG_INSN_P (p_insn))
-	  note_stores (PATTERN (p_insn), record_hard_reg_sets,
-		       &prologue_clobbered);
-      CLEAR_HARD_REG_BIT (prologue_clobbered, STACK_POINTER_REGNUM);
-      if (frame_pointer_needed)
-	CLEAR_HARD_REG_BIT (prologue_clobbered, HARD_FRAME_POINTER_REGNUM);
-
-      CLEAR_HARD_REG_SET (live_on_edge);
-      reg_set_to_hard_reg_set (&live_on_edge,
-			       df_get_live_in (entry_edge->dest));
-      if (hard_reg_set_intersect_p (live_on_edge, prologue_clobbered))
-	entry_edge = orig_entry_edge;
-
-    fail_shrinkwrap:
-      bitmap_clear (&bb_antic_flags);
-      bitmap_clear (&bb_on_list);
-      VEC_free (basic_block, heap, vec);
-    }
-#endif
-
-  if (prologue_seq != NULL_RTX)
-    {
-      insert_insn_on_edge (prologue_seq, entry_edge);
-      inserted = true;
-    }
 
   /* If the exit block has no non-fake predecessors, we don't need
      an epilogue.  */
@@ -5510,130 +5068,100 @@ thread_prologue_and_epilogue_insns (void)
     goto epilogue_done;
 
   rtl_profile_for_bb (EXIT_BLOCK_PTR);
-
 #ifdef HAVE_return
-  /* If we're allowed to generate a simple return instruction, then by
-     definition we don't need a full epilogue.  If the last basic
-     block before the exit block does not contain active instructions,
-     examine its predecessors and try to emit (conditional) return
-     instructions.  */
-  if (optimize && !last_bb_active
-      && (HAVE_return || entry_edge != orig_entry_edge))
+  if (optimize && HAVE_return)
     {
-      edge_iterator ei2;
-      int i;
-      basic_block bb;
+      /* If we're allowed to generate a simple return instruction,
+	 then by definition we don't need a full epilogue.  Examine
+	 the block that falls through to EXIT.   If it does not
+	 contain any code, examine its predecessors and try to
+	 emit (conditional) return instructions.  */
+
+      basic_block last;
       rtx label;
-      VEC(basic_block,heap) *src_bbs;
 
-      if (exit_fallthru_edge == NULL)
+      FOR_EACH_EDGE (e, ei, EXIT_BLOCK_PTR->preds)
+	if (e->flags & EDGE_FALLTHRU)
+	  break;
+      if (e == NULL)
 	goto epilogue_done;
-      label = BB_HEAD (last_bb);
+      last = e->src;
 
-      src_bbs = VEC_alloc (basic_block, heap, EDGE_COUNT (last_bb->preds));
-      FOR_EACH_EDGE (e, ei2, last_bb->preds)
-	if (e->src != ENTRY_BLOCK_PTR)
-	  VEC_quick_push (basic_block, src_bbs, e->src);
-
-      FOR_EACH_VEC_ELT (basic_block, src_bbs, i, bb)
+      /* Verify that there are no active instructions in the last block.  */
+      label = BB_END (last);
+      while (label && !LABEL_P (label))
 	{
-	  bool simple_p;
-	  rtx jump;
-	  e = find_edge (bb, last_bb);
+	  if (active_insn_p (label))
+	    break;
+	  label = PREV_INSN (label);
+	}
 
-	  jump = BB_END (bb);
+      if (BB_HEAD (last) == label && LABEL_P (label))
+	{
+	  edge_iterator ei2;
 
-#ifdef HAVE_simple_return
-	  simple_p = (entry_edge != orig_entry_edge
-		      ? !bitmap_bit_p (&bb_flags, bb->index) : false);
-#else
-	  simple_p = false;
-#endif
-
-	  if (!simple_p
-	      && (!HAVE_return || !JUMP_P (jump)
-		  || JUMP_LABEL (jump) != label))
-	    continue;
-
-	  /* If we have an unconditional jump, we can replace that
-	     with a simple return instruction.  */
-	  if (!JUMP_P (jump))
+	  for (ei2 = ei_start (last->preds); (e = ei_safe_edge (ei2)); )
 	    {
-	      emit_barrier_after (BB_END (bb));
-	      emit_return_into_block (simple_p, bb);
-	    }
-	  else if (simplejump_p (jump))
-	    {
-	      emit_return_into_block (simple_p, bb);
-	      delete_insn (jump);
-	    }
-	  else if (condjump_p (jump) && JUMP_LABEL (jump) != label)
-	    {
-	      basic_block new_bb;
-	      edge new_e;
+	      basic_block bb = e->src;
+	      rtx jump;
 
-	      gcc_assert (simple_p);
-	      new_bb = split_edge (e);
-	      emit_barrier_after (BB_END (new_bb));
-	      emit_return_into_block (simple_p, new_bb);
-#ifdef HAVE_simple_return
-	      simple_return_block = new_bb;
-#endif
-	      new_e = single_succ_edge (new_bb);
-	      redirect_edge_succ (new_e, EXIT_BLOCK_PTR);
-
-	      continue;
-	    }
-	  /* If we have a conditional jump branching to the last
-	     block, we can try to replace that with a conditional
-	     return instruction.  */
-	  else if (condjump_p (jump))
-	    {
-	      rtx dest;
-	      if (simple_p)
-		dest = simple_return_rtx;
-	      else
-		dest = ret_rtx;
-	      if (! redirect_jump (jump, dest, 0))
+	      if (bb == ENTRY_BLOCK_PTR)
 		{
-#ifdef HAVE_simple_return
-		  if (simple_p)
-		    unconverted_simple_returns = true;
-#endif
+		  ei_next (&ei2);
 		  continue;
 		}
 
-	      /* If this block has only one successor, it both jumps
-		 and falls through to the fallthru block, so we can't
-		 delete the edge.  */
-	      if (single_succ_p (bb))
-		continue;
-	    }
-	  else
-	    {
-#ifdef HAVE_simple_return
-	      if (simple_p)
-		unconverted_simple_returns = true;
-#endif
-	      continue;
+	      jump = BB_END (bb);
+	      if (!JUMP_P (jump) || JUMP_LABEL (jump) != label)
+		{
+		  ei_next (&ei2);
+		  continue;
+		}
+
+	      /* If we have an unconditional jump, we can replace that
+		 with a simple return instruction.  */
+	      if (simplejump_p (jump))
+		{
+		  emit_return_into_block (bb);
+		  delete_insn (jump);
+		}
+
+	      /* If we have a conditional jump, we can try to replace
+		 that with a conditional return instruction.  */
+	      else if (condjump_p (jump))
+		{
+		  if (! redirect_jump (jump, 0, 0))
+		    {
+		      ei_next (&ei2);
+		      continue;
+		    }
+
+		  /* If this block has only one successor, it both jumps
+		     and falls through to the fallthru block, so we can't
+		     delete the edge.  */
+		  if (single_succ_p (bb))
+		    {
+		      ei_next (&ei2);
+		      continue;
+		    }
+		}
+	      else
+		{
+		  ei_next (&ei2);
+		  continue;
+		}
+
+	      /* Fix up the CFG for the successful change we just made.  */
+	      redirect_edge_succ (e, EXIT_BLOCK_PTR);
 	    }
 
-	  /* Fix up the CFG for the successful change we just made.  */
-	  redirect_edge_succ (e, EXIT_BLOCK_PTR);
-	}
-      VEC_free (basic_block, heap, src_bbs);
-
-      if (HAVE_return)
-	{
 	  /* Emit a return insn for the exit fallthru block.  Whether
 	     this is still reachable will be determined later.  */
 
-	  emit_barrier_after (BB_END (last_bb));
-	  emit_return_into_block (false, last_bb);
-	  epilogue_end = BB_END (last_bb);
-	  if (JUMP_P (epilogue_end))
-	    JUMP_LABEL (epilogue_end) = ret_rtx;
-	  single_succ_edge (last_bb)->flags &= ~EDGE_FALLTHRU;
+	  emit_barrier_after (BB_END (last));
+	  emit_return_into_block (last);
+	  epilogue_end = BB_END (last);
+	  single_succ_edge (last)->flags &= ~EDGE_FALLTHRU;
 	  goto epilogue_done;
 	}
     }
@@ -5670,10 +5198,15 @@ thread_prologue_and_epilogue_insns (void)
     }
 #endif
 
-  /* If nothing falls through into the exit block, we don't need an
-     epilogue.  */
+  /* Find the edge that falls through to EXIT.  Other edges may exist
+     due to RETURN instructions, but those don't need epilogues.
+     There really shouldn't be a mixture -- either all should have
+     been converted or none, however...  */
 
-  if (exit_fallthru_edge == NULL)
+  FOR_EACH_EDGE (e, ei, EXIT_BLOCK_PTR->preds)
+    if (e->flags & EDGE_FALLTHRU)
+      break;
+  if (e == NULL)
     goto epilogue_done;
 
 #ifdef HAVE_epilogue
@@ -5689,36 +5222,25 @@ thread_prologue_and_epilogue_insns (void)
       set_insn_locators (seq, epilogue_locator);
 
       seq = get_insns ();
-      returnjump = get_last_insn ();
       end_sequence ();
 
-      insert_insn_on_edge (seq, exit_fallthru_edge);
+      insert_insn_on_edge (seq, e);
       inserted = 1;
-      if (JUMP_P (returnjump))
-	{
- 	  rtx pat = PATTERN (returnjump);
- 	  if (GET_CODE (pat) == PARALLEL)
-	    pat = XVECEXP (pat, 0, 0);
-	  if (ANY_RETURN_P (pat))
-	    JUMP_LABEL (returnjump) = pat;
-	  else
-	    JUMP_LABEL (returnjump) = ret_rtx;
-	}
     }
   else
 #endif
     {
       basic_block cur_bb;
 
-      if (! next_active_insn (BB_END (exit_fallthru_edge->src)))
+      if (! next_active_insn (BB_END (e->src)))
 	goto epilogue_done;
       /* We have a fall-through edge to the exit block, the source is not
-	 at the end of the function, and there will be an assembler epilogue
-	 at the end of the function.
-	 We can't use force_nonfallthru here, because that would try to
-	 use return.  Inserting a jump 'by hand' is extremely messy, so
+         at the end of the function, and there will be an assembler epilogue
+         at the end of the function.
+         We can't use force_nonfallthru here, because that would try to
+         use return.  Inserting a jump 'by hand' is extremely messy, so
 	 we take advantage of cfg_layout_finalize using
-	 fixup_fallthru_exit_predecessor.  */
+	fixup_fallthru_exit_predecessor.  */
       cfg_layout_initialize (0);
       FOR_EACH_BB (cur_bb)
 	if (cur_bb->index >= NUM_FIXED_BLOCKS
@@ -5727,7 +5249,6 @@ thread_prologue_and_epilogue_insns (void)
       cfg_layout_finalize ();
     }
 epilogue_done:
-
   default_rtl_profile ();
 
   if (inserted)
@@ -5744,93 +5265,33 @@ epilogue_done:
 	}
     }
 
-#ifdef HAVE_simple_return
-  /* If there were branches to an empty LAST_BB which we tried to
-     convert to conditional simple_returns, but couldn't for some
-     reason, create a block to hold a simple_return insn and redirect
-     those remaining edges.  */
-  if (unconverted_simple_returns)
-    {
-      edge_iterator ei2;
-      basic_block exit_pred = EXIT_BLOCK_PTR->prev_bb;
-
-      gcc_assert (entry_edge != orig_entry_edge);
-
-#ifdef HAVE_epilogue
-      if (simple_return_block == NULL && returnjump != NULL_RTX
-	  && JUMP_LABEL (returnjump) == simple_return_rtx)
-	{
-	  edge e = split_block (exit_fallthru_edge->src,
-				PREV_INSN (returnjump));
-	  simple_return_block = e->dest;
-	}
-#endif
-      if (simple_return_block == NULL)
-	{
-	  basic_block bb;
-	  rtx start;
-
-	  bb = create_basic_block (NULL, NULL, exit_pred);
-	  start = emit_jump_insn_after (gen_simple_return (),
-					BB_END (bb));
-	  JUMP_LABEL (start) = simple_return_rtx;
-	  emit_barrier_after (start);
-
-	  simple_return_block = bb;
-	  make_edge (bb, EXIT_BLOCK_PTR, 0);
-	}
-
-    restart_scan:
-      for (ei2 = ei_start (last_bb->preds); (e = ei_safe_edge (ei2)); )
-	{
-	  basic_block bb = e->src;
-
-	  if (bb != ENTRY_BLOCK_PTR
-	      && !bitmap_bit_p (&bb_flags, bb->index))
-	    {
-	      redirect_edge_and_branch_force (e, simple_return_block);
-	      goto restart_scan;
-	    }
-	  ei_next (&ei2);
-
-	}
-    }
-#endif
-
 #ifdef HAVE_sibcall_epilogue
   /* Emit sibling epilogues before any sibling call sites.  */
   for (ei = ei_start (EXIT_BLOCK_PTR->preds); (e = ei_safe_edge (ei)); )
     {
       basic_block bb = e->src;
       rtx insn = BB_END (bb);
-      rtx ep_seq;
 
       if (!CALL_P (insn)
-	  || ! SIBLING_CALL_P (insn)
-	  || (entry_edge != orig_entry_edge
-	      && !bitmap_bit_p (&bb_flags, bb->index)))
+	  || ! SIBLING_CALL_P (insn))
 	{
 	  ei_next (&ei);
 	  continue;
 	}
 
-      ep_seq = gen_sibcall_epilogue ();
-      if (ep_seq)
-	{
-	  start_sequence ();
-	  emit_note (NOTE_INSN_EPILOGUE_BEG);
-	  emit_insn (ep_seq);
-	  seq = get_insns ();
-	  end_sequence ();
+      start_sequence ();
+      emit_note (NOTE_INSN_EPILOGUE_BEG);
+      emit_insn (gen_sibcall_epilogue ());
+      seq = get_insns ();
+      end_sequence ();
 
-	  /* Retain a map of the epilogue insns.  Used in life analysis to
-	     avoid getting rid of sibcall epilogue insns.  Do this before we
-	     actually emit the sequence.  */
-	  record_insns (seq, NULL, &epilogue_insn_hash);
-	  set_insn_locators (seq, epilogue_locator);
+      /* Retain a map of the epilogue insns.  Used in life analysis to
+	 avoid getting rid of sibcall epilogue insns.  Do this before we
+	 actually emit the sequence.  */
+      record_insns (seq, NULL, &epilogue_insn_hash);
+      set_insn_locators (seq, epilogue_locator);
 
-	  emit_insn_before (seq, insn);
-	}
+      emit_insn_before (seq, insn);
       ei_next (&ei);
     }
 #endif
@@ -5854,8 +5315,6 @@ epilogue_done:
 	}
     }
 #endif
-
-  bitmap_clear (&bb_flags);
 
   /* Threading the prologue and epilogue changes the artificial refs
      in the entry and exit blocks.  */

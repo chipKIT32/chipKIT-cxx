@@ -2875,16 +2875,7 @@ pedantic_non_lvalue_loc (location_t loc, tree x)
 {
   if (pedantic_lvalues)
     return non_lvalue_loc (loc, x);
-
-  if (CAN_HAVE_LOCATION_P (x)
-      && EXPR_LOCATION (x) != loc
-      && !(TREE_CODE (x) == SAVE_EXPR
-	   || TREE_CODE (x) == TARGET_EXPR
-	   || TREE_CODE (x) == BIND_EXPR))
-    {
-      x = copy_node (x);
-      SET_EXPR_LOCATION (x, loc);
-    }
+  protected_set_expr_location (x, loc);
   return x;
 }
 
@@ -4751,9 +4742,9 @@ make_range (tree exp, int *pin_p, tree *plow, tree *phigh,
 	  n_high = range_binop (MINUS_EXPR, exp_type,
 				build_int_cst (exp_type, 0),
 				0, low, 0);
-	  if (n_high != 0 && TREE_OVERFLOW (n_high))
-	    break;
-	  goto normalize;
+	  low = n_low, high = n_high;
+	  exp = arg0;
+	  continue;
 
 	case BIT_NOT_EXPR:
 	  /* ~ X -> -X - 1  */
@@ -4787,7 +4778,6 @@ make_range (tree exp, int *pin_p, tree *plow, tree *phigh,
 	  if (TYPE_OVERFLOW_UNDEFINED (arg0_type))
 	    *strict_overflow_p = true;
 
-	normalize:
 	  /* Check for an unsigned range which has wrapped around the maximum
 	     value thus making n_high < n_low, and normalize it.  */
 	  if (n_low && n_high && tree_int_cst_lt (n_high, n_low))
@@ -12181,13 +12171,7 @@ fold_binary_loc (location_t loc,
 	  if (integer_pow2p (sval) && tree_int_cst_sgn (sval) > 0)
 	    {
 	      tree sh_cnt = TREE_OPERAND (arg1, 1);
-	      unsigned long pow2;
-
-	      if (TREE_INT_CST_LOW (sval))
-		pow2 = exact_log2 (TREE_INT_CST_LOW (sval));
-	      else
-		pow2 = exact_log2 (TREE_INT_CST_HIGH (sval))
-		       + HOST_BITS_PER_WIDE_INT;
+	      unsigned long pow2 = exact_log2 (TREE_INT_CST_LOW (sval));
 
 	      if (strict_overflow_p)
 		fold_overflow_warning (("assuming signed overflow does not "

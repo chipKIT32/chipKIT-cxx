@@ -1,6 +1,6 @@
 /* mpc_tanh -- hyperbolic tangent of a complex number.
 
-Copyright (C) INRIA, 2008, 2009
+Copyright (C) 2008, 2009 Philippe Th\'eveny.
 
 This file is part of the MPC Library.
 

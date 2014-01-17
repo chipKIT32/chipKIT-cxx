@@ -1,6 +1,6 @@
 /* wrapper functions to allocate, reallocate and free memory
 
-Copyright (C) INRIA, 2009
+Copyright (C) 2009 Andreas Enge, Philippe Th\'eveny, Paul Zimmermann
 
 This file is part of the MPC Library.
 

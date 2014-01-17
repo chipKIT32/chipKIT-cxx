@@ -2,8 +2,6 @@
 /* { dg-do run } */
 /* { dg-options "-mdspr2 -O2" } */
 
-#define NOMIPS16 __attribute__((nomips16))
-
 typedef signed char v4q7 __attribute__ ((vector_size(4)));
 typedef signed char v4i8 __attribute__ ((vector_size(4)));
 typedef short v2q15 __attribute__ ((vector_size(4)));

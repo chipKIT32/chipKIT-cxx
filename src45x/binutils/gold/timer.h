@@ -1,6 +1,6 @@
 // timer.h -- helper class for time accounting   -*- C++ -*-
 
-// Copyright 2009, 2010 Free Software Foundation, Inc.
+// Copyright 2009 Free Software Foundation, Inc.
 // Written by Rafael Avila de Espindola <espindola@google.com>.
 
 // This file is part of gold.
@@ -48,32 +48,21 @@ class Timer
   TimeStats
   get_elapsed_time();
 
-  // Return the stats for pass N (0 <= N <= 2).
-  TimeStats
-  get_pass_time(int n);
-
-  // Start counting the time.
+  // Start couting the time.
   void
   start();
-
-  // Record the time used by pass N (0 <= N <= 2).
-  void
-  stamp(int n);
 
  private:
   // This class cannot be copied.
   Timer(const Timer&);
   Timer& operator=(const Timer&);
 
-  // Write the current time information.
+  // Write the current time infortamion.
   static void
-  get_time(TimeStats* now);
+  get_time(TimeStats *now);
 
   // The time of the last call to start.
   TimeStats start_time_;
-
-  // Times for each pass.
-  TimeStats pass_times_[3];
 };
 
 }

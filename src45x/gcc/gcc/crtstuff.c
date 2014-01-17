@@ -49,28 +49,19 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 /* Target machine header files require this define. */
 #define IN_LIBGCC2
 
-#if !defined(CHAR_BIT)
-#define CHAR_BIT __CHAR_BIT__
-#endif
-
 /* FIXME: Including auto-host is incorrect, but until we have
    identified the set of defines that need to go into auto-target.h,
    this will have to do.  */
+#include "tconfig.h"
 #include "auto-host.h"
 #undef pid_t
 #undef rlim_t
 #undef ssize_t
 #undef vfork
-#include "tconfig.h"
 #include "tsystem.h"
 #include "coretypes.h"
 #include "tm.h"
 #include "unwind-dw2-fde.h"
-
-#if defined(TARGET_MCHP_PIC32MX) || defined(_BUILD_C32_)
-#undef TEXT_SECTION_ASM_OP
-#define TEXT_SECTION_ASM_OP "\t.section .text,code"
-#endif
 
 #ifndef FORCE_CODE_SECTION_ALIGN
 # define FORCE_CODE_SECTION_ALIGN

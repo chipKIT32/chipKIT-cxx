@@ -315,12 +315,10 @@ loop_has_blocks_with_irreducible_flag (struct loop *loop)
 /* Assigns the address of OBJ in TYPE to an ssa name, and returns this name.
    The assignment statement is placed on edge ENTRY.  DECL_ADDRESS maps decls
    to their addresses that can be reused.  The address of OBJ is known to
-   be invariant in the whole function.  Other needed statements are placed
-   right before GSI.  */
+   be invariant in the whole function.  */
 
 static tree
-take_address_of (tree obj, tree type, edge entry, htab_t decl_address,
-		 gimple_stmt_iterator *gsi)
+take_address_of (tree obj, tree type, edge entry, htab_t decl_address)
 {
   int uid;
   void **dslot;
@@ -342,8 +340,6 @@ take_address_of (tree obj, tree type, edge entry, htab_t decl_address,
   dslot = htab_find_slot_with_hash (decl_address, &ielt, uid, INSERT);
   if (!*dslot)
     {
-      if (gsi == NULL)
-	return NULL;
       addr = build_addr (*var_p, current_function_decl);
       bvar = create_tmp_var (TREE_TYPE (addr), get_name (*var_p));
       add_referenced_var (bvar);
@@ -360,22 +356,13 @@ take_address_of (tree obj, tree type, edge entry, htab_t decl_address,
   else
     name = ((struct int_tree_map *) *dslot)->to;
 
-  if (gsi == NULL)
-    {
-      if (var_p != &obj)
-	{
-	  *var_p = build1 (INDIRECT_REF, TREE_TYPE (*var_p), name);
-	  name = build_fold_addr_expr_with_type (obj, type);
-	}
-      return fold_convert (type, name);
-    }
   if (var_p != &obj)
     {
       *var_p = build1 (INDIRECT_REF, TREE_TYPE (*var_p), name);
       name = force_gimple_operand (build_addr (obj, current_function_decl),
 				   &stmts, true, NULL_TREE);
       if (!gimple_seq_empty_p (stmts))
-	gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	gsi_insert_seq_on_edge_immediate (entry, stmts);
     }
 
   if (TREE_TYPE (name) != type)
@@ -383,7 +370,7 @@ take_address_of (tree obj, tree type, edge entry, htab_t decl_address,
       name = force_gimple_operand (fold_convert (type, name), &stmts, true,
 				   NULL_TREE);
       if (!gimple_seq_empty_p (stmts))
-	gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	gsi_insert_seq_on_edge_immediate (entry, stmts);
     }
 
   return name;
@@ -445,9 +432,7 @@ struct elv_data
   struct walk_stmt_info info;
   edge entry;
   htab_t decl_address;
-  gimple_stmt_iterator *gsi;
   bool changed;
-  bool reset;
 };
 
 /* Eliminates references to local variables in *TP out of the single
@@ -471,14 +456,7 @@ eliminate_local_variables_1 (tree *tp, int *walk_subtrees, void *data)
 
       type = TREE_TYPE (t);
       addr_type = build_pointer_type (type);
-      addr = take_address_of (t, addr_type, dta->entry, dta->decl_address,
-			      dta->gsi);
-      if (dta->gsi == NULL && addr == NULL_TREE)
-	{
-	  dta->reset = true;
-	  return NULL_TREE;
-	}
-
+      addr = take_address_of (t, addr_type, dta->entry, dta->decl_address);
       *tp = build1 (INDIRECT_REF, TREE_TYPE (*tp), addr);
 
       dta->changed = true;
@@ -508,13 +486,7 @@ eliminate_local_variables_1 (tree *tp, int *walk_subtrees, void *data)
 	return NULL_TREE;
 
       addr_type = TREE_TYPE (t);
-      addr = take_address_of (obj, addr_type, dta->entry, dta->decl_address,
-			      dta->gsi);
-      if (dta->gsi == NULL && addr == NULL_TREE)
-	{
-	  dta->reset = true;
-	  return NULL_TREE;
-	}
+      addr = take_address_of (obj, addr_type, dta->entry, dta->decl_address);
       *tp = addr;
 
       dta->changed = true;
@@ -527,40 +499,27 @@ eliminate_local_variables_1 (tree *tp, int *walk_subtrees, void *data)
   return NULL_TREE;
 }
 
-/* Moves the references to local variables in STMT at *GSI out of the single
+/* Moves the references to local variables in STMT out of the single
    entry single exit region starting at ENTRY.  DECL_ADDRESS contains
    addresses of the references that had their address taken
    already.  */
 
 static void
-eliminate_local_variables_stmt (edge entry, gimple_stmt_iterator *gsi,
+eliminate_local_variables_stmt (edge entry, gimple stmt,
 				htab_t decl_address)
 {
   struct elv_data dta;
-  gimple stmt = gsi_stmt (*gsi);
 
   memset (&dta.info, '\0', sizeof (dta.info));
   dta.entry = entry;
   dta.decl_address = decl_address;
   dta.changed = false;
-  dta.reset = false;
 
   if (gimple_debug_bind_p (stmt))
-    {
-      dta.gsi = NULL;
-      walk_tree (gimple_debug_bind_get_value_ptr (stmt),
-		 eliminate_local_variables_1, &dta.info, NULL);
-      if (dta.reset)
-	{
-	  gimple_debug_bind_reset_value (stmt);
-	  dta.changed = true;
-	}
-    }
+    walk_tree (gimple_debug_bind_get_value_ptr (stmt),
+	       eliminate_local_variables_1, &dta.info, NULL);
   else
-    {
-      dta.gsi = gsi;
-      walk_gimple_op (stmt, eliminate_local_variables_1, &dta.info);
-    }
+    walk_gimple_op (stmt, eliminate_local_variables_1, &dta.info);
 
   if (dta.changed)
     update_stmt (stmt);
@@ -584,7 +543,6 @@ eliminate_local_variables (edge entry, edge exit)
   VEC (basic_block, heap) *body = VEC_alloc (basic_block, heap, 3);
   unsigned i;
   gimple_stmt_iterator gsi;
-  bool has_debug_stmt = false;
   htab_t decl_address = htab_create (10, int_tree_map_hash, int_tree_map_eq,
 				     free);
   basic_block entry_bb = entry->src;
@@ -595,17 +553,8 @@ eliminate_local_variables (edge entry, edge exit)
   for (i = 0; VEC_iterate (basic_block, body, i, bb); i++)
     if (bb != entry_bb && bb != exit_bb)
       for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
-	if (gimple_debug_bind_p (gsi_stmt (gsi)))
-	  has_debug_stmt = true;
-	else
-	  eliminate_local_variables_stmt (entry, &gsi, decl_address);
-
-  if (has_debug_stmt)
-    for (i = 0; VEC_iterate (basic_block, body, i, bb); i++)
-      if (bb != entry_bb && bb != exit_bb)
-	for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
-	  if (gimple_debug_bind_p (gsi_stmt (gsi)))
-	    eliminate_local_variables_stmt (entry, &gsi, decl_address);
+	eliminate_local_variables_stmt (entry, gsi_stmt (gsi),
+					decl_address);
 
   htab_delete (decl_address);
   VEC_free (basic_block, heap, body);

@@ -325,9 +325,8 @@ typedef struct GTY(()) machine_function
 #define BIGGEST_ALIGNMENT (2 * BITS_PER_WORD)
 
 /* Get around hp-ux assembler bug, and make strcpy of constants fast.  */
-#define CONSTANT_ALIGNMENT(EXP, ALIGN)		\
-  (TREE_CODE (EXP) == STRING_CST		\
-   && (ALIGN) < BITS_PER_WORD ? BITS_PER_WORD : (ALIGN))
+#define CONSTANT_ALIGNMENT(CODE, TYPEALIGN) \
+  ((TYPEALIGN) < 32 ? 32 : (TYPEALIGN))
 
 /* Make arrays of chars word-aligned for the same reasons.  */
 #define DATA_ALIGNMENT(TYPE, ALIGN)		\

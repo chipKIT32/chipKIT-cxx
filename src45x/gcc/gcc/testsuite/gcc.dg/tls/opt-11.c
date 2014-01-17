@@ -1,6 +1,5 @@
 /* { dg-do run } */
 /* { dg-require-effective-target tls_runtime } */
-/* { dg-add-options tls } */
 
 extern void abort (void);
 extern void *memset (void *, int, __SIZE_TYPE__);
