@@ -22,7 +22,7 @@
 #<http://www.gnu.org/licenses/>.
 
 # The targets for external use include:
-# all, doc, install, install-cross, install-cross-rest,
+# all, doc, install, install-cross, install-cross-rest, install-strip,
 # uninstall, TAGS, mostlyclean, clean, distclean, maintainer-clean.
 
 # This is the default target.
@@ -254,6 +254,8 @@ LN_S=@LN_S@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_SCRIPT = @INSTALL@
+install_sh = $(SHELL) $(srcdir)/../install-sh
+INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 MAKEINFO = @MAKEINFO@
 MAKEINFOFLAGS = --no-split
 TEXI2DVI = texi2dvi
@@ -390,7 +392,7 @@ AR_FOR_TARGET := $(shell \
     if [ "$(host)" = "$(target)" ] ; then \
       echo $(AR); \
     else \
-       t='$(program_transform_name)'; echo ar | sed -e $$t ; \
+       t='$(program_transform_name)'; echo ar | sed -e "$$t" ; \
     fi; \
   fi)
 AR_FLAGS_FOR_TARGET =
@@ -405,20 +407,20 @@ RANLIB_FOR_TARGET := $(shell \
     if [ "$(host)" = "$(target)" ] ; then \
       echo $(RANLIB); \
     else \
-       t='$(program_transform_name)'; echo ranlib | sed -e $$t ; \
+       t='$(program_transform_name)'; echo ranlib | sed -e "$$t" ; \
     fi; \
   fi)
 ORIGINAL_LD_FOR_TARGET = @ORIGINAL_LD_FOR_TARGET@
 ORIGINAL_NM_FOR_TARGET = @ORIGINAL_NM_FOR_TARGET@
 NM_FOR_TARGET = ./nm
 STRIP_FOR_TARGET := $(shell \
-  if [ -f $(objdir)/../binutils/strip ] ; then \
-    echo $(objdir)/../binutils/strip ; \
+  if [ -f $(objdir)/../binutils/strip-new ] ; then \
+    echo $(objdir)/../binutils/strip-new ; \
   else \
     if [ "$(host)" = "$(target)" ] ; then \
       echo strip; \
     else \
-       t='$(program_transform_name)'; echo strip | sed -e $$t ; \
+       t='$(program_transform_name)'; echo strip | sed -e "$$t" ; \
     fi; \
   fi)
 
@@ -1212,6 +1214,7 @@ OBJS-common = \
 	dse.o \
 	dwarf2asm.o \
 	dwarf2out.o \
+	ee.o \
 	ebitmap.o \
 	emit-rtl.o \
 	et-forest.o \
@@ -1367,6 +1370,7 @@ OBJS-common = \
 	tree-profile.o \
 	tree-scalar-evolution.o \
 	tree-sra.o \
+	tree-if-switch-conversion.o \
 	tree-switch-conversion.o \
 	tree-ssa-address.o \
 	tree-ssa-alias.o \
@@ -2288,7 +2292,7 @@ tree.o : tree.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(TREE_H) \
    langhooks.h $(REAL_H) gt-tree.h $(TREE_INLINE_H) tree-iterator.h \
    $(BASIC_BLOCK_H) $(TREE_FLOW_H) $(OBSTACK_H) pointer-set.h fixed-value.h \
    tree-pass.h $(LANGHOOKS_DEF_H) $(DIAGNOSTIC_H) $(CGRAPH_H) $(TIMEVAR_H) \
-   $(EXCEPT_H) debug.h intl.h
+   $(EXCEPT_H) debug.h intl.h ssaexpand.h
 tree-dump.o: tree-dump.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
    $(TREE_H) langhooks.h $(TOPLEV_H) $(SPLAY_TREE_H) $(TREE_DUMP_H) \
    tree-iterator.h $(TREE_PASS_H) $(DIAGNOSTIC_H) $(REAL_H) fixed-value.h
@@ -2995,6 +2999,11 @@ fwprop.o : fwprop.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) \
 web.o : web.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) \
    hard-reg-set.h $(FLAGS_H) $(BASIC_BLOCK_H) $(FUNCTION_H) output.h $(TOPLEV_H) \
    $(DF_H) $(OBSTACK_H) $(TIMEVAR_H) $(TREE_PASS_H)
+ee.o : ee.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) \
+   hard-reg-set.h $(FLAGS_H) $(BASIC_BLOCK_H) $(FUNCTION_H) output.h \
+   $(DF_H) $(TIMEVAR_H) tree-pass.h $(RECOG_H) $(EXPR_H) \
+   $(REGS_H) $(TREE_H) $(TM_P_H) insn-config.h $(INSN_ATTR_H) $(TOPLEV_H) $(DIAGNOSTIC_CORE_H) \
+   $(TARGET_H) $(OPTABS_H) insn-codes.h rtlhooks-def.h $(PARAMS_H) $(CGRAPH_H)
 gcse.o : gcse.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) $(RTL_H) \
    $(REGS_H) hard-reg-set.h $(FLAGS_H) $(REAL_H) insn-config.h $(GGC_H) \
    $(RECOG_H) $(EXPR_H) $(BASIC_BLOCK_H) $(FUNCTION_H) output.h $(TOPLEV_H) \
@@ -3033,11 +3042,16 @@ tree-sra.o : tree-sra.c $(CONFIG_H) $(SYSTEM_H) coretypes.h alloc-pool.h \
    $(TM_H) $(TREE_H) $(GIMPLE_H) $(CGRAPH_H) $(TREE_FLOW_H) $(IPA_PROP_H) \
    $(DIAGNOSTIC_H) statistics.h $(TREE_DUMP_H) $(TIMEVAR_H) $(PARAMS_H) \
    $(TARGET_H) $(FLAGS_H) $(EXPR_H) $(TREE_INLINE_H)
+tree-if-switch-conversion.o : tree-if-switch-conversion.c $(CONFIG_H) \
+    $(SYSTEM_H) $(TREE_H) $(TM_P_H) $(TREE_FLOW_H) $(DIAGNOSTIC_H) \
+    $(TREE_INLINE_H) $(TIMEVAR_H) $(TM_H) coretypes.h $(TREE_DUMP_H) \
+    $(GIMPLE_H) $(TREE_PASS_H) $(FLAGS_H) $(EXPR_H) $(BASIC_BLOCK_H) output.h \
+    $(GGC_H) $(OBSTACK_H) $(PARAMS_H) $(CPPLIB_H) $(PARAMS_H)
 tree-switch-conversion.o : tree-switch-conversion.c $(CONFIG_H) $(SYSTEM_H) \
     $(TREE_H) $(TM_P_H) $(TREE_FLOW_H) $(DIAGNOSTIC_H) $(TREE_INLINE_H) \
     $(TIMEVAR_H) $(TM_H) coretypes.h $(TREE_DUMP_H) $(GIMPLE_H) \
     $(TREE_PASS_H) $(FLAGS_H) $(EXPR_H) $(BASIC_BLOCK_H) output.h \
-    $(GGC_H) $(OBSTACK_H) $(PARAMS_H) $(CPPLIB_H) $(PARAMS_H)
+    $(GGC_H) $(OBSTACK_H) $(PARAMS_H) $(CPPLIB_H) $(PARAMS_H) langhooks.h
 tree-complex.o : tree-complex.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TREE_H) \
     $(TM_H) $(RTL_H) $(REAL_H) $(FLAGS_H) $(TREE_FLOW_H) $(GIMPLE_H) \
     tree-iterator.h $(TREE_PASS_H) tree-ssa-propagate.h $(DIAGNOSTIC_H)
@@ -3345,7 +3359,7 @@ cfglayout.o : cfglayout.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
 timevar.o : timevar.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
    $(TIMEVAR_H) $(FLAGS_H) intl.h $(TOPLEV_H) $(RTL_H) timevar.def
 regcprop.o : regcprop.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
-   $(RTL_H) insn-config.h $(BASIC_BLOCK_H) $(REGS_H) hard-reg-set.h \
+   $(RTL_H) insn-config.h $(BASIC_BLOCK_H) $(REGS_H) hard-reg-set.h dce.h \
    output.h $(RECOG_H) $(FUNCTION_H) $(OBSTACK_H) $(FLAGS_H) $(TM_P_H) \
    addresses.h reload.h $(TOPLEV_H) $(TIMEVAR_H) $(TREE_PASS_H) $(DF_H)
 regrename.o : regrename.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
@@ -3644,6 +3658,7 @@ GTFILES = $(CPP_ID_DATA_H) $(srcdir)/input.h $(srcdir)/coretypes.h \
   $(srcdir)/lto-symtab.c \
   $(srcdir)/tree-ssa-alias.h \
   $(srcdir)/ipa-prop.h \
+  $(srcdir)/final.c \
   @all_gtfiles@
 
 # Compute the list of GT header files from the corresponding C sources,
@@ -4279,7 +4294,7 @@ maintainer-clean:
 	-rm -f gcc.??s gcc.*aux
 	-rm -f $(gcc_docdir)/*.info $(gcc_docdir)/*.1 $(gcc_docdir)/*.7 $(gcc_docdir)/*.dvi $(gcc_docdir)/*.pdf
 #
-# Entry points `install' and `uninstall'.
+# Entry points `install', `install-strip', and `uninstall'.
 # Also use `install-collect2' to install collect2 when the config files don't.
 
 # Copy the compiler files into directories where they will be run.
@@ -4292,6 +4307,13 @@ install: install-common $(INSTALL_HEADERS) \
 ifeq ($(enable_plugin),yes)
 install: install-plugin
 endif
+
+install-strip: override INSTALL_PROGRAM = $(INSTALL_STRIP_PROGRAM)
+ifneq ($(STRIP),)
+install-strip: STRIPPROG = $(STRIP)
+export STRIPPROG
+endif
+install-strip: install
 
 # Handle cpp installation.
 install-cpp: installdirs cpp$(exeext)

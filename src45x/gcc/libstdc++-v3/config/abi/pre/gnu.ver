@@ -1150,6 +1150,14 @@ GLIBCXX_3.4.14 {
 
 } GLIBCXX_3.4.13;
 
+GLIBCXX_3.4.15 {
+
+    # targets using emutls
+    __emutls_v._ZSt11__once_call;
+    __emutls_v._ZSt15__once_callable;
+
+} GLIBCXX_3.4.14;
+
 
 # Symbols in the support library (libsupc++) have their own tag.
 CXXABI_1.3 {

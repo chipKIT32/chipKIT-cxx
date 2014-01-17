@@ -1,6 +1,6 @@
 /* mpc_acos -- arccosine of a complex number.
 
-Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -22,17 +22,15 @@ MA 02111-1307, USA. */
 #include <stdio.h>    /* for MPC_ASSERT */
 #include "mpc-impl.h"
 
-extern int set_pi_over_2 (mpfr_ptr rop, int s, mpfr_rnd_t rnd);
-
 int
 mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 {
   int inex_re, inex_im, inex;
-  mp_prec_t p_re, p_im, p;
+  mpfr_prec_t p_re, p_im, p;
   mpc_t z1;
   mpfr_t pi_over_2;
-  mp_exp_t e1, e2;
-  mp_rnd_t rnd_im;
+  mpfr_exp_t e1, e2;
+  mpfr_rnd_t rnd_im;
   mpc_rnd_t rnd1;
 
   inex_re = 0;
@@ -74,14 +72,14 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
                 }
               else
                 {
-                  
+
                   /* the real part of the result is 3*pi/4
                      a = o(pi)  error(a) < 1 ulp(a)
                      b = o(3*a) error(b) < 2 ulp(b)
                      c = b/4    exact
                      thus 1 bit is lost */
                   mpfr_t x;
-                  mp_prec_t prec;
+                  mpfr_prec_t prec;
                   int ok;
                   mpfr_init (x);
                   prec = mpfr_get_prec (MPC_RE (rop));
@@ -159,7 +157,7 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       if (!s_im)
         mpc_conj (rop, rop, MPC_RNDNN);
 
-      return MPC_INEX (inex_re, inex_im);      
+      return MPC_INEX (inex_re, inex_im);
     }
 
   /* pure imaginary argument */
@@ -170,7 +168,7 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
                              INV_RND (MPC_RND_IM (rnd)));
       mpc_conj (rop,rop, MPC_RNDNN);
 
-      return MPC_INEX (inex_re, inex_im);      
+      return MPC_INEX (inex_re, inex_im);
     }
 
   /* regular complex argument: acos(z) = Pi/2 - asin(z) */
@@ -188,16 +186,13 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
   else
     rnd_im = rnd_im == GMP_RNDU ? GMP_RNDD
       : rnd_im == GMP_RNDD ? GMP_RNDU
-#if MPFR_VERSION_MAJOR >= 3
-      : rnd_im == GMP_RNDA ? GMP_RNDZ
-#endif
-      : rnd_im;
+      : rnd_im; /* both RNDZ and RNDA map to themselves for -asin(z) */
   rnd1 = RNDC(GMP_RNDN, rnd_im);
   mpfr_init2 (pi_over_2, p);
   for (;;)
     {
       p += mpc_ceil_log2 (p) + 3;
-      
+
       mpfr_set_prec (MPC_RE(z1), p);
       mpfr_set_prec (pi_over_2, p);
 
@@ -209,19 +204,22 @@ mpc_acos (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       inex_im = MPC_INEX_IM(inex); /* inex_im is in {-1, 0, 1} */
       e2 = mpfr_get_exp (MPC_RE(z1));
       mpfr_sub (MPC_RE(z1), pi_over_2, MPC_RE(z1), GMP_RNDN);
-      /* the error on x=Re(z1) is bounded by 1/2 ulp(x) + 2^(e1-p-1) +
-         2^(e2-p-1) */
-      e1 = e1 >= e2 ? e1 + 1 : e2 + 1;
-      /* the error on x is bounded by 1/2 ulp(x) + 2^(e1-p-1) */
-      e1 -= mpfr_get_exp (MPC_RE(z1));
-      /* the error on x is bounded by 1/2 ulp(x) [1 + 2^e1] */
-      e1 = e1 <= 0 ? 0 : e1;
-      /* the error on x is bounded by 2^e1 * ulp(x) */
-      mpfr_neg (MPC_IM(z1), MPC_IM(z1), GMP_RNDN); /* exact */
-      inex_im = -inex_im;
-      if (mpfr_can_round (MPC_RE(z1), p - e1, GMP_RNDN, GMP_RNDZ,
-                          p_re + (MPC_RND_RE(rnd) == GMP_RNDN)))
-        break;
+      if (!mpfr_zero_p (MPC_RE(z1)))
+        {
+          /* the error on x=Re(z1) is bounded by 1/2 ulp(x) + 2^(e1-p-1) +
+             2^(e2-p-1) */
+          e1 = e1 >= e2 ? e1 + 1 : e2 + 1;
+          /* the error on x is bounded by 1/2 ulp(x) + 2^(e1-p-1) */
+          e1 -= mpfr_get_exp (MPC_RE(z1));
+          /* the error on x is bounded by 1/2 ulp(x) [1 + 2^e1] */
+          e1 = e1 <= 0 ? 0 : e1;
+          /* the error on x is bounded by 2^e1 * ulp(x) */
+          mpfr_neg (MPC_IM(z1), MPC_IM(z1), GMP_RNDN); /* exact */
+          inex_im = -inex_im;
+          if (mpfr_can_round (MPC_RE(z1), p - e1, GMP_RNDN, GMP_RNDZ,
+                              p_re + (MPC_RND_RE(rnd) == GMP_RNDN)))
+            break;
+        }
     }
   inex = mpc_set (rop, z1, rnd);
   inex_re = MPC_INEX_RE(inex);

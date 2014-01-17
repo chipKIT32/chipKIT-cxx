@@ -1075,6 +1075,15 @@ also define the hook to @code{default_promote_function_mode_always_promote}
 if you would like to apply the same rules given by @code{PROMOTE_MODE}.
 @end deftypefn
 
+@deftypefn {Target Hook} {enum machine_mode} TARGET_PROMOTE_LIBCALL_MODE (enum machine_mode @var{mode}, int *@var{punsignedp}, const_tree @var{funtype}, int @var{for_return})
+Like @code{TARGET_PROMOTE_FUNCTION_MODE}, but it is applied to libcall
+arguments only.  Define this if your target requires function
+arguments to be promoted to a larger mode and uses C compiled libcall
+routines (e.g. libdecnumber).
+
+The default is not promote arguments and return values.
+@end deftypefn
+
 @defmac PARM_BOUNDARY
 Normal alignment required for function parameters on the stack, in
 bits.  All stack parameters receive at least this much alignment
@@ -3304,6 +3313,12 @@ Define this if the return address of a particular stack frame is accessed
 from the frame pointer of the previous stack frame.
 @end defmac
 
+@defmac RETURN_ADDR_REGNUM
+If defined, a C expression whose value is the register number of the return
+address for the current function.  Targets that pass the return address on
+the stack should not define this macro.
+@end defmac
+
 @defmac INCOMING_RETURN_ADDR_RTX
 A C expression whose value is RTL representing the location of the
 incoming return address at the beginning of any function, before the
@@ -4934,6 +4949,10 @@ during PIC compilation.  The hook is used to enforce these restrictions,
 as the @code{sibcall} md pattern can not fail, or fall over to a
 ``normal'' call.  The criteria for successful sibling call optimization
 may vary greatly between different architectures.
+@end deftypefn
+
+@deftypefn {Target Hook} int TARGET_ALIGN_INSNS (void)
+Return the log2 of the instruction alignment in bytes.
 @end deftypefn
 
 @deftypefn {Target Hook} void TARGET_EXTRA_LIVE_ON_ENTRY (bitmap @var{regs})

@@ -1,6 +1,6 @@
 /* mpc_neg -- Negate a complex number.
 
-Copyright (C) 2002, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2009
 
 This file is part of the MPC Library.
 

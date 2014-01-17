@@ -1,6 +1,6 @@
 /* mpc_mul_fr -- Multiply a complex number by a floating-point number.
 
-Copyright (C) 2002, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2008, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -28,8 +28,8 @@ mpc_mul_fr (mpc_ptr a, mpc_srcptr b, mpfr_srcptr c, mpc_rnd_t rnd)
   mpfr_t real;
 
   if (c == MPC_RE (a))
-    /* We have to use temporary variable. */
-    mpfr_init2 (real, MPFR_PREC (MPC_RE (a)));
+    /* We have to use a temporary variable. */
+    mpfr_init2 (real, MPC_PREC_RE (a));
   else
     real [0] = MPC_RE (a) [0];
 

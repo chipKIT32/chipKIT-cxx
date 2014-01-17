@@ -1,13 +1,13 @@
 /* mpfr_asin -- arc-sinus of a floating-point number
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library, and was contributed by Mathieu Dutour.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,19 +16,19 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "mpfr-impl.h"
 
 int
-mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mp_rnd_t rnd_mode)
+mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mpfr_rnd_t rnd_mode)
 {
   mpfr_t xp;
   int compared, inexact;
-  mp_prec_t prec;
-  mp_exp_t xp_exp;
+  mpfr_prec_t prec;
+  mpfr_exp_t xp_exp;
   MPFR_SAVE_EXPO_DECL (expo);
   MPFR_ZIV_DECL (loop);
 
@@ -58,16 +58,19 @@ mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mp_rnd_t rnd_mode)
 
   /* Set x_p=|x| (x is a normal number) */
   mpfr_init2 (xp, MPFR_PREC (x));
-  inexact = mpfr_abs (xp, x, GMP_RNDN);
+  inexact = mpfr_abs (xp, x, MPFR_RNDN);
   MPFR_ASSERTD (inexact == 0);
 
   compared = mpfr_cmp_ui (xp, 1);
+
+  MPFR_SAVE_EXPO_MARK (expo);
 
   if (MPFR_UNLIKELY (compared >= 0))
     {
       mpfr_clear (xp);
       if (compared > 0)                  /* asin(x) = NaN for |x| > 1 */
         {
+          MPFR_SAVE_EXPO_FREE (expo);
           MPFR_SET_NAN (asin);
           MPFR_RET_NAN;
         }
@@ -80,15 +83,13 @@ mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mp_rnd_t rnd_mode)
               inexact = -mpfr_const_pi (asin, MPFR_INVERT_RND(rnd_mode));
               MPFR_CHANGE_SIGN (asin);
             }
-          mpfr_div_2ui (asin, asin, 1, rnd_mode); /* May underflow */
-          return inexact;
+          mpfr_div_2ui (asin, asin, 1, rnd_mode);
         }
     }
-
-  MPFR_SAVE_EXPO_MARK (expo);
-
+  else
+    {
   /* Compute exponent of 1 - ABS(x) */
-  mpfr_ui_sub (xp, 1, xp, GMP_RNDD);
+  mpfr_ui_sub (xp, 1, xp, MPFR_RNDD);
   MPFR_ASSERTD (MPFR_GET_EXP (xp) <= 0);
   MPFR_ASSERTD (MPFR_GET_EXP (x) <= 0);
   xp_exp = 2 - MPFR_GET_EXP (xp);
@@ -101,11 +102,11 @@ mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mp_rnd_t rnd_mode)
   for (;;)
     {
       mpfr_set_prec (xp, prec);
-      mpfr_sqr (xp, x, GMP_RNDN);
-      mpfr_ui_sub (xp, 1, xp, GMP_RNDN);
-      mpfr_sqrt (xp, xp, GMP_RNDN);
-      mpfr_div (xp, x, xp, GMP_RNDN);
-      mpfr_atan (xp, xp, GMP_RNDN);
+      mpfr_sqr (xp, x, MPFR_RNDN);
+      mpfr_ui_sub (xp, 1, xp, MPFR_RNDN);
+      mpfr_sqrt (xp, xp, MPFR_RNDN);
+      mpfr_div (xp, x, xp, MPFR_RNDN);
+      mpfr_atan (xp, xp, MPFR_RNDN);
       if (MPFR_LIKELY (MPFR_CAN_ROUND (xp, prec - xp_exp,
                                        MPFR_PREC (asin), rnd_mode)))
         break;
@@ -115,6 +116,7 @@ mpfr_asin (mpfr_ptr asin, mpfr_srcptr x, mp_rnd_t rnd_mode)
   inexact = mpfr_set (asin, xp, rnd_mode);
 
   mpfr_clear (xp);
+    }
 
   MPFR_SAVE_EXPO_FREE (expo);
   return mpfr_check_range (asin, inexact, rnd_mode);

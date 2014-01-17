@@ -46,7 +46,7 @@
 #endif
 #endif
 
-#ifdef __ARM_ARCH_6M__
+#if defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6SM__)
 
 /* r0 points to a 16-word block.  Upload these values to the actual core
    state.  */

@@ -2061,7 +2061,8 @@ s390_legitimate_address_without_index_p (rtx op)
 
 /* Return true if ADDR is of kind symbol_ref or symbol_ref + const_int
    and return these parts in SYMREF and ADDEND.  You can pass NULL in
-   SYMREF and/or ADDEND if you are not interested in these values.  */
+   SYMREF and/or ADDEND if you are not interested in these values.
+   Literal pool references are *not* considered symbol references.  */
 
 static bool
 s390_symref_operand_p (rtx addr, rtx *symref, HOST_WIDE_INT *addend)
@@ -2074,6 +2075,7 @@ s390_symref_operand_p (rtx addr, rtx *symref, HOST_WIDE_INT *addend)
   if (GET_CODE (addr) == PLUS)
     {
       if (GET_CODE (XEXP (addr, 0)) == SYMBOL_REF
+	  && !CONSTANT_POOL_ADDRESS_P (XEXP (addr, 0))
 	  && CONST_INT_P (XEXP (addr, 1)))
 	{
 	  tmpaddend = INTVAL (XEXP (addr, 1));
@@ -2083,7 +2085,7 @@ s390_symref_operand_p (rtx addr, rtx *symref, HOST_WIDE_INT *addend)
 	return false;
     }
   else
-    if (GET_CODE (addr) != SYMBOL_REF)
+    if (GET_CODE (addr) != SYMBOL_REF || CONSTANT_POOL_ADDRESS_P (addr))
 	return false;
 
   if (symref)
@@ -2109,12 +2111,14 @@ s390_check_qrst_address (char c, rtx op, bool lit_pool_ok)
   /* This check makes sure that no symbolic address (except literal
      pool references) are accepted by the R or T constraints.  */
   if (s390_symref_operand_p (op, NULL, NULL))
+    return 0;
+
+  /* Ensure literal pool references are only accepted if LIT_POOL_OK.  */
+  if (!lit_pool_ok)
     {
-      if (!lit_pool_ok)
-	return 0;
       if (!s390_decompose_address (op, &addr))
 	return 0;
-      if (!addr.literal_pool)
+      if (addr.literal_pool)
 	return 0;
       decomposed = true;
     }
@@ -2780,6 +2784,12 @@ legitimate_reload_constant_p (rtx op)
       && larl_operand (op, VOIDmode))
     return true;
 
+  /* Accept floating-point zero operands that fit into a single GPR.  */
+  if (GET_CODE (op) == CONST_DOUBLE
+      && s390_float_const_zero_p (op)
+      && GET_MODE_SIZE (GET_MODE (op)) <= UNITS_PER_WORD)
+    return true;
+
   /* Accept double-word operands that can be split.  */
   if (GET_CODE (op) == CONST_INT
       && trunc_int_for_mode (INTVAL (op), word_mode) != INTVAL (op))
@@ -2803,13 +2813,16 @@ s390_preferred_reload_class (rtx op, enum reg_class rclass)
 {
   switch (GET_CODE (op))
     {
-      /* Constants we cannot reload must be forced into the
-	 literal pool.  */
-
+      /* Constants we cannot reload into general registers
+	 must be forced into the literal pool.  */
       case CONST_DOUBLE:
       case CONST_INT:
-	if (legitimate_reload_constant_p (op))
-	  return rclass;
+	if (reg_class_subset_p (GENERAL_REGS, rclass)
+	    && legitimate_reload_constant_p (op))
+	  return GENERAL_REGS;
+	else if (reg_class_subset_p (ADDR_REGS, rclass)
+		 && legitimate_reload_constant_p (op))
+	  return ADDR_REGS;
 	else
 	  return NO_REGS;
 
@@ -8157,7 +8170,7 @@ s390_emit_epilogue (bool sibcall)
 
       p = rtvec_alloc (2);
 
-      RTVEC_ELT (p, 0) = gen_rtx_RETURN (VOIDmode);
+      RTVEC_ELT (p, 0) = ret_rtx;
       RTVEC_ELT (p, 1) = gen_rtx_USE (VOIDmode, return_reg);
       emit_jump_insn (gen_rtx_PARALLEL (VOIDmode, p));
     }
@@ -8404,6 +8417,20 @@ s390_promote_function_mode (const_tree type, enum machine_mode mode,
 	*punsignedp = POINTERS_EXTEND_UNSIGNED;
       return Pmode;
     }
+
+  return mode;
+}
+
+/* Libcall arguments and return values are promoted to word size.  */
+
+static enum machine_mode
+s390_promote_libcall_mode (enum machine_mode mode,
+			   int *punsignedp ATTRIBUTE_UNUSED,
+			   const_tree fntype ATTRIBUTE_UNUSED,
+			   int for_return ATTRIBUTE_UNUSED)
+{
+  if (GET_MODE_SIZE (mode) < UNITS_PER_LONG)
+    return Pmode;
 
   return mode;
 }
@@ -10292,6 +10319,9 @@ s390_sched_init (FILE *file ATTRIBUTE_UNUSED,
 
 #undef TARGET_PROMOTE_FUNCTION_MODE
 #define TARGET_PROMOTE_FUNCTION_MODE s390_promote_function_mode
+#undef TARGET_PROMOTE_LIBCALL_MODE
+#define TARGET_PROMOTE_LIBCALL_MODE s390_promote_libcall_mode
+
 #undef TARGET_PASS_BY_REFERENCE
 #define TARGET_PASS_BY_REFERENCE s390_pass_by_reference
 

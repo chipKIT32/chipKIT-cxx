@@ -1,7 +1,6 @@
 /* mpc_proj -- projection of a complex number onto the Riemann sphere.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny
-              2009 Andreas Enge
+Copyright (C) INRIA, 2008, 2009
 
 This file is part of the MPC Library.
 

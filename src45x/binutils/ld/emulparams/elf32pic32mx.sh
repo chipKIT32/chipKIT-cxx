@@ -34,6 +34,14 @@ GENERATE_SHLIB_SCRIPT=no
 GENERATE_PIE_SCRIPT=no
 SHLIB_TEXT_START_ADDR=0
 
+INITIAL_READONLY_SECTIONS=
+if test -z "${CREATE_SHLIB}"; then
+  INITIAL_READONLY_SECTIONS=".interp       ${RELOCATING-0} : { *(.interp) }"
+fi
+INITIAL_READONLY_SECTIONS="${INITIAL_READONLY_SECTIONS}
+  .reginfo      ${RELOCATING-0} : { *(.reginfo) }
+"
+
 # Unlike most targets, the MIPS backend puts all dynamic relocations
 # in a single dynobj section, which it also calls ".rel.dyn".  It does
 # this so that it can easily sort all dynamic relocations before the
@@ -55,12 +63,14 @@ EXECUTABLE_SYMBOLS="
  */
 EXTERN (_min_stack_size _min_heap_size)
 PROVIDE(_min_stack_size = 0x400) ;
-PROVIDE(_min_heap_size = 0) ;
+/* PROVIDE(_min_heap_size = 0) ; Defined on the command line */
 "
 
 # These files will always be included in the link
 INPUT_FILES="
 INCLUDE procdefs.ld
+PROVIDE(_DBG_CODE_ADDR = 0xBFC02000) ;
+PROVIDE(_DBG_CODE_SIZE = 0xFF0) ;
 "
 # Initial section should go before .text
 unset INIT_AFTER_TEXT
@@ -96,6 +106,7 @@ BOOT_SECTION="
   .reset _RESET_ADDR :
   {
     KEEP(*(.reset))
+    KEEP(*(.reset.startup))
   } > kseg1_boot_mem
 
   .bev_excpt _BEV_EXCPT_ADDR :
@@ -110,7 +121,7 @@ BOOT_SECTION="
 
   .dbg_code _DBG_CODE_ADDR (NOLOAD) :
   {
-    . += (DEFINED (_DEBUGGER) ? 0xFF0 : 0x0);
+    . += (DEFINED (_DEBUGGER) ? _DBG_CODE_SIZE : 0x0);
   } > debug_exec_mem
 
   .app_excpt _GEN_EXCPT_ADDR :
@@ -502,6 +513,9 @@ BOOT_SECTION="
   } > exception_mem
   ASSERT (_vector_spacing == 0 || SIZEOF(.vector_63) <= (_vector_spacing << 5), \"function at exception vector 63 too large\")
 
+  /*  Starting with C32 v2.00, the startup code is in the .reset.startup section.
+   *  Keep this here for backwards compatibility.
+   */
   .startup ORIGIN(kseg0_boot_mem) :
   {
     KEEP(*(.startup))
@@ -570,11 +584,11 @@ OTHER_SDATA_SECTIONS="
   .lit8         ${RELOCATING-0} :
   {
     *(.lit8)
-  } >${DATA_MEMORY_REGION} AT>${CODE_MEMORY_REGION}
+  } >${DATA_MEMORY_REGION}
   .lit4         ${RELOCATING-0} :
   {
     *(.lit4)
-  } >${DATA_MEMORY_REGION} AT>${CODE_MEMORY_REGION}
+  } >${DATA_MEMORY_REGION}
   . = ALIGN (4) ;
   _data_end = . ;
 "
@@ -592,58 +606,34 @@ BSS_END_SYMBOLS="
 # Other output sections to include in the linker script before the DEBUG
 # sections
 OTHER_SECTIONS="
-  /* Heap allocating takes a chunk of memory following BSS */
-  .heap ALIGN(8) :
-  {
-    _heap = . ;
-    . += _min_heap_size ;
-    . = ALIGN(8);
-  } >${DATA_MEMORY_REGION}
-
-  /* Stack allocation follows the heap */
-  .stack ALIGN(8) :
-  {
-    _splim = . ;
-    _SPLIM = . ;
-    . += _min_stack_size ;
-    . = ALIGN(8);
-  } >${DATA_MEMORY_REGION}
+  /* Starting with C32 v2.00, the heap and stack are dynamically
+   * allocated by the linker.
+   */
 
   /*
    * RAM functions go at the end of our stack and heap allocation.
    * Alignment of 2K required by the boundary register (BMXDKPBA).
+   *
+   * RAM functions are now allocated by the linker. The linker generates
+   * _ramfunc_begin and _bmxdkpba_address symbols depending on the
+   * location of RAM functions.
    */
-  .ramfunc ALIGN(2K) :
-  {
-    _ramfunc_begin = . ;
-    *(.ramfunc ${RELOCATING+ .ramfunc.*})
-    . = ALIGN(4) ;
-    _ramfunc_end = . ;
-  } >${DATA_MEMORY_REGION} AT>${CODE_MEMORY_REGION}
-  _ramfunc_image_begin = LOADADDR(.ramfunc) ;
-  _ramfunc_length = SIZEOF(.ramfunc) ;
-  _bmxdkpba_address = _ramfunc_begin - ORIGIN(${DATA_MEMORY_REGION}) ;
+
   _bmxdudba_address = LENGTH(${DATA_MEMORY_REGION}) ;
   _bmxdupba_address = LENGTH(${DATA_MEMORY_REGION}) ;
 
-  /*
-   * The actual top of stack should include the gap between the stack
-   * section and the beginning of the .ramfunc section caused by the
-   * alignment of the .ramfunc section minus 2 words.  If RAM functions
-   * do not exist, then the top of the stack should point to the end of
-   * the data memory.
-   */
-  _stack = (_ramfunc_length > 0)
-         ? _ramfunc_begin - 8
-         : ORIGIN(${DATA_MEMORY_REGION}) + LENGTH(${DATA_MEMORY_REGION}) ;
-  ASSERT((_min_stack_size + _min_heap_size) <= (_stack - _heap),
-    \"Not enough space to allocate both stack and heap.  Reduce heap and/or stack size.\")
-
     /* The .pdr section belongs in the absolute section */
     /DISCARD/ : { *(.pdr) }
-    /* We don't load .reginfo onto the target, so don't locate it
-     * in real memory 
-     */
-    /DISCARD/ : { *(.reginfo) }
+
+  .gptab.sdata : { *(.gptab.data) *(.gptab.sdata) }
+  .gptab.sbss : { *(.gptab.bss) *(.gptab.sbss) }
+  .mdebug.abi32 : { KEEP(*(.mdebug.abi32)) }
+  .mdebug.abiN32 : { KEEP(*(.mdebug.abiN32)) }
+  .mdebug.abi64 : { KEEP(*(.mdebug.abi64)) }
+  .mdebug.abiO64 : { KEEP(*(.mdebug.abiO64)) }
+  .mdebug.eabi32 : { KEEP(*(.mdebug.eabi32)) }
+  .mdebug.eabi64 : { KEEP(*(.mdebug.eabi64)) }
+  .gcc_compiled_long32 : { KEEP(*(.gcc_compiled_long32)) }
+  .gcc_compiled_long64 : { KEEP(*(.gcc_compiled_long64)) }
 "
 

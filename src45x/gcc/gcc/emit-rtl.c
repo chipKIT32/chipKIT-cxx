@@ -1548,6 +1548,12 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
   unsigned int align = MEM_ALIGN (ref);
   HOST_WIDE_INT apply_bitpos = 0;
   tree type;
+#if defined(_BUILD_C30_) && 1
+  /* I don't think the adress space of the ref is the address space of
+     the final type... its the address space of the ref... 
+     Just like some of the other memory settings we make. (CW) */
+  addr_space_t as;
+#endif
 
   /* It can happen that type_for_mode was given a mode for which there
      is no language-level type.  In which case it returns NULL, which
@@ -1559,6 +1565,9 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
   if (type == error_mark_node)
     return;
 
+#if defined(_BUILD_C30_) && 1
+  as = TYPE_ADDR_SPACE(type);
+#endif
   /* If we have already set DECL_RTL = ref, get_alias_set will get the
      wrong answer, as it assumes that DECL_RTL already has the right alias
      info.  Callers should not set DECL_RTL until after the call to
@@ -1633,6 +1642,9 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
 	    MEM_NOTRAP_P (ref) = !DECL_WEAK (base);
 	  else
 	    MEM_NOTRAP_P (ref) = 1;
+#if defined(_BUILD_C30_) && 1
+          as = TYPE_ADDR_SPACE(TREE_TYPE(base));
+#endif
 	}
       else
 	MEM_NOTRAP_P (ref) = TREE_THIS_NOTRAP (base);
@@ -1669,6 +1681,9 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
 		  ? GEN_INT (tree_low_cst (DECL_SIZE_UNIT (t), 1)) : 0);
 	  align = DECL_ALIGN (t);
 	  align_computed = true;
+#if defined(_BUILD_C30_) && 1
+          as = TYPE_ADDR_SPACE(TREE_TYPE(base));
+#endif
 	}
 
       /* If this is a constant, we know the alignment.  */
@@ -1731,6 +1746,10 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
 	    {
 	      expr = t2;
 	      offset = NULL;
+#if defined(_BUILD_C30_) && 0
+/* moved into make_decl_rtl */
+              as = TYPE_ADDR_SPACE(TREE_TYPE(t2));
+#endif
 	      if (host_integerp (off_tree, 1))
 		{
 		  HOST_WIDE_INT ioff = tree_low_cst (off_tree, 1);
@@ -1801,9 +1820,14 @@ set_mem_attributes_minus_bitpos (rtx ref, tree t, int objectp,
     }
 
   /* Now set the attributes we computed above.  */
+#if defined(_BUILD_C30_) && 1
+  MEM_ATTRS (ref)
+    = get_mem_attrs (alias, expr, offset, size, align, as, GET_MODE (ref));
+#else
   MEM_ATTRS (ref)
     = get_mem_attrs (alias, expr, offset, size, align,
 		     TYPE_ADDR_SPACE (type), GET_MODE (ref));
+#endif
 
   /* If this is already known to be a scalar or aggregate, we are done.  */
   if (MEM_IN_STRUCT_P (ref) || MEM_SCALAR_P (ref))
@@ -2432,6 +2456,8 @@ verify_rtx_sharing (rtx orig, rtx insn)
     case CODE_LABEL:
     case PC:
     case CC0:
+    case RETURN:
+    case SIMPLE_RETURN:
     case SCRATCH:
       return;
       /* SCRATCH must be shared because they represent distinct values.  */
@@ -2530,6 +2556,8 @@ verify_rtl_sharing (void)
 	    for (i = 0; i < XVECLEN (sequence, 0); i++)
 	      {
 		q = XVECEXP (sequence, 0, i);
+		if (LABEL_P (q) || DELETED_NOTE_P (q))
+		  continue;
 		gcc_assert (INSN_P (q));
 		reset_used_flags (PATTERN (q));
 		reset_used_flags (REG_NOTES (q));
@@ -3167,6 +3195,38 @@ prev_nondebug_insn (rtx insn)
   return insn;
 }
 
+/* Return the next insn after INSN that is not a NOTE nor DEBUG_INSN.
+   This routine does not look inside SEQUENCEs.  */
+
+rtx
+next_nonnote_nondebug_insn (rtx insn)
+{
+  while (insn)
+    {
+      insn = NEXT_INSN (insn);
+      if (insn == 0 || (!NOTE_P (insn) && !DEBUG_INSN_P (insn)))
+	break;
+    }
+
+  return insn;
+}
+
+/* Return the previous insn before INSN that is not a NOTE nor DEBUG_INSN.
+   This routine does not look inside SEQUENCEs.  */
+
+rtx
+prev_nonnote_nondebug_insn (rtx insn)
+{
+  while (insn)
+    {
+      insn = PREV_INSN (insn);
+      if (insn == 0 || (!NOTE_P (insn) && !DEBUG_INSN_P (insn)))
+	break;
+    }
+
+  return insn;
+}
+
 /* Return the next INSN, CALL_INSN or JUMP_INSN after INSN;
    or 0, if there is none.  This routine does not look inside
    SEQUENCEs.  */
@@ -3291,13 +3351,16 @@ prev_label (rtx insn)
   return insn;
 }
 
-/* Return the last label to mark the same position as LABEL.  Return null
-   if LABEL itself is null.  */
+/* Return the last label to mark the same position as LABEL.  Return LABEL
+   itself if it is null or any return rtx.  */
 
 rtx
 skip_consecutive_labels (rtx label)
 {
   rtx insn;
+
+  if (label && ANY_RETURN_P (label))
+    return label;
 
   for (insn = label; insn != 0 && !INSN_P (insn); insn = NEXT_INSN (insn))
     if (LABEL_P (insn))
@@ -3631,6 +3694,12 @@ make_insn_raw (rtx pattern)
       warning (0, "ICE: emit_insn used where emit_jump_insn needed:\n");
       debug_rtx (insn);
     }
+#endif
+
+#ifdef _BUILD_C30_
+  /* make it so that insn can be printed safely */
+  NEXT_INSN(insn) = 0;
+  PREV_INSN(insn) = 0;
 #endif
 
   return insn;
@@ -5177,7 +5246,7 @@ classify_insn (rtx x)
     return CODE_LABEL;
   if (GET_CODE (x) == CALL)
     return CALL_INSN;
-  if (GET_CODE (x) == RETURN)
+  if (GET_CODE (x) == RETURN || GET_CODE (x) == SIMPLE_RETURN)
     return JUMP_INSN;
   if (GET_CODE (x) == SET)
     {
@@ -5683,8 +5752,10 @@ init_emit_regs (void)
   init_reg_modes_target ();
 
   /* Assign register numbers to the globally defined register rtx.  */
-  pc_rtx = gen_rtx_PC (VOIDmode);
-  cc0_rtx = gen_rtx_CC0 (VOIDmode);
+  pc_rtx = gen_rtx_fmt_ (PC, VOIDmode);
+  ret_rtx = gen_rtx_fmt_ (RETURN, VOIDmode);
+  simple_return_rtx = gen_rtx_fmt_ (SIMPLE_RETURN, VOIDmode);
+  cc0_rtx = gen_rtx_fmt_ (CC0, VOIDmode);
   stack_pointer_rtx = gen_raw_REG (Pmode, STACK_POINTER_REGNUM);
   frame_pointer_rtx = gen_raw_REG (Pmode, FRAME_POINTER_REGNUM);
   hard_frame_pointer_rtx = gen_raw_REG (Pmode, HARD_FRAME_POINTER_REGNUM);
@@ -5830,6 +5901,17 @@ init_emit_once (void)
 	   mode != VOIDmode;
 	   mode = GET_MODE_WIDER_MODE (mode))
 	const_tiny_rtx[i][(int) mode] = GEN_INT (i);
+
+#ifdef _BUILD_C30_
+      const_tiny_rtx[i][P16PMPmode] = GEN_INT(i);
+      const_tiny_rtx[i][P32EXTmode] = GEN_INT(i);
+      const_tiny_rtx[i][P24PSVmode] = GEN_INT(i);
+      const_tiny_rtx[i][P24PROGmode] = GEN_INT(i);
+      const_tiny_rtx[i][P32PEDSmode] = GEN_INT(i);
+      const_tiny_rtx[i][P32EDSmode] = GEN_INT(i);
+      const_tiny_rtx[i][P16APSVmode] = GEN_INT(i);
+#endif
+
     }
 
   for (mode = GET_CLASS_NARROWEST_MODE (MODE_COMPLEX_INT);

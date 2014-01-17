@@ -202,8 +202,13 @@ do {									\
     }									\
 } while (0)
 
+#ifdef _BUILD_C30_
+#define sbitmap_free(MAP)		((MAP) ? (free((MAP)->popcount), free((MAP))) : (void)(0))
+#define sbitmap_vector_free(VEC)	((VEC) ? free(VEC) : (void)(0))
+#else
 #define sbitmap_free(MAP)		(free((MAP)->popcount), free((MAP)))
 #define sbitmap_vector_free(VEC)	free(VEC)
+#endif
 
 struct int_list;
 

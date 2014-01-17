@@ -1,7 +1,7 @@
 /* mpc_set_x_x -- Set complex number real and imaginary parts from parameters
    whose type is known by mpfr.
 
-Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann, Andreas Enge
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 

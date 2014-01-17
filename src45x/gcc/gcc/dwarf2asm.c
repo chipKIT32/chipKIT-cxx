@@ -285,7 +285,11 @@ dw2_asm_output_nstring (const char *str, size_t orig_len,
 
   if (flag_debug_asm && comment)
     {
+#ifdef _BUILD_C30_
+      fputs ("\t.asciz \"", asm_out_file);
+#else
       fputs ("\t.ascii \"", asm_out_file);
+#endif
       for (i = 0; i < len; i++)
 	{
 	  int c = str[i];
@@ -296,7 +300,11 @@ dw2_asm_output_nstring (const char *str, size_t orig_len,
 	  else
 	    fprintf (asm_out_file, "\\%o", c);
 	}
+#ifdef _BUILD_C30_
+      fprintf (asm_out_file, "\"\t%s ", ASM_COMMENT_START);
+#else
       fprintf (asm_out_file, "\\0\"\t%s ", ASM_COMMENT_START);
+#endif
       vfprintf (asm_out_file, comment, ap);
       fputc ('\n', asm_out_file);
     }
@@ -831,9 +839,31 @@ dw2_force_const_mem (rtx x, bool is_public)
 
       if (is_public && USE_LINKONCE_INDIRECT)
 	{
-	  char *ref_name = XALLOCAVEC (char, strlen (str) + sizeof "DW.ref.");
+	  char *ref_name = XALLOCAVEC (char, strlen (str) + sizeof "DW.ref." + 1);
 
+#if defined(_BUILD_C32_)
+	  /* Ensure that Microchip flags remain at the beginning of the section name */
+	  char *first_extended_flag, *last_extended_flag;
+	  char *stripped = XALLOCAVEC (char, strlen (str)+1);
+	  memset (stripped, 0, strlen (str)+1);
+	  first_extended_flag = strchr(str,MCHP_EXTENDED_FLAG[0]);
+	  if (first_extended_flag)
+	    {
+	      last_extended_flag = strrchr(str,MCHP_EXTENDED_FLAG[0]);
+	    }
+	  if (first_extended_flag && last_extended_flag)
+	    {
+	      strncpy (stripped, first_extended_flag, abs(last_extended_flag-first_extended_flag)+1);
+	      stripped[abs(last_extended_flag-first_extended_flag)+1] = '\0';
+	      sprintf (ref_name, "%s" "DW.ref.%s", stripped, last_extended_flag+1);
+	    }
+	  else
+	    {
+	      sprintf (ref_name, "DW.ref.%s", str);
+	    }
+#else
 	  sprintf (ref_name, "DW.ref.%s", str);
+#endif
 	  gcc_assert (!maybe_get_identifier (ref_name));
 	  decl_id = get_identifier (ref_name);
 	  TREE_PUBLIC (decl_id) = 1;

@@ -1,13 +1,13 @@
 /* Test file for mpfr_rec_sqrt.
 
-Copyright 2008, 2009 Free Software Foundation, Inc.
+Copyright 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,44 +42,44 @@ special (void)
 
   /* rec_sqrt(NaN) = NaN */
   mpfr_set_nan (x);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_nan_p (x) && inex == 0);
 
   /* rec_sqrt(+Inf) = +0 */
   mpfr_set_inf (x, 1);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_zero_p (x) && MPFR_IS_POS(x) && inex == 0);
 
   /* rec_sqrt(-Inf) = NaN */
   mpfr_set_inf (x, -1);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_nan_p (x) && inex == 0);
 
   /* rec_sqrt(+0) = +Inf */
-  mpfr_set_ui (x, 0, GMP_RNDN);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_inf_p (x) && MPFR_IS_POS(x) && inex == 0);
 
   /* rec_sqrt(-0) = +Inf */
-  mpfr_set_ui (x, 0, GMP_RNDN);
-  mpfr_neg (x, x, GMP_RNDN);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
+  mpfr_neg (x, x, MPFR_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_inf_p (x) && MPFR_IS_POS(x) && inex == 0);
 
   /* rec_sqrt(-1) = NaN */
-  mpfr_set_si (x, -1, GMP_RNDN);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  mpfr_set_si (x, -1, MPFR_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_nan_p (x) && inex == 0);
 
   /* rec_sqrt(1) = 1 */
-  mpfr_set_ui (x, 1, GMP_RNDN);
-  inex = mpfr_rec_sqrt (x, x, GMP_RNDN);
+  mpfr_set_ui (x, 1, MPFR_RNDN);
+  inex = mpfr_rec_sqrt (x, x, MPFR_RNDN);
   MPFR_ASSERTN((mpfr_cmp_ui (x, 1) == 0) && (inex == 0));
 
   mpfr_set_prec (x, 23);
   mpfr_set_prec (y, 33);
   mpfr_set_str_binary (x, "1.0001110110101001010100e-1");
-  inex = mpfr_rec_sqrt (y, x, GMP_RNDU);
+  inex = mpfr_rec_sqrt (y, x, MPFR_RNDU);
   mpfr_set_prec (x, 33);
   mpfr_set_str_binary (x, "1.01010110101110100100100101011");
   MPFR_ASSERTN (inex > 0 && mpfr_cmp (x, y) == 0);
@@ -96,17 +96,17 @@ bad_case1 (void)
 
   mpfr_init2 (x, 72);
   mpfr_inits2 (6, y, z, (mpfr_ptr) 0);
-  mpfr_set_str (x, "1.08310518720928b30e@-120", 16, GMP_RNDN);
-  mpfr_set_str (z, "f.8@59", 16, GMP_RNDN);
+  mpfr_set_str (x, "1.08310518720928b30e@-120", 16, MPFR_RNDN);
+  mpfr_set_str (z, "f.8@59", 16, MPFR_RNDN);
   /* z = rec_sqrt(x) rounded on 6 bits toward 0, the exact value
      being ~= f.bffffffffffffffffa11@59. */
-  mpfr_rec_sqrt (y, x, GMP_RNDZ);
+  mpfr_rec_sqrt (y, x, MPFR_RNDZ);
   if (mpfr_cmp0 (y, z) != 0)
     {
       printf ("Error in bad_case1\nexpected ");
-      mpfr_out_str (stdout, 16, 0, z, GMP_RNDN);
+      mpfr_out_str (stdout, 16, 0, z, MPFR_RNDN);
       printf ("\ngot      ");
-      mpfr_out_str (stdout, 16, 0, y, GMP_RNDN);
+      mpfr_out_str (stdout, 16, 0, y, MPFR_RNDN);
       printf ("\n");
       exit (1);
     }
@@ -114,7 +114,7 @@ bad_case1 (void)
 }
 
 static int
-pm2 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
+pm2 (mpfr_ptr y, mpfr_srcptr x, mpfr_rnd_t rnd_mode)
 {
   return mpfr_pow_si (y, x, -2, rnd_mode);
 }

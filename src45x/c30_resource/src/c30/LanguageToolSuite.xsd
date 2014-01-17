@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<xs:schema targetNamespace="http://www.microchip.com/lti"
+           xmlns:lti="http://www.microchip.com/lti"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:annotation>
+    <xs:documentation>
+
+      This schema defines the validation requirements of XML documents
+      of the `LanguageToolSuite' type.  Files of this type allow a
+      language tool suite to publish certain useful characteristics
+      about themselves in a programmatically accessible way.
+
+    </xs:documentation>
+  </xs:annotation>
+
+  <xs:element name="LanguageToolSuite">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="lti:BaseDir"/>
+        <xs:element ref="lti:DeviceFamily" minOccurs="0" maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:attribute ref="lti:uuid" use="required"/>
+      <xs:attribute ref="lti:name" use="required"/>
+      <xs:attribute ref="lti:version" use="required"/>
+      <xs:attribute ref="lti:altversion" use="optional"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="BaseDir">
+    <xs:complexType>
+      <xs:attribute ref="lti:dir" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="DeviceFamily">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+	<xs:element ref="lti:Device"/>
+	<xs:element ref="lti:IncludeDir"/>
+	<xs:element ref="lti:AssemblerIncludeDir"/>
+	<xs:element ref="lti:LibraryDir"/>
+      </xs:choice>
+      <xs:attribute ref="lti:family" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="Device">
+    <xs:complexType>
+      <xs:attribute ref="lti:device" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="IncludeDir">
+    <xs:complexType>
+      <xs:attribute ref="lti:dir" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="AssemblerIncludeDir">
+    <xs:complexType>
+      <xs:attribute ref="lti:dir" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="LibraryDir">
+    <xs:complexType>
+      <xs:attribute ref="lti:dir" use="required"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:attribute name="uuid" type="braced-uuid"/>
+  <xs:attribute name="name" type="xs:normalizedString"/>
+  <xs:attribute name="version" type="version-vector"/>
+  <xs:attribute name="altversion" type="xs:normalizedString"/>
+  <xs:attribute name="dir" type="xs:normalizedString"/>
+  <xs:attribute name="family" type="xs:normalizedString"/>
+  <xs:attribute name="device" type="xs:normalizedString"/>
+
+  <xs:simpleType name="braced-uuid">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="version-vector">
+    <xs:restriction base="xs:normalizedString">
+      <xs:pattern value="[0-9]+(\.[0-9]+)*"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

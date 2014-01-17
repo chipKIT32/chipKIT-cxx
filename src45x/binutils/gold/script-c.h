@@ -416,6 +416,21 @@ script_data_segment_relro_end(void* closure);
 extern void
 script_saw_segment_start_expression(void* closure);
 
+/* Called by the bison parser for MEMORY regions.  */
+
+extern void
+script_add_memory(void*, const char*, size_t, unsigned int,
+		  Expression_ptr, Expression_ptr);
+
+extern unsigned int
+script_parse_memory_attr(void*, const char*, size_t, int);
+
+extern void
+script_set_section_region(void*, const char*, size_t, int);
+
+extern void
+script_include_directive(void *, const char*, size_t);
+  
 /* Called by the bison parser for expressions.  */
 
 extern Expression_ptr
@@ -483,9 +498,9 @@ script_exp_function_addr(const char*, size_t);
 extern Expression_ptr
 script_exp_function_loadaddr(const char*, size_t);
 extern Expression_ptr
-script_exp_function_origin(const char*, size_t);
+script_exp_function_origin(void*, const char*, size_t);
 extern Expression_ptr
-script_exp_function_length(const char*, size_t);
+script_exp_function_length(void*, const char*, size_t);
 extern Expression_ptr
 script_exp_function_constant(const char*, size_t);
 extern Expression_ptr
@@ -507,27 +522,27 @@ extern void
 script_register_vers_node(void* closure,
 			  const char* tag,
 			  int taglen,
-			  struct Version_tree *,
-			  struct Version_dependency_list *);
+			  struct Version_tree*,
+			  struct Version_dependency_list*);
 
-extern struct Version_dependency_list *
+extern struct Version_dependency_list*
 script_add_vers_depend(void* closure,
-		       struct Version_dependency_list *existing_dependencies,
-		       const char *depend_to_add, int deplen);
+		       struct Version_dependency_list* existing_dependencies,
+		       const char* depend_to_add, int deplen);
 
-extern struct Version_expression_list *
+extern struct Version_expression_list*
 script_new_vers_pattern(void* closure,
-			struct Version_expression_list *,
-			const char *, int, int);
+			struct Version_expression_list*,
+			const char*, int, int);
 
-extern struct Version_expression_list *
-script_merge_expressions(struct Version_expression_list *a,
-                         struct Version_expression_list *b);
+extern struct Version_expression_list*
+script_merge_expressions(struct Version_expression_list* a,
+                         struct Version_expression_list* b);
 
-extern struct Version_tree *
+extern struct Version_tree*
 script_new_vers_node(void* closure,
-		     struct Version_expression_list *global,
-		     struct Version_expression_list *local);
+		     struct Version_expression_list* global,
+		     struct Version_expression_list* local);
 
 extern void
 version_script_push_lang(void* closure, const char* lang, int langlen);

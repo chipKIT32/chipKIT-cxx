@@ -1,6 +1,6 @@
 /* mpc_cmp -- Compare two complex numbers.
 
-Copyright (C) 2002, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -29,6 +29,6 @@ mpc_cmp (mpc_srcptr a, mpc_srcptr b)
 
   cmp_re = mpfr_cmp (MPC_RE(a), MPC_RE(b));
   cmp_im = mpfr_cmp (MPC_IM(a), MPC_IM(b));
-  
+
   return MPC_INEX(cmp_re, cmp_im);
 }

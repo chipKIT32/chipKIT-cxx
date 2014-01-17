@@ -1,7 +1,7 @@
 /* mpc_urandom -- Generate a random complex number uniformly distributed in
    the interval [0,1[.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny
+Copyright (C) INRIA, 2008, 2009
 
 This file is part of the MPC Library.
 

@@ -32,3 +32,4 @@ struct target_c_incpath_s {
 extern struct target_c_incpath_s target_c_incpath;
 
 enum { QUOTE = 0, BRACKET, SYSTEM, AFTER };
+

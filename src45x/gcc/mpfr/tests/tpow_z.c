@@ -1,13 +1,13 @@
 /* Test file for mpfr_pow_z -- power function x^z with z a MPZ
 
-Copyright 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdlib.h>
 #include <float.h>
@@ -40,95 +40,95 @@ check_special (void)
   mpz_init (z);
 
   /* x^0 = 1 except for NAN */
-  mpfr_set_ui (x, 23, GMP_RNDN);
+  mpfr_set_ui (x, 23, MPFR_RNDN);
   mpz_set_ui (z, 0);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_cmp_ui (y, 1) != 0)
     ERROR ("23^0");
   mpfr_set_nan (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_nan_p (y) || mpfr_cmp_si (y, 1) != 0)
     ERROR ("NAN^0");
   mpfr_set_inf (x, 1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_cmp_ui (y, 1) != 0)
     ERROR ("INF^0");
 
   /* sINF^N = INF if s==1 or n even if N > 0*/
   mpz_set_ui (z, 42);
   mpfr_set_inf (x, 1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || mpfr_sgn (y) <= 0)
     ERROR ("INF^42");
   mpfr_set_inf (x, -1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || mpfr_sgn (y) <= 0)
     ERROR ("-INF^42");
   mpz_set_ui (z, 17);
   mpfr_set_inf (x, 1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || mpfr_sgn (y) <= 0)
     ERROR ("INF^17");
   mpfr_set_inf (x, -1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || mpfr_sgn (y) >= 0)
     ERROR ("-INF^17");
 
   mpz_set_si (z, -42);
   mpfr_set_inf (x, 1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("INF^-42");
   mpfr_set_inf (x, -1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("-INF^-42");
   mpz_set_si (z, -17);
   mpfr_set_inf (x, 1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("INF^-17");
   mpfr_set_inf (x, -1);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) >= 0)
     ERROR ("-INF^-17");
 
   /* s0^N = +0 if s==+ or n even if N > 0*/
   mpz_set_ui (z, 42);
   MPFR_SET_ZERO (x); MPFR_SET_POS (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("+0^42");
   MPFR_SET_NEG (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("-0^42");
   mpz_set_ui (z, 17);
   MPFR_SET_POS (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("+0^17");
   MPFR_SET_NEG (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_zero_p (y) == 0 || MPFR_SIGN (y) >= 0)
     ERROR ("-0^17");
 
   mpz_set_si (z, -42);
   MPFR_SET_ZERO (x); MPFR_SET_POS (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("+0^-42");
   MPFR_SET_NEG (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("-0^-42");
   mpz_set_si (z, -17);
   MPFR_SET_POS (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || MPFR_SIGN (y) <= 0)
     ERROR ("+0^-17");
   MPFR_SET_NEG (x);
-  res = mpfr_pow_z (y, x, z, GMP_RNDN);
+  res = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (res != 0 || mpfr_inf_p (y) == 0 || MPFR_SIGN (y) >= 0)
     ERROR ("-0^-17");
 
@@ -138,14 +138,14 @@ check_special (void)
 }
 
 static void
-check_integer (mp_prec_t begin, mp_prec_t end, unsigned long max)
+check_integer (mpfr_prec_t begin, mpfr_prec_t end, unsigned long max)
 {
   mpfr_t x, y1, y2;
   mpz_t z;
   unsigned long i, n;
-  mp_prec_t p;
+  mpfr_prec_t p;
   int res1, res2;
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
 
   mpfr_inits2 (begin, x, y1, y2, (mpfr_ptr) 0);
   mpz_init (z);
@@ -160,7 +160,7 @@ check_integer (mp_prec_t begin, mp_prec_t end, unsigned long max)
           if ((i & 1) != 0)
             mpz_neg (z, z);
           mpfr_urandomb (x, RANDS);
-          mpfr_mul_2ui (x, x, 1, GMP_RNDN); /* 0 <= x < 2 */
+          mpfr_mul_2ui (x, x, 1, MPFR_RNDN); /* 0 <= x < 2 */
           rnd = RND_RAND ();
           if (mpz_fits_slong_p (z))
             {
@@ -206,8 +206,8 @@ check_regression (void)
   mpfr_init2 (y, 122);
 
   mpfr_set_str_binary (x, "0.10000010010000111101001110100101101010011110011100001111000001001101000110011001001001001011001011010110110110101000111011E1");
-  res1 = mpfr_pow_z (y, x, z, GMP_RNDU);
-  res2 = mpfr_pow_ui (x, x, 2026876995UL, GMP_RNDU);
+  res1 = mpfr_pow_z (y, x, z, MPFR_RNDU);
+  res2 = mpfr_pow_ui (x, x, 2026876995UL, MPFR_RNDU);
   if (mpfr_cmp (x, y) || res1 != res2)
     {
       printf ("Regression (1) tested failed (%d=?%d)\n",res1, res2);
@@ -232,10 +232,10 @@ bug20071104 (void)
 
   mpz_init_set_si (z, -2);
   mpfr_inits2 (20, x, y, (mpfr_ptr) 0);
-  mpfr_set_ui (x, 0, GMP_RNDN);
+  mpfr_set_ui (x, 0, MPFR_RNDN);
   mpfr_nextbelow (x);  /* x = -2^(emin-1) */
   mpfr_clear_flags ();
-  inex = mpfr_pow_z (y, x, z, GMP_RNDN);
+  inex = mpfr_pow_z (y, x, z, MPFR_RNDN);
   if (! mpfr_inf_p (y) || MPFR_SIGN (y) < 0)
     {
       printf ("Error in bug20071104: expected +Inf, got ");
@@ -268,7 +268,7 @@ check_overflow (void)
 
   mpfr_set_str_binary (a, "1E10");
   mpz_init_set_ui (z, ULONG_MAX);
-  res = mpfr_pow_z (a, a, z, GMP_RNDN);
+  res = mpfr_pow_z (a, a, z, MPFR_RNDN);
   if (!MPFR_IS_INF (a) || MPFR_SIGN (a) < 0)
     {
       printf ("Error for (1e10)^ULONG_MAX\n");
@@ -283,7 +283,7 @@ check_overflow (void)
   mpfr_set_str_binary (a, "-1.1E10");
   n = (ULONG_MAX ^ (ULONG_MAX >> 1)) + 1;
   mpz_set_ui (z, n);
-  res = mpfr_pow_z (a, a, z, GMP_RNDN);
+  res = mpfr_pow_z (a, a, z, MPFR_RNDN);
   if (!MPFR_IS_INF (a) || MPFR_SIGN (a) > 0)
     {
       printf ("Error for (-1e10)^%lu, expected -Inf,\ngot ", n);
@@ -305,11 +305,11 @@ bug20080223 (void)
   mpfr_init2 (exp, 53);
   mpfr_init2 (answer, 53);
 
-  mpfr_set_si (exp, -1073741824, GMP_RNDN);
+  mpfr_set_si (exp, -1073741824, MPFR_RNDN);
 
-  mpfr_set_str (a, "1.999999999", 10, GMP_RNDN);
+  mpfr_set_str (a, "1.999999999", 10, MPFR_RNDN);
   /* a = 562949953139837/2^48 */
-  mpfr_pow (answer, a, exp, GMP_RNDN);
+  mpfr_pow (answer, a, exp, MPFR_RNDN);
   mpfr_set_str_binary (a, "0.110110101111011001110000111111100011101000111011101E-1073741823");
   MPFR_ASSERTN(mpfr_cmp0 (answer, a) == 0);
 
@@ -323,7 +323,7 @@ bug20080904 (void)
 {
   mpz_t exp;
   mpfr_t a, answer;
-  mp_exp_t emin_default;
+  mpfr_exp_t emin_default;
 
   mpz_init (exp);
   mpfr_init2 (a, 70);
@@ -335,10 +335,10 @@ bug20080904 (void)
   mpz_set_str (exp, "-4eb92f8c7b7bf81e", 16);
   mpfr_set_str_binary (a, "1.110000101110100110100011111000011110111101000011111001111001010011100");
 
-  mpfr_pow_z (answer, a, exp, GMP_RNDN);
+  mpfr_pow_z (answer, a, exp, MPFR_RNDN);
   /* The correct result is near 2^(-2^62), so it underflows when
      MPFR_EMIN_MIN > -2^62 (i.e. with 32 and 64 bits machines). */
-  mpfr_set_str (a, "AA500C0D7A69275DBp-4632850503556296886", 16, GMP_RNDN);
+  mpfr_set_str (a, "AA500C0D7A69275DBp-4632850503556296886", 16, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_cmp0 (answer, a) == 0);
 
   mpfr_set_emin (emin_default);

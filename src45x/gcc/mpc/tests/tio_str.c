@@ -1,6 +1,6 @@
 /* tio_str.c -- Test file for mpc_inp_str and mpc_out_str.
 
-Copyright (C) 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2009, 2011
 
 This file is part of the MPC Library.
 
@@ -94,8 +94,8 @@ check_file (const char* file_name)
             printf ("     got size: %lu\nexpected size: %lu\n     ",
                     (unsigned long int) size, (unsigned long int) expected_size);
           printf ("    ");
-          OUT (got);
-          OUT (expected);
+          MPC_OUT (got);
+          MPC_OUT (expected);
 
           exit (1);
         }
@@ -148,8 +148,8 @@ check_io_str (mpc_ptr read_number, mpc_ptr expected)
   if (mpc_cmp (read_number, expected) != 0 || mpfr_erangeflag_p())
     {
       printf ("Error: inp_str o out_str <> Id\n");
-      OUT (read_number);
-      OUT (expected);
+      MPC_OUT (read_number);
+      MPC_OUT (expected);
 
       exit (1);
     }
@@ -196,8 +196,8 @@ check_stdout (mpc_ptr read_number, mpc_ptr expected)
     {
       printf ("mpc_inp_str did not read the number which was written by "
               "mpc_out_str\n");
-      OUT (read_number);
-      OUT (expected);
+      MPC_OUT (read_number);
+      MPC_OUT (expected);
       exit (1);
     }
   fflush(stdin);
@@ -211,7 +211,7 @@ int
 main (void)
 {
   mpc_t z, x;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
 
   test_start ();
 

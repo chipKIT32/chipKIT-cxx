@@ -149,7 +149,6 @@ case $target in
 	i[34567]86-w64-mingw* | \
 	mips*-*-* | \
 	mmix-*-* | \
-	pic32*-*-* | \
 	powerpc*-*-* | \
 	rs6000*-*-* | \
 	s390*-*-* | \

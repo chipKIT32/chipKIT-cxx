@@ -367,4 +367,8 @@ overlaps_hard_reg_set_p (const HARD_REG_SET regs, enum machine_mode mode,
   return false;
 }
 
+/* Get registers used by given function call instruction.  */
+void get_call_reg_set_usage (rtx insn, HARD_REG_SET *reg_set,
+			     HARD_REG_SET default_set);
+
 #endif /* GCC_REGS_H */

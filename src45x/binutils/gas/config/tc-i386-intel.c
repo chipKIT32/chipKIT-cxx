@@ -227,15 +227,20 @@ static INLINE int i386_intel_check (const reg_entry *rreg,
 
 static INLINE void i386_intel_fold (expressionS *e, symbolS *sym)
 {
+  expressionS *exp = symbol_get_value_expression (sym);
   if (S_GET_SEGMENT (sym) == absolute_section)
     {
       offsetT val = e->X_add_number;
 
-      *e = *symbol_get_value_expression (sym);
+      *e = *exp;
       e->X_add_number += val;
     }
   else
     {
+      if (exp->X_op == O_symbol
+	  && strcmp (S_GET_NAME (exp->X_add_symbol),
+		     GLOBAL_OFFSET_TABLE_NAME) == 0)
+	sym = exp->X_add_symbol;
       e->X_add_symbol = sym;
       e->X_op_symbol = NULL;
       e->X_op = O_symbol;
@@ -273,14 +278,28 @@ i386_intel_simplify_register (expressionS *e)
 	}
       i.op[this_operand].regs = i386_regtab + reg_num;
     }
+  else if (!intel_state.index
+	   && (i386_regtab[reg_num].reg_type.bitfield.regxmm
+	       || i386_regtab[reg_num].reg_type.bitfield.regymm))
+    intel_state.index = i386_regtab + reg_num;
   else if (!intel_state.base && !intel_state.in_scale)
     intel_state.base = i386_regtab + reg_num;
   else if (!intel_state.index)
-    intel_state.index = i386_regtab + reg_num;
+    {
+      if (intel_state.in_scale
+	  || i386_regtab[reg_num].reg_type.bitfield.baseindex)
+	intel_state.index = i386_regtab + reg_num;
+      else
+	{
+	  /* Convert base to index and make ESP/RSP the base.  */
+	  intel_state.index = intel_state.base;
+	  intel_state.base = i386_regtab + reg_num;
+	}
+    }
   else
     {
       /* esp is invalid as index */
-      intel_state.index = i386_regtab + REGNAM_EAX + 4;
+      intel_state.index = i386_regtab + REGNAM_EAX + ESP_REG_NUM;
     }
   return 2;
 }
@@ -435,7 +454,7 @@ static int i386_intel_simplify (expressionS *e)
 		break;
 	      default:
 		/* esp is invalid as index */
-		intel_state.index = i386_regtab + REGNAM_EAX + 4;
+		intel_state.index = i386_regtab + REGNAM_EAX + ESP_REG_NUM;
 		break;
 	      }
 

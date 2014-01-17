@@ -1,13 +1,13 @@
 /* mpf2mpfr.h -- Compatibility include file with mpf.
 
-Copyright 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2000, 2001, 2002, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifndef __MPFR_FROM_MPF__
 #define __MPFR_FROM_MPF__
@@ -168,5 +168,8 @@ MA 02110-1301, USA. */
 #define mpf_ui_sub(x,y,z) mpfr_ui_sub(x,y,z,MPFR_DEFAULT_RND)
 #undef mpf_urandomb
 #define mpf_urandomb(x,y,n) mpfr_urandomb(x,y)
+
+#undef mpz_set_f
+#define mpz_set_f(z,f) mpfr_get_z(z,f,MPFR_DEFAULT_RND)
 
 #endif /* __MPFR_FROM_MPF__ */

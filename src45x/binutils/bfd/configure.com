@@ -70,13 +70,13 @@ $DECK
    IF match_pos <> 0 THEN;
       POSITION(BEGINNING_OF(match_pos));
       ERASE(match_pos);
-      COPY_TEXT('0');
+      COPY_TEXT('1');
    ENDIF;
    match_pos := SEARCH_QUIETLY('@BFD_HOST_64BIT_LONG_LONG@', FORWARD, EXACT, rang);
    IF match_pos <> 0 THEN;
       POSITION(BEGINNING_OF(match_pos));
       ERASE(match_pos);
-      COPY_TEXT('0');
+      COPY_TEXT('1');
    ENDIF;
    match_pos := SEARCH_QUIETLY('@BFD_HOST_64_BIT_DEFINED@', FORWARD, EXACT, rang);
    IF match_pos <> 0 THEN;
@@ -250,11 +250,18 @@ $DECK
    IF match_pos <> 0 THEN;
       POSITION(BEGINNING_OF(match_pos));
       ERASE(match_pos);
-      COPY_TEXT('"<http://support.microchip.com/>"');
+      COPY_TEXT('"<http://www.microchip.com/support>"');
    ENDIF;
    WRITE_FILE(file, GET_INFO(COMMAND_LINE, "output_file"));
    QUIT
 $  EOD
+$!
+$!
+$! create bfd_stdint.h
+$!
+$ write sys$output "Generate `bfd_stdint.h'"
+$ create []bfd_stdint.h
+#include <inttypes.h>
 $!
 $!
 $! create targmatch.h

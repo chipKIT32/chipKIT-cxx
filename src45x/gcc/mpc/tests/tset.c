@@ -1,6 +1,6 @@
 /* tset.c -- Test file for mpc_set_x and mpc_set_x_x functions.
 
-Copyright (C) 2009 Philippe Th\'eveny, Paul Zimmermann, Andreas Enge
+Copyright (C) INRIA, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -30,6 +30,10 @@ MA 02111-1307, USA. */
 # endif
 #endif
 
+#if HAVE_COMPLEX_H
+# include <complex.h>
+#endif
+
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -40,7 +44,7 @@ MA 02111-1307, USA. */
   do {                                                          \
     printf ("Error in "function_name" for prec = %lu\n",        \
             (unsigned long int) precision);                     \
-    OUT(a);                                                     \
+    MPC_OUT(a);                                                     \
     exit (1);                                                   \
   } while (0)
 
@@ -67,7 +71,7 @@ check_set (void)
   mpf_t mpf;
   mpfr_t fr;
   mpc_t x, z;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
 
   mpz_init (mpz);
   mpq_init (mpq);
@@ -82,6 +86,8 @@ check_set (void)
 
   for (prec = 2; prec <= 1000; prec++)
     {
+      unsigned long int u = (unsigned long int) prec;
+
       mpc_set_prec (z, prec);
       mpfr_set_prec (fr, prec);
 
@@ -91,10 +97,16 @@ check_set (void)
 
       mpc_set_d (z, 1.23456789, MPC_RNDNN);
       if (mpfr_cmp (MPC_RE(z), fr) != 0 || mpfr_cmp_si (MPC_IM(z), 0) != 0)
-        PRINT_ERROR ("mpc_set", prec, z);
+        PRINT_ERROR ("mpc_set_d", prec, z);
 
-      mpc_set_ui (z, prec, MPC_RNDNN);
-      if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
+#if defined _MPC_H_HAVE_COMPLEX
+      mpc_set_dc (z, I*1.23456789+1.23456789, MPC_RNDNN);
+      if (mpfr_cmp (MPC_RE(z), fr) != 0 || mpfr_cmp (MPC_IM(z), fr) != 0)
+        PRINT_ERROR ("mpc_set_c", prec, z);
+#endif
+
+      mpc_set_ui (z, u, MPC_RNDNN);
+      if (mpfr_cmp_ui (MPC_RE(z), u) != 0
           || mpfr_cmp_ui (MPC_IM(z), 0) != 0)
         PRINT_ERROR ("mpc_set_ui", prec, z);
 
@@ -112,9 +124,14 @@ check_set (void)
       if (mpfr_cmp (MPC_RE(z), fr) != 0 || mpfr_cmp (MPC_IM(z), fr) != 0)
         PRINT_ERROR ("mpc_set_ld_ld", prec, z);
 
-      mpc_set_ui_ui (z, prec, prec, MPC_RNDNN);
-      if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
-          || mpfr_cmp_ui (MPC_IM(z), prec) != 0)
+#if defined _MPC_H_HAVE_COMPLEX
+      mpc_set_ldc (z, I*1.23456789L+1.23456789L, MPC_RNDNN);
+      if (mpfr_cmp (MPC_RE(z), fr) != 0 || mpfr_cmp (MPC_IM(z), fr) != 0)
+        PRINT_ERROR ("mpc_set_lc", prec, z);
+#endif
+      mpc_set_ui_ui (z, u, u, MPC_RNDNN);
+      if (mpfr_cmp_ui (MPC_RE(z), u) != 0
+          || mpfr_cmp_ui (MPC_IM(z), u) != 0)
         PRINT_ERROR ("mpc_set_ui_ui", prec, z);
 
       mpc_set_ld (z, 1.23456789L, MPC_RNDNN);
@@ -137,8 +154,8 @@ check_set (void)
         {
           printf ("Error in mpc_set for prec = %lu\n",
                   (unsigned long int) prec);
-          OUT(z);
-          OUT(x);
+          MPC_OUT(z);
+          MPC_OUT(x);
           exit (1);
         }
 
@@ -184,17 +201,17 @@ check_set (void)
           || mpfr_erangeflag_p())
         PRINT_ERROR ("mpc_set_q_q", prec, z);
 
-      mpc_set_ui_fr (z, prec, fr, MPC_RNDNN);
+      mpc_set_ui_fr (z, u, fr, MPC_RNDNN);
       mpfr_clear_flags ();
-      if (mpfr_cmp_ui (MPC_RE (z), prec) != 0
+      if (mpfr_cmp_ui (MPC_RE (z), u) != 0
           || mpfr_cmp (MPC_IM (z), fr) != 0
           || mpfr_erangeflag_p ())
         PRINT_ERROR ("mpc_set_ui_fr", prec, z);
 
-      mpc_set_fr_ui (z, fr, prec, MPC_RNDNN);
+      mpc_set_fr_ui (z, fr, u, MPC_RNDNN);
       mpfr_clear_flags ();
       if (mpfr_cmp (MPC_RE (z), fr) != 0
-          || mpfr_cmp_ui (MPC_IM (z), prec) != 0
+          || mpfr_cmp_ui (MPC_IM (z), u) != 0
           || mpfr_erangeflag_p())
         PRINT_ERROR ("mpc_set_fr_ui", prec, z);
 
@@ -233,32 +250,32 @@ check_set (void)
 
 #ifdef _MPC_H_HAVE_INTMAX_T
       {
-        uintmax_t uim = prec;
-        intmax_t im = prec;
+        uintmax_t uim = (uintmax_t) prec;
+        intmax_t im = (intmax_t) prec;
 
         mpc_set_uj (z, uim, MPC_RNDNN);
-        if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
+        if (mpfr_cmp_ui (MPC_RE(z), u) != 0
             || mpfr_cmp_ui (MPC_IM(z), 0) != 0)
           PRINT_ERROR ("mpc_set_uj", prec, z);
 
         mpc_set_sj (z, im, MPC_RNDNN);
-        if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
+        if (mpfr_cmp_ui (MPC_RE(z), u) != 0
             || mpfr_cmp_ui (MPC_IM(z), 0) != 0)
           PRINT_ERROR ("mpc_set_sj (1)", prec, z);
 
         mpc_set_uj_uj (z, uim, uim, MPC_RNDNN);
-        if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
-            || mpfr_cmp_ui (MPC_IM(z), prec) != 0)
+        if (mpfr_cmp_ui (MPC_RE(z), u) != 0
+            || mpfr_cmp_ui (MPC_IM(z), u) != 0)
           PRINT_ERROR ("mpc_set_uj_uj", prec, z);
 
         mpc_set_sj_sj (z, im, im, MPC_RNDNN);
-        if (mpfr_cmp_ui (MPC_RE(z), prec) != 0
-            || mpfr_cmp_ui (MPC_IM(z), prec) != 0)
+        if (mpfr_cmp_ui (MPC_RE(z), u) != 0
+            || mpfr_cmp_ui (MPC_IM(z), u) != 0)
           PRINT_ERROR ("mpc_set_sj_sj (1)", prec, z);
 
-	im = LONG_MAX;
-	if (sizeof (intmax_t) == 2 * sizeof (unsigned long))
-	  im = 2 * im * im + 4 * im + 1; /* gives 2^(2n-1)-1 from 2^(n-1)-1 */
+        im = LONG_MAX;
+        if (sizeof (intmax_t) == 2 * sizeof (unsigned long))
+          im = 2 * im * im + 4 * im + 1; /* gives 2^(2n-1)-1 from 2^(n-1)-1 */
 
         mpc_set_sj (z, im, MPC_RNDNN);
         if (mpfr_get_sj (MPC_RE(z), GMP_RNDN) != im ||
@@ -271,6 +288,20 @@ check_set (void)
           PRINT_ERROR ("mpc_set_sj_sj (2)", im, z);
       }
 #endif /* _MPC_H_HAVE_INTMAX_T */
+
+#if defined _MPC_H_HAVE_COMPLEX
+      {
+         double _Complex c = 1.0 - 2.0*I;
+         long double _Complex lc = c;
+
+         mpc_set_dc (z, c, MPC_RNDNN);
+         if (mpc_get_dc (z, MPC_RNDNN) != c)
+            PRINT_ERROR ("mpc_get_c", prec, z);
+         mpc_set_ldc (z, lc, MPC_RNDNN);
+         if (mpc_get_ldc (z, MPC_RNDNN) != lc)
+            PRINT_ERROR ("mpc_get_lc", prec, z);
+      }
+#endif
     }
 
   mpz_clear (mpz);
@@ -282,15 +313,15 @@ check_set (void)
 }
 
 static void
-check_set_str (mp_exp_t exp_max)
+check_set_str (mpfr_exp_t exp_max)
 {
   mpc_t expected;
   mpc_t got;
   char *str;
 
   mpfr_prec_t prec;
-  mp_exp_t exp_min;
-  unsigned int base;
+  mpfr_exp_t exp_min;
+  int base;
 
   mpc_init2 (expected, 1024);
   mpc_init2 (got, 1024);
@@ -308,7 +339,7 @@ check_set_str (mp_exp_t exp_max)
       mpc_set_prec (got, prec);
       mpc_set_prec (expected, prec);
 
-      base = 2 + (unsigned int) gmp_urandomm_ui (rands, 35);
+      base = 2 + (int) gmp_urandomm_ui (rands, 35);
          /* uses external variable rands from random.c */
 
       mpfr_set_nan (MPC_RE (expected));
@@ -319,9 +350,9 @@ check_set_str (mp_exp_t exp_max)
         {
           printf ("Error: mpc_set_str o mpc_get_str != Id\n"
                   "in base %u with str=\"%s\"\n", base, str);
-          OUT (expected);
+          MPC_OUT (expected);
           printf ("     ");
-          OUT (got);
+          MPC_OUT (got);
           exit (1);
         }
       mpc_free_str (str);
@@ -333,9 +364,9 @@ check_set_str (mp_exp_t exp_max)
         {
           printf ("Error: mpc_set_str o mpc_get_str != Id\n"
                   "in base %u with str=\"%s\"\n", base, str);
-          OUT (expected);
+          MPC_OUT (expected);
           printf ("     ");
-          OUT (got);
+          MPC_OUT (got);
           exit (1);
         }
       mpc_free_str (str);
@@ -355,9 +386,9 @@ check_set_str (mp_exp_t exp_max)
           {
             printf ("Error: mpc_set_str o mpc_get_str != Id\n"
                     "with str=\"%s\"\n", str);
-            OUT (expected);
+            MPC_OUT (expected);
             printf ("     ");
-            OUT (got);
+            MPC_OUT (got);
             exit (1);
           }
         mpc_free_str (str);
@@ -377,9 +408,9 @@ check_set_str (mp_exp_t exp_max)
     {
       printf ("Error: mpc_set_str o mpc_get_str != Id\n"
               "with str=\"%s\"\n", str);
-      OUT (expected);
+      MPC_OUT (expected);
       printf ("     ");
-      OUT (got);
+      MPC_OUT (got);
       exit (1);
     }
   mpc_free_str (str);

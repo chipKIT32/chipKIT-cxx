@@ -1,6 +1,6 @@
-/* test file for mpc_add.
+/* tadd - test file for mpc_add.
 
-Copyright (C) 2008 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2008, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -26,7 +26,7 @@ static void
 check_ternary_value (void)
 {
   mpc_t x, y, z;
-  mp_prec_t prec;
+  mpfr_prec_t prec;
 
   mpc_init2 (x, 2);
   mpc_init2 (y, 2);
@@ -38,7 +38,7 @@ check_ternary_value (void)
       mpc_set_prec (y, prec);
 
       mpc_set_ui (x, 1, MPC_RNDNN);
-      mpc_mul_2exp (x, x, prec, MPC_RNDNN);
+      mpc_mul_2exp (x, x, (unsigned long int) prec, MPC_RNDNN);
       mpc_set_ui (y, 1, MPC_RNDNN);
 
       if (mpc_add (z, x, y, MPC_RNDNN) == 0)
@@ -56,7 +56,7 @@ check_ternary_value (void)
 int
 main (void)
 {
-  DECL_FUNC (CCC, f, mpc_add);
+  DECL_FUNC (C_CC, f, mpc_add);
   f.properties = FUNC_PROP_SYMETRIC;
 
   test_start ();

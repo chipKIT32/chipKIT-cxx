@@ -1,6 +1,6 @@
 /* test file for mpc_pow.
 
-Copyright (C) 2009 Paul Zimmermann
+Copyright (C) INRIA, 2009, 2011
 
 This file is part of the MPC Library.
 
@@ -24,7 +24,7 @@ MA 02111-1307, USA. */
 int
 main (void)
 {
-  DECL_FUNC (CCC, f, mpc_pow);
+  DECL_FUNC (C_CC, f, mpc_pow);
 
   test_start ();
 

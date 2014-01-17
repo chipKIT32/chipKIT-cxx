@@ -1,6 +1,6 @@
 /* mpc_sqr -- Square a complex number.
 
-Copyright (C) 2002, 2005, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2005, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -30,12 +30,12 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
    mpfr_t x;
       /* rop temporary variable to hold the real part of op,
          needed in the case rop==op */
-   mp_prec_t prec;
+   mpfr_prec_t prec;
    int inex_re, inex_im, inexact;
-   mp_exp_t old_emax, old_emin, emin, emax;
+   mpfr_exp_t emin, emax;
 
    /* special values: NaN and infinities */
-   if (!mpfr_number_p (MPC_RE (op)) || !mpfr_number_p (MPC_IM (op))) {
+   if (!mpc_fin_p (op)) {
       if (mpfr_nan_p (MPC_RE (op)) || mpfr_nan_p (MPC_IM (op))) {
          mpfr_set_nan (MPC_RE (rop));
          mpfr_set_nan (MPC_IM (rop));
@@ -88,15 +88,16 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
         mpc_conj (rop, rop, MPC_RNDNN);
       return MPC_INEX(inex_re, inex_im);
    }
-   /* If the real and imaginary part of the argument have rop very different */
-   /* exponent, it is not reasonable to use Karatsuba squaring; compute    */
+   /* If the real and imaginary parts of the argument have very different  */
+   /* exponents, it is not reasonable to use Karatsuba squaring; compute   */
    /* exactly with the standard formulae instead, even if this means an    */
    /* additional multiplication.                                           */
-   if (SAFE_ABS (mp_exp_t, MPFR_EXP (MPC_RE (op)) - MPFR_EXP (MPC_IM (op)))
-       > (mp_exp_t) MPC_MAX_PREC (op) / 2)
+   if (SAFE_ABS (mpfr_exp_t,
+                 mpfr_get_exp (MPC_RE (op)) - mpfr_get_exp (MPC_IM (op)))
+       > (mpfr_exp_t) MPC_MAX_PREC (op) / 2)
    {
-      mpfr_init2 (u, 2*MPFR_PREC (MPC_RE (op)));
-      mpfr_init2 (v, 2*MPFR_PREC (MPC_IM (op)));
+      mpfr_init2 (u, 2*MPC_PREC_RE (op));
+      mpfr_init2 (v, 2*MPC_PREC_IM (op));
 
       mpfr_sqr (u, MPC_RE (op), GMP_RNDN);
       mpfr_sqr (v, MPC_IM (op), GMP_RNDN); /* both are exact */
@@ -115,17 +116,14 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
 
    if (rop == op)
    {
-      mpfr_init2 (x, MPFR_PREC (op->re));
+      mpfr_init2 (x, MPC_PREC_RE (op));
       mpfr_set (x, op->re, GMP_RNDN);
    }
    else
       x [0] = op->re [0];
 
-   /* store the maximal exponent */
-   old_emax = mpfr_get_emax ();
-   old_emin = mpfr_get_emin ();
-   mpfr_set_emax (emax = mpfr_get_emax_max ());
-   mpfr_set_emin (emin = mpfr_get_emin_min ());
+   emax = mpfr_get_emax ();
+   emin = mpfr_get_emin ();
 
    do
    {
@@ -134,25 +132,12 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
       mpfr_set_prec (u, prec);
       mpfr_set_prec (v, prec);
 
-      /* Let op = x + iy. We need u = x+y and v = x-y, rounded away.       */
-      /* As this is not implemented in mpfr, we round towards zero and    */
-      /* add one ulp if the result is not exact. The error is bounded     */
-      /* above by 1 ulp.                                                  */
+      /* Let op = x + iy. We need u = x+y and v = x-y, rounded away.      */
+      /* The error is bounded above by 1 ulp.                             */
       /* We first let inexact be 1 if the real part is not computed       */
       /* exactly and determine the sign later.                            */
-      inexact = 0;
-      if (mpfr_add (u, x, MPC_IM (op), GMP_RNDZ))
-         /* we have to use x here instead of MPC_RE (op), as MPC_RE (rop)
-            may be modified later in the attempt to assign u to it */
-      {
-         mpfr_add_one_ulp (u, GMP_RNDN);
-         inexact = 1;
-      }
-      if (mpfr_sub (v, x, MPC_IM (op), GMP_RNDZ))
-      {
-         mpfr_add_one_ulp (v, GMP_RNDN);
-         inexact = 1;
-      }
+      inexact =    ROUND_AWAY (mpfr_add (u, x, MPC_IM (op), MPFR_RNDA), u)
+                 | ROUND_AWAY (mpfr_sub (v, x, MPC_IM (op), MPFR_RNDA), v);
 
       /* compute the real part as u*v, rounded away                    */
       /* determine also the sign of inex_re                            */
@@ -172,18 +157,20 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
           MPC_ASSERT (mpfr_get_exp (u) != emin);
           if (mpfr_inf_p (u))
             {
-              mp_rnd_t rnd_re = MPC_RND_RE (rnd);
+              mpfr_rnd_t rnd_re = MPC_RND_RE (rnd);
               if (rnd_re == GMP_RNDZ || rnd_re == GMP_RNDD)
                 {
                   mpfr_set_ui_2exp (MPC_RE (rop), 1, emax, rnd_re);
                   inex_re = -1;
                 }
-              else /* round up or away from zero */
+              else /* round up or away from zero */ {
+                mpfr_set_inf (MPC_RE (rop), 1);
                 inex_re = 1;
+              }
               break;
             }
           ok = (!inexact) | mpfr_can_round (u, prec - 3, GMP_RNDU, GMP_RNDZ,
-               MPFR_PREC (MPC_RE (rop)) + (MPC_RND_RE (rnd) == GMP_RNDN));
+               MPC_PREC_RE (rop) + (MPC_RND_RE (rnd) == GMP_RNDN));
           if (ok)
             {
               inex_re = mpfr_set (MPC_RE (rop), u, MPC_RND_RE (rnd));
@@ -202,20 +189,21 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
              away from zero), the result will be an underflow */
           if (mpfr_get_exp (u) == emin)
             {
-              mp_rnd_t rnd_re = MPC_RND_RE (rnd);
+              mpfr_rnd_t rnd_re = MPC_RND_RE (rnd);
               if (rnd_re == GMP_RNDZ || rnd_re == GMP_RNDN ||
                   rnd_re == GMP_RNDU)
                 {
                   mpfr_set_ui (MPC_RE (rop), 0, rnd_re);
                   inex_re = 1;
-                  
                 }
-              else /* round down or away from zero */
+              else /* round down or away from zero */ {
+                mpfr_set (MPC_RE (rop), u, rnd_re);
                 inex_re = -1;
+              }
               break;
             }
           ok = (!inexact) | mpfr_can_round (u, prec - 3, GMP_RNDD, GMP_RNDZ,
-               MPFR_PREC (MPC_RE (rop)) + (MPC_RND_RE (rnd) == GMP_RNDN));
+               MPC_PREC_RE (rop) + (MPC_RND_RE (rnd) == GMP_RNDN));
           if (ok)
             {
               inex_re = mpfr_set (MPC_RE (rop), u, MPC_RND_RE (rnd));
@@ -246,9 +234,8 @@ mpc_sqr (mpc_ptr rop, mpc_srcptr op, mpc_rnd_t rnd)
    if (rop == op)
       mpfr_clear (x);
 
-   /* restore the exponent range */
-   mpfr_set_emax (old_emax);
-   mpfr_set_emin (old_emin);
+   inex_re = mpfr_check_range (MPC_RE(rop), inex_re, MPC_RND_RE (rnd));
+   inex_im = mpfr_check_range (MPC_IM(rop), inex_im, MPC_RND_IM (rnd));
 
    return MPC_INEX (inex_re, inex_im);
 }

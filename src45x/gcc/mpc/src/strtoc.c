@@ -1,6 +1,6 @@
 /* mpc_strtoc -- Read a complex number from a string.
 
-Copyright (C) 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -24,7 +24,7 @@ MA 02111-1307, USA. */
 #include "mpc-impl.h"
 
 static void
-skip_whitespace (char **p) {
+skip_whitespace (const char **p) {
    /* TODO: This function had better be inlined, but it is unclear whether
       the hassle to get this implemented across all platforms is worth it. */
    while (isspace ((unsigned char) **p))
@@ -32,8 +32,9 @@ skip_whitespace (char **p) {
 }
 
 int
-mpc_strtoc (mpc_ptr rop, char *nptr, char **endptr, int base, mpc_rnd_t rnd) {
-   char *p, *end;
+mpc_strtoc (mpc_ptr rop, const char *nptr, char **endptr, int base, mpc_rnd_t rnd) {
+   const char *p;
+   char *end;
    int bracketed = 0;
 
    int inex_re = 0, inex_im = 0;
@@ -75,12 +76,12 @@ mpc_strtoc (mpc_ptr rop, char *nptr, char **endptr, int base, mpc_rnd_t rnd) {
    }
 
    if (endptr != NULL)
-      *endptr = p;
+     *endptr = (char*) p;
    return MPC_INEX (inex_re, inex_im);
 
 error:
    if (endptr != NULL)
-      *endptr = nptr;
+     *endptr = (char*) nptr;
    mpfr_set_nan (MPC_RE (rop));
    mpfr_set_nan (MPC_IM (rop));
    return -1;

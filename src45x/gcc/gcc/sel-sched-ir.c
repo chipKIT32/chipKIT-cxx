@@ -686,7 +686,7 @@ merge_fences (fence_t f, insn_t insn,
 
       /* Find fallthrough edge.  */
       gcc_assert (BLOCK_FOR_INSN (insn)->prev_bb);
-      candidate = find_fallthru_edge (BLOCK_FOR_INSN (insn)->prev_bb);
+      candidate = find_fallthru_edge_from (BLOCK_FOR_INSN (insn)->prev_bb);
 
       if (!candidate
           || (candidate->src != BLOCK_FOR_INSN (last_scheduled_insn)
@@ -4324,7 +4324,7 @@ sel_bb_head (basic_block bb)
       note = bb_note (bb);
       head = next_nonnote_insn (note);
 
-      if (head && BLOCK_FOR_INSN (head) != bb)
+      if (head && (BARRIER_P (head) || BLOCK_FOR_INSN (head) != bb))
 	head = NULL_RTX;
     }
 

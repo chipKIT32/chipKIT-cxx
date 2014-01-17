@@ -1,6 +1,6 @@
 /* mpc_div -- Divide two complex numbers.
 
-Copyright (C) 2002, 2003, 2004, 2005, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2003, 2004, 2005, 2008, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -149,7 +149,7 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
    int ok_re = 0, ok_im = 0;
    mpc_t res, c_conj;
    mpfr_t q;
-   mp_prec_t prec;
+   mpfr_prec_t prec;
    int inexact_prod, inexact_norm, inexact_re, inexact_im, loops = 0;
 
    /* save signs of operands in case there are overlaps */
@@ -211,7 +211,7 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
       mpc_ptr dest = (overlap) ? tmpa : a;
 
       if (overlap)
-         mpc_init3 (tmpa, MPFR_PREC (MPC_RE (a)), MPFR_PREC (MPC_IM (a)));
+         mpc_init3 (tmpa, MPC_PREC_RE (a), MPC_PREC_IM (a));
 
       cloc[0] = MPC_IM(c)[0]; /* copies mpfr struct IM(c) into cloc */
       inexact_re = mpfr_div (MPC_RE(dest), MPC_IM(b), cloc, MPC_RND_RE(rnd));
@@ -254,7 +254,7 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
    do
    {
       loops ++;
-      prec += (loops <= 2) ? mpc_ceil_log2 (prec) + 5 : prec / 2;
+      prec += loops <= 2 ? mpc_ceil_log2 (prec) + 5 : prec / 2;
 
       mpc_set_prec (res, prec);
       mpfr_set_prec (q, prec);
@@ -266,15 +266,15 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
       /* We need rounding away from zero for both the real and the imagin-  */
       /* ary part; then the final result is also rounded away from zero.    */
       /* The error is less than 1 ulp. Since this is not implemented in     */
-      /* mpfr, we round towards zero and add 1 ulp to the absolute values   */
+      /* mpc, we round towards zero and add 1 ulp to the absolute values    */
       /* if they are not exact. */
       inexact_prod = mpc_mul (res, b, c_conj, MPC_RNDZZ);
       inexact_re = MPC_INEX_RE (inexact_prod);
       inexact_im = MPC_INEX_IM (inexact_prod);
       if (inexact_re != 0)
-         mpfr_add_one_ulp (MPC_RE (res), GMP_RNDN);
+         MPFR_ADD_ONE_ULP (MPC_RE (res));
       if (inexact_im != 0)
-         mpfr_add_one_ulp (MPC_IM (res), GMP_RNDN);
+         MPFR_ADD_ONE_ULP (MPC_IM (res));
 
       /* divide the product by the norm */
       if (inexact_norm == 0 && (inexact_re == 0 || inexact_im == 0))
@@ -285,14 +285,16 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
          if (MPFR_SIGN (MPC_RE (res)) > 0)
          {
             inexact_re |= mpfr_div (MPC_RE (res), MPC_RE (res), q, GMP_RNDU);
-            ok_re = mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDU,
-                  MPC_RND_RE(rnd), MPFR_PREC(MPC_RE(a)));
+            ok_re = mpfr_inf_p (MPC_RE (res)) || mpfr_zero_p (MPC_RE (res)) ||
+              mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDU,
+                              MPC_RND_RE(rnd), MPC_PREC_RE(a));
          }
          else
          {
             inexact_re |= mpfr_div (MPC_RE (res), MPC_RE (res), q, GMP_RNDD);
-            ok_re = mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDD,
-                  MPC_RND_RE(rnd), MPFR_PREC(MPC_RE(a)));
+            ok_re = mpfr_inf_p (MPC_RE (res)) || mpfr_zero_p (MPC_RE (res)) ||
+              mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDD,
+                              MPC_RND_RE(rnd), MPC_PREC_RE(a));
          }
 
          if (ok_re || !inexact_re) /* compute imaginary part */
@@ -301,13 +303,13 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
             {
                inexact_im |= mpfr_div (MPC_IM (res), MPC_IM (res), q, GMP_RNDU);
                ok_im = mpfr_can_round (MPC_IM (res), prec - 4, GMP_RNDU,
-                     MPC_RND_IM(rnd), MPFR_PREC(MPC_IM(a)));
+                                       MPC_RND_IM(rnd), MPC_PREC_IM(a));
             }
             else
             {
                inexact_im |= mpfr_div (MPC_IM (res), MPC_IM (res), q, GMP_RNDD);
                ok_im = mpfr_can_round (MPC_IM (res), prec - 4, GMP_RNDD,
-                     MPC_RND_IM(rnd), MPFR_PREC(MPC_IM(a)));
+                                       MPC_RND_IM(rnd), MPC_PREC_IM(a));
             }
          }
       }
@@ -328,15 +330,17 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
          {
            inexact_re = mpfr_mul (MPC_RE (res), MPC_RE (res), q, GMP_RNDU)
              || inexact_re;
-           ok_re = mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDU,
-                                   MPC_RND_RE(rnd), MPFR_PREC(MPC_RE(a)));
+           ok_re = mpfr_inf_p (MPC_RE (res)) || mpfr_zero_p (MPC_RE (res)) ||
+             mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDU,
+                             MPC_RND_RE(rnd), MPC_PREC_RE(a));
          }
          else
          {
            inexact_re = mpfr_mul (MPC_RE (res), MPC_RE (res), q, GMP_RNDD)
              || inexact_re;
-           ok_re = mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDD,
-                                   MPC_RND_RE(rnd), MPFR_PREC(MPC_RE(a)));
+           ok_re = mpfr_inf_p (MPC_RE (res)) || mpfr_zero_p (MPC_RE (res)) ||
+             mpfr_can_round (MPC_RE (res), prec - 4, GMP_RNDD,
+                             MPC_RND_RE(rnd), MPC_PREC_RE(a));
          }
 
          if (ok_re) /* compute imaginary part */
@@ -345,22 +349,37 @@ mpc_div (mpc_ptr a, mpc_srcptr b, mpc_srcptr c, mpc_rnd_t rnd)
             {
               inexact_im = mpfr_mul (MPC_IM (res), MPC_IM (res), q, GMP_RNDU)
                 || inexact_im;
-               ok_im = mpfr_can_round (MPC_IM (res), prec - 4, GMP_RNDU,
-                                       MPC_RND_IM(rnd), MPFR_PREC(MPC_IM(a)));
+              ok_im = mpfr_can_round (MPC_IM (res), prec - 4, GMP_RNDU,
+                                      MPC_RND_IM(rnd), MPC_PREC_IM(a));
             }
             else
             {
               inexact_im = mpfr_mul (MPC_IM (res), MPC_IM (res), q, GMP_RNDD)
                 || inexact_im;
               ok_im = mpfr_can_round (MPC_IM (res), prec - 4, GMP_RNDD,
-                                      MPC_RND_IM(rnd), MPFR_PREC(MPC_IM(a)));
+                                      MPC_RND_IM(rnd), MPC_PREC_IM(a));
             }
          }
       }
+
+      /* check for overflow or underflow on the imaginary part */
+      if (ok_im == 0 &&
+          (mpfr_inf_p (MPC_IM (res)) || mpfr_zero_p (MPC_IM (res))))
+        ok_im = 1;
    }
    while ((!ok_re && inexact_re) || (!ok_im && inexact_im));
 
    mpc_set (a, res, rnd);
+
+   /* fix inexact flags in case of overflow/underflow */
+   if (mpfr_inf_p (MPC_RE (res)))
+     inexact_re = mpfr_sgn (MPC_RE (res));
+   else if (mpfr_zero_p (MPC_RE (res)))
+     inexact_re = -mpfr_sgn (MPC_RE (res));
+   if (mpfr_inf_p (MPC_IM (res)))
+     inexact_im = mpfr_sgn (MPC_IM (res));
+   else if (mpfr_zero_p (MPC_IM (res)))
+     inexact_im = -mpfr_sgn (MPC_IM (res));
 
    mpc_clear (res);
    mpfr_clear (q);

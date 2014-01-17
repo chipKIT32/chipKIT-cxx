@@ -31,6 +31,7 @@
 ;; Register numbers
 (define_constants
   [(R0_REGNUM        0)		; First CORE register
+   (R1_REGNUM	     1)		; Second CORE register
    (IP_REGNUM	    12)		; Scratch register
    (SP_REGNUM	    13)		; Stack pointer
    (LR_REGNUM       14)		; Return address register
@@ -104,6 +105,8 @@
    (UNSPEC_SYMBOL_OFFSET 27) ; The offset of the start of the symbol from
                              ; another symbolic address.
    (UNSPEC_MEMORY_BARRIER 28) ; Represent a memory barrier.
+   (UNSPEC_UNALIGNED_LOAD 29)
+   (UNSPEC_UNALIGNED_STORE 30)
   ]
 )
 
@@ -429,7 +432,7 @@
 
 (define_attr "tune_cortexr4" "yes,no"
   (const (if_then_else
-	  (eq_attr "tune" "cortexr4,cortexr4f")
+	  (eq_attr "tune" "cortexr4,cortexr4f,cortexr5")
 	  (const_string "yes")
 	  (const_string "no"))))
 
@@ -450,9 +453,9 @@
 	  (const_string "yes")
 	  (const_string "no"))))
 
-; Specifies which machine an alternative is tuned for.  Used to compute
-; attribute ENABLED.
-(define_attr "alt_tune" "all,onlya8,nota8" (const_string "all"))
+; Specifies which machine an alternative is tuned for. Also used for enabling/disabling
+; alternatives based on architecture level and/or FPU unit. Used to compute attribute ENABLED.
+(define_attr "alt_tune" "all,onlya8,nota8,vfp9,notvfp9" (const_string "all"))
 
 (define_attr "enabled" ""
   (cond [(and (eq_attr "alt_tune" "onlya8")
@@ -461,6 +464,14 @@
 
 	 (and (eq_attr "alt_tune" "nota8")
 	      (eq_attr "tune" "cortexa8"))
+	 (const_int 0)
+
+	 (and (eq_attr "alt_tune" "vfp9")
+	      (ne (symbol_ref "TARGET_32BIT && (arm_arch6 || TARGET_VFP3)") (const_int 0)))
+	 (const_int 0)
+
+	 (and (eq_attr "alt_tune" "notvfp9")
+	      (ne (symbol_ref "TARGET_32BIT && !(arm_arch6 || TARGET_VFP3)") (const_int 0)))
 	 (const_int 0)]
 	(const_int 1)))
 
@@ -1793,11 +1804,11 @@
 
 (define_insn "maddhisi4"
   [(set (match_operand:SI 0 "s_register_operand" "=r")
-	(plus:SI (match_operand:SI 3 "s_register_operand" "r")
-		 (mult:SI (sign_extend:SI
-			   (match_operand:HI 1 "s_register_operand" "%r"))
+	(plus:SI (mult:SI (sign_extend:SI
+			   (match_operand:HI 1 "s_register_operand" "r"))
 			  (sign_extend:SI
-			   (match_operand:HI 2 "s_register_operand" "r")))))]
+			   (match_operand:HI 2 "s_register_operand" "r")))
+		 (match_operand:SI 3 "s_register_operand" "r")))]
   "TARGET_DSP_MULTIPLY"
   "smlabb%?\\t%0, %1, %2, %3"
   [(set_attr "insn" "smlaxy")
@@ -1807,11 +1818,11 @@
 (define_insn "*maddhidi4"
   [(set (match_operand:DI 0 "s_register_operand" "=r")
 	(plus:DI
-	  (match_operand:DI 3 "s_register_operand" "0")
 	  (mult:DI (sign_extend:DI
-	 	    (match_operand:HI 1 "s_register_operand" "%r"))
+	 	    (match_operand:HI 1 "s_register_operand" "r"))
 		   (sign_extend:DI
-		    (match_operand:HI 2 "s_register_operand" "r")))))]
+		    (match_operand:HI 2 "s_register_operand" "r")))
+	  (match_operand:DI 3 "s_register_operand" "0")))]
   "TARGET_DSP_MULTIPLY"
   "smlalbb%?\\t%Q0, %R0, %1, %2"
   [(set_attr "insn" "smlalxy")
@@ -2374,7 +2385,7 @@
 ;;; this insv pattern, so this pattern needs to be reevalutated.
 
 (define_expand "insv"
-  [(set (zero_extract:SI (match_operand:SI 0 "s_register_operand" "")
+  [(set (zero_extract:SI (match_operand:SI 0 "nonimmediate_operand" "")
                          (match_operand:SI 1 "general_operand" "")
                          (match_operand:SI 2 "general_operand" ""))
         (match_operand:SI 3 "reg_or_int_operand" ""))]
@@ -2388,34 +2399,65 @@
 
     if (arm_arch_thumb2)
       {
-	bool use_bfi = TRUE;
-
-	if (GET_CODE (operands[3]) == CONST_INT)
+        if (unaligned_access && MEM_P (operands[0])
+	    && s_register_operand (operands[3], GET_MODE (operands[3]))
+	    && (width == 16 || width == 32) && (start_bit % BITS_PER_UNIT) == 0)
 	  {
-	    HOST_WIDE_INT val = INTVAL (operands[3]) & mask;
-
-	    if (val == 0)
+	    rtx base_addr;
+	    
+	    if (width == 32)
 	      {
-		emit_insn (gen_insv_zero (operands[0], operands[1],
-					  operands[2]));
-		DONE;
+	        base_addr = adjust_address (operands[0], SImode,
+					    start_bit / BITS_PER_UNIT);
+		emit_insn (gen_unaligned_storesi (base_addr, operands[3]));
 	      }
+	    else
+	      {
+	        rtx tmp = gen_reg_rtx (HImode);
 
-	    /* See if the set can be done with a single orr instruction.  */
-	    if (val == mask && const_ok_for_arm (val << start_bit))
-	      use_bfi = FALSE;
-	  }
-	  
-	if (use_bfi)
-	  {
-	    if (GET_CODE (operands[3]) != REG)
-	      operands[3] = force_reg (SImode, operands[3]);
-
-	    emit_insn (gen_insv_t2 (operands[0], operands[1], operands[2],
-				    operands[3]));
+	        base_addr = adjust_address (operands[0], HImode,
+					    start_bit / BITS_PER_UNIT);
+		emit_move_insn (tmp, gen_lowpart (HImode, operands[3]));
+		emit_insn (gen_unaligned_storehi (base_addr, tmp));
+	      }
 	    DONE;
 	  }
+	else if (s_register_operand (operands[0], GET_MODE (operands[0])))
+	  {
+	    bool use_bfi = TRUE;
+
+	    if (GET_CODE (operands[3]) == CONST_INT)
+	      {
+		HOST_WIDE_INT val = INTVAL (operands[3]) & mask;
+
+		if (val == 0)
+		  {
+		    emit_insn (gen_insv_zero (operands[0], operands[1],
+					      operands[2]));
+		    DONE;
+		  }
+
+		/* See if the set can be done with a single orr instruction.  */
+		if (val == mask && const_ok_for_arm (val << start_bit))
+		  use_bfi = FALSE;
+	      }
+
+	    if (use_bfi)
+	      {
+		if (GET_CODE (operands[3]) != REG)
+		  operands[3] = force_reg (SImode, operands[3]);
+
+		emit_insn (gen_insv_t2 (operands[0], operands[1], operands[2],
+					operands[3]));
+		DONE;
+	      }
+	  }
+	else
+	  FAIL;
       }
+
+    if (!s_register_operand (operands[0], GET_MODE (operands[0])))
+      FAIL;
 
     target = copy_rtx (operands[0]);
     /* Avoid using a subreg as a subtarget, and avoid writing a paradoxical 
@@ -3606,7 +3648,7 @@
 
 (define_expand "extzv"
   [(set (match_dup 4)
-	(ashift:SI (match_operand:SI   1 "register_operand" "")
+	(ashift:SI (match_operand:SI   1 "nonimmediate_operand" "")
 		   (match_operand:SI   2 "const_int_operand" "")))
    (set (match_operand:SI              0 "register_operand" "")
 	(lshiftrt:SI (match_dup 4)
@@ -3619,10 +3661,53 @@
     
     if (arm_arch_thumb2)
       {
-	emit_insn (gen_extzv_t2 (operands[0], operands[1], operands[2],
-				 operands[3]));
-	DONE;
+	HOST_WIDE_INT width = INTVAL (operands[2]);
+	HOST_WIDE_INT bitpos = INTVAL (operands[3]);
+
+	if (unaligned_access && MEM_P (operands[1])
+	    && (width == 16 || width == 32) && (bitpos % BITS_PER_UNIT) == 0)
+	  {
+	    rtx base_addr;
+
+	    if (width == 32)
+              {
+		base_addr = adjust_address (operands[1], SImode,
+					    bitpos / BITS_PER_UNIT);
+		emit_insn (gen_unaligned_loadsi (operands[0], base_addr));
+              }
+	    else
+              {
+		rtx dest = operands[0];
+		rtx tmp = gen_reg_rtx (SImode);
+
+		/* We may get a paradoxical subreg here.  Strip it off.  */
+		if (GET_CODE (dest) == SUBREG
+		    && GET_MODE (dest) == SImode
+		    && GET_MODE (SUBREG_REG (dest)) == HImode)
+		  dest = SUBREG_REG (dest);
+
+		if (GET_MODE_BITSIZE (GET_MODE (dest)) != width)
+		  FAIL;
+
+		base_addr = adjust_address (operands[1], HImode,
+					    bitpos / BITS_PER_UNIT);
+		emit_insn (gen_unaligned_loadhiu (tmp, base_addr));
+		emit_move_insn (gen_lowpart (SImode, dest), tmp);
+	      }
+	    DONE;
+	  }
+	else if (s_register_operand (operands[1], GET_MODE (operands[1])))
+	  {
+	    emit_insn (gen_extzv_t2 (operands[0], operands[1], operands[2],
+				     operands[3]));
+	    DONE;
+	  }
+	else
+	  FAIL;
       }
+    
+    if (!s_register_operand (operands[1], GET_MODE (operands[1])))
+      FAIL;
 
     operands[3] = GEN_INT (rshift);
     
@@ -3637,7 +3722,103 @@
   }"
 )
 
-(define_insn "extv"
+(define_expand "extv"
+  [(set (match_operand:SI 0 "s_register_operand" "")
+	(sign_extract:SI (match_operand:SI 1 "nonimmediate_operand" "")
+			 (match_operand:SI 2 "const_int_operand" "")
+			 (match_operand:SI 3 "const_int_operand" "")))]
+  "arm_arch_thumb2"
+{
+  HOST_WIDE_INT width = INTVAL (operands[2]);
+  HOST_WIDE_INT bitpos = INTVAL (operands[3]);
+
+  if (unaligned_access && MEM_P (operands[1]) && (width == 16 || width == 32)
+      && (bitpos % BITS_PER_UNIT) == 0)
+    {
+      rtx base_addr;
+      
+      if (width == 32)
+        {
+	  base_addr = adjust_address (operands[1], SImode,
+				      bitpos / BITS_PER_UNIT);
+	  emit_insn (gen_unaligned_loadsi (operands[0], base_addr));
+        }
+      else
+        {
+	  rtx dest = operands[0];
+	  rtx tmp = gen_reg_rtx (SImode);
+	  
+	  /* We may get a paradoxical subreg here.  Strip it off.  */
+	  if (GET_CODE (dest) == SUBREG
+	      && GET_MODE (dest) == SImode
+	      && GET_MODE (SUBREG_REG (dest)) == HImode)
+	    dest = SUBREG_REG (dest);
+	  
+	  if (GET_MODE_BITSIZE (GET_MODE (dest)) != width)
+	    FAIL;
+	  
+	  base_addr = adjust_address (operands[1], HImode,
+				      bitpos / BITS_PER_UNIT);
+	  emit_insn (gen_unaligned_loadhis (tmp, base_addr));
+	  emit_move_insn (gen_lowpart (SImode, dest), tmp);
+	}
+
+      DONE;
+    }
+  else if (s_register_operand (operands[1], GET_MODE (operands[1])))
+    /* empty */;
+  else
+    FAIL;
+})
+
+; ARMv6+ unaligned load/store instructions (used for packed structure accesses).
+
+(define_insn "unaligned_loadsi"
+  [(set (match_operand:SI 0 "s_register_operand" "=r")
+	(unspec:SI [(match_operand:SI 1 "memory_operand" "m")]
+		   UNSPEC_UNALIGNED_LOAD))]
+  "unaligned_access"
+  "ldr%?\t%0, %1\t@ unaligned"
+  [(set_attr "predicable" "yes")
+   (set_attr "type" "load1")])
+
+(define_insn "unaligned_loadhis"
+  [(set (match_operand:SI 0 "s_register_operand" "=r")
+	(sign_extend:SI (unspec:HI [(match_operand:HI 1 "memory_operand" "m")]
+				   UNSPEC_UNALIGNED_LOAD)))]
+  "unaligned_access"
+  "ldr%(sh%)\t%0, %1\t@ unaligned"
+  [(set_attr "predicable" "yes")
+   (set_attr "type" "load_byte")])
+
+(define_insn "unaligned_loadhiu"
+  [(set (match_operand:SI 0 "s_register_operand" "=r")
+	(zero_extend:SI (unspec:HI [(match_operand:HI 1 "memory_operand" "m")]
+				   UNSPEC_UNALIGNED_LOAD)))]
+  "unaligned_access"
+  "ldr%(h%)\t%0, %1\t@ unaligned"
+  [(set_attr "predicable" "yes")
+   (set_attr "type" "load_byte")])
+
+(define_insn "unaligned_storesi"
+  [(set (match_operand:SI 0 "memory_operand" "=m")
+	(unspec:SI [(match_operand:SI 1 "s_register_operand" "r")]
+		   UNSPEC_UNALIGNED_STORE))]
+  "unaligned_access"
+  "str%?\t%1, %0\t@ unaligned"
+  [(set_attr "predicable" "yes")
+   (set_attr "type" "store1")])
+
+(define_insn "unaligned_storehi"
+  [(set (match_operand:HI 0 "memory_operand" "=m")
+	(unspec:HI [(match_operand:HI 1 "s_register_operand" "r")]
+		   UNSPEC_UNALIGNED_STORE))]
+  "unaligned_access"
+  "str%(h%)\t%1, %0\t@ unaligned"
+  [(set_attr "predicable" "yes")
+   (set_attr "type" "store1")])
+
+(define_insn "*extv_reg"
   [(set (match_operand:SI 0 "s_register_operand" "=r")
 	(sign_extract:SI (match_operand:SI 1 "s_register_operand" "r")
                          (match_operand:SI 2 "const_int_operand" "M")
@@ -3657,6 +3838,28 @@
   "ubfx%?\t%0, %1, %3, %2"
   [(set_attr "length" "4")
    (set_attr "predicable" "yes")]
+)
+
+
+;; Division instructions
+(define_insn "divsi3"
+  [(set (match_operand:SI	  0 "s_register_operand" "=r")
+	(div:SI (match_operand:SI 1 "s_register_operand"  "r")
+		(match_operand:SI 2 "s_register_operand"  "r")))]
+  "TARGET_IDIV"
+  "sdiv%?\t%0, %1, %2"
+  [(set_attr "predicable" "yes")
+   (set_attr "insn" "sdiv")]
+)
+
+(define_insn "udivsi3"
+  [(set (match_operand:SI	   0 "s_register_operand" "=r")
+	(udiv:SI (match_operand:SI 1 "s_register_operand"  "r")
+		 (match_operand:SI 2 "s_register_operand"  "r")))]
+  "TARGET_IDIV"
+  "udiv%?\t%0, %1, %2"
+  [(set_attr "predicable" "yes")
+   (set_attr "insn" "udiv")]
 )
 
 
@@ -4116,8 +4319,8 @@
 })
 
 (define_split
-  [(set (match_operand:SI 0 "register_operand" "")
-	(zero_extend:SI (match_operand:HI 1 "register_operand" "")))]
+  [(set (match_operand:SI 0 "s_register_operand" "")
+	(zero_extend:SI (match_operand:HI 1 "s_register_operand" "")))]
   "!TARGET_THUMB2 && !arm_arch6"
   [(set (match_dup 0) (ashift:SI (match_dup 2) (const_int 16)))
    (set (match_dup 0) (lshiftrt:SI (match_dup 0) (const_int 16)))]
@@ -4236,8 +4439,8 @@
 })
 
 (define_split
-  [(set (match_operand:SI 0 "register_operand" "")
-	(zero_extend:SI (match_operand:QI 1 "register_operand" "")))]
+  [(set (match_operand:SI 0 "s_register_operand" "")
+	(zero_extend:SI (match_operand:QI 1 "s_register_operand" "")))]
   "!arm_arch6"
   [(set (match_dup 0) (ashift:SI (match_dup 2) (const_int 24)))
    (set (match_dup 0) (lshiftrt:SI (match_dup 0) (const_int 24)))]
@@ -5847,7 +6050,7 @@
 (define_expand "reload_inhi"
   [(parallel [(match_operand:HI 0 "s_register_operand" "=r")
 	      (match_operand:HI 1 "arm_reload_memory_operand" "o")
-	      (match_operand:DI 2 "s_register_operand" "=&r")])]
+	      (match_operand:DI 2 "s_register_operand" "=&l")])]
   "TARGET_EITHER"
   "
   if (TARGET_ARM)
@@ -8884,66 +9087,72 @@
   [(set_attr "type" "call")]
 )
 
-(define_expand "return"
-  [(return)]
-  "TARGET_32BIT && USE_RETURN_INSN (FALSE)"
+;; Both kinds of return insn.
+(define_code_iterator returns [return simple_return])
+(define_code_attr return_str [(return "") (simple_return "simple_")])
+(define_code_attr return_simple_p [(return "false") (simple_return "true")])
+(define_code_attr return_cond [(return " && USE_RETURN_INSN (FALSE)")
+			       (simple_return " && use_simple_return_p ()")])
+
+(define_expand "<return_str>return"
+  [(returns)]
+  "TARGET_32BIT<return_cond>"
   "")
 
-;; Often the return insn will be the same as loading from memory, so set attr
-(define_insn "*arm_return"
-  [(return)]
-  "TARGET_ARM && USE_RETURN_INSN (FALSE)"
-  "*
-  {
-    if (arm_ccfsm_state == 2)
-      {
-        arm_ccfsm_state += 2;
-        return \"\";
-      }
-    return output_return_instruction (const_true_rtx, TRUE, FALSE);
-  }"
+(define_insn "*arm_<return_str>return"
+  [(returns)]
+  "TARGET_ARM<return_cond>"
+{
+  if (arm_ccfsm_state == 2)
+    {
+      arm_ccfsm_state += 2;
+      return "";
+    }
+  return output_return_instruction (const_true_rtx, true, false,
+				    <return_simple_p>);
+}
   [(set_attr "type" "load1")
    (set_attr "length" "12")
    (set_attr "predicable" "yes")]
 )
 
-(define_insn "*cond_return"
+(define_insn "*cond_<return_str>return"
   [(set (pc)
         (if_then_else (match_operator 0 "arm_comparison_operator"
 		       [(match_operand 1 "cc_register" "") (const_int 0)])
-                      (return)
+                      (returns)
                       (pc)))]
-  "TARGET_ARM && USE_RETURN_INSN (TRUE)"
-  "*
-  {
-    if (arm_ccfsm_state == 2)
-      {
-        arm_ccfsm_state += 2;
-        return \"\";
-      }
-    return output_return_instruction (operands[0], TRUE, FALSE);
-  }"
+  "TARGET_ARM<return_cond>"
+{
+  if (arm_ccfsm_state == 2)
+    {
+      arm_ccfsm_state += 2;
+      return "";
+    }
+  return output_return_instruction (operands[0], true, false,
+				    <return_simple_p>);
+}
   [(set_attr "conds" "use")
    (set_attr "length" "12")
    (set_attr "type" "load1")]
 )
 
-(define_insn "*cond_return_inverted"
+(define_insn "*cond_<return_str>return_inverted"
   [(set (pc)
         (if_then_else (match_operator 0 "arm_comparison_operator"
 		       [(match_operand 1 "cc_register" "") (const_int 0)])
                       (pc)
-		      (return)))]
-  "TARGET_ARM && USE_RETURN_INSN (TRUE)"
-  "*
-  {
-    if (arm_ccfsm_state == 2)
-      {
-        arm_ccfsm_state += 2;
-        return \"\";
-      }
-    return output_return_instruction (operands[0], TRUE, TRUE);
-  }"
+		      (returns)))]
+  "TARGET_ARM<return_cond>"
+{
+  if (arm_ccfsm_state == 2)
+    {
+      arm_ccfsm_state += 2;
+      return "";
+    }
+  return output_return_instruction (operands[0], true, true,
+				    <return_simple_p>);
+}
   [(set_attr "conds" "use")
    (set_attr "length" "12")
    (set_attr "type" "load1")]
@@ -9122,7 +9331,8 @@
 	rtx reg = gen_reg_rtx (SImode);
 
 	emit_insn (gen_addsi3 (reg, operands[0],
-			       GEN_INT (-INTVAL (operands[1]))));
+			       gen_int_mode (-INTVAL (operands[1]),
+			       		     SImode)));
 	operands[0] = reg;
       }
 
@@ -9272,7 +9482,7 @@
           [(match_operator:SI 3 "shift_operator"
              [(match_operand:SI 4 "s_register_operand" "r")
               (match_operand:SI 5 "reg_or_int_operand" "rI")])
-           (match_operand:SI 2 "s_register_operand" "r")]))]
+           (match_operand:SI 2 "s_register_operand" "rk")]))]
   "TARGET_ARM"
   "%i1%?\\t%0, %2, %4%S3"
   [(set_attr "predicable" "yes")
@@ -10811,8 +11021,7 @@
       DONE;
     }
   emit_jump_insn (gen_rtx_UNSPEC_VOLATILE (VOIDmode,
-	gen_rtvec (1,
-		gen_rtx_RETURN (VOIDmode)),
+	gen_rtvec (1, ret_rtx),
 	VUNSPEC_EPILOGUE));
   DONE;
   "
@@ -10829,7 +11038,7 @@
   "TARGET_32BIT"
   "*
   if (use_return_insn (FALSE, next_nonnote_insn (insn)))
-    return output_return_instruction (const_true_rtx, FALSE, FALSE);
+    return output_return_instruction (const_true_rtx, false, false, false);
   return arm_output_epilogue (next_nonnote_insn (insn));
   "
 ;; Length is absolute worst case
@@ -11440,19 +11649,17 @@
 
 ;; tls descriptor call
 (define_insn "tlscall"
-  [(set (reg:SI 0) (unspec:SI [(reg:SI 0)
+  [(set (reg:SI R0_REGNUM) (unspec:SI [(reg:SI R0_REGNUM)
                                (match_operand:SI 0 "" "X")
 			       (match_operand 1 "" "")] UNSPEC_TLS))
-   (clobber (reg:SI 1))
+   (clobber (reg:SI R1_REGNUM))
    (clobber (reg:SI LR_REGNUM))
    (clobber (reg:SI CC_REGNUM))]
-  "TARGET_GNU_TLS"
+  "TARGET_GNU2_TLS"
   {
     targetm.asm_out.internal_label (asm_out_file, "LPIC",
 				    INTVAL (operands[1]));
-    /* The + is to avoid an assembly parse ambiguity with symbols that
-       look like register names, which is unsuccessfully recovered from.  */
-    return TARGET_THUMB2 ? "blx\\t%c0(tlscall)" : "bl\\t+%c0(tlscall)";
+    return "bl\\t%c0(tlscall)";
   }
   [(set_attr "conds" "clob")
    (set_attr "length" "4")]
@@ -11460,13 +11667,15 @@
 
 ;;
 
+;; We only care about the lower 16 bits of the constant 
+;; being inserted into the upper 16 bits of the register.
 (define_insn "*arm_movtas_ze" 
   [(set (zero_extract:SI (match_operand:SI 0 "s_register_operand" "+r")
                    (const_int 16)
                    (const_int 16))
         (match_operand:SI 1 "const_int_operand" ""))]
-  "TARGET_32BIT"
-  "movt%?\t%0, %c1"
+  "arm_arch_thumb2"
+  "movt%?\t%0, %L1"
  [(set_attr "predicable" "yes")
    (set_attr "length" "4")]
 )
@@ -11594,3 +11803,5 @@
 (include "neon.md")
 ;; Synchronization Primitives
 (include "sync.md")
+;; Fixed-point patterns
+(include "arm-fixed.md")

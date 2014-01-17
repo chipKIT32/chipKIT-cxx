@@ -10,3 +10,7 @@
 	ldrh r0, [r1, #0]
 	ldrh r0, [r1], #-0
 	ldrh r0, [r1], #0
+	ldr r0, [r1, #-0]!
+	ldr r0, [r1, #0]!
+	ldrh r0, [r1, #-0]!
+	ldrh r0, [r1, #0]!

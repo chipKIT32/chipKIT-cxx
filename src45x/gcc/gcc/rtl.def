@@ -296,6 +296,10 @@ DEF_RTL_EXPR(CALL, "call", "ee", RTX_EXTRA)
 
 DEF_RTL_EXPR(RETURN, "return", "", RTX_EXTRA)
 
+/* A plain return, to be used on paths that are reached without going
+   through the function prologue.  */
+DEF_RTL_EXPR(SIMPLE_RETURN, "simple_return", "", RTX_EXTRA)
+
 /* Special for EH return from subroutine.  */
 
 DEF_RTL_EXPR(EH_RETURN, "eh_return", "", RTX_EXTRA)
@@ -710,6 +714,10 @@ DEF_RTL_EXPR(US_TRUNCATE, "us_truncate", "e", RTX_UNARY)
 /* Changed 'te' to 'tei'; the 'i' field is for recording
    initialization status of variables.  */
 DEF_RTL_EXPR(VAR_LOCATION, "var_location", "tei", RTX_EXTRA)
+
+#ifdef _BUILD_C30_
+#include "config/pic30/pic30-rtl.def"
+#endif
 
 /* All expressions from this point forward appear only in machine
    descriptions.  */

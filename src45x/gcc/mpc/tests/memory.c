@@ -1,6 +1,6 @@
 /* Memory allocation used during tests.
 
-Copyright 2001, 2002, 2003, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright (C) 2001, 2002, 2003, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library (version 2.4.1).
@@ -30,6 +30,8 @@ MA 02110-1301, USA. */
 #define __gmp_default_allocate malloc
 #define __gmp_default_reallocate(p,old,new) realloc(p,new)
 #define __gmp_default_free(p,size) free(p)
+
+#include "mpc-tests.h"
 
 /* Each block allocated is a separate malloc, for the benefit of a redzoning
    malloc debugger during development or when bug hunting.

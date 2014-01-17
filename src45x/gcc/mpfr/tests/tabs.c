@@ -1,13 +1,13 @@
 /* Test file for mpfr_abs.
 
-Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,7 +29,7 @@ MA 02110-1301, USA. */
 static void
 check_inexact (void)
 {
-  mp_prec_t p, q;
+  mpfr_prec_t p, q;
   mpfr_t x, y, absx;
   int rnd;
   int inexact, cmp;
@@ -45,17 +45,17 @@ check_inexact (void)
       mpfr_urandomb (x, RANDS);
       if (randlimb () % 2)
         {
-          mpfr_set (absx, x, GMP_RNDN);
-          mpfr_neg (x, x, GMP_RNDN);
+          mpfr_set (absx, x, MPFR_RNDN);
+          mpfr_neg (x, x, MPFR_RNDN);
         }
       else
-        mpfr_set (absx, x, GMP_RNDN);
+        mpfr_set (absx, x, MPFR_RNDN);
       for (q=2; q<2*p; q++)
         {
           mpfr_set_prec (y, q);
           RND_LOOP (rnd)
             {
-              inexact = mpfr_abs (y, x, (mp_rnd_t) rnd);
+              inexact = mpfr_abs (y, x, (mpfr_rnd_t) rnd);
               cmp = mpfr_cmp (y, absx);
               if (((inexact == 0) && (cmp != 0)) ||
                   ((inexact > 0) && (cmp <= 0)) ||
@@ -85,24 +85,24 @@ check_cmp (int argc, char *argv[])
 
   mpfr_inits2 (53, x, y, (mpfr_ptr) 0);
 
-  mpfr_set_ui(x, 1, GMP_RNDN);
-  (mpfr_abs) (x, x, GMP_RNDN);
+  mpfr_set_ui(x, 1, MPFR_RNDN);
+  (mpfr_abs) (x, x, MPFR_RNDN);
   if (mpfr_cmp_ui (x, 1))
     {
       printf ("Error in mpfr_abs(1.0)\n");
       exit (1);
     }
 
-  mpfr_set_si(x, -1, GMP_RNDN);
-  mpfr_abs(x, x, GMP_RNDN);
+  mpfr_set_si(x, -1, MPFR_RNDN);
+  mpfr_abs(x, x, MPFR_RNDN);
   if (mpfr_cmp_ui (x, 1))
     {
       printf ("Error in mpfr_abs(1.0)\n");
       exit (1);
     }
 
-  mpfr_set_si(x, -1, GMP_RNDN);
-  mpfr_abs(x, x, GMP_RNDN);
+  mpfr_set_si(x, -1, MPFR_RNDN);
+  mpfr_abs(x, x, MPFR_RNDN);
   if (mpfr_cmp_ui (x, 1))
     {
       printf ("Error in mpfr_abs(-1.0)\n");
@@ -110,14 +110,14 @@ check_cmp (int argc, char *argv[])
     }
 
   mpfr_set_inf (x, 1);
-  mpfr_abs (x, x, GMP_RNDN);
+  mpfr_abs (x, x, MPFR_RNDN);
   if (!mpfr_inf_p(x) || (mpfr_sgn(x) <= 0))
     {
       printf ("Error in mpfr_abs(Inf).\n");
       exit (1);
     }
   mpfr_set_inf (x, -1);
-  mpfr_abs (x, x, GMP_RNDN);
+  mpfr_abs (x, x, MPFR_RNDN);
   if (!mpfr_inf_p(x) || (mpfr_sgn(x) <= 0))
     {
       printf ("Error in mpfr_abs(-Inf).\n");
@@ -125,7 +125,7 @@ check_cmp (int argc, char *argv[])
     }
 
   MPFR_SET_NAN(x);
-  mpfr_abs (x, x, GMP_RNDN);
+  mpfr_abs (x, x, MPFR_RNDN);
   if (!MPFR_IS_NAN(x))
     {
       printf ("Error in mpfr_abs(NAN).\n");
@@ -135,7 +135,7 @@ check_cmp (int argc, char *argv[])
   n = (argc==1) ? 25000 : atoi(argv[1]);
   for (k = 1; k <= n; k++)
     {
-      mp_rnd_t rnd;
+      mpfr_rnd_t rnd;
       int sign = SIGN_RAND ();
 
       mpfr_urandomb (x, RANDS);

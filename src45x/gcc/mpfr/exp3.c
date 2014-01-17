@@ -1,13 +1,13 @@
 /* mpfr_exp -- exponential of a floating-point number
 
-Copyright 1999, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H /* for MPFR_MPZ_SIZEINBASE2 */
 #include "mpfr-impl.h"
@@ -40,13 +40,13 @@ MA 02110-1301, USA. */
 */
 static void
 mpfr_exp_rational (mpfr_ptr y, mpz_ptr p, long r, int m,
-                   mpz_t *Q, mp_prec_t *mult)
+                   mpz_t *Q, mpfr_prec_t *mult)
 {
   unsigned long n, i, j;
   mpz_t *S, *ptoj;
-  mp_prec_t *log2_nb_terms;
-  mp_exp_t diff, expo;
-  mp_prec_t precy = MPFR_PREC(y), prec_i_have, prec_ptoj;
+  mpfr_prec_t *log2_nb_terms;
+  mpfr_exp_t diff, expo;
+  mpfr_prec_t precy = MPFR_PREC(y), prec_i_have, prec_ptoj;
   int k, l;
 
   MPFR_ASSERTN ((size_t) m < sizeof (long) * CHAR_BIT - 1);
@@ -127,40 +127,40 @@ mpfr_exp_rational (mpfr_ptr y, mpz_ptr p, long r, int m,
 
   /* Q[0] now equals i! */
   MPFR_MPZ_SIZEINBASE2 (prec_i_have, S[0]);
-  diff = (mp_exp_t) prec_i_have - 2 * (mp_exp_t) precy;
+  diff = (mpfr_exp_t) prec_i_have - 2 * (mpfr_exp_t) precy;
   expo = diff;
   if (diff >= 0)
-    mpz_div_2exp (S[0], S[0], diff);
+    mpz_fdiv_q_2exp (S[0], S[0], diff);
   else
     mpz_mul_2exp (S[0], S[0], -diff);
 
   MPFR_MPZ_SIZEINBASE2 (prec_i_have, Q[0]);
-  diff = (mp_exp_t) prec_i_have - (mp_prec_t) precy;
+  diff = (mpfr_exp_t) prec_i_have - (mpfr_prec_t) precy;
   expo -= diff;
   if (diff > 0)
-    mpz_div_2exp (Q[0], Q[0], diff);
+    mpz_fdiv_q_2exp (Q[0], Q[0], diff);
   else
     mpz_mul_2exp (Q[0], Q[0], -diff);
 
   mpz_tdiv_q (S[0], S[0], Q[0]);
-  mpfr_set_z (y, S[0], GMP_RNDD);
+  mpfr_set_z (y, S[0], MPFR_RNDD);
   MPFR_SET_EXP (y, MPFR_GET_EXP (y) + expo - r * (i - 1) );
 }
 
-#define shift (BITS_PER_MP_LIMB/2)
+#define shift (GMP_NUMB_BITS/2)
 
 int
-mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
+mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mpfr_rnd_t rnd_mode)
 {
   mpfr_t t, x_copy, tmp;
   mpz_t uk;
-  mp_exp_t ttt, shift_x;
+  mpfr_exp_t ttt, shift_x;
   unsigned long twopoweri;
   mpz_t *P;
-  mp_prec_t *mult;
+  mpfr_prec_t *mult;
   int i, k, loop;
   int prec_x;
-  mp_prec_t realprec, Prec;
+  mpfr_prec_t realprec, Prec;
   int iter;
   int inexact = 0;
   MPFR_SAVE_EXPO_DECL (expo);
@@ -174,19 +174,19 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
   /* decompose x */
   /* we first write x = 1.xxxxxxxxxxxxx
      ----- k bits -- */
-  prec_x = MPFR_INT_CEIL_LOG2 (MPFR_PREC (x)) - MPFR_LOG2_BITS_PER_MP_LIMB;
+  prec_x = MPFR_INT_CEIL_LOG2 (MPFR_PREC (x)) - MPFR_LOG2_GMP_NUMB_BITS;
   if (prec_x < 0)
     prec_x = 0;
 
   ttt = MPFR_GET_EXP (x);
   mpfr_init2 (x_copy, MPFR_PREC(x));
-  mpfr_set (x_copy, x, GMP_RNDD);
+  mpfr_set (x_copy, x, MPFR_RNDD);
 
   /* we shift to get a number less than 1 */
   if (ttt > 0)
     {
       shift_x = ttt;
-      mpfr_div_2ui (x_copy, x, ttt, GMP_RNDN);
+      mpfr_div_2ui (x_copy, x, ttt, MPFR_RNDN);
       ttt = MPFR_GET_EXP (x_copy);
     }
   else
@@ -207,23 +207,23 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
       int scaled = 0;
       MPFR_BLOCK_DECL (flags);
 
-      k = MPFR_INT_CEIL_LOG2 (Prec) - MPFR_LOG2_BITS_PER_MP_LIMB;
+      k = MPFR_INT_CEIL_LOG2 (Prec) - MPFR_LOG2_GMP_NUMB_BITS;
 
       /* now we have to extract */
-      twopoweri = BITS_PER_MP_LIMB;
+      twopoweri = GMP_NUMB_BITS;
 
       /* Allocate tables */
       P    = (mpz_t*) (*__gmp_allocate_func) (3*(k+2)*sizeof(mpz_t));
       for (i = 0; i < 3*(k+2); i++)
         mpz_init (P[i]);
-      mult = (mp_prec_t*) (*__gmp_allocate_func) (2*(k+2)*sizeof(mp_prec_t));
+      mult = (mpfr_prec_t*) (*__gmp_allocate_func) (2*(k+2)*sizeof(mpfr_prec_t));
 
       /* Particular case for i==0 */
       mpfr_extract (uk, x_copy, 0);
       MPFR_ASSERTD (mpz_cmp_ui (uk, 0) != 0);
       mpfr_exp_rational (tmp, uk, shift + twopoweri - ttt, k + 1, P, mult);
       for (loop = 0; loop < shift; loop++)
-        mpfr_sqr (tmp, tmp, GMP_RNDD);
+        mpfr_sqr (tmp, tmp, MPFR_RNDD);
       twopoweri *= 2;
 
       /* General case */
@@ -234,7 +234,7 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
           if (MPFR_LIKELY (mpz_cmp_ui (uk, 0) != 0))
             {
               mpfr_exp_rational (t, uk, twopoweri - ttt, k  - i + 1, P, mult);
-              mpfr_mul (tmp, tmp, t, GMP_RNDD);
+              mpfr_mul (tmp, tmp, t, MPFR_RNDD);
             }
           MPFR_ASSERTN (twopoweri <= LONG_MAX/2);
           twopoweri *=2;
@@ -244,14 +244,14 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
       for (i = 0; i < 3*(k+2); i++)
         mpz_clear (P[i]);
       (*__gmp_free_func) (P, 3*(k+2)*sizeof(mpz_t));
-      (*__gmp_free_func) (mult, 2*(k+2)*sizeof(mp_prec_t));
+      (*__gmp_free_func) (mult, 2*(k+2)*sizeof(mpfr_prec_t));
 
       if (shift_x > 0)
         {
           MPFR_BLOCK (flags, {
               for (loop = 0; loop < shift_x - 1; loop++)
-                mpfr_sqr (tmp, tmp, GMP_RNDD);
-              mpfr_sqr (t, tmp, GMP_RNDD);
+                mpfr_sqr (tmp, tmp, MPFR_RNDD);
+              mpfr_sqr (t, tmp, MPFR_RNDD);
             } );
 
           if (MPFR_UNLIKELY (MPFR_OVERFLOW (flags)))
@@ -266,14 +266,14 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
             {
               /* This may be a spurious underflow. So, let's scale
                  the result. */
-              mpfr_mul_2ui (tmp, tmp, 1, GMP_RNDD);  /* no overflow, exact */
-              mpfr_sqr (t, tmp, GMP_RNDD);
+              mpfr_mul_2ui (tmp, tmp, 1, MPFR_RNDD);  /* no overflow, exact */
+              mpfr_sqr (t, tmp, MPFR_RNDD);
               if (MPFR_IS_ZERO (t))
                 {
                   /* approximate result < 2^(emin - 3), thus
                      exact result < 2^(emin - 2). */
-                  inexact = mpfr_underflow (y, (rnd_mode == GMP_RNDN) ?
-                                            GMP_RNDZ : rnd_mode, 1);
+                  inexact = mpfr_underflow (y, (rnd_mode == MPFR_RNDN) ?
+                                            MPFR_RNDZ : rnd_mode, 1);
                   MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, MPFR_FLAGS_UNDERFLOW);
                   break;
                 }
@@ -281,30 +281,30 @@ mpfr_exp_3 (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
             }
         }
 
-      if (mpfr_can_round (shift_x > 0 ? t : tmp, realprec, GMP_RNDD, GMP_RNDZ,
-                          MPFR_PREC(y) + (rnd_mode == GMP_RNDN)))
+      if (mpfr_can_round (shift_x > 0 ? t : tmp, realprec, MPFR_RNDD, MPFR_RNDZ,
+                          MPFR_PREC(y) + (rnd_mode == MPFR_RNDN)))
         {
           inexact = mpfr_set (y, shift_x > 0 ? t : tmp, rnd_mode);
           if (MPFR_UNLIKELY (scaled && MPFR_IS_PURE_FP (y)))
             {
               int inex2;
-              mp_exp_t ey;
+              mpfr_exp_t ey;
 
               /* The result has been scaled and needs to be corrected. */
               ey = MPFR_GET_EXP (y);
               inex2 = mpfr_mul_2si (y, y, -2, rnd_mode);
               if (inex2)  /* underflow */
                 {
-                  if (rnd_mode == GMP_RNDN && inexact < 0 &&
+                  if (rnd_mode == MPFR_RNDN && inexact < 0 &&
                       MPFR_IS_ZERO (y) && ey == __gmpfr_emin + 1)
                     {
-                      /* Double rounding case: in GMP_RNDN, the scaled
+                      /* Double rounding case: in MPFR_RNDN, the scaled
                          result has been rounded downward to 2^emin.
                          As the exact result is > 2^(emin - 2), correct
                          rounding must be done upward. */
                       /* TODO: make sure in coverage tests that this line
                          is reached. */
-                      inexact = mpfr_underflow (y, GMP_RNDU, 1);
+                      inexact = mpfr_underflow (y, MPFR_RNDU, 1);
                     }
                   else
                     {

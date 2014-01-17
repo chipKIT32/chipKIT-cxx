@@ -19,10 +19,12 @@ MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a8
 MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4f
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-m4
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-m3
 MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m1
 MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m0
+MULTILIB_MATCHES      += march?armv6-m=march?armv6s-m
 MULTILIB_MATCHES      += march?armv5te=march?armv6
 MULTILIB_MATCHES      += march?armv5te=march?armv6j
 MULTILIB_MATCHES      += march?armv5te=march?armv6k

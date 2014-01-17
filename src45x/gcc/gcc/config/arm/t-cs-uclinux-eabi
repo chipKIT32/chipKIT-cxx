@@ -3,14 +3,14 @@
 # We build 3 multilibs:
 #  .	    (default)
 #  thumb2/  -mthumb -march=armv7 -mfix-cortex-m3-ldrd
-#  armv6-m/ -mthumb -march=armv6-m
+#  armv6-m/ -mthumb -march=armv6s-m
 
 MULTILIB_OPTIONS     = mthumb
 MULTILIB_DIRNAMES    = thumb
 MULTILIB_EXCEPTIONS  = 
 MULTILIB_MATCHES     =
 
-MULTILIB_OPTIONS      += march=armv7/march=armv6-m
+MULTILIB_OPTIONS      += march=armv7/march=armv6s-m
 MULTILIB_DIRNAMES     += armv7 armv6-m
 
 MULTILIB_EXCEPTIONS   += mthumb
@@ -28,12 +28,14 @@ MULTILIB_MATCHES      += march?armv7=mcpu?cortex-a8
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-a5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4f
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-m4
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-m3
 
-MULTILIB_EXCEPTIONS   += march=armv6-m
-MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m1
-MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m0
+MULTILIB_EXCEPTIONS   += march=armv6s-m
+MULTILIB_MATCHES      += march?armv6s-m=mcpu?cortex-m1
+MULTILIB_MATCHES      += march?armv6s-m=mcpu?cortex-m0
+MULTILIB_MATCHES      += march?armv6s-m=march?armv6-m
 
 MULTILIB_ALIASES       =
 
@@ -46,11 +48,11 @@ MULTILIB_DIRNAMES     += broken_ldrd
 MULTILIB_EXCEPTIONS   += mfix-cortex-m3-ldrd
 MULTILIB_EXCEPTIONS   += mthumb/mfix-cortex-m3-ldrd
 MULTILIB_EXCEPTIONS   += march=armv7/mfix-cortex-m3-ldrd
-MULTILIB_EXCEPTIONS   += *march=armv6-m*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv6s-m*mfix-cortex-m3-ldrd
 
 MULTILIB_ALIASES      += mthumb/march?armv7/mfix-cortex-m3-ldrd=mthumb/march?armv7
 
 
 MULTILIB_OSDIRNAMES    = mthumb/march.armv7/mfix-cortex-m3-ldrd=!thumb2
-MULTILIB_OSDIRNAMES   += mthumb/march.armv6-m=!armv6-m
+MULTILIB_OSDIRNAMES   += mthumb/march.armv6s-m=!armv6-m
 

@@ -28,6 +28,8 @@ extern enum machine_mode default_promote_function_mode (const_tree, enum machine
 							int *, const_tree, int);
 extern enum machine_mode default_promote_function_mode_always_promote
 			(const_tree, enum machine_mode, int *, const_tree, int);
+extern enum machine_mode default_promote_libcall_mode (enum machine_mode,
+						       int *, const_tree, int);
 
 extern enum machine_mode default_cc_modes_compatible (enum machine_mode,
 						      enum machine_mode);

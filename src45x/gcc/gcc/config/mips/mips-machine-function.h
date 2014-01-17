@@ -134,7 +134,7 @@ struct GTY(()) machine_function  {
 
   /* How many instructions it takes to load a label into $AT, or 0 if
      this property hasn't yet been calculated.  */
-  unsigned int load_label_length;
+  unsigned int load_label_num_insns;
 
   /* True if mips_adjust_insn_length should ignore an instruction's
      hazard attribute.  */
@@ -162,10 +162,6 @@ struct GTY(()) machine_function  {
      split_insns pass; see mips_must_initialize_gp_p () for details.  */
   bool must_restore_gp_when_clobbered_p;
 
-  /* True if we have emitted an instruction to initialize
-     mips16_gp_pseudo_rtx.  */
-  bool initialized_mips16_gp_pseudo_p;
-
   /* True if this is an interrupt handler.  */
   bool interrupt_handler_p;
   enum mips_function_type_tag current_function_type;
@@ -181,6 +177,15 @@ struct GTY(()) machine_function  {
   /* True if this is an interrupt handler that should use DERET
      instead of ERET.  */
   bool use_debug_exception_return_p;
+
+  /* True if some of the callees uses its frame header.  */
+  bool callees_use_frame_header_p;
+
+  /* True if current function uses its frame header.  */
+  bool uses_frame_header_p;
+
+  /* Frame size before updated by optimizations.  */
+  HOST_WIDE_INT initial_total_size;
 };
 
 

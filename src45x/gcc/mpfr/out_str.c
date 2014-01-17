@@ -1,13 +1,13 @@
 /* mpfr_out_str -- output a floating-point number to a stream
 
-Copyright 1999, 2001, 2002, 2004, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2001, 2002, 2004, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,57 +16,47 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "mpfr-impl.h"
 
+/* Warning! S should not contain "%". */
+#define OUT_STR_RET(S)                          \
+  do                                            \
+    {                                           \
+      int r;                                    \
+      r = fprintf (stream, (S));                \
+      return r < 0 ? 0 : r;                     \
+    }                                           \
+  while (0)
+
 size_t
 mpfr_out_str (FILE *stream, int base, size_t n_digits, mpfr_srcptr op,
-              mp_rnd_t rnd_mode)
+              mpfr_rnd_t rnd_mode)
 {
   char *s, *s0;
   size_t l;
-  mp_exp_t e;
+  mpfr_exp_t e;
+  int err;
 
-  MPFR_ASSERTN (base >= 2 && base <= 36);
+  MPFR_ASSERTN (base >= 2 && base <= 62);
 
   /* when stream=NULL, output to stdout */
   if (stream == NULL)
     stream = stdout;
 
-  if (MPFR_IS_NAN(op))
+  if (MPFR_UNLIKELY (MPFR_IS_SINGULAR (op)))
     {
-      fprintf (stream, "@NaN@");
-      return 3;
-    }
-
-  if (MPFR_IS_INF(op))
-    {
-      if (MPFR_SIGN(op) > 0)
-        {
-          fprintf (stream, "@Inf@");
-          return 3;
-        }
+      if (MPFR_IS_NAN (op))
+        OUT_STR_RET ("@NaN@");
+      else if (MPFR_IS_INF (op))
+        OUT_STR_RET (MPFR_IS_POS (op) ? "@Inf@" : "-@Inf@");
       else
         {
-          fprintf (stream, "-@Inf@");
-          return 4;
-        }
-    }
-
-  if (MPFR_IS_ZERO(op))
-    {
-      if (MPFR_SIGN(op) > 0)
-        {
-          fprintf(stream, "0");
-          return 1;
-        }
-      else
-        {
-          fprintf(stream, "-0");
-          return 2;
+          MPFR_ASSERTD (MPFR_IS_ZERO (op));
+          OUT_STR_RET (MPFR_IS_POS (op) ? "0" : "-0");
         }
     }
 
@@ -77,21 +67,31 @@ mpfr_out_str (FILE *stream, int base, size_t n_digits, mpfr_srcptr op,
 
   l = strlen (s) + 1; /* size of allocated block returned by mpfr_get_str
                          - may be incorrect, as only an upper bound? */
-  if (*s == '-')
-    fputc (*s++, stream);
 
-  /* outputs mantissa */
-  fputc (*s++, stream); e--; /* leading digit */
-  fputc ((unsigned char) MPFR_DECIMAL_POINT, stream);
-  fputs (s, stream);         /* rest of mantissa */
+  /* outputs possible sign and significand */
+  err = (*s == '-' && fputc (*s++, stream) == EOF)
+    || fputc (*s++, stream) == EOF  /* leading digit */
+    || fputc ((unsigned char) MPFR_DECIMAL_POINT, stream) == EOF
+    || fputs (s, stream) == EOF;     /* trailing significand */
   (*__gmp_free_func) (s0, l);
+  if (MPFR_UNLIKELY (err))
+    return 0;
+
+  e--;  /* due to the leading digit */
 
   /* outputs exponent */
   if (e)
     {
+      int r;
+
       MPFR_ASSERTN(e >= LONG_MIN);
       MPFR_ASSERTN(e <= LONG_MAX);
-      l += fprintf (stream, (base <= 10 ? "e%ld" : "@%ld"), (long) e);
+
+      r = fprintf (stream, (base <= 10 ? "e%ld" : "@%ld"), (long) e);
+      if (MPFR_UNLIKELY (r < 0))
+        return 0;
+
+      l += r;
     }
 
   return l;

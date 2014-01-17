@@ -1,6 +1,6 @@
 /* tconj -- test file for mpc_conj.
 
-Copyright (C) 2008 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008
 
 This file is part of the MPC Library.
 

@@ -1,6 +1,6 @@
 
 tmpdir/tls-lib2.so:     file format elf32-.*arm
-architecture: arm, flags 0x[0-9a-f]+:
+architecture: armv.t, flags 0x[0-9a-f]+:
 HAS_SYMS, DYNAMIC, D_PAGED
 start address 0x[0-9a-f]+
 
@@ -33,10 +33,10 @@ Disassembly of section .text:
 
 [0-9a-f]+ <bar>:
     [0-9a-f]+:	4801      	ldr	r0, \[pc, #4\]	; .*
-    [0-9a-f]+:	f7ff efdf 	blx	[0-9a-f]+ .*
+    [0-9a-f]+:	f7ff efe0 	blx	[0-9a-f]+ .*
     [0-9a-f]+:	46c0      	nop			; .*
     [0-9a-f]+:	000080b5 	.word	0x000080b5
     [0-9a-f]+:	4801      	ldr	r0, \[pc, #4\]	; .*
-    [0-9a-f]+:	f7ff efd9 	blx	[0-9a-f]+ .*
+    [0-9a-f]+:	f7ff efda 	blx	[0-9a-f]+ .*
     [0-9a-f]+:	46c0      	nop			; .*
     [0-9a-f]+:	000080a1 	.word	0x000080a1

@@ -1,11 +1,11 @@
 /* tprintf.c -- test file for mpfr_printf and mpfr_vprintf
 
-Copyright 2008, 2009 Free Software Foundation, Inc.
+Copyright 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -14,9 +14,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #if defined HAVE_STDARG
 #include <stdarg.h>
@@ -169,7 +169,7 @@ check_long_string (void)
 
   mpfr_init2 (x, INT_MAX);
 
-  mpfr_set_ui (x, 1, GMP_RNDN);
+  mpfr_set_ui (x, 1, MPFR_RNDN);
   mpfr_nextabove (x);
 
   check_vprintf_failure ("%Rb", x);
@@ -241,13 +241,13 @@ check_mixed (void)
   double d = -1.25;
   long double ld = -1.25;
 
-  ptrdiff_t p = 1;
+  ptrdiff_t p = 1, saved_p;
   size_t sz = 1;
 
   mpz_t mpz;
   mpq_t mpq;
   mpf_t mpf;
-  mp_rnd_t rnd = GMP_RNDN;
+  mpfr_rnd_t rnd = MPFR_RNDN;
 
   mpfr_t mpfr;
   mpfr_prec_t prec;
@@ -259,7 +259,7 @@ check_mixed (void)
   mpf_init (mpf);
   mpf_set_q (mpf, mpq);
   mpfr_init (mpfr);
-  mpfr_set_f (mpfr, mpf, GMP_RNDN);
+  mpfr_set_f (mpfr, mpf, MPFR_RNDN);
   prec = mpfr_get_prec (mpfr);
 
   check_vprintf ("a. %Ra, b. %u, c. %lx%n", mpfr, ui, ulo, &j);
@@ -279,8 +279,11 @@ check_mixed (void)
   check_length_with_cmp (7, mpfr, 15, mpfr_cmp_ui (mpfr, 15), Rg);
 
 #ifndef NPRINTF_T
+  saved_p = p;
   check_vprintf ("%% a. %RNg, b. %Qx, c. %td%tn", mpfr, mpq, p, &p);
-  check_length (8, (long) p, 20, ld);  /* no format specifier '%td' in C89 */
+  if (p != 20)
+    mpfr_fprintf (stderr, "Error in test 8, got '%% a. %RNg, b. %Qx, c. %td'\n", mpfr, mpq, saved_p);
+  check_length (8, (long) p, 20, ld); /* no format specifier '%td' in C89 */
 #endif
 
 #ifndef NPRINTF_L
@@ -290,7 +293,7 @@ check_mixed (void)
 
 #ifndef NPRINTF_HH
   check_vprintf ("a. %hhi, b. %Ra, c. %hhu%hhn", sch, mpfr, uch, &uch);
-  check_length (10, (unsigned int) uch, 22, u);  /* no format specifier '%hhu' in C89 */
+  check_length (10, (unsigned int) uch, 22, u); /* no format specifier '%hhu' in C89 */
 #endif
 
 #if defined(HAVE_LONG_LONG) && !defined(NPRINTF_LL)
@@ -328,7 +331,7 @@ check_random (int nb_tests)
 {
   int i;
   mpfr_t x;
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
   char flag[] =
     {
       '-',
@@ -346,7 +349,7 @@ check_random (int nb_tests)
       'f',
       'g'
     };
-  mp_exp_t old_emin, old_emax;
+  mpfr_exp_t old_emin, old_emax;
 
   old_emin = mpfr_get_emin ();
   old_emax = mpfr_get_emax ();
@@ -363,7 +366,7 @@ check_random (int nb_tests)
       char *ptr = fmt;
 
       tests_default_random (x, 256, MPFR_EMIN_MIN, MPFR_EMAX_MAX);
-      rnd = (mp_rnd_t) RND_RAND ();
+      rnd = (mpfr_rnd_t) RND_RAND ();
 
       spec = (int) (randlimb () % 5);
       jmax = (spec == 3 || spec == 4) ? 6 : 5; /* ' flag only with %f or %g */

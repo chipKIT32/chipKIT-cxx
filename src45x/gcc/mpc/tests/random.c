@@ -1,6 +1,6 @@
 /* Handle seed for random numbers.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny, Paul Zimmermann, Andreas Enge
+Copyright (C) INRIA, 2008, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -66,17 +66,17 @@ test_start (void)
       gmp_randseed_ui (rands, 0xfac11e);
   else
     {
-      seed = atoi (environment_seed);
+      seed = (unsigned long int) atoi (environment_seed);
       if (seed == 0 || seed == 1)
         {
-#if HAVE_GETTIMEOFDAY
+#if defined HAVE_GETTIMEOFDAY
           struct timeval  tv;
           gettimeofday (&tv, NULL);
-          seed = tv.tv_sec + tv.tv_usec;
+          seed = (unsigned long int) (tv.tv_sec + tv.tv_usec);
 #else
           time_t  tv;
           time (&tv);
-          seed = tv;
+          seed = (unsigned long int) tv;
 #endif
           gmp_randseed_ui (rands, seed);
           printf ("Seed GMP_CHECK_RANDOMIZE=%lu "
@@ -110,11 +110,11 @@ test_end (void)
    equal to ZERO_PROBABILITY / 256.
 */
 void
-test_default_random (mpc_ptr z, mp_exp_t emin, mp_exp_t emax,
+test_default_random (mpc_ptr z, mpfr_exp_t emin, mpfr_exp_t emax,
                      unsigned int negative_probability,
                      unsigned int zero_probability)
 {
-  const unsigned long range = (long)emax - (long)emin + 1;
+  const unsigned long range = (unsigned long int) (emax - emin) + 1;
   unsigned long r;
 
   if (!rands_initialized)
@@ -150,10 +150,10 @@ test_default_random (mpc_ptr z, mp_exp_t emin, mp_exp_t emax,
         mpfr_set_ui (MPC_IM (z), 0, GMP_RNDN);
     }
   if (!mpfr_zero_p (MPC_RE (z)))
-    mpfr_set_exp (MPC_RE (z), (mp_exp_t) gmp_urandomm_ui (rands, range) + emin);
+    mpfr_set_exp (MPC_RE (z), (mpfr_exp_t) gmp_urandomm_ui (rands, range) + emin);
 
   if (!mpfr_zero_p (MPC_IM (z)))
-    mpfr_set_exp (MPC_IM (z), (mp_exp_t) gmp_urandomm_ui (rands, range) + emin);
+    mpfr_set_exp (MPC_IM (z), (mpfr_exp_t) gmp_urandomm_ui (rands, range) + emin);
 
   if (negative_probability > 256)
     negative_probability = 256;

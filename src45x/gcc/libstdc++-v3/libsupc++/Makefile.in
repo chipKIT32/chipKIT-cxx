@@ -768,9 +768,9 @@ cp-demangle.c:
 	rm -f $@
 	$(LN_S) $(toplevel_srcdir)/libiberty/cp-demangle.c $@
 cp-demangle.lo: cp-demangle.c
-	$(LTCOMPILE) -DIN_GLIBCPP_V3 -Wno-error -c $<
+	$(LTCOMPILE) -DIN_GLIBCPP_V3 -Wno-error -mno-smart-io -c $<
 cp-demangle.o: cp-demangle.c
-	$(C_COMPILE) -DIN_GLIBCPP_V3 -Wno-error -c $<
+	$(C_COMPILE) -DIN_GLIBCPP_V3 -Wno-error -mno-smart-io -c $<
 
 # We have to have rules modified from the default to counteract SUN make
 # prepending each of $(glibcxxinstall_HEADERS) with VPATH below.

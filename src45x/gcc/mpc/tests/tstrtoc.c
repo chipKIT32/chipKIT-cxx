@@ -1,6 +1,6 @@
 /* test file for mpc_strtoc.
 
-Copyright (C) 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2009, 2011
 
 This file is part of the MPC Library.
 
@@ -53,7 +53,7 @@ check_file (const char* file_name)
 
 
   fp = open_data_file (file_name);
-  
+
   /* initializations */
   str = (char *) malloc (str_len);
   if (str == NULL)
@@ -118,8 +118,8 @@ check_file (const char* file_name)
           else
             {
               printf ("     ");
-              OUT (got);
-              OUT (expected);
+              MPC_OUT (got);
+              MPC_OUT (expected);
             }
           exit (1);
         }
@@ -151,7 +151,7 @@ check_null (void)
     {
       printf ("Error: mpc_strtoc(z, NULL) with a NULL pointer should fail"
               " and the z value should be set to NaN +I*NaN\ngot ");
-      OUT (z);
+      MPC_OUT (z);
       exit (1);
     }
 

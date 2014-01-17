@@ -1,0 +1,112 @@
+# Expect script for various ELF tests.
+#   Copyright 2011 Free Software Foundation, Inc.
+#
+# This file is part of the GNU Binutils.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
+
+# Exclude non-ELF targets.
+if ![is_elf_format] {
+    return
+}
+
+# This feature probably doesn't make sense on non-Linux targets.
+if { ![istarget *-*-linux*] } {
+    return
+}
+
+# Check if compiler works.
+if { [which $CXX] == 0 } {
+    return
+}
+
+global nm
+global nm_output
+
+# Build unoptimized libraries and program.  There should be a symbol
+# named "_ZN4testC2Ei" defined in all four pieces.  If not, the compiler
+# is doing something unexpected and this test isn't valid.
+
+if { ![ld_simple_link $CXX libcomdat0-base.so "$CXXFLAGS -fPIC -shared $srcdir/$subdir/comdat0.C"]
+     || ![ld_nm $nm "" "libcomdat0-base.so"]
+     || ![info exists nm_output(ZN4testC2Ei)] } {
+   unresolved "ELF comdat baseline"
+   return
+}
+
+if { ![ld_simple_link $CXX libcomdat1a-base.so "$CXXFLAGS -fPIC -shared $srcdir/$subdir/comdat1a.C -L . -lcomdat0-base"]
+     || ![ld_nm $nm "" "libcomdat1a-base.so"]
+     || ![info exists nm_output(ZN4testC2Ei)] } {
+   unresolved "ELF comdat baseline"
+   return
+}
+
+if { ![ld_simple_link $CXX libcomdat1b-base.so "$CXXFLAGS -fPIC -shared $srcdir/$subdir/comdat1b.C -L. -lcomdat0-base"]
+     || ![ld_nm $nm "" "libcomdat1b-base.so"]
+     || ![info exists nm_output(ZN4testC2Ei)] } {
+   unresolved "ELF comdat baseline"
+   return
+}
+
+if { ![ld_simple_link $CXX comdat-main-base "$CXXFLAGS $srcdir/$subdir/comdat-main.C -L. -Wl,-rpath-link=. -lcomdat1a-base -lcomdat1b-base -lcomdat0-base"]
+     || ![ld_nm $nm "" "comdat-main-base"]
+     || ![info exists nm_output(ZN4testC2Ei)] } {
+   unresolved "ELF comdat baseline"
+   return
+}
+
+# Now rebuild everything with --shared-comdat.  Only libcomdat0 should
+# include a definition of "_ZN4testC2Ei".  The other three pieces should
+# simply include a dynamic reference to that definition.
+
+if { ![ld_simple_link $CXX libcomdat0-opt.so "$CXXFLAGS -fPIC -shared -Wl,--shared-comdat $srcdir/$subdir/comdat0.C"]
+     || ![ld_nm $nm "" "libcomdat0-opt.so"]
+     || ![info exists nm_output(ZN4testC2Ei)] } {
+   fail "ELF comdat libcomdat0"
+   return
+} else {
+   pass "ELF comdat libcomdat0"
+}
+
+if { ![ld_simple_link $CXX libcomdat1a-opt.so "$CXXFLAGS -fPIC -shared -Wl,--shared-comdat $srcdir/$subdir/comdat1a.C -L . -lcomdat0-opt"]
+     || ![ld_nm $nm "" "libcomdat1a-opt.so"]
+     || [info exists nm_output(ZN4testC2Ei)] } {
+   fail "ELF comdat libcomdat1a"
+   return
+} else {
+   pass "ELF comdat libcomdat1a"
+}
+
+if { ![ld_simple_link $CXX libcomdat1b-opt.so "$CXXFLAGS -fPIC -shared -Wl,--shared-comdat $srcdir/$subdir/comdat1b.C -L. -lcomdat0-opt"]
+     || ![ld_nm $nm "" "libcomdat1b-opt.so"]
+     || [info exists nm_output(ZN4testC2Ei)] } {
+   fail "ELF comdat libcomdat1b"
+   return
+} else {
+   pass "ELF comdat libcomdat1b"
+}
+
+if { ![ld_simple_link $CXX comdat-main-opt "$CXXFLAGS -Wl,--shared-comdat $srcdir/$subdir/comdat-main.C -L. -Wl,-rpath-link=. -lcomdat1a-opt -lcomdat1b-opt -lcomdat0-opt"]
+     || ![ld_nm $nm "" "comdat-main-opt"]
+     || [info exists nm_output(ZN4testC2Ei)] } {
+   fail "ELF comdat comdat-main"
+   return
+} else {
+   pass "ELF comdat comdat-main"
+}
+
+

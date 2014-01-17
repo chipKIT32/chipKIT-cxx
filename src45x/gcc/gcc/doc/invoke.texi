@@ -382,7 +382,8 @@ Objective-C and Objective-C++ Dialects}.
 -fstrict-aliasing -fstrict-overflow -fthread-jumps -ftracer @gol
 -ftree-builtin-call-dce -ftree-ccp -ftree-ch -ftree-copy-prop @gol
 -ftree-copyrename -ftree-dce @gol
--ftree-dominator-opts -ftree-dse -ftree-forwprop -ftree-fre -ftree-loop-im @gol
+-ftree-dominator-opts -ftree-dse -ftree-forwprop -ftree-fre @gol
+-ftree-if-to-switch-conversion -ftree-loop-im @gol
 -ftree-phiprop -ftree-loop-distribution @gol
 -ftree-loop-ivcanon -ftree-loop-linear -ftree-loop-optimize @gol
 -ftree-parallelize-loops=@var{n} -ftree-pre -ftree-pta -ftree-reassoc @gol
@@ -709,6 +710,7 @@ Objective-C and Objective-C++ Dialects}.
 -mmemcpy  -mno-memcpy  -mlong-calls  -mno-long-calls @gol
 -mjals -mno-jals @gol
 -mmad  -mno-mad  -mfused-madd  -mno-fused-madd  -nocpp @gol
+-mfix-24k -mno-fix-24k @gol
 -mfix-r4000  -mno-fix-r4000  -mfix-r4400  -mno-fix-r4400 @gol
 -mfix-r10000 -mno-fix-r10000  -mfix-vr4120  -mno-fix-vr4120 @gol
 -mfix-vr4130  -mno-fix-vr4130  -mfix-sb1  -mno-fix-sb1 @gol
@@ -913,6 +915,7 @@ See S/390 and zSeries Options.
 -finhibit-size-directive  -finstrument-functions @gol
 -finstrument-functions-exclude-function-list=@var{sym},@var{sym},@dots{} @gol
 -finstrument-functions-exclude-file-list=@var{file},@var{file},@dots{} @gol
+-finstrument-function-calls @gol
 -fno-common  -fno-ident @gol
 -fpcc-struct-return  -fpic  -fPIC -fpie -fPIE @gol
 -fno-jump-tables @gol
@@ -5753,6 +5756,7 @@ compilation time.
 -fipa-pure-const @gol
 -fipa-reference @gol
 -fmerge-constants
+-fshrink-wrap @gol
 -fsplit-wide-types @gol
 -ftree-builtin-call-dce @gol
 -ftree-ccp @gol
@@ -5801,6 +5805,7 @@ also turns on the following optimization flags:
 -fsched-interblock  -fsched-spec @gol
 -fschedule-insns  -fschedule-insns2 @gol
 -fstrict-aliasing -fstrict-overflow @gol
+-ftree-if-to-switch-conversion @gol
 -ftree-switch-conversion @gol
 -ftree-pre @gol
 -ftree-vrp}
@@ -5813,7 +5818,8 @@ invoking @option{-O2} on programs that use computed gotos.
 Optimize yet more.  @option{-O3} turns on all optimizations specified
 by @option{-O2} and also turns on the @option{-finline-functions},
 @option{-funswitch-loops}, @option{-fpredictive-commoning},
-@option{-fgcse-after-reload} and @option{-ftree-vectorize} options.
+@option{-fgcse-after-reload}, @option{-ftree-vectorize} and
+@option{-fipa-cp-clone} options.
 
 @item -O0
 @opindex O0
@@ -6506,6 +6512,11 @@ This option has no effect until one of @option{-fselective-scheduling} or
 When pipelining loops during selective scheduling, also pipeline outer loops.
 This option has no effect until @option{-fsel-sched-pipelining} is turned on.
 
+@item -fshrink-wrap
+@opindex fshrink-wrap
+Emit function prologues only before parts of the function that need it,
+rather than at the top of the function.
+
 @item -fcaller-saves
 @opindex fcaller-saves
 Enable values to be allocated in registers that will be clobbered by
@@ -6635,6 +6646,10 @@ at @option{-O} and higher.
 Perform conversion of simple initializations in a switch to
 initializations from a scalar array.  This flag is enabled by default
 at @option{-O2} and higher.
+
+@item -ftree-if-to-switch-conversion
+Perform conversion of chains of ifs into switches.  This flag is enabled by
+default at @option{-O2} and higher.
 
 @item -ftree-dce
 @opindex ftree-dce
@@ -8602,6 +8617,12 @@ loop in the loop nest by a given number of iterations.  The strip
 length can be changed using the @option{loop-block-tile-size}
 parameter.  The default value is 51 iterations.
 
+@item if-to-switch-threshold
+If-chain to switch conversion, enabled by
+@option{-ftree-if-to-switch-conversion} convert chains of ifs of sufficient
+length into switches.  The parameter @option{if-to-switch-threshold} can be
+used to set the minimal required length.  The default value is 3.
+
 @end table
 @end table
 
@@ -9906,7 +9927,8 @@ assembly code.  Permissible names are: @samp{arm2}, @samp{arm250},
 @samp{arm1136j-s}, @samp{arm1136jf-s}, @samp{mpcore}, @samp{mpcorenovfp},
 @samp{arm1156t2-s}, @samp{arm1156t2f-s}, @samp{arm1176jz-s}, @samp{arm1176jzf-s},
 @samp{cortex-a5}, @samp{cortex-a8}, @samp{cortex-a9},
-@samp{cortex-r4}, @samp{cortex-r4f}, @samp{cortex-m4}, @samp{cortex-m3},
+@samp{cortex-r4}, @samp{cortex-r4f}, @samp{cortex-r5},
+@samp{cortex-m4}, @samp{cortex-m3},
 @samp{cortex-m1},
 @samp{cortex-m0},
 @samp{xscale}, @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
@@ -10116,13 +10138,14 @@ best available method for the selected processor.  The default setting is
 @item -mtls-dialect=@var{dialect}
 @opindex mtls-dialect
 Specify the dialect to use for accessing thread local storage.  Two
-dialects are supported - @option{arm} and @option{gnu}.  The
-@option{arm} dialect selects the ARM EABI scheme for supporting local
-and global dynamic tls models.  The @option{gnu} dialect selects the
-experimental GNU scheme.  The GNU scheme is compatible with the ARM
-scheme, but does require new assembler, linker and library
-support.  Initial and local exec TLS models are unaffected by this
-option and use the ARM EABI scheme.
+dialects are supported - @option{gnu} and @option{gnu2}.  The
+@option{gnu} dialect selects the original GNU scheme for supporting
+local and global dynamic TLS models.  The @option{gnu2} dialect
+selects the GNU descriptor scheme, which provides better performance
+for shared libraries.  The GNU descriptor scheme is compatible with
+the original scheme, but does require new assembler, linker and
+library support.  Initial and local exec TLS models are unaffected by
+this option and always use the original scheme.
 
 @item -mword-relocations
 @opindex mword-relocations
@@ -12970,7 +12993,7 @@ below, which also classifies the CPUs into families:
 
 @multitable @columnfractions 0.20 0.80
 @item @strong{Family} @tab @strong{@samp{-mcpu} arguments}
-@item @samp{51} @tab @samp{51} @samp{51ac} @samp{51cn} @samp{51em} @samp{51qe}
+@item @samp{51} @tab @samp{51} @samp{51ac} @samp{51ag} @samp{51cn} @samp{51em} @samp{51je} @samp{51jm} @samp{51mm} @samp{51qe}
 @item @samp{5206} @tab @samp{5202} @samp{5204} @samp{5206}
 @item @samp{5206e} @tab @samp{5206e}
 @item @samp{5208} @tab @samp{5207} @samp{5208}
@@ -13652,7 +13675,7 @@ The processor names are:
 @samp{74kc}, @samp{74kf2_1}, @samp{74kf1_1}, @samp{74kf3_2},
 @samp{1004kc}, @samp{1004kf2_1}, @samp{1004kf1_1},
 @samp{loongson2e}, @samp{loongson2f},
-@samp{m4k}, @samp{m14k}, @samp{m14kc},
+@samp{m4k}, @samp{m14k}, @samp{m14kc}, @samp{m14ke}, @samp{14kec},
 @samp{octeon},
 @samp{orion},
 @samp{r2000}, @samp{r3000}, @samp{r3900}, @samp{r4000}, @samp{r4400},
@@ -14226,15 +14249,24 @@ Enable (disable) use of the floating point multiply-accumulate
 instructions, when they are available.  The default is
 @option{-mfused-madd}.
 
-When multiply-accumulate instructions are used, the intermediate
-product is calculated to infinite precision and is not subject to
-the FCSR Flush to Zero bit.  This may be undesirable in some
-circumstances.
+On the R8000 CPU when multiply-accumulate instructions are used,
+the intermediate product is calculated to infinite precision
+and is not subject to the FCSR Flush to Zero bit.  This may be
+undesirable in some circumstances.  On other processors the result
+is numerically identical to the equivalent computation using
+separate multiply, add, subtract and negate instructions.
 
 @item -nocpp
 @opindex nocpp
 Tell the MIPS assembler to not run its preprocessor over user
 assembler files (with a @samp{.s} suffix) when assembling them.
+
+@item -mfix-24k
+@item -mno-fix-24k
+@opindex mfix-24k
+@opindex mno-fix-24k
+Work around the 24K E48 (lost data on stores during refill) errata.
+The workarounds are implemented by the assembler rather than by GCC.
 
 @item -mfix-r4000
 @itemx -mno-fix-r4000
@@ -17538,6 +17570,33 @@ of the function name, it is considered to be a match.  For C99 and C++
 extended identifiers, the function name must be given in UTF-8, not
 using universal character names.
 
+@item -finstrument-function-calls
+@opindex finstrument-function-calls
+Generate instrumentation calls immediately before and after each
+function call. The following profiling functions will be called with
+the address of the function that is called between them. Use
+@code{__builtin_return_address(0)} inside the profiling functions to
+get the addresses from where they are called.
+
+@smallexample
+void __cyg_profile_call_enter  (void *fn);
+void __cyg_profile_call_exit   (void *fn);
+@end smallexample
+
+Additionally instrumentation calls are inserted at the beginning of
+each function. The argument is the address of the function where the
+insertion occurred. 
+
+@smallexample
+void __cyg_profile_call_inside (void *fn);
+@end smallexample
+
+If an instrumented function gets inlined, calling
+@code{__builtin_return_address(0)} from inside @code{__cyg_profile_call_inside}
+will return an address that is in the address range of the function
+where it was inlined into. This can be used to detect if inlining
+occurred for the function that contains @code{__cyg_profile_call_inside}.
+
 @item -fstack-check
 @opindex fstack-check
 Generate code to verify that you do not go beyond the boundary of the
@@ -17711,8 +17770,8 @@ is at @w{@uref{http://gcc.gnu.org/wiki/Visibility}}.
 @opindex fstrict-volatile-bitfields
 This option should be used if accesses to volatile bitfields (or other
 structure fields, although the compiler usually honors those types
-anyway) should use a single access in a mode of the same size as the
-container's type, aligned to a natural alignment if possible.  For
+anyway) should use a single access of the width of the
+field's type, aligned to a natural alignment if possible.  For
 example, targets with memory-mapped peripheral registers might require
 all such accesses to be 16 bits wide; with this flag the user could
 declare all peripheral bitfields as ``unsigned short'' (assuming short
@@ -17725,11 +17784,13 @@ instruction, even though that will access bytes that do not contain
 any portion of the bitfield, or memory-mapped registers unrelated to
 the one being updated.
 
-If the target requires strict alignment, and honoring the container
+If the target requires strict alignment, and honoring the field
 type would require violating this alignment, a warning is issued.
-However, the access happens as the user requested, under the
-assumption that the user knows something about the target hardware
-that GCC is unaware of.
+If the field has @code{packed} attribute, the access is done without
+honoring the field type.  If the field doesn't have @code{packed}
+attribute, the access is done honoring the field type.  In both cases,
+GCC assumes that the user knows something about the target hardware
+that it is unaware of.
 
 The default value of this option is determined by the application binary
 interface for the target processor.

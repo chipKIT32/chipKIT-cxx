@@ -1,6 +1,6 @@
 // script.cc -- handle linker scripts for gold.
 
-// Copyright 2006, 2007, 2008, 2009, 2010 Free Software Foundation, Inc.
+// Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 // Written by Ian Lance Taylor <iant@google.com>.
 
 // This file is part of gold.
@@ -146,13 +146,7 @@ class Token
   }
 
   uint64_t
-  integer_value() const
-  {
-    gold_assert(this->classification_ == TOKEN_INTEGER);
-    // Null terminate.
-    std::string s(this->value_, this->value_length_);
-    return strtoull(s.c_str(), NULL, 0);
-  }
+  integer_value() const;
 
  private:
   // The token classification.
@@ -170,6 +164,35 @@ class Token
   // (one based).
   int charpos_;
 };
+
+// Return the value of a TOKEN_INTEGER.
+
+uint64_t
+Token::integer_value() const
+{
+  gold_assert(this->classification_ == TOKEN_INTEGER);
+
+  size_t len = this->value_length_;
+
+  uint64_t multiplier = 1;
+  char last = this->value_[len - 1];
+  if (last == 'm' || last == 'M')
+    {
+      multiplier = 1024 * 1024;
+      --len;
+    }
+  else if (last == 'k' || last == 'K')
+    {
+      multiplier = 1024;
+      --len;
+    }
+
+  char *end;
+  uint64_t ret = strtoull(this->value_, &end, 0);
+  gold_assert(static_cast<size_t>(end - this->value_) == len);
+
+  return ret * multiplier;
+}
 
 // This class handles lexing a file into a sequence of tokens.
 
@@ -474,9 +497,7 @@ Lex::can_continue_name(const char* c)
 // For a number we accept 0x followed by hex digits, or any sequence
 // of digits.  The old linker accepts leading '$' for hex, and
 // trailing HXBOD.  Those are for MRI compatibility and we don't
-// accept them.  The old linker also accepts trailing MK for mega or
-// kilo.  FIXME: Those are mentioned in the documentation, and we
-// should accept them.
+// accept them.
 
 // Return whether C1 C2 C3 can start a hex number.
 
@@ -700,11 +721,18 @@ Lex::gather_token(Token::Classification classification,
 		  const char* (Lex::*can_continue_fn)(const char*),
 		  const char* start,
 		  const char* match,
-		  const char **pp)
+		  const char** pp)
 {
   const char* new_match = NULL;
-  while ((new_match = (this->*can_continue_fn)(match)))
+  while ((new_match = (this->*can_continue_fn)(match)) != NULL)
     match = new_match;
+
+  // A special case: integers may be followed by a single M or K,
+  // case-insensitive.
+  if (classification == Token::TOKEN_INTEGER
+      && (*match == 'm' || *match == 'M' || *match == 'k' || *match == 'K'))
+    ++match;
+
   *pp = match;
   return this->make_token(classification, start, match - start, start);
 }
@@ -955,18 +983,20 @@ Symbol_assignment::sized_finalize(Symbol_table* symtab, const Layout* layout,
   uint64_t final_val = this->val_->eval_maybe_dot(symtab, layout, true,
 						  is_dot_available,
 						  dot_value, dot_section,
-						  &section, NULL);
+						  &section, NULL, false);
   Sized_symbol<size>* ssym = symtab->get_sized_symbol<size>(this->sym_);
   ssym->set_value(final_val);
   if (section != NULL)
     ssym->set_output_section(section);
 }
 
-// Set the symbol value if the expression yields an absolute value.
+// Set the symbol value if the expression yields an absolute value or
+// a value relative to DOT_SECTION.
 
 void
 Symbol_assignment::set_if_absolute(Symbol_table* symtab, const Layout* layout,
-				   bool is_dot_available, uint64_t dot_value)
+				   bool is_dot_available, uint64_t dot_value,
+				   Output_section* dot_section)
 {
   if (this->sym_ == NULL)
     return;
@@ -974,8 +1004,9 @@ Symbol_assignment::set_if_absolute(Symbol_table* symtab, const Layout* layout,
   Output_section* val_section;
   uint64_t val = this->val_->eval_maybe_dot(symtab, layout, false,
 					    is_dot_available, dot_value,
-					    NULL, &val_section, NULL);
-  if (val_section != NULL)
+					    dot_section, &val_section, NULL,
+					    false);
+  if (val_section != NULL && val_section != dot_section)
     return;
 
   if (parameters->target().get_size() == 32)
@@ -998,6 +1029,8 @@ Symbol_assignment::set_if_absolute(Symbol_table* symtab, const Layout* layout,
     }
   else
     gold_unreachable();
+  if (val_section != NULL)
+    this->sym_->set_output_section(val_section);
 }
 
 // Print for debugging.
@@ -1048,6 +1081,20 @@ Script_options::Script_options()
   : entry_(), symbol_assignments_(), symbol_definitions_(),
     symbol_references_(), version_script_info_(), script_sections_()
 {
+}
+
+// Returns true if NAME is on the list of symbol assignments waiting
+// to be processed.
+
+bool
+Script_options::is_pending_assignment(const char* name)
+{
+  for (Symbol_assignments::iterator p = this->symbol_assignments_.begin();
+       p != this->symbol_assignments_.end();
+       ++p)
+    if ((*p)->name() == name)
+      return true;
+  return false;
 }
 
 // Add a symbol to be defined.
@@ -1173,7 +1220,7 @@ Script_options::set_section_addresses(Symbol_table* symtab, Layout* layout)
   for (Symbol_assignments::iterator p = this->symbol_assignments_.begin();
        p != this->symbol_assignments_.end();
        ++p)
-    (*p)->set_if_absolute(symtab, layout, false, 0);
+    (*p)->set_if_absolute(symtab, layout, false, 0, NULL);
 
   return this->script_sections_.set_section_addresses(symtab, layout);
 }
@@ -1192,7 +1239,8 @@ class Parser_closure
                  Command_line* command_line,
 		 Script_options* script_options,
 		 Lex* lex,
-		 bool skip_on_incompatible_target)
+		 bool skip_on_incompatible_target,
+		 Script_info* script_info)
     : filename_(filename), posdep_options_(posdep_options),
       parsing_defsym_(parsing_defsym), in_group_(in_group),
       is_in_sysroot_(is_in_sysroot),
@@ -1200,7 +1248,8 @@ class Parser_closure
       found_incompatible_target_(false),
       command_line_(command_line), script_options_(script_options),
       version_script_info_(script_options->version_script_info()),
-      lex_(lex), lineno_(0), charpos_(0), lex_mode_stack_(), inputs_(NULL)
+      lex_(lex), lineno_(0), charpos_(0), lex_mode_stack_(), inputs_(NULL),
+      script_info_(script_info)
   {
     // We start out processing C symbols in the default lex mode.
     this->language_stack_.push_back(Version_script_info::LANGUAGE_C);
@@ -1351,6 +1400,11 @@ class Parser_closure
     this->language_stack_.pop_back();
   }
 
+  // Return a pointer to the incremental info.
+  Script_info*
+  script_info()
+  { return this->script_info_; }
+
  private:
   // The name of the file we are reading.
   const char* filename_;
@@ -1387,6 +1441,8 @@ class Parser_closure
   std::vector<Version_script_info::Language> language_stack_;
   // New input files found to add to the link.
   Input_arguments* inputs_;
+  // Pointer to incremental linking info.
+  Script_info* script_info_;
 };
 
 // FILE was found as an argument on the command line.  Try to read it
@@ -1408,6 +1464,17 @@ read_input_script(Workqueue* workqueue, Symbol_table* symtab, Layout* layout,
 
   Lex lex(input_string.c_str(), input_string.length(), PARSING_LINKER_SCRIPT);
 
+  Script_info* script_info = NULL;
+  if (layout->incremental_inputs() != NULL)
+    {
+      const std::string& filename = input_file->filename();
+      Timespec mtime = input_file->file().get_mtime();
+      unsigned int arg_serial = input_argument->file().arg_serial();
+      script_info = new Script_info(filename);
+      layout->incremental_inputs()->report_script(script_info, arg_serial,
+						  mtime);
+    }
+
   Parser_closure closure(input_file->filename().c_str(),
 			 input_argument->file().options(),
 			 false,
@@ -1416,7 +1483,8 @@ read_input_script(Workqueue* workqueue, Symbol_table* symtab, Layout* layout,
                          NULL,
 			 layout->script_options(),
 			 &lex,
-			 input_file->will_search_for());
+			 input_file->will_search_for(),
+			 script_info);
 
   bool old_saw_sections_clause =
     layout->script_options()->saw_sections_clause();
@@ -1462,33 +1530,31 @@ read_input_script(Workqueue* workqueue, Symbol_table* symtab, Layout* layout,
       this_blocker = nb;
     }
 
-  if (layout->incremental_inputs())
-    {
-      // Like new Read_symbols(...) above, we rely on close.inputs()
-      // getting leaked by closure.
-      Script_info* info = new Script_info(closure.inputs());
-      layout->incremental_inputs()->report_script(
-          input_argument,
-          input_file->file().get_mtime(),
-          info);
-    }
   *used_next_blocker = true;
 
   return true;
 }
 
-// Helper function for read_version_script() and
-// read_commandline_script().  Processes the given file in the mode
-// indicated by first_token and lex_mode.
+// Helper function for read_version_script(), read_commandline_script() and
+// script_include_directive().  Processes the given file in the mode indicated
+// by first_token and lex_mode.
 
 static bool
 read_script_file(const char* filename, Command_line* cmdline,
                  Script_options* script_options,
                  int first_token, Lex::Mode lex_mode)
 {
-  // TODO: if filename is a relative filename, search for it manually
-  // using "." + cmdline->options()->search_path() -- not dirsearch.
   Dirsearch dirsearch;
+  std::string name = filename;
+
+  // If filename is a relative filename, search for it manually using "." +
+  // cmdline->options()->library_path() -- not dirsearch.
+  if (!IS_ABSOLUTE_PATH(filename))
+    {
+      const General_options::Dir_list& search_path =
+          cmdline->options().library_path();
+      name = Dirsearch::find_file_in_dir_list(name, search_path, ".");
+    }
 
   // The file locking code wants to record a Task, but we haven't
   // started the workqueue yet.  This is only for debugging purposes,
@@ -1499,7 +1565,7 @@ read_script_file(const char* filename, Command_line* cmdline,
   Position_dependent_options posdep = cmdline->position_dependent_options();
   if (posdep.format_enum() == General_options::OBJECT_FORMAT_BINARY)
     posdep.set_format_enum(General_options::OBJECT_FORMAT_ELF);
-  Input_file_argument input_argument(filename,
+  Input_file_argument input_argument(name.c_str(),
 				     Input_file_argument::INPUT_FILE_TYPE_FILE,
 				     "", false, posdep);
   Input_file input_file(&input_argument);
@@ -1521,7 +1587,8 @@ read_script_file(const char* filename, Command_line* cmdline,
                          cmdline,
 			 script_options,
 			 &lex,
-			 false);
+			 false,
+			 NULL);
   if (yyparse(&closure) != 0)
     {
       input_file.file().unlock(task);
@@ -1580,7 +1647,7 @@ Script_options::define_symbol(const char* definition)
   Position_dependent_options posdep_options;
 
   Parser_closure closure("command line", posdep_options, true,
-			 false, false, NULL, this, &lex, false);
+			 false, false, NULL, this, &lex, false, NULL);
 
   if (yyparse(&closure) != 0)
     return false;
@@ -1883,12 +1950,12 @@ class Lazy_demangler
 
  private:
   // The symbol to demangle.
-  const char *symbol_;
+  const char* symbol_;
   // Option flags to pass to cplus_demagle.
   const int options_;
   // The cached demangled value, or NULL if demangling didn't happen yet or
   // failed.
-  char *demangled_;
+  char* demangled_;
   // Whether we already called cplus_demangle
   bool did_demangle_;
 };
@@ -2118,7 +2185,7 @@ void
 Version_script_info::add_exact_match(const std::string& match,
 				     const Version_tree* v, bool is_global,
 				     const Version_expression* ve,
-				     Exact *pe)
+				     Exact* pe)
 {
   std::pair<Exact::iterator, bool> ins =
     pe->insert(std::make_pair(match, Version_tree_match(v, is_global, ve)));
@@ -2562,12 +2629,8 @@ yyerror(void* closurev, const char* message)
 extern "C" void
 script_add_extern(void* closurev, const char* name, size_t length)
 {
-  // We treat exactly like -u NAME.  FIXME: If it seems useful, we
-  // could handle this after the command line has been read, by adding
-  // entries to the symbol table directly.
-  std::string arg("--undefined=");
-  arg.append(name, length);
-  script_parse_option(closurev, arg.c_str(), arg.size());
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  closure->script_options()->add_symbol_reference(name, length);
 }
 
 // Called by the bison parser to add a file to the link.
@@ -2597,7 +2660,7 @@ script_add_file(void* closurev, const char* name, size_t length)
     {
       // In addition to checking the normal library search path, we
       // also want to check in the script-directory.
-      const char *slash = strrchr(closure->filename(), '/');
+      const char* slash = strrchr(closure->filename(), '/');
       if (slash != NULL)
 	{
 	  script_directory.assign(closure->filename(),
@@ -2610,7 +2673,27 @@ script_add_file(void* closurev, const char* name, size_t length)
 			   Input_file_argument::INPUT_FILE_TYPE_FILE,
 			   extra_search_path, false,
 			   closure->position_dependent_options());
-  closure->inputs()->add_file(file);
+  Input_argument& arg = closure->inputs()->add_file(file);
+  arg.set_script_info(closure->script_info());
+}
+
+// Called by the bison parser to add a library to the link.
+
+extern "C" void
+script_add_library(void* closurev, const char* name, size_t length)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  std::string name_string(name, length);
+
+  if (name_string[0] != 'l')
+    gold_error(_("library name must be prefixed with -l"));
+    
+  Input_file_argument file(name_string.c_str() + 1,
+			   Input_file_argument::INPUT_FILE_TYPE_LIBRARY,
+			   "", false,
+			   closure->position_dependent_options());
+  Input_argument& arg = closure->inputs()->add_file(file);
+  arg.set_script_info(closure->script_info());
 }
 
 // Called by the bison parser to start a group.  If we are already in
@@ -2684,7 +2767,7 @@ script_set_common_allocation(void* closurev, int set)
 // Called by the bison parser to refer to a symbol.
 
 extern "C" Expression*
-script_symbol(void *closurev, const char* name, size_t length)
+script_symbol(void* closurev, const char* name, size_t length)
 {
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   if (length != 1 || name[0] != '.')
@@ -2762,7 +2845,7 @@ script_check_output_format(void* closurev,
 {
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   std::string name(default_name, default_length);
-  Target* target = select_target_by_name(name.c_str());
+  Target* target = select_target_by_bfd_name(name.c_str());
   if (target == NULL || !parameters->is_compatible_target(target))
     {
       if (closure->skip_on_incompatible_target())
@@ -2798,7 +2881,7 @@ script_add_search_dir(void* closurev, const char* option, size_t length)
     gold_warning(_("%s:%d:%d: ignoring SEARCH_DIR; SEARCH_DIR is only valid"
 		   " for scripts specified via -T/--script"),
 		 closure->filename(), closure->lineno(), closure->charpos());
-  else
+  else if (!closure->command_line()->options().nostdlib())
     {
       std::string s = "-L" + std::string(option, length);
       script_parse_option(closurev, s.c_str(), s.size());
@@ -2851,8 +2934,8 @@ extern "C" void
 script_register_vers_node(void*,
 			  const char* tag,
 			  int taglen,
-			  struct Version_tree *tree,
-			  struct Version_dependency_list *deps)
+			  struct Version_tree* tree,
+			  struct Version_dependency_list* deps)
 {
   gold_assert(tree != NULL);
   tree->dependencies = deps;
@@ -2863,10 +2946,10 @@ script_register_vers_node(void*,
 // Add a dependencies to the list of existing dependencies, if any,
 // and return the expanded list.
 
-extern "C" struct Version_dependency_list *
+extern "C" struct Version_dependency_list*
 script_add_vers_depend(void* closurev,
-		       struct Version_dependency_list *all_deps,
-		       const char *depend_to_add, int deplen)
+		       struct Version_dependency_list* all_deps,
+		       const char* depend_to_add, int deplen)
 {
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   if (all_deps == NULL)
@@ -2877,10 +2960,10 @@ script_add_vers_depend(void* closurev,
 
 // Add a pattern expression to an existing list of expressions, if any.
 
-extern "C" struct Version_expression_list *
+extern "C" struct Version_expression_list*
 script_new_vers_pattern(void* closurev,
-			struct Version_expression_list *expressions,
-			const char *pattern, int patlen, int exact_match)
+			struct Version_expression_list* expressions,
+			const char* pattern, int patlen, int exact_match)
 {
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   if (expressions == NULL)
@@ -2895,8 +2978,8 @@ script_new_vers_pattern(void* closurev,
 // Attaches b to the end of a, and clears b.  So a = a + b and b = {}.
 
 extern "C" struct Version_expression_list*
-script_merge_expressions(struct Version_expression_list *a,
-                         struct Version_expression_list *b)
+script_merge_expressions(struct Version_expression_list* a,
+                         struct Version_expression_list* b)
 {
   a->expressions.insert(a->expressions.end(),
                         b->expressions.begin(), b->expressions.end());
@@ -2908,10 +2991,10 @@ script_merge_expressions(struct Version_expression_list *a,
 
 // Combine the global and local expressions into a a Version_tree.
 
-extern "C" struct Version_tree *
+extern "C" struct Version_tree*
 script_new_vers_node(void* closurev,
-		     struct Version_expression_list *global,
-		     struct Version_expression_list *local)
+		     struct Version_expression_list* global,
+		     struct Version_expression_list* local)
 {
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   Version_tree* tree = closure->version_script()->allocate_version_tree();
@@ -3201,4 +3284,126 @@ script_saw_segment_start_expression(void* closurev)
   Parser_closure* closure = static_cast<Parser_closure*>(closurev);
   Script_sections* ss = closure->script_options()->script_sections();
   ss->set_saw_segment_start_expression(true);
+}
+
+extern "C" void
+script_set_section_region(void* closurev, const char* name, size_t namelen,
+			  int set_vma)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  if (!closure->script_options()->saw_sections_clause())
+    {
+      gold_error(_("%s:%d:%d: MEMORY region '%.*s' referred to outside of "
+		   "SECTIONS clause"),
+		 closure->filename(), closure->lineno(), closure->charpos(),
+		 static_cast<int>(namelen), name);
+      return;
+    }
+
+  Script_sections* ss = closure->script_options()->script_sections();
+  Memory_region* mr = ss->find_memory_region(name, namelen);
+  if (mr == NULL)
+    {
+      gold_error(_("%s:%d:%d: MEMORY region '%.*s' not declared"),
+		 closure->filename(), closure->lineno(), closure->charpos(),
+		 static_cast<int>(namelen), name);
+      return;
+    }
+
+  ss->set_memory_region(mr, set_vma);
+}
+
+extern "C" void
+script_add_memory(void* closurev, const char* name, size_t namelen,
+		  unsigned int attrs, Expression* origin, Expression* length)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  Script_sections* ss = closure->script_options()->script_sections();
+  ss->add_memory_region(name, namelen, attrs, origin, length);
+}
+
+extern "C" unsigned int
+script_parse_memory_attr(void* closurev, const char* attrs, size_t attrlen,
+			 int invert)
+{
+  int attributes = 0;
+
+  while (attrlen--)
+    switch (*attrs++)
+      {
+      case 'R':
+      case 'r':
+	attributes |= MEM_READABLE; break;
+      case 'W':
+      case 'w':
+	attributes |= MEM_READABLE | MEM_WRITEABLE; break;
+      case 'X':
+      case 'x':
+	attributes |= MEM_EXECUTABLE; break;
+      case 'A':
+      case 'a':
+	attributes |= MEM_ALLOCATABLE; break;
+      case 'I':
+      case 'i':
+      case 'L':
+      case 'l':
+	attributes |= MEM_INITIALIZED; break;
+      default:
+	yyerror(closurev, _("unknown MEMORY attribute"));
+      }
+
+  if (invert)
+    attributes = (~ attributes) & MEM_ATTR_MASK;
+
+  return attributes;
+}
+
+extern "C" void
+script_include_directive(void* closurev, const char* filename, size_t length)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  std::string name(filename, length);
+  Command_line* cmdline = closure->command_line();
+  read_script_file(name.c_str(), cmdline, &cmdline->script_options(),
+                   PARSING_LINKER_SCRIPT, Lex::LINKER_SCRIPT);
+}
+
+// Functions for memory regions.
+
+extern "C" Expression*
+script_exp_function_origin(void* closurev, const char* name, size_t namelen)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  Script_sections* ss = closure->script_options()->script_sections();
+  Expression* origin = ss->find_memory_region_origin(name, namelen);
+
+  if (origin == NULL)
+    {
+      gold_error(_("undefined memory region '%s' referenced "
+		   "in ORIGIN expression"),
+		 name);
+      // Create a dummy expression to prevent crashes later on.
+      origin = script_exp_integer(0);
+    }
+
+  return origin;
+}
+
+extern "C" Expression*
+script_exp_function_length(void* closurev, const char* name, size_t namelen)
+{
+  Parser_closure* closure = static_cast<Parser_closure*>(closurev);
+  Script_sections* ss = closure->script_options()->script_sections();
+  Expression* length = ss->find_memory_region_length(name, namelen);
+
+  if (length == NULL)
+    {
+      gold_error(_("undefined memory region '%s' referenced "
+		   "in LENGTH expression"),
+		 name);
+      // Create a dummy expression to prevent crashes later on.
+      length = script_exp_integer(0);
+    }
+
+  return length;
 }

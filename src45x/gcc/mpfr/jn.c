@@ -1,14 +1,14 @@
 /* mpfr_j0, mpfr_j1, mpfr_jn -- Bessel functions of 1st kind, integer order.
    http://www.opengroup.org/onlinepubs/009695399/functions/j0.html
 
-Copyright 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -17,9 +17,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -28,43 +28,50 @@ MA 02110-1301, USA. */
               j(n,-z) = (-1)^n j(n,z)
 */
 
-static int mpfr_jn_asympt (mpfr_ptr, long, mpfr_srcptr, mp_rnd_t);
+static int mpfr_jn_asympt (mpfr_ptr, long, mpfr_srcptr, mpfr_rnd_t);
 
 int
-mpfr_j0 (mpfr_ptr res, mpfr_srcptr z, mp_rnd_t r)
+mpfr_j0 (mpfr_ptr res, mpfr_srcptr z, mpfr_rnd_t r)
 {
   return mpfr_jn (res, 0, z, r);
 }
 
 int
-mpfr_j1 (mpfr_ptr res, mpfr_srcptr z, mp_rnd_t r)
+mpfr_j1 (mpfr_ptr res, mpfr_srcptr z, mpfr_rnd_t r)
 {
   return mpfr_jn (res, 1, z, r);
 }
 
-/* Estimate k0 such that z^2/4 = k0 * (k0 + n)
-   i.e., (sqrt(n^2+z^2)-n)/2 = n/2 * (sqrt(1+(z/n)^2) - 1).
-   Return min(2*k0/log(2), ULONG_MAX).
+/* Estimate k1 such that z^2/4 = k1 * (k1 + n)
+   i.e., k1 = (sqrt(n^2+z^2)-n)/2 = n/2 * (sqrt(1+(z/n)^2) - 1) if n != 0.
+   Return k0 = min(2*k1/log(2), ULONG_MAX).
 */
 static unsigned long
-mpfr_jn_k0 (long n, mpfr_srcptr z)
+mpfr_jn_k0 (unsigned long n, mpfr_srcptr z)
 {
   mpfr_t t, u;
   unsigned long k0;
 
   mpfr_init2 (t, 32);
   mpfr_init2 (u, 32);
-  mpfr_div_si (t, z, n, GMP_RNDN);
-  mpfr_sqr (t, t, GMP_RNDN);
-  mpfr_add_ui (t, t, 1, GMP_RNDN);
-  mpfr_sqrt (t, t, GMP_RNDN);
-  mpfr_sub_ui (t, t, 1, GMP_RNDN);
-  mpfr_mul_si (t, t, n, GMP_RNDN);
-  /* the following is a 32-bit approximation to nearest of log(2) */
-  mpfr_set_str_binary (u, "0.10110001011100100001011111111");
-  mpfr_div (t, t, u, GMP_RNDN);
-  if (mpfr_fits_ulong_p (t, GMP_RNDN))
-    k0 = mpfr_get_ui (t, GMP_RNDN);
+  if (n == 0)
+    {
+      mpfr_abs (t, z, MPFR_RNDN);  /* t = 2*k1 */
+    }
+  else
+    {
+      mpfr_div_ui (t, z, n, MPFR_RNDN);
+      mpfr_sqr (t, t, MPFR_RNDN);
+      mpfr_add_ui (t, t, 1, MPFR_RNDN);
+      mpfr_sqrt (t, t, MPFR_RNDN);
+      mpfr_sub_ui (t, t, 1, MPFR_RNDN);
+      mpfr_mul_ui (t, t, n, MPFR_RNDN);  /* t = 2*k1 */
+    }
+  /* the following is a 32-bit approximation to nearest to 1/log(2) */
+  mpfr_set_str_binary (u, "1.0111000101010100011101100101001");
+  mpfr_mul (t, t, u, MPFR_RNDN);
+  if (mpfr_fits_ulong_p (t, MPFR_RNDN))
+    k0 = mpfr_get_ui (t, MPFR_RNDN);
   else
     k0 = ULONG_MAX;
   mpfr_clear (t);
@@ -73,14 +80,17 @@ mpfr_jn_k0 (long n, mpfr_srcptr z)
 }
 
 int
-mpfr_jn (mpfr_ptr res, long n, mpfr_srcptr z, mp_rnd_t r)
+mpfr_jn (mpfr_ptr res, long n, mpfr_srcptr z, mpfr_rnd_t r)
 {
   int inex;
   unsigned long absn;
-  mp_prec_t prec, pbound, err;
-  mp_exp_t exps, expT;
+  mpfr_prec_t prec, pbound, err;
+  mpfr_uprec_t uprec;
+  mpfr_exp_t exps, expT, diffexp;
   mpfr_t y, s, t, absz;
   unsigned long k, zz, k0;
+  MPFR_GROUP_DECL(g);
+  MPFR_SAVE_EXPO_DECL (expo);
   MPFR_ZIV_DECL (loop);
 
   MPFR_LOG_FUNC (("x[%#R]=%R n=%d rnd=%d", z, z, n, r),
@@ -113,20 +123,54 @@ mpfr_jn (mpfr_ptr res, long n, mpfr_srcptr z, mp_rnd_t r)
         }
     }
 
+  MPFR_SAVE_EXPO_MARK (expo);
+
   /* check for tiny input for j0: j0(z) = 1 - z^2/4 + ..., more precisely
      |j0(z) - 1| <= z^2/4 for -1 <= z <= 1. */
   if (n == 0)
     MPFR_FAST_COMPUTE_IF_SMALL_INPUT (res, __gmpfr_one, -2 * MPFR_GET_EXP (z),
-                                      2, 0, r, return _inexact);
+                                      2, 0, r, inex = _inexact; goto end);
 
   /* idem for j1: j1(z) = z/2 - z^3/16 + ..., more precisely
      |j1(z) - z/2| <= |z^3|/16 for -1 <= z <= 1, with the sign of j1(z) - z/2
      being the opposite of that of z. */
+  /* TODO: add a test to trigger an error when
+       inex = _inexact; goto end
+     is forgotten in MPFR_FAST_COMPUTE_IF_SMALL_INPUT below. */
   if (n == 1)
-    /* we first compute 2j1(z) = z - z^3/8 + ..., then divide by 2 using
-       the "extra" argument of MPFR_FAST_COMPUTE_IF_SMALL_INPUT. */
-    MPFR_FAST_COMPUTE_IF_SMALL_INPUT (res, z, -2 * MPFR_GET_EXP (z), 3,
-                                      0, r, mpfr_div_2ui (res, res, 1, r));
+    {
+      /* We first compute 2j1(z) = z - z^3/8 + ..., then divide by 2 using
+         the "extra" argument of MPFR_FAST_COMPUTE_IF_SMALL_INPUT. But we
+         must also handle the underflow case (an overflow is not possible
+         for small inputs). If an underflow occurred in mpfr_round_near_x,
+         the rounding was to zero or equivalent, and the result is 0, so
+         that the division by 2 will give the wanted result. Otherwise...
+         The rounded result in unbounded exponent range is res/2. If the
+         division by 2 doesn't underflow, it is exact, and we can return
+         this result. And an underflow in the division is a real underflow.
+         In case of directed rounding mode, the result is correct. But in
+         case of rounding to nearest, there is a double rounding problem,
+         and the result is 0 iff the result before the division is the
+         minimum positive number and _inexact has the same sign as z;
+         but in rounding to nearest, res/2 will yield 0 iff |res| is the
+         minimum positive number, so that we just need to test the result
+         of the division and the sign of _inexact. */
+      mpfr_clear_flags ();
+      MPFR_FAST_COMPUTE_IF_SMALL_INPUT
+        (res, z, -2 * MPFR_GET_EXP (z), 3, 0, r, {
+          int inex2 = mpfr_div_2ui (res, res, 1, r);
+          if (MPFR_UNLIKELY (r == MPFR_RNDN && MPFR_IS_ZERO (res)) &&
+              (MPFR_ASSERTN (inex2 != 0), SIGN (_inexact) != MPFR_SIGN (z)))
+            {
+              mpfr_nexttoinf (res);
+              inex = - inex2;
+            }
+          else
+            inex = inex2 != 0 ? inex2 : _inexact;
+          MPFR_SAVE_EXPO_UPDATE_FLAGS (expo, __gmpfr_flags);
+          goto end;
+        });
+    }
 
   /* we can use the asymptotic expansion as soon as |z| > p log(2)/2,
      but to get some margin we use it for |z| > p/2 */
@@ -137,94 +181,117 @@ mpfr_jn (mpfr_ptr res, long n, mpfr_srcptr z, mp_rnd_t r)
     {
       inex = mpfr_jn_asympt (res, n, z, r);
       if (inex != 0)
-        return inex;
+        goto end;
     }
 
-  mpfr_init2 (y, 32);
+  MPFR_GROUP_INIT_3 (g, 32, y, s, t);
 
   /* check underflow case: |j(n,z)| <= 1/sqrt(2 Pi n) (ze/2n)^n
      (see algorithms.tex) */
+  /* FIXME: the code below doesn't detect all the underflow cases. Either
+     this should be done, or the generic code should detect underflows. */
   if (absn > 0)
     {
-      /* the following is an upper 32-bit approximation of exp(1)/2 */
+      /* the following is an upper 32-bit approximation to exp(1)/2 */
       mpfr_set_str_binary (y, "1.0101101111110000101010001011001");
       if (MPFR_SIGN(z) > 0)
-        mpfr_mul (y, y, z, GMP_RNDU);
+        mpfr_mul (y, y, z, MPFR_RNDU);
       else
         {
-          mpfr_mul (y, y, z, GMP_RNDD);
-          mpfr_neg (y, y, GMP_RNDU);
+          mpfr_mul (y, y, z, MPFR_RNDD);
+          mpfr_neg (y, y, MPFR_RNDU);
         }
-      mpfr_div_ui (y, y, absn, GMP_RNDU);
-      /* now y is an upper approximation of |ze/2n|: y < 2^EXP(y),
+      mpfr_div_ui (y, y, absn, MPFR_RNDU);
+      /* now y is an upper approximation to |ze/2n|: y < 2^EXP(y),
          thus |j(n,z)| < 1/2*y^n < 2^(n*EXP(y)-1).
-         If n*EXP(y) < __gmpfr_emin then we have an underflow.
+         If n*EXP(y) < emin then we have an underflow.
+         Note that if emin = MPFR_EMIN_MIN and j = 1, this inequality
+         will never be satisfied.
          Warning: absn is an unsigned long. */
-      if ((MPFR_EXP(y) < 0 && absn > (unsigned long) (-__gmpfr_emin))
-          || (absn <= (unsigned long) (-MPFR_EMIN_MIN) &&
-              MPFR_EXP(y) < __gmpfr_emin / (mp_exp_t) absn))
+      if ((MPFR_GET_EXP (y) < 0 && absn > - expo.saved_emin)
+          || (absn <= - MPFR_EMIN_MIN &&
+              MPFR_GET_EXP (y) < expo.saved_emin / (mpfr_exp_t) absn))
         {
-          mpfr_clear (y);
-          return mpfr_underflow (res, (r == GMP_RNDN) ? GMP_RNDZ : r,
+          MPFR_GROUP_CLEAR (g);
+          MPFR_SAVE_EXPO_FREE (expo);
+          return mpfr_underflow (res, (r == MPFR_RNDN) ? MPFR_RNDZ : r,
                          (n % 2) ? ((n > 0) ? MPFR_SIGN(z) : -MPFR_SIGN(z))
                                  : MPFR_SIGN_POS);
         }
     }
 
-  mpfr_init (s);
-  mpfr_init (t);
-
   /* the logarithm of the ratio between the largest term in the series
      and the first one is roughly bounded by k0, which we add to the
      working precision to take into account this cancellation */
+  /* The following operations avoid integer overflow and ensure that
+     prec <= MPFR_PREC_MAX (prec = MPFR_PREC_MAX won't prevent an abort,
+     but the failure should be handled cleanly). */
   k0 = mpfr_jn_k0 (absn, z);
-  prec = MPFR_PREC (res) + k0 + 2 * MPFR_INT_CEIL_LOG2 (MPFR_PREC (res)) + 3;
+  MPFR_LOG_MSG (("k0 = %lu\n", k0));
+  uprec = MPFR_PREC_MAX - 2 * MPFR_INT_CEIL_LOG2 (MPFR_PREC_MAX) - 3;
+  if (k0 < uprec)
+    uprec = k0;
+  uprec += MPFR_PREC (res) + 2 * MPFR_INT_CEIL_LOG2 (MPFR_PREC (res)) + 3;
+  prec = uprec < MPFR_PREC_MAX ? (mpfr_prec_t) uprec : MPFR_PREC_MAX;
 
   MPFR_ZIV_INIT (loop, prec);
   for (;;)
     {
-      mpfr_set_prec (y, prec);
-      mpfr_set_prec (s, prec);
-      mpfr_set_prec (t, prec);
-      mpfr_pow_ui (t, z, absn, GMP_RNDN); /* z^|n| */
-      mpfr_mul (y, z, z, GMP_RNDN);       /* z^2 */
-      zz = mpfr_get_ui (y, GMP_RNDU);
-      MPFR_ASSERTN (zz < ULONG_MAX);
-      mpfr_div_2ui (y, y, 2, GMP_RNDN);   /* z^2/4 */
-      mpfr_fac_ui (s, absn, GMP_RNDN);    /* |n|! */
-      mpfr_div (t, t, s, GMP_RNDN);
+      MPFR_GROUP_REPREC_3 (g, prec, y, s, t);
+      mpfr_pow_ui (t, z, absn, MPFR_RNDN); /* z^|n| */
+      mpfr_mul (y, z, z, MPFR_RNDN);       /* z^2 */
+      mpfr_clear_erangeflag ();
+      zz = mpfr_get_ui (y, MPFR_RNDU);
+      /* FIXME: The error analysis is incorrect in case of range error. */
+      MPFR_ASSERTN (! mpfr_erangeflag_p ()); /* since mpfr_clear_erangeflag */
+      mpfr_div_2ui (y, y, 2, MPFR_RNDN);   /* z^2/4 */
+      mpfr_fac_ui (s, absn, MPFR_RNDN);    /* |n|! */
+      mpfr_div (t, t, s, MPFR_RNDN);
       if (absn > 0)
-        mpfr_div_2ui (t, t, absn, GMP_RNDN);
-      mpfr_set (s, t, GMP_RNDN);
-      exps = MPFR_EXP (s);
+        mpfr_div_2ui (t, t, absn, MPFR_RNDN);
+      mpfr_set (s, t, MPFR_RNDN);
+      /* note: we assume here that the maximal error bound is proportional to
+         2^exps, which is true also in the case where s=0 */
+      exps = MPFR_IS_ZERO (s) ? MPFR_EMIN_MIN : MPFR_GET_EXP (s);
       expT = exps;
       for (k = 1; ; k++)
         {
-          mpfr_mul (t, t, y, GMP_RNDN);
-          mpfr_neg (t, t, GMP_RNDN);
+          mpfr_mul (t, t, y, MPFR_RNDN);
+          mpfr_neg (t, t, MPFR_RNDN);
+          /* Mathematically: absn <= LONG_MAX + 1 <= (ULONG_MAX + 1) / 2,
+             and in practice, k is not very large, so that one should have
+             k + absn <= ULONG_MAX. */
+          MPFR_ASSERTN (absn <= ULONG_MAX - k);
           if (k + absn <= ULONG_MAX / k)
-            mpfr_div_ui (t, t, k * (k + absn), GMP_RNDN);
+            mpfr_div_ui (t, t, k * (k + absn), MPFR_RNDN);
           else
             {
-              mpfr_div_ui (t, t, k, GMP_RNDN);
-              mpfr_div_ui (t, t, k + absn, GMP_RNDN);
+              mpfr_div_ui (t, t, k, MPFR_RNDN);
+              mpfr_div_ui (t, t, k + absn, MPFR_RNDN);
             }
-          exps = MPFR_EXP (t);
+          /* see above note */
+          exps = MPFR_IS_ZERO (s) ? MPFR_EMIN_MIN : MPFR_GET_EXP (t);
           if (exps > expT)
             expT = exps;
-          mpfr_add (s, s, t, GMP_RNDN);
-          exps = MPFR_EXP (s);
+          mpfr_add (s, s, t, MPFR_RNDN);
+          exps = MPFR_IS_ZERO (s) ? MPFR_EMIN_MIN : MPFR_GET_EXP (s);
           if (exps > expT)
             expT = exps;
-          if (MPFR_EXP (t) + (mp_exp_t) prec <= MPFR_EXP (s) &&
-              zz / (2 * k) < k + n)
+          /* Above it has been checked that k + absn <= ULONG_MAX. */
+          if (MPFR_GET_EXP (t) + (mpfr_exp_t) prec <= exps &&
+              zz / (2 * k) < k + absn)
             break;
         }
       /* the error is bounded by (4k^2+21/2k+7) ulp(s)*2^(expT-exps)
          <= (k+2)^2 ulp(s)*2^(2+expT-exps) */
-      err = 2 * MPFR_INT_CEIL_LOG2(k + 2) + 2 + expT - MPFR_EXP (s);
+      diffexp = expT - exps;
+      err = 2 * MPFR_INT_CEIL_LOG2(k + 2) + 2;
+      /* FIXME: Can an overflow occur in the following sum? */
+      MPFR_ASSERTN (diffexp >= 0 && err >= 0 &&
+                    diffexp <= MPFR_PREC_MAX - err);
+      err += diffexp;
       if (MPFR_LIKELY (MPFR_CAN_ROUND (s, prec - err, MPFR_PREC(res), r)))
-          break;
+        break;
       MPFR_ZIV_NEXT (loop, prec);
     }
   MPFR_ZIV_FREE (loop);
@@ -232,11 +299,11 @@ mpfr_jn (mpfr_ptr res, long n, mpfr_srcptr z, mp_rnd_t r)
   inex = ((n >= 0) || ((n & 1) == 0)) ? mpfr_set (res, s, r)
                                       : mpfr_neg (res, s, r);
 
-  mpfr_clear (y);
-  mpfr_clear (s);
-  mpfr_clear (t);
+  MPFR_GROUP_CLEAR (g);
 
-  return inex;
+ end:
+  MPFR_SAVE_EXPO_FREE (expo);
+  return mpfr_check_range (res, inex, r);
 }
 
 #define MPFR_JN

@@ -1,6 +1,6 @@
 /* mpc_set_str -- Convert a string into a complex number.
 
-Copyright (C) 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -23,7 +23,7 @@ MA 02111-1307, USA. */
 #include "mpc-impl.h"
 
 int
-mpc_set_str (mpc_t z, char *str, int base, mpc_rnd_t rnd)
+mpc_set_str (mpc_t z, const char *str, int base, mpc_rnd_t rnd)
 {
   char *p;
   int inex;

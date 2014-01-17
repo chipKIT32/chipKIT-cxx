@@ -32,6 +32,17 @@
   
 _GLIBCXX_BEGIN_NAMESPACE(std)
 
+#if !defined(_U) && defined(_UP)
+#define _U _UP
+#define _L _LO
+#define _N _DI
+#define _X _XD
+#define _P _PU
+#define _C _CN
+#define _B _BB
+#define _S _SP
+#endif
+
   /// @brief  Base class for ctype.
   struct ctype_base
   {

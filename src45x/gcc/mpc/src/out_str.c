@@ -1,6 +1,6 @@
 /* mpc_out_str -- Output a complex number on a given stream.
 
-Copyright (C) 2009 Andreas Enge
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 

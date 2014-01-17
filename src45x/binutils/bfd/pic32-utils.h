@@ -3,7 +3,7 @@
    Free Software Foundation, Inc.
 
    This file is part of BFD, the Binary File Descriptor library.
-   
+
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation; either version 3 of the License, or
@@ -18,9 +18,17 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston,
    MA 02110-1301, USA.  */
-   
+
 #ifndef _PIC32_UTILS_H
 #define _PIC32_UTILS_H
+
+#ifndef PIC32
+#define PIC32
+#endif
+
+#ifndef TARGET_IS_PIC32MX
+#define TARGET_IS_PIC32MX
+#endif
 
 /*****************************************************************************/
 
@@ -40,23 +48,30 @@
   (sec)->memory = 0;              \
   (sec)->heap = 0;                \
   (sec)->stack = 0;               \
+  (sec)->ramfunc = 0;             \
   (sec)->vma = 0;                 \
   (sec)->lma = 0;                 \
   (sec)->entsize = 0;}
 /*
 ** Macros used to set section attributes
 */
-#define PIC32_SET_CODE_ATTR(sec) \
-  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_CODE | SEC_ALLOC);
-#define PIC32_SET_DATA_ATTR(sec) \
-  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_DATA | SEC_ALLOC);
+#define PIC32_SET_CODE_ATTR(sec) { \
+  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_CODE | SEC_ALLOC ); \
+  (sec)->heap = 0; \
+  (sec)->stack = 0; }
+#define PIC32_SET_DATA_ATTR(sec) { \
+  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_DATA | SEC_ALLOC); \
+  (sec)->heap = 0; \
+  (sec)->stack = 0; }
 #define PIC32_SET_BSS_ATTR(sec)   \
   { (sec)->flags |= SEC_ALLOC;      \
-  (sec)->flags &= ~(SEC_LOAD | SEC_DATA | SEC_HAS_CONTENTS); }
+  (sec)->flags &= ~(SEC_LOAD | SEC_DATA | SEC_HAS_CONTENTS); \
+  (sec)->heap = 0; \
+  (sec)->stack = 0; }
 #define PIC32_SET_PERSIST_ATTR(sec)  \
   { (sec)->persistent = 1;           \
-  (sec)->flags |= SEC_ALLOC;         \
-  (sec)->flags &= ~(SEC_LOAD | SEC_DATA); }
+  (sec)->flags |= SEC_ALLOC;      \
+  (sec)->flags &= ~(SEC_LOAD | SEC_DATA);}
 #define PIC32_SET_MEMORY_ATTR(sec) \
   { (sec)->memory = 1;             \
   (sec)->flags |= (SEC_HAS_CONTENTS | SEC_ALLOC); }
@@ -68,6 +83,10 @@
   { (sec)->stack = 1;            \
   (sec)->flags |= SEC_ALLOC;     \
   (sec)->flags &= ~(SEC_LOAD | SEC_DATA | SEC_HAS_CONTENTS); }
+#define PIC32_SET_RAMFUNC_ATTR(sec) \
+  { (sec)->ramfunc = 1;          \
+  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_ALLOC); \
+  (sec)->flags &= ~(SEC_DATA | SEC_CODE); }
 
 #define PIC32_SET_ABSOLUTE_ATTR(sec) \
   (sec)->absolute = 1;
@@ -84,7 +103,12 @@
   (sec)->flags |= SEC_MERGE;
 #define PIC32_SET_INFO_ATTR(sec) \
   { (sec)->flags |= SEC_DEBUGGING; \
+    (sec)->flags |= SEC_READONLY; \
     (sec)->flags &= ~SEC_ALLOC; }
+#define PIC32_SET_KEEP_ATTR(sec) \
+  (sec)->flags |= SEC_KEEP; 
+#define PIC32_SET_COHERENT_ATTR(sec) \
+  (sec)->coherent = 1;
 
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
@@ -115,6 +139,9 @@
 #define PIC32_IS_STACK_ATTR(sec) \
   ((((sec)->flags & (SEC_ALLOC|SEC_LOAD|SEC_CODE|SEC_DATA|SEC_HAS_CONTENTS)) == SEC_ALLOC) && \
   ((sec)->stack == 1))
+#define PIC32_IS_RAMFUNC_ATTR(sec) \
+  ((((sec)->flags & (SEC_ALLOC)) == (SEC_ALLOC)) && \
+  ((sec)->ramfunc == 1))
 
 #define PIC32_IS_ABSOLUTE_ATTR(sec) \
   ((sec)->absolute == 1)
@@ -130,21 +157,15 @@
   (((sec)->flags & SEC_MERGE) == SEC_MERGE)
 #define PIC32_IS_INFO_ATTR(sec) \
   (((sec)->flags & SEC_DEBUGGING) == SEC_DEBUGGING)
+#define PIC32_IS_KEEP_ATTR(sec) \
+  (((sec)->flags & SEC_KEEP) == SEC_KEEP)
+#define PIC32_IS_COHERENT_ATTR(sec) \
+  ((sec)->coherent == 1)
 
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
 #define PIC32_IS_UNORDERED_ATTR(sec) \
   ((sec)->unordered == 1)
-#if 0
-#define PIC30_IS_EXTERNAL_ATTR(sec) \
-  (0)
-
-#define PIC30_IS_LOCAL_DATA(sec)       \
-  ((!PIC30_IS_EDS_ATTR(sec) &&         \
-      (PIC30_IS_BSS_ATTR(sec) ||       \
-       PIC30_IS_DATA_ATTR(sec) ||      \
-       PIC30_IS_PERSIST_ATTR(sec))))
-#endif
 
 #define PIC32_IS_EVEN(value) (((value) & 0x1) == 0)
 
@@ -154,7 +175,7 @@
 ** Define some structures for the Undefined Symbol hash table.
 **
 ** This is used by the linker to collect object signatures
-** for undefined symbols. 
+** for undefined symbols.
 **
 */
 #define MCHP_UNDEFSYM_INIT 20
@@ -181,7 +202,11 @@ extern struct bfd_hash_entry *mchp_undefsym_newfunc
 
 extern struct mchp_undefsym_table *mchp_undefsym_init
   PARAMS ((struct bfd_link_info *info));
-  
+
 /*****************************************************************************/
+
+extern bfd_boolean pic32_has_fill_option;
+extern bfd_boolean pic32_has_processor_option;
+extern const bfd_arch_info_type *global_PROCESSOR;
 #endif
 

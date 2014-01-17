@@ -1,6 +1,6 @@
 /* test file for mpc_cosh.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny, Paul Zimmermann, Andreas Enge
+Copyright (C) INRIA, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -24,17 +24,6 @@ MA 02111-1307, USA. */
 #include "mpc-tests.h"
 
 static void
-test_failed (mpc_t op, mpc_t get, mpc_t expected)
-{
-  printf ("mpc_cosh(op) failed\n with ");
-  OUT (op);
-  printf ("     ");
-  OUT (get);
-  OUT (expected);
-  exit (1);
-}
-
-static void
 pure_real_argument (void)
 {
   /* cosh(x -i*0) = cosh(x) +i*0 if x<0 */
@@ -55,27 +44,27 @@ pure_real_argument (void)
   mpfr_set_ui (MPC_IM (u), 0, GMP_RNDN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
   /* cosh(1 -i*0) = cosh(1) -i*0 */
   mpc_conj (z, z, MPC_RNDNN);
   mpc_conj (u, u, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || !mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
   /* cosh(-1 +i*0) = cosh(1) -i*0 */
   mpc_neg (z, z, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || !mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
   /* cosh(-1 -i*0) = cosh(1) +i*0 */
   mpc_conj (z, z, MPC_RNDNN);
   mpc_conj (u, u, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
   mpc_clear (cosh_z);
   mpc_clear (z);
@@ -95,33 +84,33 @@ pure_imaginary_argument (void)
   mpc_init2 (u, 100);
   mpc_init2 (cosh_z, 100);
 
-  /* cosh(+0 +i) = cos(1) +i*0 */
+  /* cosh(+0 +i) = cos(1) + i*0 */
   mpc_set_ui_ui (z, 0, 1, MPC_RNDNN);
   mpfr_cos (MPC_RE (u), MPC_IM (z), GMP_RNDN);
   mpfr_set_ui (MPC_IM (u), 0, GMP_RNDN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
-  /* cosh(+0 -i) = cos(1) -i*0 */
+  /* cosh(+0 -i) = cos(1) - i*0 */
   mpc_conj (z, z, MPC_RNDNN);
   mpc_conj (u, u, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || !mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
-  /* cosh(-0 +i) = cos(1) -i*0 */
+  /* cosh(-0 +i) = cos(1) - i*0 */
   mpc_neg (z, z, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || !mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
-  /* cosh(-0 -i) = cos(1) +i*0 */
+  /* cosh(-0 -i) = cos(1) + i*0 */
   mpc_conj (z, z, MPC_RNDNN);
   mpc_conj (u, u, MPC_RNDNN);
   mpc_cosh (cosh_z, z, MPC_RNDNN);
   if (mpc_cmp (cosh_z, u) != 0 || mpfr_signbit (MPC_IM (cosh_z)))
-    test_failed (z, cosh_z, u);
+    TEST_FAILED ("mpc_cosh", z, cosh_z, u, MPC_RNDNN);
 
   mpc_clear (cosh_z);
   mpc_clear (z);

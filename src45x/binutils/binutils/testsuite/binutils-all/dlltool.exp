@@ -14,7 +14,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
 
-if {![istarget "i*86-*-*"] && ![istarget "x86_64-*-mingw*"] && ![istarget "arm-*-pe*]} {
+if {![istarget "i*86-*-*"]
+    && ![istarget "x86_64-*-mingw*"]
+    && ![istarget "arm-*-pe*"]} {
     return
 }
 
@@ -45,6 +47,21 @@ if ![string match "" $err] then {
     fail "dlltool (fastcall export)"
 } else {
     pass "dlltool (fastcall export)"
+}
+
+if { "$target_xfail" == "yes" } {
+    setup_xfail *-*
+}
+
+verbose "$DLLTOOL -l libversion.a --def $srcdir/$subdir/version.def" 1
+catch "exec $DLLTOOL -l libersion.a --def $srcdir/$subdir/version.def" err
+
+if ![string match "" $err] then {
+    send_log "$err\n"
+    verbose "$err" 1
+    fail "dlltool (version.dll)"
+} else {
+    pass "dlltool (version.dll)"
 }
 
 if { "$target_xfail" == "yes" } {

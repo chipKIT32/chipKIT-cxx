@@ -28,6 +28,7 @@ MULTILIB_MATCHES      += march?armv7=mcpu?cortex-a8
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-a5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4f
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r5
 MULTILIB_MATCHES      += march?armv7=mcpu?cortex-m3
 MULTILIB_MATCHES      += march?armv4t=march?ep9312
 MULTILIB_MATCHES      += march?armv4t=mcpu?arm7tdmi

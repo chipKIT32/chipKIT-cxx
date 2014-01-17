@@ -1,13 +1,13 @@
 /* Mulder's MulHigh function (short product)
 
-Copyright 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -40,7 +40,8 @@ static short mulhigh_ktab[] = {MPFR_MULHIGH_TAB};
    of {mp, n} * {np, n}.
    The error is at worst of ln(n) for rp[n] and rp[n-1] is totally wrong */
 static void
-mpfr_mulhigh_n_basecase (mp_ptr rp, mp_srcptr up, mp_srcptr vp, mp_size_t n)
+mpfr_mulhigh_n_basecase (mpfr_limb_ptr rp, mpfr_limb_srcptr up,
+                         mpfr_limb_srcptr vp, mp_size_t n)
 {
   mp_size_t i;
 
@@ -51,7 +52,8 @@ mpfr_mulhigh_n_basecase (mp_ptr rp, mp_srcptr up, mp_srcptr vp, mp_size_t n)
 }
 
 void
-mpfr_mulhigh_n (mp_ptr rp, mp_srcptr np, mp_srcptr mp, mp_size_t n)
+mpfr_mulhigh_n (mpfr_limb_ptr rp, mpfr_limb_srcptr np, mpfr_limb_srcptr mp,
+                mp_size_t n)
 {
   mp_size_t k;
 
@@ -86,7 +88,7 @@ static short sqrhigh_ktab[] = {MPFR_SQRHIGH_TAB};
 #endif
 
 void
-mpfr_sqrhigh_n (mp_ptr rp, mp_srcptr np, mp_size_t n)
+mpfr_sqrhigh_n (mpfr_limb_ptr rp, mpfr_limb_srcptr np, mp_size_t n)
 {
   mp_size_t k;
 

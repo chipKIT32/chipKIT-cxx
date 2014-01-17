@@ -609,10 +609,16 @@ static const struct m68k_cpu m68k_cpus[] =
 
   {mcfisa_a|mcfisa_c|mcfusp,                    mcf51_ctrl, "51", 0},
   {mcfisa_a|mcfisa_c|mcfusp,                    mcf51_ctrl, "51ac", 1},
+  {mcfisa_a|mcfisa_c|mcfusp,                    mcf51_ctrl, "51ag", 1},
   {mcfisa_a|mcfisa_c|mcfusp,                    mcf51_ctrl, "51cn", 1},
   {mcfisa_a|mcfisa_c|mcfusp|mcfmac,  		mcf51_ctrl, "51em", 1},
+  {mcfisa_a|mcfisa_c|mcfusp|mcfmac,  		mcf51_ctrl, "51je", 1},
+  {mcfisa_a|mcfisa_c|mcfusp|mcfemac,            mcf51_ctrl, "51jf", 1},
+  {mcfisa_a|mcfisa_c|mcfusp|mcfemac,            mcf51_ctrl, "51jg", 1},
   {mcfisa_a|mcfisa_c|mcfusp,  			mcf51_ctrl, "51jm", 1},
+  {mcfisa_a|mcfisa_c|mcfusp|mcfmac,  		mcf51_ctrl, "51mm", 1},
   {mcfisa_a|mcfisa_c|mcfusp,                    mcf51_ctrl, "51qe", 1},
+  {mcfisa_a|mcfisa_c|mcfusp|mcfemac,            mcf51_ctrl, "51qm", 1},
 
   {mcfisa_a,					mcf_ctrl, "5200", 0},
   {mcfisa_a,					mcf_ctrl, "5202", 1},
@@ -1335,12 +1341,10 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
   *reloc->sym_ptr_ptr = symbol_get_bfdsym (fixp->fx_addsy);
   reloc->address = fixp->fx_frag->fr_address + fixp->fx_where;
 #ifndef OBJ_ELF
-  if (fixp->fx_pcrel)
-    reloc->addend = fixp->fx_addnumber;
-  else if (OUTPUT_FLAVOR == bfd_target_aout_flavour
-	   && fixp->fx_addsy
-	   && S_IS_WEAK (fixp->fx_addsy)
-	   && ! bfd_is_und_section (S_GET_SEGMENT (fixp->fx_addsy)))
+  if (OUTPUT_FLAVOR == bfd_target_aout_flavour
+      && fixp->fx_addsy
+      && S_IS_WEAK (fixp->fx_addsy)
+      && ! bfd_is_und_section (S_GET_SEGMENT (fixp->fx_addsy)))
     {
       /* PR gas/3041 References to weak symbols must be treated as extern
 	 in order to be overridable by the linker, even if they are defined
@@ -1364,6 +1368,8 @@ tc_gen_reloc (asection *section ATTRIBUTE_UNUSED, fixS *fixp)
 		      - (S_GET_VALUE (fixp->fx_addsy)
 			 + S_GET_SEGMENT (fixp->fx_addsy)->vma);
     }
+  else if (fixp->fx_pcrel)
+    reloc->addend = fixp->fx_addnumber;
   else
     reloc->addend = 0;
 #else

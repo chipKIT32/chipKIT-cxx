@@ -58,7 +58,7 @@ along with GCC; see the file COPYING3.  If not see
 	  %{mabi=32: -dynamic-linker " LINUX_DYNAMIC_LINKER32 "}}} \
       %{static:-static}}} \
 %{mabi=n32:-melf32%{EB:b}%{EL:l}tsmipn32} \
-%{mabi=64:-melf64%{EB:b}%{EL:l}tsmip} \
+%{mabi=64:-melf64%{EB:b}%{EL:l}tsmip%{msym32:_sym32}} \
 %{mabi=32:-melf32%{EB:b}%{EL:l}tsmip}"
 
 #undef LOCAL_LABEL_PREFIX

@@ -1,6 +1,6 @@
 /* mpc_pow_ld -- Raise a complex number to a long double power.
 
-Copyright (C) 2009 Paul Zimmermann
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 

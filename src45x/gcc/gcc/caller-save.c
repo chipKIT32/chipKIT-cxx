@@ -488,7 +488,7 @@ setup_save_areas (void)
 	  freq = REG_FREQ_FROM_BB (BLOCK_FOR_INSN (insn));
 	  REG_SET_TO_HARD_REG_SET (hard_regs_to_save,
 				   &chain->live_throughout);
-	  COPY_HARD_REG_SET (used_regs, call_used_reg_set);
+	  get_call_reg_set_usage (insn, &used_regs, call_used_reg_set);
 
 	  /* Record all registers set in this call insn.  These don't
 	     need to be saved.  N.B. the call insn might set a subreg
@@ -547,7 +547,7 @@ setup_save_areas (void)
 	    continue;
 	  REG_SET_TO_HARD_REG_SET (hard_regs_to_save,
 				   &chain->live_throughout);
-	  COPY_HARD_REG_SET (used_regs, call_used_reg_set);
+	  get_call_reg_set_usage (insn, &used_regs, call_used_reg_set);
 
 	  /* Record all registers set in this call insn.  These don't
 	     need to be saved.  N.B. the call insn might set a subreg
@@ -812,6 +812,7 @@ save_call_clobbered_regs (void)
 	    {
 	      unsigned regno;
 	      HARD_REG_SET hard_regs_to_save;
+	      HARD_REG_SET call_def_reg_set;
 	      reg_set_iterator rsi;
 
 	      /* Use the register life information in CHAIN to compute which
@@ -857,7 +858,9 @@ save_call_clobbered_regs (void)
 	      AND_COMPL_HARD_REG_SET (hard_regs_to_save, call_fixed_reg_set);
 	      AND_COMPL_HARD_REG_SET (hard_regs_to_save, this_insn_sets);
 	      AND_COMPL_HARD_REG_SET (hard_regs_to_save, hard_regs_saved);
-	      AND_HARD_REG_SET (hard_regs_to_save, call_used_reg_set);
+	      get_call_reg_set_usage (insn, &call_def_reg_set,
+				      call_used_reg_set);
+	      AND_HARD_REG_SET (hard_regs_to_save, call_def_reg_set);
 
 	      for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
 		if (TEST_HARD_REG_BIT (hard_regs_to_save, regno))
@@ -883,7 +886,10 @@ save_call_clobbered_regs (void)
 	     remain saved.  If the last insn in the block is a JUMP_INSN, put
 	     the restore before the insn, otherwise, put it after the insn.  */
 
-	  if (DEBUG_INSN_P (insn) && last && last->block == chain->block)
+	  if (n_regs_saved
+	      && DEBUG_INSN_P (insn)
+	      && last
+	      && last->block == chain->block)
 	    {
 	      rtx ins, prev;
 	      basic_block bb = BLOCK_FOR_INSN (insn);

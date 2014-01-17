@@ -1,6 +1,6 @@
 /* mpc_mul_si -- Multiply a complex number by a signed integer.
 
-Copyright (C) 2005, 2009 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2005, 2009
 
 This file is part of the MPC Library.
 

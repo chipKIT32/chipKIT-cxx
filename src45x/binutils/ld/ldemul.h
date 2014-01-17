@@ -59,7 +59,11 @@ extern void ldemul_set_symbols
 extern void ldemul_create_output_section_statements
   (void);
 extern lang_output_section_statement_type *ldemul_place_orphan
+#ifdef TARGET_IS_PIC32MX
+  (struct lang_input_statement_struct *, asection *, const char *, int);
+#else
   (asection *, const char *, int);
+#endif
 extern bfd_boolean ldemul_parse_args
   (int, char **);
 extern void ldemul_add_options
@@ -152,7 +156,11 @@ typedef struct ld_emulation_xfer_struct {
      the default action should be taken.  This field may be NULL, in
      which case the default action will always be taken.  */
   lang_output_section_statement_type *(*place_orphan)
+#ifdef TARGET_IS_PIC32MX
+    (struct lang_input_statement_struct *, asection *, const char *, int);
+#else
     (asection *, const char *, int);
+#endif
 
   /* Run after assigning parsing with the args, but before
      reading the script.  Used to initialize symbols used in the script.  */
@@ -207,3 +215,4 @@ typedef enum {
 extern ld_emulation_xfer_type *ld_emulations[];
 
 #endif
+

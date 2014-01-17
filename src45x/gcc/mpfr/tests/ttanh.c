@@ -1,13 +1,13 @@
 /* Test file for mpfr_tanh.
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,20 +38,20 @@ special (void)
   mpfr_init (x);
 
   mpfr_set_nan (x);
-  mpfr_tanh (x, x, GMP_RNDN);
+  mpfr_tanh (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_nan_p (x));
 
   mpfr_set_inf (x, 1);
-  mpfr_tanh (x, x, GMP_RNDN);
+  mpfr_tanh (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_cmp_ui (x, 1) == 0);
 
   mpfr_set_inf (x, -1);
-  mpfr_tanh (x, x, GMP_RNDN);
+  mpfr_tanh (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_cmp_si (x, -1) == 0);
 
   mpfr_set_prec (x, 10);
   mpfr_set_str_binary (x, "-0.1001011001");
-  mpfr_tanh (x, x, GMP_RNDN);
+  mpfr_tanh (x, x, MPFR_RNDN);
   MPFR_ASSERTN(mpfr_cmp_si_2exp (x, -135, -8) == 0);
 
   mpfr_clear (x);
@@ -62,7 +62,7 @@ special_overflow (void)
 {
   mpfr_t x, y;
   int i;
-  mp_exp_t emin, emax;
+  mpfr_exp_t emin, emax;
 
   emin = mpfr_get_emin ();
   emax = mpfr_get_emax ();
@@ -74,7 +74,7 @@ special_overflow (void)
   mpfr_init2 (y, 24);
 
   mpfr_set_str_binary (x, "0.101100100000000000110100E7");
-  i = mpfr_tanh (y, x, GMP_RNDN);
+  i = mpfr_tanh (y, x, MPFR_RNDN);
   if (mpfr_cmp_ui (y, 1) || i != 1)
     {
       printf("Overflow error (1). i=%d\ny=", i);
@@ -83,8 +83,8 @@ special_overflow (void)
     }
   MPFR_ASSERTN (!mpfr_overflow_p ());
 
-  i = mpfr_tanh (y, x, GMP_RNDZ);
-  if (mpfr_cmp_str (y, "0.111111111111111111111111E0", 2, GMP_RNDN)
+  i = mpfr_tanh (y, x, MPFR_RNDZ);
+  if (mpfr_cmp_str (y, "0.111111111111111111111111E0", 2, MPFR_RNDN)
       || i != -1)
     {
       printf("Overflow error (2).i=%d\ny=", i);
@@ -97,7 +97,7 @@ special_overflow (void)
   set_emax (emax);
 
   mpfr_set_str_binary (x, "0.1E1000000000");
-  i = mpfr_tanh (y, x, GMP_RNDN);
+  i = mpfr_tanh (y, x, MPFR_RNDN);
   if (mpfr_cmp_ui (y, 1) || i != 1)
     {
       printf("Overflow error (3). i=%d\ny=", i);
@@ -106,8 +106,8 @@ special_overflow (void)
     }
   MPFR_ASSERTN (!mpfr_overflow_p ());
   mpfr_set_str_binary (x, "-0.1E1000000000");
-  i = mpfr_tanh (y, x, GMP_RNDU);
-  if (mpfr_cmp_str (y, "-0.111111111111111111111111E0", 2, GMP_RNDN)
+  i = mpfr_tanh (y, x, MPFR_RNDU);
+  if (mpfr_cmp_str (y, "-0.111111111111111111111111E0", 2, MPFR_RNDN)
       || i != 1)
     {
       printf("Overflow error (4). i=%d\ny=", i);

@@ -56,7 +56,7 @@ along with GCC; see the file COPYING3.  If not see
    CC1_SPEC itself by config/linux.h, but mips.h overrides CC1_SPEC
    and provides this hook instead.  */
 #undef SUBTARGET_CC1_SPEC
-#define SUBTARGET_CC1_SPEC "%{profile:-p} %{!mjals:-mno-jals}"
+#define SUBTARGET_CC1_SPEC "%{profile:-p}"
 
 /* From iris5.h */
 /* -G is incompatible with -KPIC which is the default, so only allow objects
@@ -151,9 +151,6 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 #undef SUBTARGET_OVERRIDE_OPTIONS
 #define SUBTARGET_OVERRIDE_OPTIONS                              \
 do {                                                            \
-  /* microMIPS PLT entries are non-microMIPS.  */		\
-  if (TARGET_INTERLINK_MIPS16 == -1 && TARGET_MICROMIPS)	\
-    TARGET_INTERLINK_MIPS16 = 1;				\
   /* __thread_support is not supported by uClibc.  */           \
   if (linux_uclibc)                                             \
     targetm.have_tls = 0;                                       \

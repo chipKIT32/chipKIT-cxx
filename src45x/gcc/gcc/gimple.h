@@ -1047,6 +1047,7 @@ extern void gimplify_function_tree (tree);
 
 /* In cfgexpand.c.  */
 extern tree gimple_assign_rhs_to_tree (gimple);
+extern void add_reg_br_prob_note (rtx last, int probability);
 
 /* In builtins.c  */
 extern bool validate_gimple_arglist (const_gimple, ...);
@@ -4824,7 +4825,7 @@ gimple_alloc_kind (enum gimple_code code)
 
 extern void dump_gimple_statistics (void);
 
-extern tree maybe_fold_and_comparisons (enum tree_code, tree, tree, 
+extern tree maybe_fold_and_comparisons (enum tree_code, tree, tree,
 					enum tree_code, tree, tree);
 extern tree maybe_fold_or_comparisons (enum tree_code, tree, tree,
 				       enum tree_code, tree, tree);

@@ -1,6 +1,6 @@
 # Data file for mpc_sinh.
 #
-# Copyright (C) 2008 Andreas Enge
+# Copyright (C) INRIA, 2008, 2010
 #
 # This file is part of the MPC Library.
 #
@@ -81,3 +81,6 @@
 # IEEE-754 double precision
 - - 53 0xF48D4FDF29C53p-105 53 2   53 0x15124271980435p-52 53 0x3243F6A8885A3p-49 N N
 
+# huge values
++ - 53 +inf 53 -inf 53 0x4580CBF242683p-3 53 -0x1B3E8A3660D279p-3 N N
++ + 53 +inf 53 +inf 53 -0x1B3E8A3660D279p-3 53 0x4580CBF242683p-3 N N

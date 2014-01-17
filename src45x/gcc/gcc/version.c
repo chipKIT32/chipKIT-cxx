@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
+#include "config.h"
 #include "version.h"
 
 /* This is the location of the online document giving instructions for
@@ -36,7 +37,20 @@ const char bug_report_url[] = "<URL:http://www.microchip.com/chipkit>";
    Makefile.  */
 
 /* const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION; */
+#ifdef _BUILD_C32_
+const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.30"; /* chipKIT */
 
-const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.31-20120614";
+#elif defined(_BUILD_C30_)
+#define version2(X) #X
+#define version(X) version2(X)
+
+char *version_string = BASEVER " " "(XC16, Microchip " version(MCHP_VERSION)
+                       ") Build date: " __DATE__;
+#else
+
+const char version_string[] = BASEVER " " "MPLAB XC Compiler v1.10";
+#endif
+
 const char pkgversion_string[] = PKGVERSION;
+
 

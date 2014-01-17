@@ -103,6 +103,8 @@ extern char arm_arch_name[];
  	  }						\
 	if (low_irq_latency)				\
 	  builtin_define ("__low_irq_latency__");	\
+	if (TARGET_IDIV)				\
+	  builtin_define ("__ARM_ARCH_EXT_IDIV__");	\
     } while (0)
 
 /* The various ARM cores.  */
@@ -233,8 +235,7 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 
 #define TARGET_HARD_TP			(target_thread_pointer == TP_CP15)
 #define TARGET_SOFT_TP			(target_thread_pointer == TP_SOFT)
-#define TARGET_ARM_TLS			(target_tls_dialect == TLS_ARM)
-#define TARGET_GNU_TLS			(target_tls_dialect == TLS_GNU)
+#define TARGET_GNU2_TLS			(target_tls_dialect == TLS_GNU2)
 
 /* Only 16-bit thumb code.  */
 #define TARGET_THUMB1			(TARGET_THUMB && !arm_arch_thumb2)
@@ -286,7 +287,8 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
   (TARGET_32BIT && arm_arch6 && (arm_arch_notm || arm_arch7em))
 
 /* Should MOVW/MOVT be used in preference to a constant pool.  */
-#define TARGET_USE_MOVT (arm_arch_thumb2 && !optimize_size)
+#define TARGET_USE_MOVT \
+  (arm_arch_thumb2 && !optimize_size && !current_tune->prefer_constant_pool)
 
 /* We could use unified syntax for arm mode, but for now we just use it
    for Thumb-2.  */
@@ -307,6 +309,10 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 /* Nonzero if this chip supports ldrex{bhd} and strex{bhd}.  */
 #define TARGET_HAVE_LDREXBHD	((arm_arch6k && TARGET_ARM) || arm_arch7)
 
+/* Nonzero if integer division instructions supported.  */
+#define TARGET_IDIV		((TARGET_ARM && arm_arch_arm_hwdiv) \
+				 || (TARGET_THUMB2 && arm_arch_thumb_hwdiv))
+
 /* True iff the full BPABI is being used.  If TARGET_BPABI is true,
    then TARGET_AAPCS_BASED must be true -- but the converse does not
    hold.  TARGET_BPABI implies the use of the BPABI runtime library,
@@ -324,7 +330,8 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
    --with-float is ignored if -mhard-float, -msoft-float or -mfloat-abi are
    specified.
    --with-fpu is ignored if -mfpu is specified.
-   --with-abi is ignored is -mabi is specified.  */
+   --with-abi is ignored is -mabi is specified.
+   --with-tls is ignored if -mtls-dialect is specified. */
 #define OPTION_DEFAULT_SPECS \
   {"arch", "%{!march=*:%{!mcpu=*:-march=%(VALUE)}}" }, \
   {"cpu", "%{!march=*:%{!mcpu=*:-mcpu=%(VALUE)}}" }, \
@@ -333,7 +340,8 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
     "%{!msoft-float:%{!mhard-float:%{!mfloat-abi=*:-mfloat-abi=%(VALUE)}}}" }, \
   {"fpu", "%{!mfpu=*:-mfpu=%(VALUE)}"}, \
   {"abi", "%{!mabi=*:-mabi=%(VALUE)}"}, \
-  {"mode", "%{!marm:%{!mthumb:-m%(VALUE)}}"},
+  {"mode", "%{!marm:%{!mthumb:-m%(VALUE)}}"}, \
+  {"tls", "%{!mtls-dialect=*:-mtls-dialect=%(VALUE)}"},
 
 /* Which floating point model to use.  */
 enum arm_fp_model
@@ -420,8 +428,8 @@ enum arm_tp_type {
 };
 
 enum arm_tls_type {
-  TLS_ARM,
-  TLS_GNU
+  TLS_GNU,
+  TLS_GNU2
 };
 
 extern enum arm_tp_type target_thread_pointer;
@@ -497,8 +505,11 @@ extern int arm_cpp_interwork;
 /* Nonzero if chip supports Thumb 2.  */
 extern int arm_arch_thumb2;
 
-/* Nonzero if chip supports integer division instruction.  */
-extern int arm_arch_hwdiv;
+/* Nonzero if chip supports integer division instruction in ARM mode.  */
+extern int arm_arch_arm_hwdiv;
+
+/* Nonzero if chip supports integer division instruction in Thumb mode.  */
+extern int arm_arch_thumb_hwdiv;
 
 /* Nonzero if we should minimize interrupt latency of the
    generated code.  */
@@ -1348,6 +1359,7 @@ enum reg_class
   (TARGET_32BIT ? (CLASS) :				\
    ((CLASS) == GENERAL_REGS || (CLASS) == HI_REGS	\
     || (CLASS) == NO_REGS || (CLASS) == STACK_REG	\
+    || (CLASS) == CORE_REGS				\
    ? LO_REGS : (CLASS)))
 
 /* Must leave BASE_REGS reloads alone */
@@ -1424,7 +1436,11 @@ enum reg_class
 	  HOST_WIDE_INT low, high;					   \
 									   \
 	  if (MODE == DImode || (MODE == DFmode && TARGET_SOFT_FLOAT))	   \
-	    low = ((val & 0xf) ^ 0x8) - 0x8;				   \
+	    {								   \
+	      if (TARGET_NEON && (val & 0x3) != 0)			   \
+		break;							   \
+	      low = ((val & 0xf) ^ 0x8) - 0x8;			   	   \
+	    }								   \
 	  else if (TARGET_MAVERICK && TARGET_HARD_FLOAT)		   \
 	    /* Need to be careful, -256 is not a valid offset.  */	   \
 	    low = val >= 0 ? (val & 0xff) : -((-val) & 0xff);		   \
@@ -2275,9 +2291,8 @@ typedef struct
 /* Try to generate sequences that don't involve branches, we can then use
    conditional instructions */
 #define BRANCH_COST(speed_p, predictable_p) \
-  (TARGET_32BIT ? ((arm_tune_cortex_a5 && !optimize_size) ? 0 \
-		   : (TARGET_THUMB2 && optimize_size ? 1 : 4)) \
-		: (optimize > 0 ? 2 : 0))
+  (current_tune->branch_cost (speed_p, predictable_p))
+
 
 /* Position Independent Code.  */
 /* We decide which register to use based on the compilation options and
@@ -2629,6 +2644,8 @@ extern int making_const_table;
 
 #define RETURN_ADDR_RTX(COUNT, FRAME) \
   arm_return_addr (COUNT, FRAME)
+
+#define RETURN_ADDR_REGNUM LR_REGNUM
 
 /* Mask of the bits in the PC that contain the real return address
    when running in 26-bit mode.  */

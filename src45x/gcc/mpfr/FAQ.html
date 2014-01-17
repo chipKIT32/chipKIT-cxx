@@ -2,16 +2,15 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 
 <!--
-Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
-The GNU MPFR Library is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License (either version 2.1
-of the License, or, at your option, any later version) and the GNU General
-Public License as published by the Free Software Foundation (most of MPFR is
-under the former, some under the latter).
+The GNU MPFR Library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at your
+option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
 WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
@@ -19,15 +18,19 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA.
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
+<!--
+    Do not modify directly! Regenerate this file with:
+      xsltproc -\-nodtdattr faq-web.xsl faq.xhtml
+  -->
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 
 <head><meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-<title>Frequently Asked Questions about MPFR</title>
+<title>Frequently Asked Questions about GNU MPFR</title>
 <style type="text/css">/*<![CDATA[*/
 /* Global stylesheet for visual media */
 
@@ -112,7 +115,7 @@ var.env { font-style: normal }
 
 <body>
 
-<h1>Frequently Asked Questions about <cite><acronym>MPFR</acronym></cite></h1>
+<h1>Frequently Asked Questions about <cite><acronym>GNU</acronym> <acronym>MPFR</acronym></cite></h1>
 
 <p><strong>Important notice: Problems with a particular version of
 <cite><acronym>MPFR</acronym></cite> are discussed in the corresponding
@@ -141,6 +144,8 @@ are not more accurate.</a></li>
 installation using <cite>autoconf</cite> or <cite>pkg-config</cite>?</a></li>
 <li><a href="#cite">How to cite <cite><acronym>MPFR</acronym></cite> in a
 scientific publication?</a></li>
+<li><a href="#fpic">When I build <cite><acronym>MPFR</acronym></cite>, I get
+an error asking me to recompile with <samp>-fPIC</samp>.</a></li>
 </ol>
 
 <dl class="faq">
@@ -183,11 +188,11 @@ infinities, not-a-number (NaN).</p></li>
 <cite><acronym>MPFR</acronym></cite>?</dt>
 
 <dd><p>You need to add <q><code>r</code></q> to the function names, and to
-specify the rounding mode (<code>GMP_RNDN</code> for rounding to nearest,
-<code>GMP_RNDZ</code> for rounding towards zero, <code>GMP_RNDU</code>
-for rounding towards plus infinity, <code>GMP_RNDD</code> for rounding
+specify the rounding mode (<code>MPFR_RNDN</code> for rounding to nearest,
+<code>MPFR_RNDZ</code> for rounding towards zero, <code>MPFR_RNDU</code>
+for rounding towards plus infinity, <code>MPFR_RNDD</code> for rounding
 towards minus infinity). You can also define macros as follows:
-<code class="block-code">#define mpf_add(a, b, c) mpfr_add(a, b, c, GMP_RNDN)</code></p>
+<code class="block-code">#define mpf_add(a, b, c) mpfr_add(a, b, c, MPFR_RNDN)</code></p>
 <p>The header file <samp>mpf2mpfr.h</samp> from the
 <cite><acronym>MPFR</acronym></cite> distribution automatically
 redefines all <cite><acronym>MPF</acronym></cite> functions in this
@@ -323,7 +328,7 @@ in particular for most exact decimal numbers, such as 0.17, which are
 not exactly representable in binary.</p>
 <p>Also remember that <cite><acronym>MPFR</acronym></cite> does not track
 the accuracy of the results: copying a value <var>x</var> to <var>y</var>
-with <code>mpfr_set (y, x, GMP_RNDN)</code> where the variable <var>y</var>
+with <code>mpfr_set (y, x, MPFR_RNDN)</code> where the variable <var>y</var>
 is more precise than the variable <var>x</var> will not make it more
 accurate; the (binary) value will remain unchanged.</p></dd>
 
@@ -350,6 +355,32 @@ and/or the library web page
 is related to a particular release of <cite><acronym>MPFR</acronym></cite>,
 for example if you report timings, please also indicate the release number
 for future reference.</p></dd>
+
+<dt id="fpic">10. When I build <cite><acronym>MPFR</acronym></cite>, I get
+an error asking me to recompile with <samp>-fPIC</samp>.</dt>
+
+<dd><p>A typical error looks like:</p>
+<p><tt>/usr/bin/ld: <em>/path/to/</em>libgmp.a(realloc.o): relocation
+R_X86_64_32 against `.rodata.str1.1' can not be used when making a
+shared object; recompile with -fPIC<br />
+<em>/path/to/</em>libgmp.a: could not read symbols: Bad value<br />
+collect2: ld returned 1 exit status</tt></p>
+<p>The probable reason is that you tried to build
+<cite><acronym>MPFR</acronym></cite> with the shared library enabled (this
+is the default), while only a static <cite><acronym>GMP</acronym></cite>
+library could be found. To solve this problem, either rebuild and reinstall
+<cite><acronym>GMP</acronym></cite> without the <samp>--disable-shared</samp>
+configure option, or configure <cite><acronym>MPFR</acronym></cite> with
+<samp>--disable-shared</samp>. If you did this and still get the above
+error, the cause may be conflicting <cite><acronym>GMP</acronym></cite>
+versions installed on your system; please check that your search path
+settings are correct.</p>
+<p>Additional note about the last sentence: Under <acronym>GNU</acronym>/Linux
+(for instance), the linker takes the first library found in the library search
+path, whether it is dynamic or static. The default behavior under darwin is
+different, but <cite><acronym>MPFR</acronym></cite> will change it.</p></dd>
+<!-- Reference concerning darwin: see MPFR_LD_SEARCH_PATHS_FIRST
+     in MPFR's configure.{ac,in} and acinclude.m4 -->
 
 </dl>
 

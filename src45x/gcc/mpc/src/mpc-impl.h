@@ -1,6 +1,6 @@
 /* mpc-impl.h -- Internal include file for mpc.
 
-Copyright (C) 2002, 2004, 2005, 2008, 2009 Andreas Enge, Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2002, 2004, 2005, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -23,20 +23,14 @@ MA 02111-1307, USA. */
 #define __MPC_IMPL_H
 
 #include <stdlib.h>
-
-#include "config.h" /* for MPC_USE_LOGGING */
-
-#ifndef __MPC_TESTS_H
-#define __MPC_WITHIN_MPC 1
-#endif
-
+#include "config.h"
 #include "mpc.h"
 
 #define MPC_RE(x) ((x)->re)
 #define MPC_IM(x) ((x)->im)
 
 /*
- * Miscelaneous useful macros
+ * Miscellaneous useful macros
  */
 
 #define MPC_MAX(h,i) ((h) > (i) ? (h) : (i))
@@ -57,27 +51,48 @@ MA 02111-1307, USA. */
 #define BITS_PER_MP_LIMB mp_bits_per_limb
 #endif
 
-#define MPFR_PREC(x) mpfr_get_prec(x)
-#define MPFR_EXP(x)  mpfr_get_exp(x)
-
 #define MPFR_SIGNBIT(x) (mpfr_signbit (x) ? -1 : 1)
-#define MPC_MPFR_SIGN(x) (mpfr_zero_p (x)? 0 : MPFR_SIGNBIT (x))
+#define MPC_MPFR_SIGN(x) (mpfr_zero_p (x) ? 0 : MPFR_SIGNBIT (x))
    /* should be called MPFR_SIGN, but this is taken in mpfr.h */
 #define MPFR_CHANGE_SIGN(x) mpfr_neg(x,x,GMP_RNDN)
-#define MPFR_IS_SINGULAR(x) (mpfr_nan_p(x) || mpfr_inf_p(x) || mpfr_zero_p(x))
 #define MPFR_COPYSIGN(x,y,z,rnd) (mpfr_nan_p (z) ? \
    mpfr_setsign (x, y, 0, rnd) : \
    mpfr_copysign (x, y, z, rnd))
    /* work around spurious signs in nan */
+#define MPFR_ADD_ONE_ULP(x) mpfr_add_one_ulp (x, GMP_RNDN)
+#define MPFR_SUB_ONE_ULP(x) mpfr_sub_one_ulp (x, GMP_RNDN)
+   /* drop unused rounding mode from macroes */
 #define MPFR_SWAP(a,b) do { mpfr_srcptr tmp; tmp = a; a = b; b = tmp; } while (0)
+
+
+/*
+ * Macro implementing rounding away from zero, to ease compatibility with
+ * mpfr < 3. f is the complete function call with a rounding mode of
+ * MPFR_RNDA, rop the name of the variable containing the result; it is
+ * already contained in f, but needs to be repeated so that the macro can
+ * modify the variable.
+ * Usage: replace each call to a function such as
+ *    mpfr_add (rop, a, b, MPFR_RNDA)
+ * by
+ *    ROUND_AWAY (mpfr_add (rop, a, b, MPFR_RNDA), rop)
+*/
+#if MPFR_VERSION_MAJOR < 3
+   /* round towards zero, add 1 ulp if not exact */
+#define MPFR_RNDA GMP_RNDZ
+#define ROUND_AWAY(f,rop)                            \
+   ((f) ? MPFR_ADD_ONE_ULP (rop), MPFR_SIGNBIT (rop) : 0)
+#else
+#define ROUND_AWAY(f,rop) \
+   (f)
+#endif
 
 
 /*
  * MPC macros
  */
 
-#define MPC_PREC_RE(x) (MPFR_PREC(MPC_RE(x)))
-#define MPC_PREC_IM(x) (MPFR_PREC(MPC_IM(x)))
+#define MPC_PREC_RE(x) (mpfr_get_prec(MPC_RE(x)))
+#define MPC_PREC_IM(x) (mpfr_get_prec(MPC_IM(x)))
 #define MPC_MAX_PREC(x) MPC_MAX(MPC_PREC_RE(x), MPC_PREC_IM(x))
 
 #define INV_RND(r) \
@@ -95,22 +110,13 @@ MA 02111-1307, USA. */
    /* Consider as NaN all other numbers containing at least one NaN */
 
 
-#define OUT(x)                                                  \
+#define MPC_OUT(x)                                                  \
 do {                                                            \
   printf (#x "[%lu,%lu]=", (unsigned long int) MPC_PREC_RE (x), \
       (unsigned long int) MPC_PREC_IM (x));                     \
   mpc_out_str (stdout, 2, 0, x, MPC_RNDNN);                     \
   printf ("\n");                                                \
 } while (0)
-
-/* C++ iterator on mpfr_rnd_t */
-#if defined (__cplusplus)
-inline
-mpfr_rnd_t & operator++(mpfr_rnd_t &rnd)
-{
-  return rnd = mpfr_rnd_t(rnd + 1);
-}
-#endif
 
 
 /*
@@ -145,12 +151,14 @@ mpfr_rnd_t & operator++(mpfr_rnd_t &rnd)
 extern "C" {
 #endif
 
-__MPC_DECLSPEC int  mpc_mul_naive     __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_mul_naive __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
 __MPC_DECLSPEC int  mpc_mul_karatsuba __MPC_PROTO ((mpc_ptr, mpc_srcptr, mpc_srcptr, mpc_rnd_t));
+__MPC_DECLSPEC int  mpc_pow_usi __MPC_PROTO ((mpc_ptr, mpc_srcptr, unsigned long, int, mpc_rnd_t));
 __MPC_DECLSPEC char* mpc_alloc_str __MPC_PROTO ((size_t));
 __MPC_DECLSPEC char* mpc_realloc_str __MPC_PROTO ((char*, size_t, size_t));
 __MPC_DECLSPEC void mpc_free_str __MPC_PROTO ((char*));
-__MPC_DECLSPEC unsigned long mpc_ceil_log2 __MPC_PROTO ((unsigned long));
+__MPC_DECLSPEC mpfr_prec_t mpc_ceil_log2 __MPC_PROTO ((mpfr_prec_t));
+__MPC_DECLSPEC int set_pi_over_2 __MPC_PROTO ((mpfr_ptr, int, mpfr_rnd_t));
 
 #if defined (__cplusplus)
 }

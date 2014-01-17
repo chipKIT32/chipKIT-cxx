@@ -467,7 +467,7 @@
           [(match_operator:SI 3 "shift_operator"
              [(match_operand:SI 4 "s_register_operand" "r")
               (match_operand:SI 5 "const_shift_count" "M")])
-           (match_operand:SI 2 "s_register_operand" "r")]))]
+           (match_operand:SI 2 "s_register_operand" "rk")]))]
   "TARGET_THUMB2"
   "%i1%?\\t%0, %2, %4%S3"
   [(set_attr "predicable" "yes")
@@ -1020,16 +1020,15 @@
 
 ;; Note: this is not predicable, to avoid issues with linker-generated
 ;; interworking stubs.
-(define_insn "*thumb2_return"
-  [(return)]
-  "TARGET_THUMB2 && USE_RETURN_INSN (FALSE)"
-  "*
-  {
-    return output_return_instruction (const_true_rtx, TRUE, FALSE);
-  }"
+(define_insn "*thumb2_<return_str>return"
+  [(returns)]
+  "TARGET_THUMB2<return_cond>"
+{
+  return output_return_instruction (const_true_rtx, true, false,
+				    <return_simple_p>);
+}
   [(set_attr "type" "load1")
-   (set_attr "length" "12")]
-)
+   (set_attr "length" "12")])
 
 (define_insn_and_split "thumb2_eh_return"
   [(unspec_volatile [(match_operand:SI 0 "s_register_operand" "r")]
@@ -1162,26 +1161,6 @@
   "
   [(set_attr "predicable" "yes")
    (set_attr "length" "2")]
-)
-
-(define_insn "divsi3"
-  [(set (match_operand:SI	  0 "s_register_operand" "=r")
-	(div:SI (match_operand:SI 1 "s_register_operand"  "r")
-		(match_operand:SI 2 "s_register_operand"  "r")))]
-  "TARGET_THUMB2 && arm_arch_hwdiv"
-  "sdiv%?\t%0, %1, %2"
-  [(set_attr "predicable" "yes")
-   (set_attr "insn" "sdiv")]
-)
-
-(define_insn "udivsi3"
-  [(set (match_operand:SI	   0 "s_register_operand" "=r")
-	(udiv:SI (match_operand:SI 1 "s_register_operand"  "r")
-		 (match_operand:SI 2 "s_register_operand"  "r")))]
-  "TARGET_THUMB2 && arm_arch_hwdiv"
-  "udiv%?\t%0, %1, %2"
-  [(set_attr "predicable" "yes")
-   (set_attr "insn" "udiv")]
 )
 
 (define_insn "*thumb2_subsi_short"

@@ -1,13 +1,13 @@
 /* mpfr_hypot -- Euclidean distance
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -27,15 +27,15 @@ MA 02110-1301, USA. */
  *    hypot(x,y)= sqrt(x^2+y^2) = z                */
 
 int
-mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mp_rnd_t rnd_mode)
+mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mpfr_rnd_t rnd_mode)
 {
   int inexact, exact;
   mpfr_t t, te, ti; /* auxiliary variables */
-  mp_prec_t N, Nz; /* size variables */
-  mp_prec_t Nt;   /* precision of the intermediary variable */
-  mp_prec_t threshold;
-  mp_exp_t Ex, sh;
-  mp_exp_unsigned_t diff_exp;
+  mpfr_prec_t N, Nz; /* size variables */
+  mpfr_prec_t Nt;   /* precision of the intermediary variable */
+  mpfr_prec_t threshold;
+  mpfr_exp_t Ex, sh;
+  mpfr_uexp_t diff_exp;
 
   MPFR_SAVE_EXPO_DECL (expo);
   MPFR_ZIV_DECL (loop);
@@ -61,7 +61,6 @@ mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mp_rnd_t rnd_mode)
       else /* y is necessarily 0 */
         return mpfr_abs (z, x, rnd_mode);
     }
-  MPFR_CLEAR_FLAGS(z);
 
   if (mpfr_cmpabs (x, y) < 0)
     {
@@ -74,18 +73,20 @@ mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mp_rnd_t rnd_mode)
   /* now |x| >= |y| */
 
   Ex = MPFR_GET_EXP (x);
-  diff_exp = (mp_exp_unsigned_t) Ex - MPFR_GET_EXP (y);
+  diff_exp = (mpfr_uexp_t) Ex - MPFR_GET_EXP (y);
 
   N = MPFR_PREC (x);   /* Precision of input variable */
   Nz = MPFR_PREC (z);   /* Precision of output variable */
-  threshold = (MAX (N, Nz) + (rnd_mode == GMP_RNDN ? 1 : 0)) << 1;
+  threshold = (MAX (N, Nz) + (rnd_mode == MPFR_RNDN ? 1 : 0)) << 1;
+  if (rnd_mode == MPFR_RNDA)
+    rnd_mode = MPFR_RNDU; /* since the result is positive, RNDA = RNDU */
 
   /* Is |x| a suitable approximation to the precision Nz ?
      (see algorithms.tex for explanations) */
   if (diff_exp > threshold)
     /* result is |x| or |x|+ulp(|x|,Nz) */
     {
-      if (MPFR_UNLIKELY (rnd_mode == GMP_RNDU))
+      if (MPFR_UNLIKELY (rnd_mode == MPFR_RNDU))
         {
           /* If z > abs(x), then it was already rounded up; otherwise
              z = abs(x), and we need to add one ulp due to y. */
@@ -93,7 +94,7 @@ mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mp_rnd_t rnd_mode)
             mpfr_nexttoinf (z);
           MPFR_RET (1);
         }
-      else /* GMP_RNDZ, GMP_RNDD, GMP_RNDN */
+      else /* MPFR_RNDZ, MPFR_RNDD, MPFR_RNDN */
         {
           if (MPFR_LIKELY (Nz >= N))
             {
@@ -140,14 +141,14 @@ mpfr_hypot (mpfr_ptr z, mpfr_srcptr x, mpfr_srcptr y, mp_rnd_t rnd_mode)
   MPFR_ZIV_INIT (loop, Nt);
   for (;;)
     {
-      mp_prec_t err;
+      mpfr_prec_t err;
 
-      exact = mpfr_mul_2si (te, x, sh, GMP_RNDZ);
-      exact |= mpfr_mul_2si (ti, y, sh, GMP_RNDZ);
-      exact |= mpfr_sqr (te, te, GMP_RNDZ);
+      exact = mpfr_mul_2si (te, x, sh, MPFR_RNDZ);
+      exact |= mpfr_mul_2si (ti, y, sh, MPFR_RNDZ);
+      exact |= mpfr_sqr (te, te, MPFR_RNDZ);
       /* Use fma in order to avoid underflow when diff_exp<=MPFR_EMAX_MAX-2 */
-      exact |= mpfr_fma (t, ti, ti, te, GMP_RNDZ);
-      exact |= mpfr_sqrt (t, t, GMP_RNDZ);
+      exact |= mpfr_fma (t, ti, ti, te, MPFR_RNDZ);
+      exact |= mpfr_sqrt (t, t, MPFR_RNDZ);
 
       err = Nt < N ? 4 : 2;
       if (MPFR_LIKELY (exact == 0

@@ -1,13 +1,13 @@
 /* mpfr_coth - Hyperbolic cotangent function.
 
-Copyright 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 /* the hyperbolic cotangent is defined by coth(x) = 1/tanh(x)
    coth (NaN) = NaN.
@@ -42,10 +42,10 @@ MA 02110-1301, USA. */
   if (MPFR_GET_EXP(z) == 1) /* 1 <= |z| < 2 */                          \
     {                                                                   \
       /* the following is exact by Sterbenz theorem */                  \
-      mpfr_sub_si (z, z, MPFR_SIGN(z) > 0 ? 1 : -1, GMP_RNDN);          \
-      if (MPFR_IS_ZERO(z) || MPFR_GET_EXP(z) <= - (mp_exp_t) precy)     \
+      mpfr_sub_si (z, z, MPFR_SIGN(z) > 0 ? 1 : -1, MPFR_RNDN);         \
+      if (MPFR_IS_ZERO(z) || MPFR_GET_EXP(z) <= - (mpfr_exp_t) precy)   \
         {                                                               \
-          mpfr_add_si (z, z, MPFR_SIGN(z) > 0 ? 1 : -1, GMP_RNDN);      \
+          mpfr_add_si (z, z, MPFR_SIGN(z) > 0 ? 1 : -1, MPFR_RNDN);     \
           break;                                                        \
         }                                                               \
     }
@@ -63,19 +63,21 @@ MA 02110-1301, USA. */
    result. If x < 2^E, then y > 2^(-E), thus ufp(y) > 2^(-E-1).
    A sufficient condition is thus EXP(x) + 1 <= -2 MAX(PREC(x),PREC(Y)). */
 #define ACTION_TINY(y,x,r) \
-  if (MPFR_EXP(x) + 1 <= -2 * (mp_exp_t) MAX(MPFR_PREC(x), MPFR_PREC(y))) \
+  if (MPFR_EXP(x) + 1 <= -2 * (mpfr_exp_t) MAX(MPFR_PREC(x), MPFR_PREC(y))) \
     {                                                                   \
       int signx = MPFR_SIGN(x);                                         \
       inexact = mpfr_ui_div (y, 1, x, r);                               \
       if (inexact == 0) /* x is a power of two */                       \
         { /* result always 1/x, except when rounding away from zero */  \
-          if (rnd_mode == GMP_RNDU)                                     \
+          if (rnd_mode == MPFR_RNDA)                                    \
+            rnd_mode = (signx > 0) ? MPFR_RNDU : MPFR_RNDD;             \
+          if (rnd_mode == MPFR_RNDU)                                    \
             {                                                           \
               if (signx > 0)                                            \
                 mpfr_nextabove (y); /* 2^k + epsilon */                 \
               inexact = 1;                                              \
             }                                                           \
-          else if (rnd_mode == GMP_RNDD)                                \
+          else if (rnd_mode == MPFR_RNDD)                               \
             {                                                           \
               if (signx < 0)                                            \
                 mpfr_nextbelow (y); /* -2^k - epsilon */                \

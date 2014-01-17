@@ -265,6 +265,8 @@ foreach option {
     synci
     relax-pic-calls
     mcount-ra-address
+    micromips
+    interlink-mips16
 } {
     lappend mips_option_groups $option "-m(no-|)$option"
 }
@@ -316,6 +318,18 @@ set mips_option_tests(-mips16) {
     .set mips16
     jr $31
     .set nomips16
+    .align 2
+1:
+    ori $3,$31,1
+    jalr $3
+    move $31,$2
+}
+set mips_option_tests(-mmicromips) {
+    move $2,$31
+    bal 1f
+    .set micromips
+    jr $31
+    .set nomicromips
     .align 2
 1:
     ori $3,$31,1

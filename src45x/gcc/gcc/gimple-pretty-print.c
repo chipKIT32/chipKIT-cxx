@@ -429,6 +429,13 @@ dump_gimple_assign (pretty_printer *buffer, gimple gs, int spc, int flags)
     {
       if (!(flags & TDF_RHS_ONLY))
 	{
+#ifdef _BUILD_C30_
+          { const char str[16];
+
+            sprintf(str,"@ %p ", gimple_assign_lhs(gs));
+            pp_string(buffer,str);
+          }
+#endif
 	  dump_generic_node (buffer, gimple_assign_lhs (gs), spc, flags, false);
 	  pp_space (buffer);
 	  pp_character (buffer, '=');

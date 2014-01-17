@@ -46,6 +46,10 @@
 extern "C" void
 __cxxabiv1::__cxa_pure_virtual (void)
 {
+#if defined(TARGET_IS_PIC32MX)
+  while(1);
+#else
   writestr ("pure virtual method called\n");
   std::terminate ();
+#endif
 }

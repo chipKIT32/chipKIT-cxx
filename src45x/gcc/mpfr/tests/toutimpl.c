@@ -1,14 +1,14 @@
 /* Test file for internal debugging-out functions:
    mpfr_dump, mpfr_print_binary, mpfr_print_rnd_mode.
 
-Copyright 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -17,9 +17,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdlib.h>
 #include "mpfr-test.h"
@@ -45,28 +45,28 @@ main (void)
   tests_start_mpfr ();
 
   /* Check RND_MODE */
-  if (strcmp (mpfr_print_rnd_mode(GMP_RNDN), "GMP_RNDN"))
+  if (strcmp (mpfr_print_rnd_mode(MPFR_RNDN), "MPFR_RNDN"))
     {
-      printf ("Error for printing GMP_RNDN\n");
+      printf ("Error for printing MPFR_RNDN\n");
       exit (1);
     }
-  if (strcmp (mpfr_print_rnd_mode(GMP_RNDU), "GMP_RNDU"))
+  if (strcmp (mpfr_print_rnd_mode(MPFR_RNDU), "MPFR_RNDU"))
     {
-      printf ("Error for printing GMP_RNDU\n");
+      printf ("Error for printing MPFR_RNDU\n");
       exit (1);
     }
-  if (strcmp (mpfr_print_rnd_mode(GMP_RNDD), "GMP_RNDD"))
+  if (strcmp (mpfr_print_rnd_mode(MPFR_RNDD), "MPFR_RNDD"))
     {
-      printf ("Error for printing GMP_RNDD\n");
+      printf ("Error for printing MPFR_RNDD\n");
       exit (1);
     }
-  if (strcmp (mpfr_print_rnd_mode(GMP_RNDZ), "GMP_RNDZ"))
+  if (strcmp (mpfr_print_rnd_mode(MPFR_RNDZ), "MPFR_RNDZ"))
     {
-      printf ("Error for printing GMP_RNDZ\n");
+      printf ("Error for printing MPFR_RNDZ\n");
       exit (1);
     }
-  if (mpfr_print_rnd_mode ((mp_rnd_t) -1) != NULL ||
-      mpfr_print_rnd_mode (GMP_RND_MAX) != NULL)
+  if (mpfr_print_rnd_mode ((mpfr_rnd_t) -1) != NULL ||
+      mpfr_print_rnd_mode (MPFR_RND_MAX) != NULL)
     {
       printf ("Error for illegal rounding mode values.\n");
       exit (1);

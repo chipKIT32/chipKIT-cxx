@@ -1,6 +1,6 @@
 /* mpc_fr_div -- Divide a floating-point number by a complex number.
 
-Copyright (C) 2008, 2009 Andreas Enge, Philippe Th\'eveny, Paul Zimmermann
+Copyright (C) INRIA, 2008, 2009
 
 This file is part of the MPC Library.
 

@@ -1,7 +1,7 @@
-/* mpc_set_fr -- Set the real part of a complex number from a real number
+/* mpc_set_x -- Set the real part of a complex number
    (imaginary part equals +0 regardless of rounding mode).
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -28,6 +28,10 @@ MA 02111-1307, USA. */
 # if HAVE_STDINT_H
 #  include <stdint.h>
 # endif
+#endif
+
+#if HAVE_COMPLEX_H
+# include <complex.h>
 #endif
 
 #include "mpc-impl.h"
@@ -80,6 +84,18 @@ mpc_set_uj (mpc_ptr a, uintmax_t b, mpc_rnd_t rnd)
 int
 mpc_set_sj (mpc_ptr a, intmax_t b, mpc_rnd_t rnd)
    MPC_SET_X (sj, a, b, rnd)
+#endif
+
+#ifdef _MPC_H_HAVE_COMPLEX
+int
+mpc_set_dc (mpc_ptr a, double _Complex b, mpc_rnd_t rnd) {
+   return mpc_set_d_d (a, creal (b), cimag (b), rnd);
+}
+
+int
+mpc_set_ldc (mpc_ptr a, long double _Complex b, mpc_rnd_t rnd) {
+   return mpc_set_ld_ld (a, creall (b), cimagl (b), rnd);
+}
 #endif
 
 void

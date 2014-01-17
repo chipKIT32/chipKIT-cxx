@@ -1,6 +1,6 @@
 # Data test file for mpc_cosh.
 
-# Copyright (C) 2008 Paul Zimmermann
+# Copyright (C) INRIA, 2008, 2010
 
 # This file is part of the MPC Library.
 #
@@ -128,3 +128,8 @@
 0 0 2 nan 2 nan   2 nan 2 nan   N N
 
 + + 53 0x10000000000001p-53 53 0x10000000000001p-52   53 0x1DA2E1BD2C9EBCp-53 53 0x138AADEA15829Fp-52 N N
+
+
+# huge values
++ - 53 +inf 53 -inf 53 0x4580CBF242683p-3 53 -0x1B3E8A3660D279p-3 N N
+- - 53 -inf 53 -inf 53 -0x1B3E8A3660D279p-3 53 0x4580CBF242683p-3 N N

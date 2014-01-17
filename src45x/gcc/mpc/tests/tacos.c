@@ -1,6 +1,6 @@
 /* test file for mpc_acos.
 
-Copyright (C) 2009 Philippe Th\'eveny
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 
