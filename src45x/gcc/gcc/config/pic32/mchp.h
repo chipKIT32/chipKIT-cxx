@@ -383,7 +383,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 
 #define CC1PLUS_SPEC " \
  %{!fenforce-eh-specs:-fno-enforce-eh-specs} \
- %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=c++0x} -msmart-io=0 }} \
+ %{mxc32cpp-lib:%{!mno-xc32cpp-lib: -msmart-io=0 }} \
  %(subtarget_cc1plus_spec) \
 "
 
