@@ -979,7 +979,7 @@ void pic32_report_crypto_sections()
           c = strchr(s->sec->name, '%');
           if (c) *c = (char) '\0';
           fprintf( crypto, "%s \t%#X \t%#X  \n", s->sec->name,
-                 s->sec->vma, s->sec->size);
+                 (unsigned int)s->sec->vma, (unsigned int)s->sec->size);
 
        }
     fclose(crypto);

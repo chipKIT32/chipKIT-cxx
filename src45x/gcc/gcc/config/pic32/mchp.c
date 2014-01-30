@@ -961,7 +961,7 @@ mchp_output_vector_dispatch_table (void)
         fprintf (asm_out_file, "\t.section\t.vector_%d,code,keep\n",
                  dispatch_entry->vector_number);
         fprintf (asm_out_file, "\t.set\tnomips16\n");
-        if (mips_base_micromips)
+        if (mips_base_micromips && (pic32_device_mask & HAS_MICROMIPS))
           {
             fprintf (asm_out_file, "\t.set\tmicromips\n");
           }
@@ -3910,7 +3910,7 @@ void mchp_cache_conversion_state(rtx val, tree sym)
   s = cache_conversion_state(val, status_output, conv_state_unknown);
   if (s == conv_state_unknown)
     {
-      if (sym && STRING_CST_CHECK(sym))
+      if (sym && (TREE_CODE(sym)==STRING_CST) && STRING_CST_CHECK(sym))
         {
           const char *string = TREE_STRING_POINTER(sym);
 
@@ -3958,7 +3958,7 @@ static void mchp_handle_conversion(rtx val,
   /* a constant string will be given a symbol name, and so will a
      symbol ... */
   sym = constant_string(val);
-  if (!(sym && STRING_CST_CHECK(sym))) sym = 0;
+  if (!(sym && (TREE_CODE(sym)==STRING_CST) && STRING_CST_CHECK(sym))) sym = 0;
   mchp_cache_conversion_state(val, sym);
   style = matching_fn->conversion_style == info_I ? status_input:status_output;
   conversion_info(cache_conversion_state(val, style, conv_state_unknown),
