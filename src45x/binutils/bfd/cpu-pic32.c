@@ -287,10 +287,12 @@ void process_resource_file(unsigned int procID, int debug) {
     pic32_resource_version = xmalloc(strlen(version_part1) + 
                                      strlen(version_part2) + 40);
     version = rib->version.major * 100 + rib->version.minor;
+#if !defined (CHIPKIT_PIC32)
     if (version != pic32_tool_version) {
       fprintf(stderr,"Warning: resource version (%d.%.2d) does not match!\n",
               rib->version.major, rib->version.minor);
-    } 
+    }
+#endif
     sprintf(pic32_resource_version,"Part Supprt version (%c) ",
               rib->resource_version_increment);
   }
