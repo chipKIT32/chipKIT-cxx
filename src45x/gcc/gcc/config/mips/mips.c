@@ -1080,10 +1080,10 @@ static const struct mips_rtx_cost_data mips_rtx_cost_data[PROCESSOR_MAX] =
   },
   { /* M4k */
     SOFT_FP_COSTS,
-    COSTS_N_INSNS (2),         /* int_mult_si */
-    COSTS_N_INSNS (2),         /* int_mult_di */
-    COSTS_N_INSNS (12),        /* int_div_si */
-    COSTS_N_INSNS (12),        /* int_div_di */
+    COSTS_N_INSNS (31),        /* int_mult_si (>31 for now) */
+    COSTS_N_INSNS (31),        /* int_mult_di */
+    COSTS_N_INSNS (31),        /* int_div_si */
+    COSTS_N_INSNS (31),        /* int_div_di */
     2,                         /* branch_cost */
     4                          /* memory_latency */
   },
