@@ -1,0 +1,17 @@
+/*
+ *  EXTRA RTL nodes for C30
+ */
+
+/*
+ * operators for various page/offset operations needed for C30
+ */
+
+DEF_RTL_EXPR(PSVPAGE, "psvpage", "e", RTX_UNARY)
+DEF_RTL_EXPR(TBLPAGE, "tblpage", "e", RTX_UNARY)
+DEF_RTL_EXPR(EDSPAGE, "edspage", "ee", RTX_UNARY)
+DEF_RTL_EXPR(DMAPAGE, "dmapage", "e", RTX_UNARY)
+
+DEF_RTL_EXPR(PSVOFFSET, "psvoffset", "e", RTX_UNARY)
+DEF_RTL_EXPR(EDSOFFSET, "edsoffset", "e", RTX_UNARY)
+DEF_RTL_EXPR(DMAOFFSET, "dmaoffset", "e", RTX_UNARY)
+DEF_RTL_EXPR(TBLOFFSET, "tbloffset", "e", RTX_UNARY)

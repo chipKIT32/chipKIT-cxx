@@ -1,0 +1,90 @@
+#! /usr/bin/perl
+
+# Copyright (c) 2004 MIPS Technologies Inc. All Rights Reserved.
+#
+# Patch version names and numbers scattered through the source
+# tree with our own release name.
+
+if (@ARGV < 2) {
+  print STDERR "Usage: NAME BASEDIR\n";
+  exit (1);
+}
+
+#$debug = 1;
+$release = shift @ARGV;
+$basedir = shift @ARGV;
+
+($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
+#$release .= sprintf "-%04d%02d%02d", 1900+$year, $mon+1, $mday;
+
+while (<>) {
+  chop;
+  next if /^\s*#/;
+  next if /^$/;
+  ($fname, $beg, $end) = split (/\t+/);
+
+  $fname = "$basedir/$fname";
+  unless (open (IN, $fname)) {
+    print STDERR "Cannot open $fname for input\n";
+    exit 1;
+  }
+
+  if (! $debug) {
+    $out = "$fname-new";
+    unless (open (OUT, ">$out")) {
+      print STDERR "Cannot open $out for output\n";
+      exit 1;
+    }
+  }
+
+  $matches = 0;
+  $changes = 0;
+
+  $pat = "^(\\s*$beg)(.*)($end\\s*)\$";
+  print "$fname: searching for /$pat/\n" if $debug;
+
+  while ($line = <IN>) {
+    chop $line;
+    if ($line =~ /$pat/) {
+      $matches++;
+      $nline = "$1$release$3";
+      if ($nline eq $line) {
+	print "$fname:$.:$line (UNCHANGED)\n";
+      }
+      else {
+	print "$fname:$.:$line (OLD)\n";
+	print "$fname:$.:$nline (NEW)\n";
+	$line = $nline;
+	$changes++;
+      }
+    }
+    print OUT "$line\n" if OUT;
+  }
+  close IN;
+  close OUT;
+
+  if ($matches == 0) {
+    print STDERR "$fname: no matching lines\n";
+    unlink "$out" if $out;
+    exit 1;
+  }
+
+  if ($matches > 1) {
+    print STDERR "$fname: too many matches\n";
+    unlink "$out" if $out;
+    exit 1;
+  }
+
+  if ($changes == 0) {
+    unlink "$out" if $out;
+    next;
+  }
+
+  system ("mv -f $out $fname") if $out;
+
+#  if ($fname =~ /configure\.in/) {
+#    ($dir = $fname) =~ s:^(.*)/[^/]+$:$1:;
+#    print "cd $dir; autoreconf --cygnus --force --verbose\n";
+#    system ("cd $dir; autoreconf --cygnus --force --verbose");
+#  }
+}
