@@ -5,14 +5,14 @@ See http://gcc.gnu.org/ml/gcc/2006-06/msg00691.html,
 http://gcc.gnu.org/onlinedocs/gcc/Decimal-Float.html,
 and TR 24732 <http://www.open-std.org/jtc1/sc22/wg14/www/projects#24732>.
 
-Copyright 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -21,9 +21,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -185,7 +185,7 @@ decimal64_to_string (char *s, _Decimal64 d)
       rp[1] &= 524287; /* 2^19-1: cancel G[11] */
       rp[1] |= 2097152; /* add 2^21 */
     }
-#if BITS_PER_MP_LIMB >= 54
+#if GMP_NUMB_BITS >= 54
   rp[0] |= rp[1] << 32;
   rn = 1;
 #endif
@@ -209,7 +209,7 @@ decimal64_to_string (char *s, _Decimal64 d)
 }
 
 int
-mpfr_set_decimal64 (mpfr_ptr r, _Decimal64 d, mp_rnd_t rnd_mode)
+mpfr_set_decimal64 (mpfr_ptr r, _Decimal64 d, mpfr_rnd_t rnd_mode)
 {
   char s[23]; /* need 1 character for sign,
                      16 characters for mantissa,

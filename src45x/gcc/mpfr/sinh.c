@@ -1,13 +1,13 @@
 /* mpfr_sinh -- hyperbolic sine
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
@@ -27,7 +27,7 @@ MA 02110-1301, USA. */
     sinh(x) = 1/2 [e^(x)-e^(-x)]          */
 
 int
-mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
+mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mpfr_rnd_t rnd_mode)
 {
   mpfr_t x;
   int inexact;
@@ -65,8 +65,8 @@ mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
 
   {
     mpfr_t t, ti;
-    mp_exp_t d;
-    mp_prec_t Nt;    /* Precision of the intermediary variable */
+    mpfr_exp_t d;
+    mpfr_prec_t Nt;    /* Precision of the intermediary variable */
     long int err;    /* Precision of error */
     MPFR_ZIV_DECL (loop);
     MPFR_SAVE_EXPO_DECL (expo);
@@ -92,15 +92,15 @@ mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
         MPFR_BLOCK_DECL (flags);
 
         /* compute sinh */
-        MPFR_BLOCK (flags, mpfr_exp (t, x, GMP_RNDD));
+        MPFR_BLOCK (flags, mpfr_exp (t, x, MPFR_RNDD));
         if (MPFR_OVERFLOW (flags))
           /* exp(x) does overflow */
           {
             /* sinh(x) = 2 * sinh(x/2) * cosh(x/2) */
-            mpfr_div_2ui (ti, x, 1, GMP_RNDD); /* exact */
+            mpfr_div_2ui (ti, x, 1, MPFR_RNDD); /* exact */
 
             /* t <- cosh(x/2): error(t) <= 1 ulp(t) */
-            MPFR_BLOCK (flags, mpfr_cosh (t, ti, GMP_RNDD));
+            MPFR_BLOCK (flags, mpfr_cosh (t, ti, MPFR_RNDD));
             if (MPFR_OVERFLOW (flags))
               /* when x>1 we have |sinh(x)| >= cosh(x/2), so sinh(x)
                  overflows too */
@@ -112,10 +112,10 @@ mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
 
             /* ti <- sinh(x/2): , error(ti) <= 1 ulp(ti)
                cannot overflow because 0 < sinh(x) < cosh(x) when x > 0 */
-            mpfr_sinh (ti, ti, GMP_RNDD);
+            mpfr_sinh (ti, ti, MPFR_RNDD);
 
             /* multiplication below, error(t) <= 5 ulp(t) */
-            MPFR_BLOCK (flags, mpfr_mul (t, t, ti, GMP_RNDD));
+            MPFR_BLOCK (flags, mpfr_mul (t, t, ti, MPFR_RNDD));
             if (MPFR_OVERFLOW (flags))
               {
                 inexact = mpfr_overflow (y, rnd_mode, MPFR_SIGN (xt));
@@ -124,7 +124,7 @@ mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
               }
 
             /* doubling below, exact */
-            MPFR_BLOCK (flags, mpfr_mul_2ui (t, t, 1, GMP_RNDN));
+            MPFR_BLOCK (flags, mpfr_mul_2ui (t, t, 1, MPFR_RNDN));
             if (MPFR_OVERFLOW (flags))
               {
                 inexact = mpfr_overflow (y, rnd_mode, MPFR_SIGN (xt));
@@ -145,9 +145,9 @@ mpfr_sinh (mpfr_ptr y, mpfr_srcptr xt, mp_rnd_t rnd_mode)
         else
           {
             d = MPFR_GET_EXP (t);
-            mpfr_ui_div (ti, 1, t, GMP_RNDU); /* 1/exp(x) */
-            mpfr_sub (t, t, ti, GMP_RNDN);    /* exp(x) - 1/exp(x) */
-            mpfr_div_2ui (t, t, 1, GMP_RNDN);  /* 1/2(exp(x) - 1/exp(x)) */
+            mpfr_ui_div (ti, 1, t, MPFR_RNDU); /* 1/exp(x) */
+            mpfr_sub (t, t, ti, MPFR_RNDN);    /* exp(x) - 1/exp(x) */
+            mpfr_div_2ui (t, t, 1, MPFR_RNDN);  /* 1/2(exp(x) - 1/exp(x)) */
 
             /* it may be that t is zero (in fact, it can only occur when te=1,
                and thus ti=1 too) */

@@ -1425,7 +1425,7 @@ gen_rx_rtsd_vector (unsigned int adjust, unsigned int low, unsigned int high)
 				: plus_constant (stack_pointer_rtx,
 						 i * UNITS_PER_WORD)));
 
-  XVECEXP (vector, 0, count - 1) = gen_rtx_RETURN (VOIDmode);
+  XVECEXP (vector, 0, count - 1) = ret_rtx;
 
   return vector;
 }
@@ -2191,7 +2191,7 @@ static void
 rx_option_override (void)
 {
   /* This target defaults to strict volatile bitfields.  */
-  if (flag_strict_volatile_bitfields < 0)
+  if (flag_strict_volatile_bitfields < 0 && abi_version_at_least(2))
     flag_strict_volatile_bitfields = 1;
 }
 

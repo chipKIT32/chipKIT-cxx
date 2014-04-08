@@ -1,6 +1,6 @@
 # Data file for mpc_exp.
 #
-# Copyright (C) 2008 Philippe Th\'eveny
+# Copyright (C) INRIA, 2008, 2010
 #
 # This file is part of the MPC Library.
 #
@@ -113,3 +113,8 @@
 + - 53 -0x53aa981b6c9300p-55 53  0xc1bdceeee0f57p-52     25 +0 67 -4 Z D
 + - 53 -0x6a88995d4dc810p-56 53 -0xe8c7b7568da23p-52     23 -0 68 -2 U D
 
+# overflow
+- - 2 -inf 2 -inf  53 0x3312ae437f94441ec@-9 53 0xe45f7bab0595dd700@-10 N N
+
+# input close to 0
+? ? 53 1 53 0x5D7A2148071Fp-7213522 53 0x1E02AE0D0F6Fp-7213521 53 0x5D7A2148071Fp-7213522 N N

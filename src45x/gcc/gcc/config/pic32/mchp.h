@@ -1148,3 +1148,4 @@ extern enum mips_function_type_tag current_function_type;
 #define PIC32_SUPPORT_CRYPTO_ATTRIBUTE 1
 
 #endif /* MCHP_H */
+

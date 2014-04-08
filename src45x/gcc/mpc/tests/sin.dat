@@ -1,6 +1,6 @@
 # Data file for mpc_sin.
 #
-# Copyright (C) 2008 Philippe Th\'eveny
+# Copyright (C) INRIA, 2008, 2010
 #
 # This file is part of the MPC Library.
 #
@@ -160,3 +160,6 @@
 - + 53 0x100FFFFFFFFFFFp-43 53 -0x11B7CA26B51951p-97    53 0x3243F6A8885A3p-49 53 -0x1BBDD1808C59A3p-50 D U
 - - 53 0x100FFFFFFFFFFFp-43 53 -0x8DBE5135A8CA9p-96     53 0x3243F6A8885A3p-49 53 -0x1BBDD1808C59A3p-50 D D
 
+# huge values
++ + 53 +inf 53 +inf 53 0x4580CBF242683p-3 53 -0x1B3E8A3660D279p-3 N N
+- + 53 -inf 53 +inf 53 -0x1B3E8A3660D279p-3 53 0x4580CBF242683p-3 N N

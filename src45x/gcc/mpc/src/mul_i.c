@@ -1,6 +1,6 @@
 /* mpc_mul_i -- Multiply a complex number by plus or minus i.
 
-Copyright (C) 2005, 2009 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2005, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -29,8 +29,8 @@ mpc_mul_i (mpc_ptr a, mpc_srcptr b, int sign, mpc_rnd_t rnd)
   mpfr_t tmp;
 
   /* Treat the most probable case of compatible precisions first */
-  if (     MPFR_PREC (MPC_RE (b)) == MPFR_PREC (MPC_IM (a))
-        && MPFR_PREC (MPC_IM (b)) == MPFR_PREC (MPC_RE (a)))
+  if (     MPC_PREC_RE (b) == MPC_PREC_IM (a)
+        && MPC_PREC_IM (b) == MPC_PREC_RE (a))
   {
      if (a == b)
         mpfr_swap (MPC_RE (a), MPC_IM (a));
@@ -50,7 +50,7 @@ mpc_mul_i (mpc_ptr a, mpc_srcptr b, int sign, mpc_rnd_t rnd)
   {
      if (a == b)
      {
-        mpfr_init2 (tmp, MPFR_PREC (MPC_RE (a)));
+        mpfr_init2 (tmp, MPC_PREC_RE (a));
         if (sign >= 0)
         {
            inex_re = mpfr_neg (tmp, MPC_IM (b), MPC_RND_RE (rnd));

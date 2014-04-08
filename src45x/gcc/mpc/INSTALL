@@ -6,12 +6,12 @@ in the Texinfo documentation (type 'info mpc.info').
 
 0. You first need to install GMP and MPFR. See <http://gmplib.org/>
    and <http://www.mpfr.org>.
-   MPC requires GMP version 4.2 or later and MPFR version 2.3.1 or later.
+   MPC requires GMP version 4.3.2 or later and MPFR version 2.4.2 or later.
 
 1. In the directory of the MPC archive, type
 
-      tar xzf mpc-0.8.1.tar.gz
-      cd mpc-0.8.1
+      tar xzf mpc-0.9.tar.gz
+      cd mpc-0.9
       ./configure
       make
 
@@ -78,3 +78,9 @@ For any issue related to the makefile.vc file, please contact directly
 Mickael Gastineau at <gastineau at imcce dot fr> (replace 'at' by '@',
 and 'dot' by '.').
 
+If you want to compile mpc with mingw in the msys shell, you might need to
+add the following to the configure command (or in your environment):
+
+LDFLAGS=-L/usr/local/lib CPPFLAGS=-I/usr/local/include
+
+(reported by Sisyphus)

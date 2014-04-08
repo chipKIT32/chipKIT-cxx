@@ -31,6 +31,10 @@
 #include "coff/pe.h"
 #endif
 
+#ifdef OBJ_XCOFF
+#include "coff/xcoff.h"
+#endif
+
 #define streq(a,b)     (strcmp ((a), (b)) == 0)
 #define strneq(a,b,n)  (strncmp ((a), (b), (n)) == 0)
 
@@ -1095,15 +1099,8 @@ weak_name2altname (const char * name)
 static const char *
 weak_altname2name (const char * name)
 {
-  char * weak_name;
-  char * dot;
-
   gas_assert (weak_is_altname (name));
-
-  weak_name = xstrdup (name + 6);
-  if ((dot = strchr (weak_name, '.')))
-    *dot = 0;
-  return weak_name;
+  return xstrdup (name + 6);
 }
 
 /* Make a weak symbol name unique by
@@ -1120,9 +1117,6 @@ weak_uniquify (const char * name)
     unique = an_external_name;
 #endif
   gas_assert (weak_is_altname (name));
-
-  if (strchr (name + sizeof (weak_altprefix), '.'))
-    return name;
 
   ret = xmalloc (strlen (name) + strlen (unique) + 2);
   strcpy (ret, name);
@@ -1537,6 +1531,7 @@ coff_frob_file_after_relocs (void)
                                                  'o' for over
                                                  'w' for data
   						 'd' (apparently m88k for data)
+						 'e' for exclude
                                                  'x' for text
   						 'r' for read-only data
   						 's' for shared data (PE)
@@ -1604,6 +1599,11 @@ obj_coff_section (int ignore ATTRIBUTE_UNUSED)
 		}
 	      switch (attr)
 		{
+		case 'e':
+		  /* Exclude section from linking.  */
+		  flags |= SEC_EXCLUDE;
+		  break;
+
 		case 'b':
 		  /* Uninitialised data section.  */
 		  flags |= SEC_ALLOC;
@@ -1772,8 +1772,13 @@ coff_frob_section (segT sec)
 #endif
     {
       symbolS *secsym = section_symbol (sec);
+      unsigned char sclass = C_STAT;
 
-      S_SET_STORAGE_CLASS (secsym, C_STAT);
+#ifdef OBJ_XCOFF
+      if (bfd_get_section_flags (stdoutput, sec) & SEC_DEBUGGING)
+        sclass = C_DWARF;
+#endif
+      S_SET_STORAGE_CLASS (secsym, sclass);
       S_SET_NUMBER_AUXILIARY (secsym, 1);
       SF_SET_STATICS (secsym);
       SA_SET_SCN_SCNLEN (secsym, size);
@@ -1829,11 +1834,15 @@ obj_coff_init_stab_section (segT seg)
 }
 
 #ifdef DEBUG
+const char * s_get_name (symbolS *);
+
 const char *
 s_get_name (symbolS *s)
 {
   return ((s == NULL) ? "(NULL)" : S_GET_NAME (s));
 }
+
+void symbol_dump (void);
 
 void
 symbol_dump (void)
@@ -1939,5 +1948,6 @@ const struct format_ops coff_format_ops =
   0,	/* ecoff_set_ext */
   coff_obj_read_begin_hook,
   coff_obj_symbol_new_hook,
-  coff_obj_symbol_clone_hook
+  coff_obj_symbol_clone_hook,
+  coff_adjust_symtab
 };

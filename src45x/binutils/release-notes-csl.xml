@@ -5,6 +5,456 @@
      relevant; it may be removed if it is relevant to all targets.
  -->
 
+      <!-- UUID: 2be8a0c1-bb40-4319-be1d-32f4403b1068 -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Linker raw binary input crash fix</title>
+        <para>
+          A bug that caused the linker to crash when linking binary
+          inputs (<option>--format=binary</option>) while using
+          <option>--gc-sections</option> has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 648971df-e5a5-4f41-9931-6646d73ef7be -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13942 13959 -->
+      <formalpara>
+        <title>Assembler bug fixes</title>
+        <para>
+          Assembler bugs have been fixed that caused assembly errors or
+          incorrect code to be produced for the <code>LUI</code>
+          instruction, microMIPS <code>B16</code>, <code>BEQZ16</code>,
+          and <code>BNEZ16</code> suffixed instruction mnemonics, as well
+          as 32-bit microMIPS instructions placed in a 16-bit delay slot
+          of a branch or a jump.
+        </para>
+      </formalpara>
+
+      <!-- UUID: def3ab07-9b8a-4cb5-85d6-f1773a74860f -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>EVA instruction assembler bug fix</title>
+        <para>
+          An assembler bug in branch delay slot optimization involving
+          EVA instructions has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 3a37c259-b8ae-4a43-8de5-203906f79175 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13735 -->
+      <formalpara>
+        <title>
+          Assembler <literal>%hi</literal> and <literal>%lo</literal>
+          operator bug fixes
+        </title>
+        <para>
+          Several bugs have been fixed in the handling of
+          <literal>%hi</literal> and <literal>%lo</literal> assembly
+          operators applied to expressions involving forward symbol
+          references.  The bugs caused the assembler to fail with a
+          <literal>relocation overflow</literal> error message or to
+          produce incorrect code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: b854bf81-05e8-42b1-aa20-1a723d413c61 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13859 -->
+      <formalpara>
+        <title>
+          microMIPS <literal>SWXC1</literal> instruction encoding bug fix
+        </title>
+        <para>
+          A bug in the encoding of the microMIPS <literal>SWXC1</literal>
+          instruction has been fixed.  The bug caused <literal>LWXC1</literal>
+          to be produced by the assembler and listed by the disassembler
+          instead.
+        </para>
+      </formalpara>
+
+      <!-- UUID: bb0bce82-cd77-46c7-aefb-ede2438bf6cc -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Binutils version 2.23</title>
+        <para>
+          &csl_prod; for &csl_target_name; is now based on binutils
+          version 2.23.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 378e6890-dd73-4844-ac3a-359154e72676 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: CB-1354 -->
+      <formalpara>
+        <title>Linker crash bug fix</title>
+        <para>
+          A bug has been fixed that caused the linker to crash
+          when using customized linker scripts without a
+          <literal>.eh_frame_hdr</literal> output section description.
+        </para>
+      </formalpara>
+
+      <!-- UUID: c9a45317-3264-446f-a4b7-d581bb5d24f8 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13685 -->
+      <formalpara>
+        <title>Linker assertion failure bug fix</title>
+        <para>
+          A linker bug has been fixed that caused assertion failures
+          when processing code that makes use of protected symbols.
+        </para>
+      </formalpara>
+
+      <!-- UUID: e88b647f-a74a-40d5-86ca-fc94de93336d -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13562 -->
+      <formalpara>
+        <title>Assembler internal error bug fix</title>
+        <para>
+          A bug has been fixed that caused the assembler to sometimes fail
+          with a <literal>fixup not contained within frag</literal> error
+          message.  The bug was triggered by the branch delay slot
+          optimization, not normally used for compiler-generated code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ed67147d-5f8d-48b1-85a1-8ab977daf412 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13581 -->
+      <formalpara>
+        <title>
+          Linker <code>_gp</code> special symbol ABI conformance bug fix
+        </title>
+        <para>
+          A bug has been fixed in the linker that caused link errors or
+          run-time malfunction of code that referred to the special
+          <code>_gp</code> symbol.  The semantics of the symbol has been
+          defined in the MIPS processor-specific ABI supplement and the
+          linker did not follow that definition.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a54099a4-fb0f-45b3-9c65-c669ddc4ea7b -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13581 -->
+      <formalpara>
+        <title>Linker script symbols</title>
+        <para>
+          The linker now supports a new <code>HIDDEN</code> keyword to define
+          symbols with object scope.  Refer to the linker manual for details.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f0366d76-73f1-4818-8a76-572efcb9ef25 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+	<title>EVA support</title>
+	<para>
+	  GAS now supports MIPS EVA instructions.
+	  You can specify the <option>-meva</option> option to
+	  GCC and GAS to indicate that EVA instructions are being
+	  used.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 9a61baf4-d613-48f8-9769-dec326d9bc19 -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13349 -->
+      <formalpara>
+        <title>Linker <option>--gc-sections</option> bug fix</title>
+        <para>
+          A linker bug that incorrectly caused undefined references to be 
+	  diagnosed when the <option>--gc-sections</option> option is used
+	  has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: de8738cb-0bc5-4a6d-8183-a47582c931cb -->
+      <!-- TARGET: sh*-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: issue12917 -->
+      <formalpara>
+        <title>Linker TLS bug fixed</title>
+        <para>
+          A linker bug in the handling of thread-local storage variables has
+          been fixed.  This bug caused the linker to emit an assertion failure
+          message at <literal>bfd/elf32-sh.c:7396</literal>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 76855c9a-036d-4d48-abd0-6e0ee785831e -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: CB-1090 -->
+      <formalpara>
+        <title>Linker <option>--gc-sections</option> option bug fix</title>
+        <para>
+          A bug has been fixed that caused the linker to incorrectly
+          remove the <code>.debug_types</code> section when using the
+          <option>--gc-sections</option> option.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 930df60a-339a-4fe6-a1ea-aab0e28b0a8c -->
+      <!-- TARGET: sh* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: issue12921 -->
+      <formalpara>
+        <title>Assembler bug fix</title>
+        <para>
+          The assembler no longer fails with an <literal>unsupported BFD
+          relocation size 8</literal> error message when
+          processing <code>.uaquad</code> and <code>.8byte</code> directives.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 17efea02-e1a9-4b6c-ae1d-4c0cc5b8dce7 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 13040 -->
+      <formalpara>
+        <title>microMIPS PLT linker bug fix</title>
+        <para>
+          A bug has been fixed that sometimes caused the linker to emit
+          MIPS32 code in the Procedure Linkage Table (PLT) in programs
+          linked from pure microMIPS objects.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 1dd6b9cf-5582-425c-b27a-24d8aae49f45 -->
+      <!-- TARGET: arm-none-linux-gnueabi -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara features="license">
+        <title>Linker COMDAT optimization bug fix</title>
+        <para>
+          A bug has been fixed that caused linker errors with the
+	  <option>--shared-comdat</option> option.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a8e0a933-7a84-48e9-938a-56f6d5938daa -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Fix for assembler internal error</title>
+        <para>
+          A bug has been fixed that caused the assembler to abort with an
+	  assertion failure in <code>emit_inc_line_addr</code>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a18ddd61-184b-4c80-ab71-a8b0be729a1f -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Binutils version 2.21</title>
+        <para>
+          &csl_prod; for &csl_target_name; is now based on binutils
+          version 2.21.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 159a0247-7970-4083-b624-a46cebc73c5f -->
+      <!-- TARGET: *-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara features="elf_shlibs">
+        <title>Linker COMDAT group code size optimization</title>
+        <para>
+          The linker supports a new option <option>-Wl,--shared-comdat</option>
+	  that causes it to resolve COMDAT group symbols to definitions
+	  provided by shared libraries when possible, discarding any
+	  duplicate definitions of the group in relocatable files included
+	  in the link.
+	  This optimization can produce smaller C++ executables and shared
+	  libraries at the expense of additional runtime overhead.  
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0b0bfae2-6a68-4ec8-82ae-ac0bb3043616 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Support for pure microMIPS objects</title>
+        <para>
+          The assembler and linker now support generation of pure microMIPS
+          objects, and the included microMIPS libraries now contain only
+          microMIPS instructions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 727791de-eb3b-46f5-9f63-e499d4ebf31d -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Binutils support for 32-bit microMIPS instructions</title>
+        <para>
+          The assembler and linker now support generation of 32-bit
+          instructions only when making microMIPS code.  For more information,
+          refer to the documentation of the <option>-minsn32</option>
+          assembler option and the <option>--insn32</option> linker option.
+        </para>
+      </formalpara>
+
+      <!-- UUID: e8bdc714-f1d8-469e-aefd-f2195cff2906 -->
+      <!-- TARGET: * -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 11778 -->
+      <formalpara>
+        <title>Assembler crash</title>
+        <para>
+          The assembler now warns when there is line information for
+	  the <literal>*ABS*</literal> section, rather than crash.
+	  This can occur when the <code>.offset</code> directive is
+	  used incorrectly.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 5d85045b-19e8-4cf4-9d81-d194a770b948 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 10746 -->
+      <formalpara>
+        <title>microMIPS linker code size optimization bug fix</title>
+        <para>
+          A bug has been fixed that sometimes caused the linker to generate
+          incorrect code when the <option>--relax</option> option is used
+          to enable certain code size optimizations that make use of the
+          <literal>ADDIUPC</literal> instruction.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 5cb19e76-73ae-47d4-9fa8-02daad39aa12 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: 10594 -->
+      <formalpara>
+        <title>24K Errata</title>
+        <para>
+          The <option>-mfix-24k</option> assembler option has been
+	  extended to work around Errata E48: Lost Data on Stores During
+	  Refill.
+          <phrase components="gcc">
+          In addition, GCC now accepts this command-line option and passes it
+          through to the assembler.
+          </phrase> 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 59f189ee-b59b-4a3b-989f-7f5511f365e3 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Addr2line bug fix</title>
+        <para>
+          A bug has been fixed that caused Addr2line to print
+	  <literal>??:0</literal> for any address instead of 
+         file and line number.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 9dd381c3-af4e-4efe-99a4-ec6feadc65c4 -->
+      <!-- TARGET: mips-sde-elf* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>microMIPS DSP ASE</title>
+        <para>
+	  The assembler now supports microMIPS encodings for
+	  the DSP ASE instructions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 5e9c3bac-6281-4bd4-bbec-0b8262a6f4dd -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Objdump fix for multiple input files</title>
+        <para>
+          The Objdump utility did not produce correct disassembly
+	  when processing multiple input files.  This has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 21abc5c6-45da-4899-82a8-4a62a893ea2c -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: binutils -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Thumb-2 assembler validation fix</title>
+        <para>
+	  The assembler now correctly rejects Thumb-2
+	  <literal>ADD</literal>, <literal>ADDS</literal>,
+	  <literal>SUB</literal>, and <literal>SUBS</literal>
+	  instructions that have an invalid shift operand.
+	  Previously, invalid shift values were accepted and
+	  generated unpredictable instructions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0f2a52eb-3e1b-4d14-a1d5-04cb92f79558 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: binutils -->
+      <formalpara>
+        <title>Improved MIPS16 and microMIPS library call support</title>
+        <para>
+          The toolchain now supports the use of MIPS16 and microMIPS code
+          in the Procedure Linkage Table (PLT).  The table is used to make
+          shared library function calls from programs.  The new feature
+          allows smaller and faster code to be generated.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 9ccc0350-1815-4cbe-a22c-52742f40d173 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <formalpara>
+        <title>microMIPS linker code size optimization bug fix</title>
+        <para>
+          A bug has been fixed that sometimes caused the linker to generate
+          incorrect code when the <option>--relax</option> option is used
+          to enable certain code size optimizations.
+        </para>
+      </formalpara>
+
+      <!-- UUID: bc7ede24-ddaf-4b50-a46e-ddc394f84573 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: binutils -->
+      <formalpara>
+        <title>MCU ASE instructions assembler bug fixes</title>
+        <para>
+          Bugs have been fixed that caused the assembler to sometimes
+          generate incorrect code for the MCU ASE <code>ACLR</code>,
+          <code>ASET</code> and <code>IRET</code> instructions.
+        </para>
+      </formalpara>
+
       <!-- UUID: 3a9fa276-e40f-44f2-8b89-1c32afdd11ea -->
       <!-- TARGET: * -->
       <!-- SORT: binutils -->

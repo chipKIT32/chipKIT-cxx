@@ -1,13 +1,13 @@
 /* mpfr_sinh_cosh -- hyperbolic sine and cosine
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,12 +16,15 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #define MPFR_NEED_LONGLONG_H
 #include "mpfr-impl.h"
+
+#define INEXPOS(y) ((y) == 0 ? 0 : (((y) > 0) ? 1 : 2))
+#define INEX(y,z) (INEXPOS(y) | (INEXPOS(z) << 2))
 
  /* The computations are done by
     cosh(x) = 1/2 [e^(x)+e^(-x)]
@@ -29,15 +32,15 @@ MA 02110-1301, USA. */
     Adapted from mpfr_sinh.c     */
 
 int
-mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
+mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mpfr_rnd_t rnd_mode)
 {
   mpfr_t x;
-  int inexact, inexact_sh, inexact_ch;
+  int inexact_sh, inexact_ch;
 
   MPFR_ASSERTN (sh != ch);
 
   MPFR_LOG_FUNC (("x[%#R]=%R rnd=%d", xt, xt, rnd_mode),
-                 ("sh[%#R]=%R ch[%#R]=%R inexact=%d", sh, sh, ch, ch, inexact));
+                 ("sh[%#R]=%R ch[%#R]=%R", sh, sh, ch, ch));
 
   if (MPFR_UNLIKELY (MPFR_IS_SINGULAR (xt)))
     {
@@ -60,7 +63,9 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
           MPFR_ASSERTD (MPFR_IS_ZERO (xt));
           MPFR_SET_ZERO (sh);                   /* sinh(0) = 0 */
           MPFR_SET_SAME_SIGN (sh, xt);
-          return mpfr_set_ui (ch, 1, rnd_mode); /* cosh(0) = 1 */
+          inexact_sh = 0;
+          inexact_ch = mpfr_set_ui (ch, 1, rnd_mode); /* cosh(0) = 1 */
+          return INEX(inexact_sh,inexact_ch);
         }
     }
 
@@ -71,8 +76,8 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
 
   {
     mpfr_t s, c, ti;
-    mp_exp_t d;
-    mp_prec_t N;    /* Precision of the intermediary variables */
+    mpfr_exp_t d;
+    mpfr_prec_t N;    /* Precision of the intermediary variables */
     long int err;    /* Precision of error */
     MPFR_ZIV_DECL (loop);
     MPFR_SAVE_EXPO_DECL (expo);
@@ -83,7 +88,6 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
     /* compute the precision of intermediary variable */
     N = MPFR_PREC (ch);
     N = MAX (N, MPFR_PREC (sh));
-    N = MAX (N, MPFR_PREC (x));
     /* the optimal number of bits : see algorithms.ps */
     N = N + MPFR_INT_CEIL_LOG2 (N) + 4;
 
@@ -97,7 +101,7 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
         MPFR_BLOCK_DECL (flags);
 
         /* compute sinh_cosh */
-        MPFR_BLOCK (flags, mpfr_exp (s, x, GMP_RNDD));
+        MPFR_BLOCK (flags, mpfr_exp (s, x, MPFR_RNDD));
         if (MPFR_OVERFLOW (flags))
           /* exp(x) does overflow */
           {
@@ -109,11 +113,11 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
             break;
           }
         d = MPFR_GET_EXP (s);
-        mpfr_ui_div (ti, 1, s, GMP_RNDU);  /* 1/exp(x) */
-        mpfr_add (c, s, ti, GMP_RNDU);     /* exp(x) + 1/exp(x) */
-        mpfr_sub (s, s, ti, GMP_RNDN);     /* exp(x) - 1/exp(x) */
-        mpfr_div_2ui (c, c, 1, GMP_RNDN);  /* 1/2(exp(x) + 1/exp(x)) */
-        mpfr_div_2ui (s, s, 1, GMP_RNDN);  /* 1/2(exp(x) - 1/exp(x)) */
+        mpfr_ui_div (ti, 1, s, MPFR_RNDU);  /* 1/exp(x) */
+        mpfr_add (c, s, ti, MPFR_RNDU);     /* exp(x) + 1/exp(x) */
+        mpfr_sub (s, s, ti, MPFR_RNDN);     /* exp(x) - 1/exp(x) */
+        mpfr_div_2ui (c, c, 1, MPFR_RNDN);  /* 1/2(exp(x) + 1/exp(x)) */
+        mpfr_div_2ui (s, s, 1, MPFR_RNDN);  /* 1/2(exp(x) - 1/exp(x)) */
 
         /* it may be that s is zero (in fact, it can only occur when exp(x)=1,
            and thus ti=1 too) */
@@ -146,8 +150,8 @@ mpfr_sinh_cosh (mpfr_ptr sh, mpfr_ptr ch, mpfr_srcptr xt, mp_rnd_t rnd_mode)
   }
 
   /* now, let's raise the flags if needed */
-  inexact = mpfr_check_range (sh, inexact_sh, rnd_mode);
-  inexact = mpfr_check_range (ch, inexact_ch, rnd_mode) || inexact;
+  inexact_sh = mpfr_check_range (sh, inexact_sh, rnd_mode);
+  inexact_ch = mpfr_check_range (ch, inexact_ch, rnd_mode);
 
-  return inexact;
+  return INEX(inexact_sh,inexact_ch);
 }

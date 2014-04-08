@@ -1,13 +1,13 @@
 /* Miscellaneous support for test programs.
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifdef HAVE_CONFIG_H
 # if HAVE_CONFIG_H
@@ -94,7 +94,7 @@ set_fpu_prec (void)
 
 #endif
 
-static mp_exp_t default_emin, default_emax;
+static mpfr_exp_t default_emin, default_emax;
 
 static void tests_rand_start (void);
 static void tests_rand_end   (void);
@@ -334,7 +334,7 @@ randlimb (void)
 {
   mp_limb_t limb;
 
-  _gmp_rand (&limb, RANDS, BITS_PER_MP_LIMB);
+  mpfr_rand_raw (&limb, RANDS, GMP_NUMB_BITS);
   return limb;
 }
 
@@ -465,7 +465,7 @@ src_fopen (const char *filename, const char *mode)
 }
 
 void
-set_emin (mp_exp_t exponent)
+set_emin (mpfr_exp_t exponent)
 {
   if (mpfr_set_emin (exponent))
     {
@@ -475,7 +475,7 @@ set_emin (mp_exp_t exponent)
 }
 
 void
-set_emax (mp_exp_t exponent)
+set_emax (mpfr_exp_t exponent)
 {
   if (mpfr_set_emax (exponent))
     {
@@ -489,7 +489,7 @@ set_emax (mp_exp_t exponent)
    If pos=0, all generated numbers are positive.
 */
 void
-tests_default_random (mpfr_ptr x, int pos, mp_exp_t emin, mp_exp_t emax)
+tests_default_random (mpfr_ptr x, int pos, mpfr_exp_t emin, mpfr_exp_t emax)
 {
   MPFR_ASSERTN (emin <= emax);
   MPFR_ASSERTN (emin >= MPFR_EMIN_MIN);
@@ -501,7 +501,7 @@ tests_default_random (mpfr_ptr x, int pos, mp_exp_t emin, mp_exp_t emax)
   mpfr_urandomb (x, RANDS);
   if (MPFR_IS_PURE_FP (x) && (emin >= 1 || (randlimb () & 1)))
     {
-      mp_exp_t e;
+      mpfr_exp_t e;
       e = MPFR_GET_EXP (x) +
         (emin + (long) (randlimb () % (emax - emin + 1)));
       /* Note: There should be no overflow here because both terms are
@@ -518,72 +518,93 @@ tests_default_random (mpfr_ptr x, int pos, mp_exp_t emin, mp_exp_t emax)
         }
     }
   if (randlimb () % 512 < pos)
-    mpfr_neg (x, x, GMP_RNDN);
+    mpfr_neg (x, x, MPFR_RNDN);
 }
 
-/* The test_one argument is a boolean. If it is true, then the function
-   is tested in only one rounding mode (the one provided in rnd) and the
-   variable rndnext is not used (due to the break). If it is false, then
-   the function is tested in the 4 rounding modes, and rnd must initially
-   be GMP_RNDZ; thus rndnext will be initialized in the first iteration.
-   gcc may give a warning about rndnext, but this is an easy and correct
-   way to implement a simple queue for the rounding modes.
-   As examples of use, see the calls to test4rm from the data_check and
+/* The test_one argument is seen a boolean. If it is true and rnd is
+   a rounding mode toward infinity, then the function is tested in
+   only one rounding mode (the one provided in rnd) and the variable
+   rndnext is not used (due to the break). If it is true and rnd is a
+   rounding mode toward or away from zero, then the function is tested
+   twice, first with the provided rounding mode and second with the
+   rounding mode toward the corresponding infinity (determined by the
+   sign of the result). If it is false, then the function is tested
+   in the 5 rounding modes, and rnd must initially be MPFR_RNDZ; thus
+   rndnext will be initialized in the first iteration.
+   If the test_one argument is 2, then this means that y is exact, and
+   the ternary value is checked.
+   As examples of use, see the calls to test5rm from the data_check and
    bad_cases functions. */
 static void
-test4rm (int (*fct) (FLIST), mpfr_srcptr x, mpfr_ptr y, mpfr_ptr z,
-         mp_rnd_t rnd, int test_one, char *name)
+test5rm (int (*fct) (FLIST), mpfr_srcptr x, mpfr_ptr y, mpfr_ptr z,
+         mpfr_rnd_t rnd, int test_one, char *name)
 {
-  mp_prec_t yprec = MPFR_PREC (y);
-  mp_rnd_t rndnext = GMP_RND_MAX;  /* means uninitialized */
+  mpfr_prec_t yprec = MPFR_PREC (y);
+  mpfr_rnd_t rndnext = MPFR_RND_MAX;  /* means uninitialized */
 
-  MPFR_ASSERTN (test_one || rnd == GMP_RNDZ);
+  MPFR_ASSERTN (test_one || rnd == MPFR_RNDZ);
   mpfr_set_prec (z, yprec);
   while (1)
     {
-      MPFR_ASSERTN (rnd != GMP_RND_MAX);
-      fct (z, x, rnd);
-      if (! mpfr_equal_p (y, z))
+      int inex;
+
+      MPFR_ASSERTN (rnd != MPFR_RND_MAX);
+      inex = fct (z, x, rnd);
+      if (! (mpfr_equal_p (y, z) || (mpfr_nan_p (y) && mpfr_nan_p (z))))
         {
           printf ("Error for %s with xprec=%lu, yprec=%lu, rnd=%s\nx = ",
                   name, (unsigned long) MPFR_PREC (x), (unsigned long) yprec,
                   mpfr_print_rnd_mode (rnd));
-          mpfr_out_str (stdout, 16, 0, x, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, x, MPFR_RNDN);
           printf ("\nexpected ");
-          mpfr_out_str (stdout, 16, 0, y, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, y, MPFR_RNDN);
           printf ("\ngot      ");
-          mpfr_out_str (stdout, 16, 0, z, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, z, MPFR_RNDN);
           printf ("\n");
           exit (1);
         }
-      if (test_one || rnd == GMP_RNDN)
-        break;
-      if (rnd == GMP_RNDZ)
+      if (test_one == 2 && inex != 0)
         {
+          printf ("Error for %s with xprec=%lu, yprec=%lu, rnd=%s\nx = ",
+                  name, (unsigned long) MPFR_PREC (x), (unsigned long) yprec,
+                  mpfr_print_rnd_mode (rnd));
+          mpfr_out_str (stdout, 16, 0, x, MPFR_RNDN);
+          printf ("\nexact case, but non-zero ternary value (%d)\n", inex);
+          exit (1);
+        }
+      if (rnd == MPFR_RNDN)
+        break;
+
+      if (test_one)
+        {
+          if (rnd == MPFR_RNDU || rnd == MPFR_RNDD)
+            break;
+
           if (MPFR_IS_NEG (y))
-            {
-              rnd = GMP_RNDU;
-              rndnext = GMP_RNDD;
-            }
+            rnd = (rnd == MPFR_RNDA) ? MPFR_RNDD : MPFR_RNDU;
           else
-            {
-              rnd = GMP_RNDD;
-              rndnext = GMP_RNDU;
-            }
+            rnd = (rnd == MPFR_RNDA) ? MPFR_RNDU : MPFR_RNDD;
+        }
+      else if (rnd == MPFR_RNDZ)
+        {
+          rnd = MPFR_IS_NEG (y) ? MPFR_RNDU : MPFR_RNDD;
+          rndnext = MPFR_RNDA;
         }
       else
         {
           rnd = rndnext;
-          if (rndnext != GMP_RNDN)
+          if (rnd == MPFR_RNDA)
             {
-              rndnext = GMP_RNDN;
               mpfr_nexttoinf (y);
+              rndnext = (MPFR_IS_NEG (y)) ? MPFR_RNDD : MPFR_RNDU;
             }
+          else if (rndnext != MPFR_RNDN)
+            rndnext = MPFR_RNDN;
           else
             {
               if (yprec == MPFR_PREC_MIN)
                 break;
-              mpfr_prec_round (y, --yprec, GMP_RNDZ);
+              mpfr_prec_round (y, --yprec, MPFR_RNDZ);
               mpfr_set_prec (z, yprec);
             }
         }
@@ -599,23 +620,26 @@ test4rm (int (*fct) (FLIST), mpfr_srcptr x, mpfr_ptr y, mpfr_ptr z,
 
    xprec is the input precision
    yprec is the output precision
-   rnd is the rounding mode (n, z, u, d, Z)
+   rnd is the rounding mode (n, z, u, d, a, Z, *)
    x is the input (hexadecimal format)
    y is the expected output (hexadecimal format) for foo(x) with rounding rnd
 
    If rnd is Z, y is the expected output in round-toward-zero, and the
-   three directed rounding modes are tested, then the round-to-nearest
+   four directed rounding modes are tested, then the round-to-nearest
    mode is tested in precision yprec-1. This is useful for worst cases,
    where yprec is the minimum value such that one has a worst case in a
    directed rounding mode.
+
+   If rnd is *, y must be an exact case. All the rounding modes are tested
+   and the ternary value is checked (it must be 0).
  */
 void
 data_check (char *f, int (*foo) (FLIST), char *name)
 {
   FILE *fp;
-  mp_prec_t xprec, yprec;
+  int xprec, yprec;  /* not mpfr_prec_t because of the fscanf */
   mpfr_t x, y, z;
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
   char r;
   int c;
 
@@ -681,7 +705,9 @@ data_check (char *f, int (*foo) (FLIST), char *name)
         {
           ungetc (c, fp);
 
-          c = fscanf (fp, "%lu %lu %c", &xprec, &yprec, &r);
+          c = fscanf (fp, "%d %d %c", &xprec, &yprec, &r);
+          MPFR_ASSERTN (xprec >= MPFR_PREC_MIN && xprec <= MPFR_PREC_MAX);
+          MPFR_ASSERTN (yprec >= MPFR_PREC_MIN && yprec <= MPFR_PREC_MAX);
           if (c == EOF)
             {
               perror ("data_check");
@@ -696,16 +722,19 @@ data_check (char *f, int (*foo) (FLIST), char *name)
           switch (r)
             {
             case 'n':
-              rnd = GMP_RNDN;
+              rnd = MPFR_RNDN;
               break;
             case 'z': case 'Z':
-              rnd = GMP_RNDZ;
+              rnd = MPFR_RNDZ;
               break;
             case 'u':
-              rnd = GMP_RNDU;
+              rnd = MPFR_RNDU;
               break;
             case 'd':
-              rnd = GMP_RNDD;
+              rnd = MPFR_RNDD;
+              break;
+            case '*':
+              rnd = MPFR_RND_MAX; /* non-existing rounding mode */
               break;
             default:
               printf ("Error: unexpected rounding mode"
@@ -714,12 +743,12 @@ data_check (char *f, int (*foo) (FLIST), char *name)
             }
           mpfr_set_prec (x, xprec);
           mpfr_set_prec (y, yprec);
-          if (mpfr_inp_str (x, fp, 0, GMP_RNDN) == 0)
+          if (mpfr_inp_str (x, fp, 0, MPFR_RNDN) == 0)
             {
               printf ("Error: corrupted argument in file '%s'\n", f);
               exit (1);
             }
-          if (mpfr_inp_str (y, fp, 0, GMP_RNDN) == 0)
+          if (mpfr_inp_str (y, fp, 0, MPFR_RNDN) == 0)
             {
               printf ("Error: corrupted result in file '%s'\n", f);
               exit (1);
@@ -735,7 +764,14 @@ data_check (char *f, int (*foo) (FLIST), char *name)
               perror ("data_check");
               exit (1);
             }
-          test4rm (foo, x, y, z, rnd, r != 'Z', name);
+          if (r == '*')
+            {
+              int rndint;
+              RND_LOOP (rndint)
+                test5rm (foo, x, y, z, (mpfr_rnd_t) rndint, 2, name);
+            }
+          else
+            test5rm (foo, x, y, z, rnd, r != 'Z', name);
         }
     }
 
@@ -757,14 +793,14 @@ data_check (char *f, int (*foo) (FLIST), char *name)
  */
 void
 bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
-           int pos, mp_exp_t emin, mp_exp_t emax,
-           mp_prec_t pymin, mp_prec_t pymax, mp_prec_t psup,
+           int pos, mpfr_exp_t emin, mpfr_exp_t emax,
+           mpfr_prec_t pymin, mpfr_prec_t pymax, mpfr_prec_t psup,
            int n)
 {
   mpfr_t x, y, z;
   char *dbgenv;
   int i, dbg;
-  mp_exp_t old_emin, old_emax;
+  mpfr_exp_t old_emin, old_emax;
 
   old_emin = mpfr_get_emin ();
   old_emax = mpfr_get_emax ();
@@ -774,7 +810,7 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
   mpfr_inits (x, y, z, (mpfr_ptr) 0);
   for (i = 0; i < n; i++)
     {
-      mp_prec_t px, py, pz;
+      mpfr_prec_t px, py, pz;
       int inex;
 
       if (dbg)
@@ -785,13 +821,13 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
       if (dbg)
         {
           printf ("bad_cases: yprec =%4ld, y = ", (long) py);
-          mpfr_out_str (stdout, 16, 0, y, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, y, MPFR_RNDN);
           printf ("\n");
         }
       px = py + psup;
       mpfr_set_prec (x, px);
       mpfr_clear_flags ();
-      inv (x, y, GMP_RNDN);
+      inv (x, y, MPFR_RNDN);
       if (mpfr_nanflag_p () || mpfr_overflow_p () || mpfr_underflow_p ())
         {
           if (dbg)
@@ -801,7 +837,7 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
       if (dbg > 1)
         {
           printf ("bad_cases: x = ");
-          mpfr_out_str (stdout, 16, 0, x, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, x, MPFR_RNDN);
           printf ("\n");
         }
       pz = px;
@@ -809,7 +845,7 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
         {
           pz += 32;
           mpfr_set_prec (z, pz);
-          if (fct (z, x, GMP_RNDN) == 0)
+          if (fct (z, x, MPFR_RNDN) == 0)
             {
               if (dbg)
                 printf ("bad_cases: exact case\n");
@@ -820,16 +856,16 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
               if (dbg > 1)
                 {
                   printf ("bad_cases: %s(x) ~= ", name);
-                  mpfr_out_str (stdout, 16, 0, z, GMP_RNDN);
+                  mpfr_out_str (stdout, 16, 0, z, MPFR_RNDN);
                 }
               else
                 {
-                  printf ("bad_cases:   [GMP_RNDZ]  ~= ");
-                  mpfr_out_str (stdout, 16, 40, z, GMP_RNDZ);
+                  printf ("bad_cases:   [MPFR_RNDZ]  ~= ");
+                  mpfr_out_str (stdout, 16, 40, z, MPFR_RNDZ);
                 }
               printf ("\n");
             }
-          inex = mpfr_prec_round (z, py, GMP_RNDN);
+          inex = mpfr_prec_round (z, py, MPFR_RNDN);
           if (mpfr_nanflag_p () || mpfr_overflow_p () || mpfr_underflow_p ()
               || ! mpfr_equal_p (z, y))
             {
@@ -842,11 +878,11 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
       /* We really have a bad case. */
       do
         py--;
-      while (py >= MPFR_PREC_MIN && mpfr_prec_round (z, py, GMP_RNDZ) == 0);
+      while (py >= MPFR_PREC_MIN && mpfr_prec_round (z, py, MPFR_RNDZ) == 0);
       py++;
       /* py is now the smallest output precision such that we have
          a bad case in the directed rounding modes. */
-      if (mpfr_prec_round (y, py, GMP_RNDZ) != 0)
+      if (mpfr_prec_round (y, py, MPFR_RNDZ) != 0)
         {
           printf ("Internal error for i = %d\n", i);
           exit (1);
@@ -861,11 +897,11 @@ bad_cases (int (*fct)(FLIST), int (*inv)(FLIST), char *name,
       if (dbg)
         {
           printf ("bad_cases: yprec =%4ld, y = ", (long) py);
-          mpfr_out_str (stdout, 16, 0, y, GMP_RNDN);
+          mpfr_out_str (stdout, 16, 0, y, MPFR_RNDN);
           printf ("\n");
         }
       /* Note: y is now the expected result rounded toward zero. */
-      test4rm (fct, x, y, z, GMP_RNDZ, 0, name);
+      test5rm (fct, x, y, z, MPFR_RNDZ, 0, name);
     next_i:
       /* In case the exponent range has been changed by
          tests_default_random()... */

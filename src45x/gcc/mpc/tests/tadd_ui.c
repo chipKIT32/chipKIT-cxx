@@ -1,6 +1,6 @@
 /* test file for mpc_add_ui.
 
-Copyright (C) 2008 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008, 2010
 
 This file is part of the MPC Library.
 
@@ -25,14 +25,14 @@ MA 02111-1307, USA. */
 static void
 check_ternary_value (void)
 {
-  unsigned int i;
+  mpfr_prec_t prec;
   mpc_t z;
 
   mpc_init2 (z, 2);
 
-  for (i=2; i <= 1024; i++)
+  for (prec=2; prec <= 1024; prec++)
     {
-      mpc_set_prec (z, i);
+      mpc_set_prec (z, prec);
 
       mpc_set_ui (z, 1, MPC_RNDNN);
       if (mpc_add_ui (z, z, 1, MPC_RNDNZ))
@@ -42,7 +42,7 @@ check_ternary_value (void)
         }
 
       mpc_set_ui (z, 1, MPC_RNDNN);
-      mpc_mul_2exp (z, z, i, MPC_RNDNN);
+      mpc_mul_2exp (z, z, (unsigned long int) prec, MPC_RNDNN);
       if (mpc_add_ui (z, z, 1, MPC_RNDNN) == 0)
         {
           printf ("Error in mpc_add_ui: 2^prec+1 cannot be exact\n");

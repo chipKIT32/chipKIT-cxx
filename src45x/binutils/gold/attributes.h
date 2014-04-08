@@ -1,6 +1,6 @@
 // attributes.h -- object attributes for gold   -*- C++ -*-
 
-// Copyright 2009 Free Software Foundation, Inc.
+// Copyright 2009, 2010 Free Software Foundation, Inc.
 // Written by Doug Kwan <dougkwan@google.com>.
 // This file contains code adapted from BFD.
 
@@ -163,7 +163,7 @@ class Object_attribute
 
   // Determine what arguments an attribute tag takes.
   static int
-  arg_type (int vendor, int tag)
+  arg_type(int vendor, int tag)
   {
     switch (vendor)
       {
@@ -180,7 +180,7 @@ class Object_attribute
   // Determine whether a GNU object attribute tag takes an integer, a
   // string or both.  */
   static int
-  gnu_arg_type (int tag)
+  gnu_arg_type(int tag)
   {
     // Except for Tag_compatibility, for GNU attributes we follow the
     // same rule ARM ones > 32 follow: odd-numbered tags take strings
@@ -257,7 +257,7 @@ class Vendor_object_attributes
   other_attributes() const
   { return &this->other_attributes_; }
 
-  // Return a new attribute asssociated with TAG.
+  // Return a new attribute associated with TAG.
   Object_attribute*
   new_attribute(int tag);
 

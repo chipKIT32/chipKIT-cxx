@@ -59,3 +59,8 @@
 
 	stclpl p3, c5, [r6, #-0]
 	stclpl p3, c5, [r6, #0]
+
+	ldr	r0,1f
+	ldr	r0,1f
+	ldr	r0,1f
+1:	.word	0

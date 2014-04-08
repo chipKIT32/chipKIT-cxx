@@ -1,6 +1,6 @@
 /* mpc_get_version -- MPC version
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008, 2009, 2010, 2011
 
 This file is part of the MPC Library.
 
@@ -24,5 +24,5 @@ MA 02111-1307, USA. */
 const char *
 mpc_get_version (void)
 {
-  return "0.8.1";
+  return "0.9";
 }

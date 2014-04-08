@@ -60,8 +60,8 @@ SECTIONS
     ${RELOCATING+ PROVIDE(etext = .);}
     ${RELOCATING+ PROVIDE(_etext = .);}
     ${RELOCATING+ PROVIDE(__etext = .);}
+    ${RELOCATING+Main = DEFINED (Main) ? Main : (DEFINED (_start) ? _start : ADDR (.text));}
   }
-  ${RELOCATING+Main = DEFINED (Main) ? Main : (DEFINED (_start) ? _start : ADDR (.text));}
 
   .stab 0 : { *(.stab) }
   .stabstr 0 : { *(.stabstr) }
@@ -79,6 +79,13 @@ SECTIONS
   .debug_loc      0 : { *(.debug_loc) }
   .debug_macinfo  0 : { *(.debug_macinfo) }
   .debug_ranges   0 : { *(.debug_ranges) }
+
+  /* DWARF 3 */
+  .debug_pubtypes 0 : { *(.debug_pubtypes) }
+  .debug_ranges   0 : { *(.debug_ranges) }
+
+  /* DWARF Extension.  */
+  .debug_macro    0 : { *(.debug_macro) } 
 
   .data ${RELOCATING+ ${DATA_ADDR}}:
   {

@@ -1,3 +1,2846 @@
+2012-12-03  Julian Brown  <julian@codesourcery.com>
+
+	Issue #14123
+
+	gas/testsuite/
+	* gas/all/sleb128-2.d: Don't require sections to be padded with
+	zeros.
+	* gas/all/sleb128-3.d: Likewise.
+	* gas/all/sleb128-4.d: Likewise.
+	* gas/all/sleb128-5.d: Likewise.
+	* gas/all/sleb128-7.d: Likewise.
+	* gas/all/gas.exp: Only run sleb128-6 on MIPS.
+	
+2012-11-29  Catherine Moore  <clm@codesourcery.com>
+
+	gas/
+	* dw2gencfi.c (output_compact_unwind_data):  Remove
+	special processing for the compact personality routines.
+
+2012-11-29  Julian Brown  <julian@codesourcery.com>
+
+	Issue #14086
+
+	Backport from FSF mainline:
+
+	gas/
+	* config/tc-arm.c (md_apply_fix): Fix conversion of BL to BLX for
+	local targets in Thumb mode.
+
+	gas/testsuite/
+	* gas/arm/bl-local-2.s: New test.
+	* gas/arm/bl-local-2.d: New.
+
+2012-11-28  Julian Brown  <julian@codesourcery.com>
+
+	Issue #14123
+
+	gas/
+	* read.c (convert_to_bignum): Add sign parameter. Use it
+	instead of X_unsigned to determine sign of resulting bignum.
+	(emit_expr): Pass extra argument to convert_to_bignum.
+	(emit_leb128_expr): Use X_extrabit instead of X_unsigned. Pass
+	X_extrabit to convert_to_bignum.
+	(parse_bitfield_cons): Set X_extrabit.
+	* expr.c (make_expr_symbol, expr_build_uconstant, operand):
+	Initialise X_extrabit field as appropriate.
+	(add_to_result): New.
+	(subtract_from_result): New.
+	(expr): Use above.
+	* expr.h (expressionS): Add X_extrabit field.
+
+	gas/testsuite/
+	* gas/all/sleb128-2.s: New test.
+	* gas/all/sleb128-3.s: Likewise.
+	* gas/all/sleb128-4.s: Likewise.
+	* gas/all/sleb128-5.s: Likewise.
+	* gas/all/sleb128-6.s: Likewise.
+	* gas/all/sleb128-7.s: Likewise.
+	* gas/all/sleb128-2.d: New.
+	* gas/all/sleb128-3.d: New.
+	* gas/all/sleb123-4.d: New.
+	* gas/all/sleb123-5.d: New.
+	* gas/all/sleb123-6.d: New.
+	* gas/all/sleb123-7.d: New.
+	* gas/all/gas.exp (sleb128-2, sleb128-3, sleb128-4, sleb128-5)
+	(sleb128-6, sleb128-7): Run new tests.
+
+2012-11-13  Meador Inge  <meadori@codesourcery.com>
+
+	issue13979
+
+	bfd/
+	* elflink.c (bfd_elf_gc_sections): Skip non-ELF BFDs when parsing
+	EH frame sections.
+
+2012-10-31  Yao Qi  <yao@codesourcery.com>
+
+	Backport from upstreams:
+
+	bfd/
+	2012-10-30  Yao Qi  <yao@codesourcery.com>
+		    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.in: Set CORE_HEADER to hosts/x86-64linux.h for
+	'i[3-7]86-*-linux-*' if x86_64-*linux is enabled.
+	* configure: Regenerated.
+
+	* elf64-x86-64.c (elf_x86_64_write_core_note): Replace type
+	'prpsinfo_t' and 'prstatus_t' with 'prpsinfo64_t' and
+	'prstatus64_t' respectively.
+
+	* hosts/x86-64linux.h (a8_uint64_t): New.
+	(user_regsx32_struct): Renamed to ...
+	(user_regs64_struct): This.  Replace uint64_t with a8_uint64_t.
+	(elf_gregx32_t): Renamed to ...
+	(elf_greg64_t): This.  Replace uint64_t with a8_uint64_t.
+	(ELF_NGREGX32): Removed.
+	(ELF_NGREG64): New.
+	(elf_gregx32_t): Removed.
+	(elf_greg64_t): New.
+	(struct prstatus64_timeval): New.
+	(elf_prstatusx32): Replace elf_gregsetx32_t with elf_gregset64_t.
+	(elf_prstatus64): New.
+	(elf_prpsinfo64): New.
+	(prstatus64_t, prpsinfo64_t): New typedef.
+
+	bfd/
+	2012-10-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.in: Also handle --enable-64-bit-bfd when setting
+	(CORE_HEADER for 'i[3-7]86-*-linux-*'.
+
+2012-10-24  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Issue #13983
+
+	Backport 622be081292dba7cfd1a1d6182e3cefe10ab326f from upstream:
+
+	binutils/testsuite/
+	2012-10-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* binutils-all/ar.exp (bfdtest1): Remove findfile.
+
+2012-10-23  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13942
+	Issue #13959
+	* release-notes-csl.xml (Assembler bug fixes): New.
+
+2012-10-23  Chao-ying Fu  <fu@mips.com>
+
+	Issue #13959
+
+	gas/
+	* config/tc-mips.c (append_insn): Set fx_no_overflow for 16-bit
+	microMIPS branch relocations.
+
+	gas/testsuite/
+	* gas/mips/micromips-b16.d: New test.
+	* gas/mips/micromips-b16.s: New test source.
+	* gas/mips/mips.exp: Run the new test.
+
+2012-10-23  Maciej W. Rozycki  <macro@codesourcery.com>
+            Chao-ying Fu  <fu@mips.com>
+
+	Issue #13942
+
+	gas/
+	* config/tc-mips.c (is_delay_slot_valid): Don't accept macros
+	in 16-bit delay slots.
+	(macro_build_jalr): Emit 32-bit JALR if placed in a 32-bit delay
+	slot.
+	(macro) <M_JAL_2>: Likewise
+
+	gas/testsuite/
+	* gas/mips/micromips-branch-delay.l: Update messages for 16-bit
+	delay slot changes.
+	* gas/mips/micromips-warn-branch-delay.d: New test.
+	* gas/mips/micromips-warn-branch-delay.l: Stderr output for the
+	new test.
+	* gas/mips/micromips-warn-branch-delay-1.d: New test.
+	* gas/mips/micromips-warn-branch-delay.s: New test source.
+	* gas/mips/micromips-warn-branch-delay-1.s: New test source.
+	* gas/mips/mips.exp: Run the new tests.
+
+2012-10-23  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gas/
+	* config/tc-mips.c (mips_ip) <'u'>: Only accept O_subtract and
+	in-range O_constant expressions.
+
+	gas/testsuite/
+	* gas/mips/lui.d: New test.
+	* gas/mips/micromips@lui.d: New test.
+	* gas/mips/lui-1.l: New list test.
+	* gas/mips/lui-2.l: New list test.
+	* gas/mips/lui.s: New test source.
+	* gas/mips/lui-1.s: New test source.
+	* gas/mips/lui-2.s: New test source.
+	* gas/mips/mips.exp: Run the new tests.
+
+2012-10-22  Meador Inge  <meadori@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	2012-10-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.am (LIBDL): Replace -ldl with @lt_cv_dlopen_libs@.
+	* configure.in (lt_cv_dlopen_libs): AC_SUBST.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+
+2012-10-22  Meador Inge  <meadori@codesourcery.com>
+
+	Revert:
+
+	2012-09-26  Meador Inge  <meadori@codesourcery.com>
+
+	bfd/
+	* Makefile.am (LIBDL): Use @plugin_libs@.
+	* Makefile.in: Regenerated.
+	* doc/Makefile.in: Likewise.
+	* configure.in (plugin_libs): New variable.
+	* configure: Regenerated.
+
+2012-10-08  Joe Seymour  <jseymour@codesourcery.com>
+
+	Backport from upstream:
+
+	2012-10-08  Joe Seymour  <jseymour@codesourcery.com>
+
+	* ld-scripts/sane1.d: Sort output from nm. Allow for other symbols in
+	output.
+
+2012-09-26  Meador Inge  <meadori@codesourcery.com>
+
+	bfd/
+	* Makefile.am (LIBDL): Use @plugin_libs@.
+	* Makefile.in: Regenerated.
+	* doc/Makefile.in: Likewise.
+	* configure.in (plugin_libs): New variable.
+	* configure: Regenerated.
+
+2012-09-26  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Issue #13896
+
+	* gas/testsuite/gas/mips/mips.exp (mips32-dsp, mips32-dspr2, mcu):
+	Tag as not suitable for XLP.
+
+2012-09-20  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	opcodes/
+	* micromips-opc.c (micromips_opcodes): Correct register access
+	mask for "sbe", "she", "swe", "swle" and "swre".
+
+2012-09-19  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	opcodes/
+	* mips-opc.c (mips_builtin_opcodes): Correct register access
+	mask for "sbe", "she", "swe", "swle" and "swre".
+
+	* release-notes-csl.xml (EVA instruction assembler bug fix): New.
+
+2012-09-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13735
+	gas/testsuite/
+	* gas/mips/hilo-diff-eb.d: New test.
+	* gas/mips/hilo-diff-eb-n32.d: New test.
+	* gas/mips/hilo-diff-eb-n64.d: New test.
+	* gas/mips/hilo-diff-el.d: New test.
+	* gas/mips/hilo-diff-el-n32.d: New test.
+	* gas/mips/hilo-diff-el-n64.d: New test.
+	* gas/mips/mips16@hilo-diff-eb.d: New test.
+	* gas/mips/mips16@hilo-diff-eb-n32.d: New test.
+	* gas/mips/mips16@hilo-diff-eb-n64.d: New test.
+	* gas/mips/mips16@hilo-diff-el.d: New test.
+	* gas/mips/mips16@hilo-diff-el-n32.d: New test.
+	* gas/mips/mips16@hilo-diff-el-n64.d: New test.
+	* gas/mips/micromips@hilo-diff-eb.d: New test.
+	* gas/mips/micromips@hilo-diff-eb-n32.d: New test.
+	* gas/mips/micromips@hilo-diff-eb-n64.d: New test.
+	* gas/mips/micromips@hilo-diff-el.d: New test.
+	* gas/mips/micromips@hilo-diff-el-n32.d: New test.
+	* gas/mips/micromips@hilo-diff-el-n64.d: New test.
+	* gas/mips/hilo-diff.s: New test source.
+	* gas/mips/mips.exp: Run the new tests.
+
+2012-09-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13735
+	gas/
+	* config/tc-mips.c (md_apply_fix): Complain about missed fixups.
+
+2012-09-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13735
+	gas/
+	* config/tc-mips.c (append_insn) <BFD_RELOC_MIPS_JMP>: Don't
+	mark as incomplete for constant expressions.
+	<BFD_RELOC_MIPS16_JMP>: Likewise.
+
+2012-09-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13735
+	gas/
+	* gas/config/tc-mips.c (md_apply_fix)
+	<BFD_RELOC_HI16_S, BFD_RELOC_MIPS16_HI16_S,
+	BFD_RELOC_MICROMIPS_HI16_S>: Handle completed fixups.
+	<BFD_RELOC_LO16, BFD_RELOC_MIPS16_LO16, BFD_RELOC_MICROMIPS_LO16>:
+	Remove embedded PIC checks, correct the handling of completed
+	MIPS16 fixups.
+
+	* release-notes-csl.xml
+	(Assembler %hi and %lo operator bug fixes): New.
+
+2012-09-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13735
+
+	gas/
+	* config/tc-mips.c (md_assemble): Add a call to mips_mark_labels.
+
+	gas/testsuite/
+	* gas/mips/branch-swap-2.s: Make sure the ISA bit is clear in
+	the label used for calculation.
+
+2012-09-13  Catherine Moore  <clm@codesourcery.com>
+
+	gas/
+	* dw2gencif.h (CFI_epilogue_begin): Rename from CFI_prologue_end.
+	* dw2gencfi.c (cfi_pseudo_table): Rename cfi_prologue_end to
+	cfi_epilogue_begin.
+	(dot_cfi): Likewise.
+	(output_cfi_insn): Likewise.
+	(select_cie_for_fde): Likewise.
+	* config/tc-mips.c (mips_cfi_endproc): Rename CFI_prologue_end
+	to CFI_epilogue_begin.  Return when encountering unrecognized
+	CFI insns.
+	* doc/as.texinfo (.cfi_epilogue_begin): Document.
+
+2012-09-12  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gas/testsuite/gas/mips/mips.exp: Invoke mips_arch_create for
+	xlp.
+
+2012-09-12  Iain Sandoe  <iain@codesoucery.com>
+
+	Revert r385120 & r385139.
+
+2012-09-06  Chao-ying Fu  <fu@mips.com>
+            Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13869
+
+	opcodes/
+	* micromips-opc.c (micromips_opcodes): Correct the encoding of
+	the "swxc1" instruction.
+
+	gas/testsuite/
+	* gas/mips/micromips.d: Correct the disassembly of SWXC1.
+	* gas/mips/micromips-trap.d: Likewise.
+	* gas/mips/micromips-insn32.d: Likewise.
+	* gas/mips/micromips-noinsn32.d: Likewise.
+	* gas/mips/micromips@24k-triple-stores-1.d: Likewise.
+	* gas/mips/micromips@mips4-fp.d: Likewise.
+
+	* release-notes-csl.xml
+	(microMIPS SWXC1 instruction encoding bug fix): New
+
+2012-09-05  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* release-notes-csl.xml: Add missing newline.
+
+2012-09-04  Julian Brown  <julian@codesourcery.com>
+
+	gas/
+	* doc/as.texinfo (.cfi_prologue_end): Document.
+	* config/tc-mips.c (mips_cfi_endproc): Handle .cfi_prologue_end.
+	* dw2gencfi.c (cfi_pseudo_table): Add cfi_prologue_end.
+	(dot_cfi): Handle CFI_prologue_end.
+	(output_cfi_insn): (Null) output CFI_prologue_end.
+	(select_cie_for_fde): Ignore CFI_prologue_end.
+	(cfi_pseudo_table): Add .cfi_prologue_end (dummy).
+	* dw2gencfi.h (CFI_prologue_end): Define.
+
+2012-09-04  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gas/config/tc-mips.c (mips_ip) <'#'>: Use correct mask value in
+	the non-microMIPS case.
+
+2012-09-03  Iain Sandoe  <iain@codesoucery.com>
+
+	* gas/config/tc-mips.c (mips_cpu_info): Adjust case of XLP/R comments.
+	Remove redundant XLP definition.
+	* include/opcode/mips.h (cpu_is_member): Handle XLP.
+
+2012-08-31  Iain Sandoe  <iain@codesoucery.com>
+
+	* ld/testsuite/ld-gc/dummy.c: Add missed commit.
+
+2012-08-31  Iain Sandoe  <iain@codesoucery.com>
+
+	* ld/testsuite/lib/ld-lib.exp (run_dump_test): Allow test code to
+	be 'c'.  Invoke $CC to compile it.
+	* ld/testsuite/ld-gc/dummy.c: New empty file.
+	* ld/testsuite/ld-gc/pr11218.d: Use a 'c' dummy file for the test.
+	* ld/testsuite/ld-gc/pr13683.d: Likewise.
+	* ld/testsuite/ld-gc/pr14265.d: Likewise.
+
+2012-08-31  Iain Sandoe  <iain@codesoucery.com>
+
+	* ld/testsuite/ld-elf/indirect.exp: Provide target-specific cflags.
+	Skip the tests for targets that cannot produce a shared library.
+	Use cflags for compiles and also pass to build tests.
+
+2012-08-31  Iain Sandoe  <iain@codesoucery.com>
+
+	* bfd/section.c (sec_info_type): Rename ELF_INFO_TYPE_EH_FRAME_ENTRY
+	to SEC_INFO_TYPE_EH_FRAME_ENTRY.
+	* bfd/bfd-in2.h: Regenerate.
+	* bfd/elf-eh-frame.c (_bfd_elf_parse_eh_frame_entry): Use renamed.
+	(_bfd_elf_write_section_eh_frame_entry): Likewise.
+	* bfd/elflink.c (elf_link_input_bfd): Likewise.
+
+2012-08-31  Iain Sandoe  <iain@codesoucery.com>
+
+	Merged from upstream binutils 2.23.51-20120829.
+
+	* release-notes-csl.xml: New note.
+
+2012-08-15  Meador Inge  <meadori@codesourcery.com>
+
+	CB-1354
+
+	* bfd/elf-eh-frame.c (_bfd_elf_maybe_strip_eh_frame_hdr): Look for
+	'.eh_frame_entry' sections if dealing with a type 2 EH frame header.
+
+2012-07-27  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13685
+
+	bfd/
+	* elfxx-mips.c (mips_elf_calculate_relocation): Fix the handling
+	of protected symbols.
+
+	* release-notes-csl.xml (Linker assertion failure bug fix): New.
+
+2012-07-26  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13581
+	Issue #13709
+
+	ld/
+	* ld/emultempl/beos.em (gld_${EMULATION_NAME}_set_symbols):
+	Update call to exp_assign.
+	* ld/emultempl/pe.em ((gld_${EMULATION_NAME}_set_symbols):
+	Likewise.
+	* ld/emultempl/pep.em (gld_${EMULATION_NAME}_set_symbols):
+	Likewise.
+	* ld/emultempl/spuelf.em (spu_place_special_section): Likewise.
+	* ld/emultempl/xtensaelf.em (ld_xtensa_insert_page_offsets):
+	Likewise.
+
+2012-07-12  Thomas Schwinge  <thomas@codesourcery.com>
+	    Maxim Kuvyrkov  <maxim@codesourcery.com>
+	    NetLogic
+
+	NetLogic's XLP support patch, based on our repository's r343556,
+	r345131, r345132, r350550.  Pushing this upstream should be
+	NetLogic's duty.
+
+	* include/opcode/mips.h <microMIPS>: Describe '#' instead of 'B'
+	for 10-bit syscall/wait/breakpoint function code.
+	* gas/config/tc-mips.c (validate_micromips_insn): Change
+	accordingly.
+	(mips_ip) <'B'>: Only handle non-microMIPS 20-bit case.
+	(mips_ip) <'#'>: Handle microMIPS 10-bit case.
+	* opcodes/micromips-opc.c (mips_opcodes): Change sdbbp, syscall,
+	wait accordingly.
+	* opcodes/mips-dis.c (print_insn_args) <'#'>: Handle case.
+	(print_insn_micromips): Change accordingly.
+	* bfd/aoutx.h: Update for XLP.
+	* bfd/archures.c: Likewise.
+	* bfd/cpu-mips.c: Likewise.
+	* bfd/elfxx-mips.c: Likewise.
+	* binutils/readelf.c: Likewise.
+	* gas/config/tc-mips.c: Likewise.
+	* gas/doc/c-mips.texi: Likewise.
+	* include/elf/mips.h: Likewise.
+	* include/opcode/mips.h: Likewise.
+	* opcodes/mips-dis.c: Likewise.
+	* opcodes/mips-opc.c: Likewise.
+	* bfd/bfd-in2.h: Regenerate.
+
+2012-07-10  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13562
+
+	gas/
+	* config/tc-mips.c (append_insn): Also handle moving delay-slot
+	instruction across frags for fixed branches.
+
+	gas/testsuite/
+	* gas/mips/branch-swap-2.l: New list test.
+	* gas/mips/branch-swap-2.s: New test source.
+	* gas/mips/mips.exp: Run the new test.
+
+	* release-notes-csl.xml (Assembler internal error bug fix): New.
+
+2012-07-06  Andrew Stubbs  <ams@codesourcery.com>
+
+	* bfd/elflink.c (elf_link_add_object_symbols): Initialize orig_sec.
+
+2012-07-05  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13581
+
+	ld/
+	* emulparams/elf32bmip.sh: Make _gp hidden.
+	* emulparams/elf32bmipn32-defs.sh: Likewise.
+	* emulparams/elf32mipswindiss.sh: Likewise.
+	* ld/scripttempl/mips.sc: Likewise.
+
+	ld/testsuite/
+	* ld-mips-elf/rel32-o32.d: Adjust section VMAs after the removal
+	of _gp from the global scope.
+
+	* release-notes-csl.xml
+	(Linker _gp special symbol ABI conformance bug fix): New.
+
+2012-07-05  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13581
+
+	bfd/
+	* elflink.c (bfd_elf_record_link_assignment): Remove --defsym
+	symbols special case.
+
+	ld/
+	* ldexp.h (etree_union): Add defsym member to the assign member
+	structure.
+	(exp_assign): Add hidden argument to prototype.
+	* ldexp.c (exp_fold_tree_1): Use the defsym member to handle
+	--defsym symbols.
+	(exp_assop): Add defsym argument, initialize the defsym member
+	of the assign structure.
+	(exp_assign): Handle hidden symbols.
+	(exp_defsym): Update to use the defsym argument to exp_assop.
+	(exp_provide): Update to handle the defsym argument to exp_assop.
+	* ldlex.l (HIDDEN): New token.
+	* ldgram.y (HIDDEN): Likewise.
+	(assignment, section): Update calls to exp_assign.
+	* ldctor.c (ldctor_build_sets): Likewise.
+	* mri.c (mri_format): Likewise.
+	* ldlang.c (lang_insert_orphan, lang_leave_overlay): Likewise.
+	(open_input_bfds): Remove --defsym symbols special case.
+	* ld.texinfo (Assigning Values to Symbols): Add HIDDEN.
+	(HIDDEN): New subsection.
+
+	* release-notes-csl.xml (Linker script symbols): New.
+
+2012-07-05  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport from upstream:
+
+	opcodes/
+	2012-07-05  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* mips-dis.c: Remove gratuitous newline.
+
+2012-07-04  Sandra Loosemore <sandra@codesourcery.com>
+
+	Revert:
+
+	2010-08-03  Daniel Jacobowitz  <dan@codesourcery.com>
+		    Sandra Loosemore <sandra@codesourcery.com>
+
+	Issue #9152
+
+	* release-notes-csl.xml (C++ code bloat with -g): New note.
+
+	gas/
+	* dw2gencfi.c (CFI_EMIT_eh_frame, CFI_EMIT_debug_frame)
+	(cfi_sections): Move earlier.
+	(dot_cfi_personality): Do not create a symbol unless generating
+	.eh_frame.
+
+2012-06-28  Sandra Loosemore <sandra@codesourcery.com>
+
+	gas/
+	* dw2gencfi.c [!TARGET_USE_CFIPOP] (cfi_pseudo_table): Don't
+	reference dot_cfi_inline_lsda here.
+
+2012-06-15  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	opcodes/
+	* Makefile.am (TARGET_LIBOPCODES_CFILES): Remove duplicate
+	micromips-opc.c.
+	* Makefile.in: Regenerate.
+
+2012-06-05  Catherine Moore  <clm@codesourcery.com>
+	    Chao-Ying Fu  <fu@mips.com>
+	
+	* release-notes-csl.xml: New note.
+
+	gas/testsuite/
+	* gas/mips/mips.exp: Run new tests.
+	* gas/mips/eva.d: New.
+	* gas/mips/eva.s: New.
+	* gas/mips/micromips@eva.d: New.
+
+	gas/
+	* config/tc-mips.c (mips_set_options): Add ase_eva.
+ 	(mips_set_options mips_opts): Add ase_eva.
+	(file_ase_eva): Declare.
+	(ISA_SUPPORTS_EVA_ASE): Define.
+	(IS_SEXT_9BIT_NUM): Define.
+	(MIPS_CPU_ASE_EVA): Define.
+	(is_opcode_valid): Add support for ase_eva.
+	(macro_build): Likewise.
+	(macro): Likewise.
+	(validate_mips_insn): Likewise.
+	(validate_micromips_insn): Likewise.
+	(mips_ip): Likewise.
+	(options): Add OPTION_EVA and OPTION_NO_EVA.
+	(md_longopts): Add -meva and -mno-eva.
+	(md_parse_option): Process new options.
+	(mips_after_parse_args): Check for valid EVA combinations.
+
+	include/
+	* opcode/mips.h (OP_SH_EVAOFFSET): Define.
+	(OP_MASK_EVAOFFSET): Define.
+	(INSN_ASE_MASK): Set EVA bit.
+	(INSN_EVA): Define.
+	(M_CACHEE_AB, M_CACHEE_OB): New.
+	(M_LBE_OB, M_LBE_AB): New.
+	(M_LBUE_OB, M_LBUE_AB): New.
+	(M_LHE_OB, M_LHE_AB): New.
+	(M_LHUE_OB, M_LHUE_AB): New.
+	(M_LLE_AB, M_LLE_OB): New.
+	(M_LWE_OB, M_LWE_AB): New.
+	(M_LWLE_AB, M_LWLE_OB): New.
+	(M_LWRE_AB, M_LWRE_OB): New.
+	(M_PREFE_AB, M_PREFE_OB): New.
+	(M_SCE_AB, M_SCE_OB): New.
+	(M_SBE_OB, M_SBE_AB): New.
+	(M_SHE_OB, M_SHE_AB): New.
+	(M_SWE_OB, M_SWE_AB): New.
+	(M_SWLE_AB, M_SWLE_OB): New.
+	(M_SWRE_AB, M_SWRE_OB): New.
+	(MICROMIPSOP_SH_EVAOFFSET): Define.
+	(MICROMIPSOP_MASK_EVAOFFSET): Define.
+
+	opcodes/
+	* micromips-opc.c (EVA): Define.
+	(micromips_opcodes): Add EVA opcodes.
+	* mips-dis.c (mips_arch_choices): Update for INSN_EVA.
+	(print_insn_args): Handle EVA offsets.
+	(print_insn_micromips): Likewise.
+	* mips-opc.c (EVA): Define.
+	(mips_builtin_opcodes): Add EVA opcodes.
+
+2012-05-24  Iain Sandoe  <iain@codesoucery.com>
+
+	Issue #13349
+
+	* release-notes-csl.xml (Linker --gc-sections bug fix): New note.
+
+	Backport from upstream:
+
+	bfd/
+	2011-10-19  Alan Modra <amodra@gmail.com>
+	* elflink.c (elf_link_output_extsym): Correct test for warning when
+	forced local executable syms are referenced from shared libraries.
+
+	2011-09-15  H.J. Lu  <hongjiu.lu@intel.com>
+	* elflink.c (elf_gc_sweep_symbol): Also hide symbols without PLT
+	nor GOT references.
+
+2012-04-19  Catherine Moore  <clm@codesoucery.com>
+
+	ld/
+	* emultemp/elf32.em (gld${EMULATION_NAME}_after_open): Fix typo.
+
+2012-04-19  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport from upstream:
+
+	bfd/
+	2012-04-19  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* elf32-sh.c (elf_sh_link_hash_entry): Specify an enum identifier for
+	got_type.
+	(allocate_dynrelocs, sh_elf_relocate_section, sh_elf_check_relocs): Use
+	it.
+
+	Issue #12917
+
+	Backport from upstream:
+
+	bfd/
+	2012-04-17  Kaz Kojima  <kkojima@rr.iij4u.or.jp>
+
+	* elf32-sh.c (allocate_dynrelocs): Don't allocate dynamic
+	relocations when LE conversion happens on the IE tls symbol.
+
+2012-04-18  Meador Inge  <meadori@codesourcery.com>
+
+	CB-1090
+
+	* release-notes-csl.xml (Linker --gc-sections option bug fix): New note.
+
+	Backport from upstream:
+
+	2011-09-29  Alan Modra  <amodra@gmail.com>
+
+ 	PR ld/13233
+ 	* elflink.c (_bfd_elf_gc_mark_extra_sections): Mark single member
+ 	debug and special section groups.
+
+2012-04-13  Meador Inge  <meadori@codesourcery.com>
+
+	Issue #8217
+
+	Reverted:
+
+	2010-04-06  Jie Zhang  <jie@codesourcery.com>
+
+	Issue #8217
+
+	gas/
+	* config/tc-arm.c (only_one_reg_in_list): New.
+	(do_ldmstm): Use different encodings when push or pop only one
+	register.
+
+	gas/testsuite/
+	* gas/arm/push-pop.d: New test.
+	* gas/arm/push-pop.s: New test.
+
+	and backported what actually got committed upstream:
+
+	gas/
+	2012-04-12  Jie Zhang  <jie@codesourcery.com>
+                    Meador Inge  <meadori@codesourcery.com>
+
+	* config/tc-arm.c (only_one_reg_in_list): New function.
+	(encode_ldmstm): Ditto.
+	(do_ldmstm): Use a different encoding when pushing or poping
+	a single register.
+	(A_COND_MASK): New macro.
+	(A_PUSH_POP_OP_MASK): Ditto.
+	(A1_OPCODE_PUSH): Ditto.
+	(A2_OPCODE_PUSH): Ditto.
+	(A2_OPCODE_POP): Ditto.
+
+	gas/testsuite/
+
+	2012-04-12  Jie Zhang  <jie@codesourcery.com>
+                    Meador Inge  <meadori@codesourcery.com>
+
+	* gas/arm/push-pop.d: New testcase.
+	* gas/arm/push-pop.s: Ditto.
+	* gas/arm/stm-ldm.d: Ditto.
+	* gas/arm/stm-ldm.s: Ditto.
+
+2012-03-22  James Lemke  <jwlemke@codesourcery.com>
+
+	gas/testsuite/gas/m68k/
+	* all.exp: Exclude pr11676 for fido-*-*.
+
+2012-03-21  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Issue #12921
+
+	Backport from upstream:
+
+	gas/
+	2012-03-21  Thomas Schwinge  <thomas@codesourcery.com>
+
+	[SH] Support the .uaquad and .8byte directives also for non-sh64
+	configurations.
+
+	* config/tc-sh.c (sh_cons_fix_new, md_apply_fix) [!HAVE_SH64]: Handle
+	BFD_RELOC_64.
+	* doc/c-sh64.texi (SH64 Machine Directives): Move .uaquad
+	description...
+	* doc/c-sh.texi (SH Machine Directives): ... here.
+
+2012-03-19  James Lemke  <jwlemke@codesourcery.com>
+
+	gas/testsuite/gas/m68k/
+	* all.exp: Exclude pr11676 for fido-*-*.
+
+2012-03-08  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #13040
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_check_relocs): Only set need_mips
+	PLT entry flag for R_MIPS_26 relocs.
+	(_bfd_mips_elf_adjust_dynamic_symbol): Default to microMIPS PLT
+	entries if producing output with any microMIPS code included.
+
+	* release-notes-csl.xml (microMIPS PLT linker bug fix): New.
+
+2012-02-17  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* release-notes-csl.xml (Linker COMDAT optimization bug fix): New note.
+
+	bfd/
+	* elflink.c (is_comdat_symbol): Remove static keyword.
+	* elf-bfd.h (is_comdat_symbol): Declare.
+	* elf32-arm.c (elf32_arm_adjust_dynamic_symbol): Test for comdat
+	symbols that didn't turn out to need PLT entries after all.
+
+2012-02-07 Paul Brook <paul@codesourcery.com>
+
+	bfd/
+	* elf-bfd.h (eh_frame_hdr_info): Add allocated_entries, entries,
+	v2_entry.
+	(elf_backend_data): Add compact_eh_encoding.
+	(bfd_elf_section_data): Add eh_frame_entry.
+	(elf_section_eh_frame_entry): Define.
+	(_bfd_elf_parse_eh_frame_entry, _bfd_elf_end_eh_frame_parsing,
+	_bfd_elf_write_section_eh_frame_entry, _bfd_elf_fixup_eh_frame_hdr):
+	Add/update prototypes.
+	* elf-eh-frame.c (bfd_elf_remember_eh_frame_entry,
+	_bfd_elf_parse_eh_frame_entry, cmp_eh_frame_hdr,
+	add_eh_frame_hdr_terminator): New functions.
+	(_bfd_elf_end_eh_frame_parsing): Sort and terminate compact frame
+	header entries.
+	(_bfd_elf_discard_section_eh_frame_hdr): Compact frame header
+	generation.
+	(_bfd_elf_maybe_strip_eh_frame_hdr): Parse .eh_frame_entry sections.
+	Provide __GNU_EH_FRAME_HDR.
+	(_bfd_elf_write_section_eh_frame_entry, _bfd_elf_fixup_eh_frame_hdr):
+	New functions.
+	(_bfd_elf_write_section_eh_frame_hdr): Write compact EH frame headers.
+	* elflink.c (elf_link_input_bfd): Handle ELF_INFO_TYPE_EH_FRAME_ENTRY.
+	(bfd_elf_final_link): Add magic for compact EH frames.
+	(_bfd_elf_gc_mark): Mark EH tables from text sections.
+	(bfd_elf_gc_sections): Parse .eh_frame_entry sections.
+	(bfd_elf_discard_info): Parse .eh_frame_entry sections.
+	* elfxx-mips.c (_bfd_mips_elf_compact_eh_encoding): New function.
+	* elfxx-mips.h (_bfd_mips_elf_compact_eh_encoding): Add prototype.
+	(elf_backend_compact_eh_encoding): Define.
+	* elfxx-target.h (elf_backend_compact_eh_encoding): Define default.
+	(elfNN_bed): Add elf_backend_compact_eh_encoding.
+	(section.c): Define ELF_INFO_TYPE_EH_FRAME_ENTRY.
+	* bfd-in2.h: Regenerate.
+
+	include/
+	* bfdlink.h (bfd_link_info): Make eh_frame_hdr a 2-bit field.
+
+	ld/
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open):
+	Search for compact frame headers.
+	* scripttempl/elf.sc: Add .eh_frame.*, .eh_frame_entry and .gnu_extab.
+
+2012-02-07 Paul Brook <paul@codesourcery.com>
+
+	gas/
+	* config/tc-mips.c (md_apply_fix): Handle BFD_RELOC_NONE.
+	(mips_make_debug_seg): New function.
+	(mips_unwind_reg_from_dwarf, mips_cfi_endproc, mips_cfi_fix_eh_ref,
+	mips_cfi_emit_expr): New functions.
+	* config/tc-mips.h (DWARF2_FDE_RELOC_SIZE): Use compact_eh.
+	(DWARF2_FDE_RELOC_ENCODING): Define.
+	(tc_make_debug_seg, tc_cfi_endproc, tc_cfi_emit_expr,
+	tc_cfi_fix_eh_ref): Define.
+	* dw2gencfi.c (EH_FRAME_LINKONCE): Define.
+	(last_fde): New variable.
+	(tc_cfi_emit_expr, tc_cfi_special_encoding): Provide defaults.
+	(compact_eh): New variable.
+	(FRAME_NAME): Use .gnu.extab for compact frames.
+	(get_debugseg_name): Suffix all EH sections except for .text.
+	(is_now_linkonce_segment): Do not squich regular compact EH
+	sections together.
+	(make_debug_seg): Use tc_make_debug_seg.
+	(cie_entry): Add fde_encoding.
+	(cfi_pseudo_table): Add "cfi_inline_lsda".
+	(dot_cfi_personality, dot_cfi_lsda): Use tc_cfi_special_encoding.
+	(dot_cfi_sections): Accept .eh_frame_entry.
+	(dot_cfi_startproc): Set last_fde.  Call tc_cfi_endproc for compact EH.
+	(get_cfi_seg): Move higher in file.
+	(output_compact_unwind_data, dot_cfi_inline_lsda): New functions.
+	(output_cie): Use tc_cfi_special_encoding and
+	DWARF2_FDE_RELOC_ENCODING.
+	(output_fde): Use tc_cfi_special_encoding.
+	(cfi_emit_eh_header, output_eh_header): New functions.
+	(cfi_finish): Handle compact EH frame generation.
+	* dw2gencfi.h (SUPPORT_COMPACT_EH, MULTIPLE_FRAME_SECTIONS): Define.
+	(EH_COMPACT_*): Define.
+	(fde_entry): Add eh_header_type, eh_data_size, eh_data, eh_loc.
+	* doc/as.texinfo: Document .cfi_sections .eh_frame_header and
+	.cfi_inline_lsda.
+
+2012-02-07 Paul Brook <paul@codesourcery.com>
+
+	bfd/
+	* reloc.c (BFD_RELOC_MIPS_EH): Add.
+	* elfxx-mips.c (mips_elf_link_hash_table): Add eh_reloc_type.
+	(mips_elf_real_reloc): New funtion.
+	(mips_elf_calculate_relocation): Handle R_MIPS_EH.  Use
+	mips_elf_real_reloc.
+	(_bfd_mips_elf_check_relocs, mips_elf_adjust_addend): Ditto.
+	(_bfd_mips_elf_relocate_section): Ditto.
+	(_bfd_mips_elf_insn32): Rename...
+	(_bfd_mips_elf_linker_flags): To this.  Add eh_reloc.
+	* elfxx-mips.h (_bfd_mips_elf_linker_flags): Update prototype.
+	* elf64-mips.c (elf_mips_eh_howto): New.
+	(bfd_elf64_bfd_reloc_type_lookup, bfd_elf64_bfd_reloc_name_lookup,
+	mips_elf64_rtype_to_howto): Handle R_MIPS_PC64.
+	* elf64-mips.c (elf_mips_eh_howto): New.
+	(bfd_elf64_bfd_reloc_type_lookup, bfd_elf64_bfd_reloc_name_lookup,
+	mips_elf64_rtype_to_howto): Handle R_MIPS_PC32.
+	* elfn32-mips.c (elf_mips_gnu_pcrel32): New.
+	(bfd_elfn32_bfd_reloc_type_lookup, bfd_elfn32_bfd_reloc_name_lookup,
+	mips_elfn32_rtype_to_howto): Handle R_MIPS_PC32.
+	* bfd-in2.h: Regenerate.
+	* libbfd.h: Regenerate.
+
+	gas/
+	* config/tc-mips.c (s_ehword): New functon.
+	(mips_pseudo_table): Add "ehword".
+
+	include/elf/
+	* mips.h: Add R_MIPS_EH.
+
+	ld/
+	* emultempl/mipself.em (eh_reloc_type): New.
+	(mips_create_output_section_statements): Use eh_reloc_type.
+	(OPTION_PCREL_EH_RELOC): Define.
+	(PARSE_AND_LIST_LONGOPTS): Add "pcrel-eh-reloc".
+	(PARSE_AND_LIST_ARGS_CASES): Handle OPTION_PCREL_EH_RELOC.
+	* ld.texinfo: Document --pcrel-eh-reloc.
+
+2012-02-07 Paul Brook <paul@codesourcery.com>
+
+	bfd/
+	* elf64-mips.c (elf_mips_gnu_pcrel32): New.
+	(bfd_elf64_bfd_reloc_type_lookup, bfd_elf64_bfd_reloc_name_lookup,
+	mips_elf64_rtype_to_howto): Handle R_MIPS_PC32.
+	* elfn32-mips.c (elf_mips_gnu_pcrel32): New.
+	(bfd_elfn32_bfd_reloc_type_lookup, bfd_elfn32_bfd_reloc_name_lookup,
+	mips_elfn32_rtype_to_howto): Handle R_MIPS_PC32.
+
+	gas/
+	* config/tc-mips.c (md_pcrel_from): Handle BFD_RELOC_32_PCREL.
+	(md_apply_fix, mips_fix_adjustable, tc_gen_reloc): Ditto.
+
+	include/elf/
+	* mips.h (R_MIPS_PC32): Update comment.
+
+2012-02-07 Paul Brook <paul@codesourcery.com>
+
+	gas/
+	* dw2gencfi.c (all_cfi_sections): new.
+	(dot_cfi_personality, dot_cfi_startproc, cfi_finish): Use
+	all_cfi_sections and per-fde section flags.
+	* dw2gencfi.h (fde_entry): Add sections.
+
+2012-02-03  James Lemke  <jwlemke@codesourcery.com>
+
+	Back port from FSF.
+
+	* release-notes-csl.xml: New note.
+
+	2011-09-05  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	PR gas/13024
+	* dwarf2dbg.c (pending_lines, pending_lines_tail): New variables.
+	(dwarf2_gen_line_info_1): Delete.
+	(dwarf2_push_line, dwarf2_flush_pending_lines): New functions.
+	(dwarf2_gen_line_info, dwarf2_emit_label): Use them.
+	(dwarf2_consume_line_info): Call dwarf2_flush_pending_lines.
+	(dwarf2_directive_loc): Push previous .locs instead of generating
+	them immediately.
+
+2011-12-22  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from mips-comdat-linker branch:
+
+	2011-11-02  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* release-notes-csl.xml (Linker COMDAT group code size optimization):
+	New note.
+
+	ld/
+	* emultempl/elf32.em (gld${EMULATION_NAME}_after_open):
+	Call find_shared_comdat_symbols before returning.
+	(OPTION_SHARED_COMDAT): Define.
+	(gld${EMULATION_NAME}_add_options): Make it know about new option.
+	(gld${EMULATION_NAME}_handle_option): Likewise.
+	(gld${EMULATION_NAME}_list_options): Likewise.
+	* ld.texinfo (--shared-comdat): Document new option.
+
+	include/
+	* bfdlink.h (struct bfd_link_info): Add shared_comdat flag.
+
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_check_relocs): Don't require static
+	relocs for .pdr references, since they may be optimized away.
+	* elflink.c (section_signature): Add forward declaration.
+	(struct elf_shared_comdat_symbol): Declare.
+	(struct elf_shared_comdat_group): Declare.
+	(struct elf_shared_comdat_library): Declare.
+	(elf_shared_comdat_group_list): New.
+	(elf_shared_comdat_library_list): New.
+	(is_comdat_symbol): New.
+	(record_shared_comdat_group_symbol): New.
+	(record_shared_comdat_library_symbol): New.
+	(replace_shared_comdat_group): New.
+	(find_shared_comdat_symbols): New.
+	(_bfd_elf_symbol_refs_local_p): Return FALSE for comdat symbols
+	that may be optimized away.
+	(elf_link_add_object_symbols): Record group and library symbols
+	for shared comdat analysis.
+	(bfd_elf_reloc_symbol_deleted_p): Also check for symbols with no
+	regular definition.
+	* elf-bfd.h (find_shared_comdat_symbols): Declare.
+
+	2011-11-14  Sandra Loosemore  <sandra@codesourcery.com>
+
+	ld/testsuite/
+	* ld-elf/comdat.exp: New.
+	* ld/testsuite/ld-elf/comdat.H: New.
+	* ld/testsuite/ld-elf/comdat0.C: New.
+	* ld/testsuite/ld-elf/comdat1a.C: New.
+	* ld/testsuite/ld-elf/comdat1b.C: New.
+	* ld/testsuite/ld-elf/comdat-main.C: New.
+
+2011-12-19  Joseph Myers  <joseph@codesourcery.com>
+
+	ld/
+	* emulparams/elf32bmip.sh (OTHER_SECTIONS): Put .mdebug.* sections
+	at address 0.
+
+2011-11-15  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gas/testsuite/
+	* gas/mips/mips.exp (has_newabi): Also set for mips*-sde-elf*.
+	* gas/mips/elf-rel-got-n32.s: Adjust padding.
+	* gas/mips/elf-rel-got-n64.s: Likewise.
+	* gas/mips/elf-rel23.s: Likewise.
+	* gas/mips/n32-consec.s: Likewise.
+	* gas/mips/elf-rel-xgot-n32.d: Update accordingly.
+	* gas/mips/elf-rel-xgot-n64.d: Likewise.
+	* gas/mips/elf-rel23.d: Likewise.
+	* gas/mips/elf-rel23a.d: Likewise.
+	* gas/mips/elf-rel23b.d: Likewise.
+
+2011-11-14  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Backport trivial fix from mainline:
+
+	bfd/
+	2011-11-14  Maxim Kuvyrkov  <maxim@codesourcery.com>
+	* elfxx-mips.c (mips_n64_exe_plt0_entry): Use 64-bit move.
+
+2011-11-04  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10951
+
+	Revert:
+
+	2011-05-03  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_symbol_processing): Replace
+	assertions with warning messages.
+
+	Backport from FSF:
+
+	2011-10-24  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_symbol_processing): Remove
+	assertions.
+
+2011-11-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (mips_elf_calculate_relocation): Don't use la25 stub
+	for mips16->mips16 calls.
+
+2011-10-27  Meador Inge  <meadori@codesourcery.com>
+
+	CB-555
+
+	Backport from FSF:
+
+	2011-10-18  Julian Brown  <julian@codesourcery.com>
+
+        ld/testsuite/
+        * ld-arm/cortex-a8-fix-b-plt.d: Adjust.
+        * ld-arm/cortex-a8-fix-bcc-plt.d: Adjust.
+        * ld-arm/cortex-a8-fix-bl-plt.d: Adjust.
+        * ld-arm/cortex-a8-fix-bl-rel-plt.d: Adjust.
+        * ld-arm/cortex-a8-fix-blx-plt.d: Adjust.
+        * ld-arm/ifunc-1.dd: Adjust.
+        * ld-arm/ifunc-2.dd: Adjust.
+        * ld-arm/ifunc-3.dd: Adjust.
+        * ld-arm/ifunc-4.dd: Adjust.
+        * ld-arm/ifunc-5.dd: Adjust.
+        * ld-arm/ifunc-6.dd: Adjust.
+        * ld-arm/ifunc-7.dd: Adjust.
+        * ld-arm/ifunc-8.dd: Adjust.
+        * ld-arm/ifunc-9.dd: Adjust.
+        * ld-arm/ifunc-10.dd: Adjust.
+        * ld-arm/ifunc-14.dd: Adjust.
+        * ld-arm/ifunc-15.dd: Adjust.
+        * ld-arm/ifunc-16.dd: Adjust.
+
+2011-10-25  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	Issue #12354
+
+	gas/
+	* config/tc-m68k.c (m68k_cpus): Add 51jg.
+
+2011-10-21  Catherine Moore  <clm@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (mips_elf_calculate_relocation):  Add check for 
+	(h != NULL).
+
+2011-10-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	gas/
+	* config/tc-mips.c (mips_pseudo_table): Add tprelword/tpreldword
+	entries.
+	(mips16_percent_op): Add MIPS16 TLS relocation ops.
+	(md_apply_fix): Add BFD_RELOC_MIPS16_TLS_* switch cases.
+	(s_tls_rel_directive): Rename from s_dtprel_internal(). Abstract out
+	directive string and reloc type as function parameters. Update
+	comments.
+	(s_dtprelword,s_dtpreldword): Change to use s_tls_rel_directive().
+	(s_tprelword,s_tpreldword): New functions.
+
+	include/
+	* elf/mips.h (elf_mips_reloc_type): Add R_MIPS16_TLS_* entries.
+
+	bfd/
+	* reloc.c (BFD_RELOC_MIPS16_TLS_GD,BFD_RELOC_MIPS16_TLS_LDM,
+	BFD_RELOC_MIPS16_TLS_DTPREL_HI16,BFD_RELOC_MIPS16_TLS_DTPREL_LO16,
+	BFD_RELOC_MIPS16_TLS_GOTTPREL,BFD_RELOC_MIPS16_TLS_TPREL_HI16,
+	BFD_RELOC_MIPS16_TLS_TPREL_LO16): New relocations for MIPS16 TLS.
+	* bfd-in2.h (bfd_reloc_code_real): Regenerate.
+	* libbfd.h (bfd_reloc_code_real_names): Regenerate.
+	* elf32-mips.c (elf_mips16_howto_table_rel): Add R_MIPS16_TLS_*
+	entries.
+	(mips16_reloc_map): Add BFD_RELOC_MIPS16_TLS_* to R_MIPS16_TLS_*
+	mappings.
+	* elfn32-mips.c (elf_mips16_howto_table_rel,
+	elf_mips16_howto_table_rela): Add R_MIPS16_TLS_* entries.
+	(mips16_reloc_map): Add BFD_RELOC_MIPS16_TLS_* to R_MIPS16_TLS_*
+	mappings.
+	* elf64-mips.c (mips16_elf64_howto_table_rel,
+	mips16_elf64_howto_table_rela): Add R_MIPS16_TLS_* entries.
+	(mips16_reloc_map): Add BFD_RELOC_MIPS16_TLS_* to R_MIPS16_TLS_*
+	mappings.
+	* elfxx-mips.c (TLS_RELOC_P,mips16_reloc_p,
+	_bfd_mips_elf_check_relocs): Add cases for R_MIPS16_TLS_* relocations.
+	(tls_gd_reloc_p): Add R_MIPS16_TLS_GD case.
+	(tls_ldm_reloc_p): Add R_MIPS16_TLS_LDM case.
+	(tls_gottprel_reloc_p): Add R_MIPS16_TLS_GOTTPREL case.
+	(mips_elf_calculate_relocation): Add cases for R_MIPS16_TLS_*,
+	R_MIPS_TLS_DTPREL32/64, and R_MIPS_TLS_TPREL32/64 relocations.
+
+2011-10-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (mips_elf_local_pic_function_p): Return true when
+	H is a MIPS16 function with a kept 32-bit stub. Update comments.
+	(mips_elf_add_la25_intro): Use MIPS16 stub section as place of
+	insertion when it exists.
+	(mips_elf_add_la25_stub): Always use LUI/ADDIU prepending for
+	MIPS16 stubs. Update comments.
+	(mips_elf_calculate_relocation): Redirect relocation to point to
+	the LA25 stub if it exists, instead of the MIPS16 stub.
+	(mips_elf_create_la25_stub): Change $25 target calculation to
+	base on MIPS16 stub if it exists.
+
+2011-10-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (mips_elf_calculate_relocation): Correct
+	R_MIPS16_LO16 handling of two cleared lower bits.
+
+2011-10-19  Meador Inge  <meadori@codesourcery.com>
+
+	CB-372
+
+	Trivial configure patch that was meant to be a part
+	of the binutils 2.21 merge.
+
+	* configure.ac (configdirs): Add convert for mips-sde-elf.
+	* configure: Regenerate.
+
+2011-10-18  Meador Inge  <meadori@codesourcery.com>
+
+	CB-372
+
+	Merged upstream binutils 2.21.
+
+	* release-notes-csl.xml: New note.
+
+2011-10-07  Meador Inge  <meadori@codesourcery.com>
+
+	Reverting the following changeset until the binutils 2.21 merge is
+	finished.  I cleared this with Maxim first:
+
+	2011-10-07  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Merge XLP support patch from NetLogic.
+	Do not spend time pushing this upstream as it should be NetLogic's work.
+
+	ld/
+	* configure.tgt: Add mips*-nlm-elf* targets.
+	gas/
+	* doc/c-mips.texi: Add xlp.
+	* config/tc-mips.c: Add definitions for XLP.
+	* configure.tgt: Handle mips*-nlm-elf* targets.
+	./
+	* include/elf/mips.h (E_MIPS_MACH_XLP): Define.
+	* include/opcode/mips.h (INSN_XLP): Define.
+	(OPCODE_IS_MEMBER): Update.
+	binutils/
+	* readelf.c (get_machine_flags): Update.
+	bfd/
+	* archures.c: Update for XLP.
+	* cpu-mips.c: Update for XLP.
+	* config.bfd: Handle mips*-nlm-elf* targets.
+	* aoutx.h: Update for XLP.
+	* elfxx-mips.c: Update for XLP.
+	* bfd-in2.h: Update for XLP.
+	opcodes/
+	* mips-dis.c: Update for XLP.
+	* mips-opc.c: Add XLP-specific instructions.
+
+2011-10-07  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	Issue #11914
+	Issue #12259
+
+	gas/
+	* config/tc-m68k.c (m68k_cpus): Add 51jf and 51qm.
+
+2011-10-07  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Merge XLP support patch from NetLogic.
+	Do not spend time pushing this upstream as it should be NetLogic's work.
+
+	ld/
+	* configure.tgt: Add mips*-nlm-elf* targets.
+	gas/
+	* doc/c-mips.texi: Add xlp.
+	* config/tc-mips.c: Add definitions for XLP.
+	* configure.tgt: Handle mips*-nlm-elf* targets.
+	./
+	* include/elf/mips.h (E_MIPS_MACH_XLP): Define.
+	* include/opcode/mips.h (INSN_XLP): Define.
+	(OPCODE_IS_MEMBER): Update.
+	binutils/
+	* readelf.c (get_machine_flags): Update.
+	bfd/
+	* archures.c: Update for XLP.
+	* cpu-mips.c: Update for XLP.
+	* config.bfd: Handle mips*-nlm-elf* targets.
+	* aoutx.h: Update for XLP.
+	* elfxx-mips.c: Update for XLP.
+	* bfd-in2.h: Update for XLP.
+	opcodes/
+	* mips-dis.c: Update for XLP.
+	* mips-opc.c: Add XLP-specific instructions.
+
+2011-10-05  Meador Inge  <meadori@codesourcery.com>
+
+	Issue #12260
+
+	gas/
+	* config/tc-arm.c (create_neon_reg_alias): Mark 'nameend' with
+	ATTRIBUTE_UNUSED since it is unused on some conditional compile paths.
+
+	bfd/
+	* elf32-arm.c (elf32_arm_merge_eabi_attributes): Delete unused
+	variables 'in_list', 'out_list', and 'out_listp'.
+
+2011-10-03  Meador Inge  <meadori@codesourcery.com>
+
+	Issue #12249
+
+	Backport from FSF:
+
+	2010-10-11  Dave Korn  <dave.korn.cygwin@gmail.com>
+
+	* elflink.c (_bfd_elf_link_output_relocs): Delete unused variable
+	"output_rel_hdr".
+
+2011-09-16  Julian Brown  <julian@codesourcery.com>
+
+	Issue #12129
+
+	bfd/
+	* elf32-arm.c (arm_allocate_glue_section_space): Undo exclusion of
+	zero-sized section if we are called subsequently with non-zero-sized
+	section.
+
+	ld/testsuite/
+	* ld-arm/thumb1-got-glue.s: New.
+	* ld-arm/thumb1-got-glue.d: New.
+	* ld-arm/arm-elf.exp: Add above test.
+
+2011-08-23  Meador Inge  <meadori@codesourcery.com>
+
+	CB-258
+
+	* release-notes-csl.xml: Revert CB-118 release note.
+
+	Revert the following FSF backport that was done for CB-118:
+
+	2010-11-25  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* ld-arm/arm-elf.exp (armeabitests): Replace --defsym argument in
+	jump-reloc-veneers* tests with --section-start .text=0x8000.
+
+	2010-11-03  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/12001
+	* ldlang.c (ldlang_def_chain_list): New variable.  Contains a list
+	of symbols defined via the --defsym command line option and
+	currently waiting assignment.
+	(insert_defined): Add a defined symbol to the symbol table.
+	(ldlang_add_def): Add a entry to the ldlang_def_chain_list.
+	(lang_place_defineds): Walk ldlang_def_chain_list defining the
+	symbols.
+	(lang_process): Call lang_place_defineds.
+	(lang_add_assignment): If the assignment has come from a --defsym
+	command line option then call lang_add_def.
+
+2011-08-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* release-notes-csl.xml
+	(Binutils support for 32-bit microMIPS instructions): New.
+	(Support for pure microMIPS objects): New.
+
+2011-08-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.h (_bfd_mips_elf_insn32): New prototype.
+	* elfxx-mips.c (mips_elf_link_hash_table): Add insn32 member.
+	(MICROMIPS_P): Document.
+	(STUB_LW_MICROMIPS): New macro.
+	(STUB_MOVE_MICROMIPS, STUB_MOVE32_MICROMIPS): Likewise.
+	(STUB_LUI_MICROMIPS): Likewise.
+	(STUB_JALR_MICROMIPS, STUB_JALR32_MICROMIPS): Likewise.
+	(STUB_LI16U_MICROMIPS, STUB_LI16S_MICROMIPS): Likewise.
+	(MICROMIPS_FUNCTION_STUB_NORMAL_SIZE): Likewise.
+	(MICROMIPS_FUNCTION_STUB_BIG_SIZE): Likewise.
+	(MICROMIPS_INSN32_FUNCTION_STUB_NORMAL_SIZE): Likewise.
+	(MICROMIPS_INSN32_FUNCTION_STUB_BIG_SIZE): Likewise.
+	(micromips_o32_exec_plt0_entry): Rename variable to...
+	(micromips_insn32_o32_exec_plt0_entry): ... this.
+	(micromips_o32_exec_plt0_entry): New variable.
+	(micromips_insn32_o32_exec_plt_entry): Likewise.
+	(_bfd_mips_elf_create_dynamic_sections): Don't set PLT header
+	size here.  Reverse a negative conditional.
+	(_bfd_mips_elf_adjust_dynamic_symbol): Adjust size calculation
+	for PLT header handling change.
+	(mips_elf_estimate_stub_size): Handle microMIPS stubs.
+	(mips_elf_allocate_lazy_stub): Likewise.
+	(mips_elf_lay_out_lazy_stubs): Likewise.  Define a _MIPS_STUBS_
+	magic symbol.
+	(_bfd_mips_elf_size_dynamic_sections): Set PLT header size here.
+	Handle microMIPS annotation of the _PROCEDURE_LINKAGE_TABLE_
+	magic symbol.
+	(_bfd_mips_elf_finish_dynamic_symbol): Fix PLT header's ISA mode
+	bit calculation.  Handle insn32 mode microMIPS PLT entries.
+	Simplify ADDIUPC overflow check.  Handle microMIPS stubs.
+	(mips_finish_exec_plt): Handle both variants of microMIPS PLT
+	header.
+	(_bfd_mips_elf_finish_dynamic_sections): Handle result from
+	mips_finish_exec_plt.
+	(_bfd_mips_elf_relax_section): Disable 16-bit microMIPS
+	relaxation options if in the insn32 mode.  Handle 32-bit
+	delay-slot NOPs in compact branch relaxation.
+	(_bfd_mips_elf_link_hash_table_create): Preinitialize insn32.
+	(_bfd_mips_elf_insn32): New function.
+	(_bfd_mips_elf_get_synthetic_symtab): Synthesize a
+	_PROCEDURE_LINKAGE_TABLE_ magic symbol.  Handle microMIPS PLT
+	headers.  Handle insn32-mode PLT entries.
+
+	opcodes/
+	* mips-dis.c (is_micromips_mode_p): Correct ELF symbol attribute
+	check.
+
+	ld/
+	* emultempl/mipself.em (insn32): New variable.
+	(mips_create_output_section_statements): Handle insn32 mode.
+	(PARSE_AND_LIST_PROLOGUE): New macro.
+	(PARSE_AND_LIST_LONGOPTS): Likewise.
+	(PARSE_AND_LIST_OPTIONS): Likewise.
+
+	* gen-doc.texi: Set MIPS.
+	* ld.texinfo: Likewise.
+	(Options specific to MIPS targets): New section.
+	(ld and MIPS family): Likewise.
+
+	ld/testsuite/
+	* ld-mips-elf/jalx-2.dd: Update for microMIPS PLT header.
+	* ld-mips-elf/pic-and-nonpic-3a.dd: Update for the _MIPS_STUBS_
+	magic symbol.
+	* ld-mips-elf/pic-and-nonpic-3b.dd: Likewise.
+	* ld-mips-elf/pic-and-nonpic-6-n32.dd: Likewise.
+	* ld-mips-elf/pic-and-nonpic-6-n64.dd: Likewise.
+	* ld-mips-elf/pic-and-nonpic-6-o32.dd: Likewise.
+	* ld-mips-elf/stub-dynsym-1-10000.d: Likewise.
+	* ld-mips-elf/stub-dynsym-1-2fe80.d: Likewise.
+	* ld-mips-elf/stub-dynsym-1-7fff.d: Likewise.
+	* ld-mips-elf/stub-dynsym-1-8000.d: Likewise.
+	* ld-mips-elf/stub-dynsym-1-fff0.d: Likewise.
+	* ld-mips-elf/tlslib-o32.d: Likewise.
+
+	* ld-mips-elf/pic-and-nonpic-3b.dd: Add missing escapes.
+
+2011-08-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_relax_section): Preserve the
+	in-place addend in JAL->JALS relaxation.
+
+2011-08-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (LA25_LUI_MICROMIPS_1, LA25_LUI_MICROMIPS_2):
+	Remove and fold macros into...
+	(LA25_LUI_MICROMIPS): ... this new macro.
+	(LA25_J_MICROMIPS_1, LA25_J_MICROMIPS_2): Likewise into...
+	(LA25_J_MICROMIPS): ... this.
+	(LA25_ADDIU_MICROMIPS_1, LA25_ADDIU_MICROMIPS_2): Likewise
+	into...
+	(LA25_ADDIU_MICROMIPS): ... this.
+	(bfd_put_micromips_32, bfd_get_micromips_32): New functions.
+	(mips_elf_create_la25_stub): Use them.
+	(check_br32_dslot, check_br32, check_bzc): Likewise.
+	(_bfd_mips_elf_relax_section): Likewise.
+	(_bfd_mips_elf_get_synthetic_symtab): Likewise.
+
+2011-08-18  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	include/opcode/
+	* mips.h: Add M_JRADDIUSP, M_JRC and M_MOVEP anonymous enum
+	values.
+
+	opcodes/
+	* micromips-opc.c (micromips_opcodes): Add "jraddiusp", "jrc" and
+	"movep" macros.
+
+	gas/
+	* config/tc-mips.c (mips_set_options): Add insn32 member.
+	(mips_opts): Initialize it.
+	(NOP_INSN): Handle the insn32 mode.
+	(is_opcode_valid): Likewise.
+	(macro_build_jalr, move_register): Likewise.
+	(options): Add OPTION_INSN32 and OPTION_NO_INSN32 enum values.
+	(md_longopts): Add "minsn32" and "mno-insn32" options.
+	(md_parse_option): Handle OPTION_INSN32 and OPTION_NO_INSN32.
+	(s_mipsset): Handle "insn32" and "noinsn32" pseudo-ops.
+	(mips_handle_align): Handle the insn32 mode.
+	(md_show_usage): Add -minsn32 and -mno-insn32.
+	(micromips_macro_build) <'c'>: New case to handle 32-bit "break"
+	encoding.
+	(micromips_macro): Handle the insn32 mode.
+	<M_JRADDIUSP>, <M_JRC>, <M_MOVEP>: New cases to handle the
+	"jraddiusp", "jrc" and "movep" macros.
+
+	* doc/as.texinfo (Target MIPS options): Add -minsn32 and
+	-mno-insn32 options.
+	(-minsn32, -mno-insn32): New options.
+	* doc/c-mips.texi (MIPS Opts): Add -minsn32 and -mno-insn32
+	options.
+	(MIPS assembly options): New node.  Document .set insn32 and
+	.set noinsn32.
+	(MIPS-Dependent): List the new node.
+
+	gas/testsuite/
+	* gas/mips/micromips-insn32.d: New test.
+	* gas/mips/micromips-noinsn32.d: Likewise.
+	* gas/mips/micromips.l: Rename to...
+	* gas/mips/micromips-warn.l: ... this.
+	* gas/mips/micromips.d: Update accordingly.
+	* gas/mips/micromips-trap.d: Likewise.
+	* gas/mips/micromips.l: New list test.
+	* gas/mips/micromips.s: Add conditionals.
+	* gas/mips/mips.exp: Run the new tests.
+
+2011-07-26  Paul Brook  <paul@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (MICROMIPS_P): Define.
+	(micromips_o32_exec_plt0_entry): New.
+	(mips_elf_got_page): Use MICROMIPS_P.
+	(mips_elf_calculate_relocation): Ditto.
+	(_bfd_mips_elf_symbol_processing): Ditto.
+	(_bfd_mips_elf_create_dynamic_sections): Ditto.
+	(_bfd_mips_elf_finish_dynamic_symbol): Set low it of address of
+	micrmips plt0.
+	(mips_finish_exec_plt): Use micromips plt header if all references are
+	also micromips.
+
+2011-07-26  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue #11778
+
+	gas/
+	* dwarf2dbg.c (out_debug_line): Ignore non-normal segments, with a
+	warning.
+	* doc/as.texinfo (Offset): Document .offset directive.
+
+	gas/testsuite/
+	* gas/all/warn-2.s: New.
+
+	* release-notes-csl.xml: Document.
+
+2010-07-20  Meador Inge  <meadori@codesourcery.com>
+
+	CB-118
+
+	* release-notes-csl.xml: New note.
+
+	Backport from FSF:
+
+	2010-11-25  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* ld-arm/arm-elf.exp (armeabitests): Replace --defsym argument in
+	jump-reloc-veneers* tests with --section-start .text=0x8000.
+
+	2010-11-03  Nick Clifton  <nickc@redhat.com>
+
+	PR ld/12001
+	* ldlang.c (ldlang_def_chain_list): New variable.  Contains a list
+	of symbols defined via the --defsym command line option and
+	currently waiting assignment.
+	(insert_defined): Add a defined symbol to the symbol table.
+	(ldlang_add_def): Add a entry to the ldlang_def_chain_list.
+	(lang_place_defineds): Walk ldlang_def_chain_list defining the
+	symbols.
+	(lang_process): Call lang_place_defineds.
+	(lang_add_assignment): If the assignment has come from a --defsym
+	command line option then call lang_add_def.
+
+2011-07-08  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	Issue #6233
+	Issue #6234
+	Issue #9116
+
+	gas/
+	* config/tc-m68k.c (m68k_cpus): Add 51ag, 51je and 51mm.
+
+2011-06-22  Julian Brown  <julian@codesourcery.com>
+
+	Issue #10390
+
+	Backport from FSF:
+
+	2010-09-19  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	bfd/
+	* elfxx-mips.c (mips_got_entry): Adjust commentary.
+	(mips_elf_create_local_got_entry): If given a symbol, check that it
+	has been assigned to the local part of the GOT.
+	(mips_elf_count_got_symbols): Take the bfd_link_info as argument
+	instead of the master GOT.  Put all locally-binding symbols in
+	the local area.
+	(mips_elf_make_got_per_bfd): Use global_got_area to decide whether
+	a symbol lives in the local or global area.
+	(mips_elf_local_relocation_p): Remove check_forced argument and
+	retain only the !check_forced behavior.
+	(mips_elf_calculate_relocation): Adjust call accordingly.
+	Use global_got_area to decide whether an output relocation
+	should be local or global.  Explicitly decay R_MIPS_GOT_PAGE
+	into R_MIPS_GOT_DISP where appropriate.  Fix selection of
+	local vs. global semantics for R_MIPS*_26.  Remove redundant
+	reevaluation of what is stored in was_local_p.
+	(mips_elf_create_dynamic_relocation): Use global_got_area to decide
+	whether the relocation should be against a global or local symbol.
+	(mips_elf_lay_out_got): Update the GOT traversal after the above
+	change to mips_elf_count_got_symbols.
+	(mips_elf_adjust_addend): Adjust call to mips_elf_local_relocation_p.
+	(_bfd_mips_elf_relocate_section): Likewise.
+	(_bfd_mips_elf_finish_dynamic_symbol): Use global_got_area to decide
+	whether the symbol has a global got entry.
+	(_bfd_mips_vxworks_finish_dynamic_symbol): Likewise.
+
+	ld/testsuite/
+	* ld-mips-elf/elf-rel-got-n32.d: Swap two local GOT entries
+	and remove some duplication between the global and local GOT
+	entries.  Adjust GP offsets accordingly.
+	* ld-mips-elf/elf-rel-got-n64-linux.d: Likewise.
+	* ld-mips-elf/elf-rel-xgot-n32.d: Reorder GOT entries and update
+	GP offsets accordingly.
+	* ld-mips-elf/elf-rel-xgot-n64-linux.d: Likewise.
+	* ld-mips-elf/mips16-pic-1.gd: Move all global GOT entries to
+	the local GOT.
+	* ld-mips-elf/mips16-pic-1.dd: Update GP offsets accordingly.
+	* ld-mips-elf/multi-got-no-shared.d: Adjust GP setup for
+	smaller GOT sizes.
+
+2011-06-16  Catherine Moore  <clm@codesourcery.com>
+
+	gas/
+	* config/tc-mips.c (mips_cpu_info_table): Add "m14ke" and "m14kec".
+	* doc/c-mips.texi (MIPS architecture options): Add "m14ke" and
+	"m14kec" to the list of -march options.
+
+2011-05-16  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10746
+
+	gas/
+	* config/tc-mips.c (mips_fix_adjustable): On REL targets reject
+	all microMIPS HI16/GOT16/LO16 relocations.
+
+	gas/testsuite/
+	* gas/mips/micromips@lb-svr4pic-ilocks.d: Adjust according to
+	HI16/GOT16/LO16 relocation conversion changes.
+
+2011-05-13  Joseph Myers  <joseph@codesourcery.com>
+
+	* release-notes-csl.xml (microMIPS linker code size optimization
+	bug fix): Restrict release note to MIPS targets.
+
+2011-05-12  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10746
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_relax_section): Exclude microMIPS
+	symbols from ADDIUPC relaxation.
+
+2011-05-12  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10746
+
+	bfd/
+	* elfxx-mips.c (mips_elf_release_contents): New function.
+	(mips_elf_write_rel_addend): Likewise.
+	(mips_elf_relax_reloc_adjust_addend): Likewise.
+	(mips_elf_relax_delete_bytes): Also adjust addends of relocs
+	against the section being handled.  Remove upper limit checks.
+	(find_match): Check the first entry too.
+	(b_insns_32): Match the change to find_match.  Make static.
+	(bzc_insns_32, bz_insns_16, move_insns_32): Likewise.
+	(bz_insns_32): Likewise.  Rename to...
+	(bz_rs_insns_32): ... this new variable.
+	(bz_rt_insns_32): New variable.
+	(bc_insn_32, bz_insn_32, bzal_insn_32): Make static.
+	(beq_insn_32, b_insn_16): Likewise.
+	(jal_insn_32_bd16, jal_insn_32_bd32): Likewise.
+	(j_insn_32, jalr_insn_32): Likewise.
+	(jalr_insn_16_bd16, jalr_insn_16_bd32, jr_insn_16): Likewise.
+	(lui_insn, addiu_insn, addiupc_insn, move_insn_16): Likewise.
+	(nop_insn_32, nop_insn_16): Likewise.
+	(bz_insn_16): Likewise.  Fix the opcode mask.
+	(ds_insns_32_bd16): Merge entries.  Match the change to
+	find_match.  Make static.
+	(ds_insns_32_bd32, ds_insns_16_bd16): Likewise.
+	(jalr_insns_32_bd16, jalr_insns_32_bd32): Remove variables.
+	(jalx_insn_32_bd32, lwgp_insn_32, lwgp_insn_16): Likewise.
+	(BZ32_REG, LWGP32_REG, LWGP16_REG_FIELD): Remove macros.
+	(BZ32_REG_FIELD): Rename to...
+	(BZC32_REG_FIELD): ... this new macro.
+	(BZ16_REG_FIELD, ADDIUPC_REG_FIELD): Fix formatting.
+	(relax_delay_slot): Remove function.
+	(check_br16_dslot, check_br32_dslot): New functions.
+	(check_br16, check_br32, check_bzc): Likewise.
+	(IS_BITSIZE): Simplify calculation.
+	(relax_phase_1): New macro.
+	(_bfd_mips_elf_relax_section): Don't relax IRIX objects.  Split
+	handling into two phases.  Reimplement ADDIUPC relaxation.
+	Recalculate and retain in-place addends of instructions relaxed.
+
+	gas/
+	* config/tc-mips.c (mips_fix_adjustable): On REL targets reject
+	microMIPS HI16/LO16 relocation pairs too.
+
+	* release-notes-csl.xml
+	(microMIPS linker code size optimization bug fix): New.
+
+2011-05-11  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10746
+	bfd/
+	* elfxx-mips.h (_bfd_mips_elf_relax_section): New prototype.
+	* elf32-mips.c
+	(elf32_mips_relax_delete_bytes, elf32_mips_relax_section):
+	Move over to...
+	* elfxx-mips.c
+	(mips_elf_relax_delete_bytes, _bfd_mips_elf_relax_section):
+	... these new functions.
+	* elf32-mips.c (bfd_elf32_bfd_relax_section): Adjust
+	accordingly.
+	(opcode_descriptor, RA, OP32_SREG, OP32_TREG, OP16_VALID_REG)
+	(b_insns_32, bc_insn_32, bz_insn_32, bzal_insn_32, beq_insn_32)
+	(b_insn_16, bz_insn_16, BZ32_REG, BZ32_REG_FIELD, bz_insns_32)
+	(bzc_insns_32, bz_insns_16, BZ16_REG, BZ16_REG_FIELD)
+	(jal_insn_32_bd16, jal_insn_32_bd32, j_insn_32, jalr_insn_32)
+	(jalr_insns_32_bd16, jalr_insns_32_bd32, ds_insns_32_bd16)
+	(ds_insns_32_bd32, jalx_insn_32_bd32, jalr_insn_16_bd32)
+	(jr_insn_16, JR16_REG, ds_insns_16_bd16, lui_insn, addiu_insn)
+	(addiupc_insn, ADDIUPC_REG_FIELD, lwgp_insn_32, lwgp_insn_16)
+	(LWGP32_REG, LWGP16_REG_FIELD, MOVE32_RD, MOVE32_RS)
+	(MOVE16_RD_FIELD, MOVE16_RS_FIELD, move_insns_32, move_insn_16)
+	(nop_insn_32, nop_insn_16, MATCH, find_match, relax_delay_slot)
+	(IS_BITSIZE): Move over to...
+	* elfxx-mips.c
+	(opcode_descriptor, RA, OP32_SREG, OP32_TREG, OP16_VALID_REG)
+	(b_insns_32, bc_insn_32, bz_insn_32, bzal_insn_32, beq_insn_32)
+	(b_insn_16, bz_insn_16, BZ32_REG, BZ32_REG_FIELD, bz_insns_32)
+	(bzc_insns_32, bz_insns_16, BZ16_REG, BZ16_REG_FIELD)
+	(jal_insn_32_bd16, jal_insn_32_bd32, j_insn_32, jalr_insn_32)
+	(jalr_insns_32_bd16, jalr_insns_32_bd32, ds_insns_32_bd16)
+	(ds_insns_32_bd32, jalx_insn_32_bd32, jalr_insn_16_bd32)
+	(jr_insn_16, JR16_REG, ds_insns_16_bd16, lui_insn, addiu_insn)
+	(addiupc_insn, ADDIUPC_REG_FIELD, lwgp_insn_32, lwgp_insn_16)
+	(LWGP32_REG, LWGP16_REG_FIELD, MOVE32_RD, MOVE32_RS)
+	(MOVE16_RD_FIELD, MOVE16_RS_FIELD, move_insns_32, move_insn_16)
+	(nop_insn_32, nop_insn_16, MATCH, find_match, relax_delay_slot)
+	(IS_BITSIZE): ... here.
+
+2011-05-03  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10951
+	bfd/
+	* elfxx-mips.c (_bfd_mips_elf_symbol_processing): Replace
+	assertions with warning messages.
+
+2011-04-22  Catherine Moore  <clm@codesourcery.com>
+
+	* release-notes-csl.xml: Fix typo in last note.
+
+2011-04-20  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10594
+
+	* release-notes-csl.xml: New note.
+
+	gas/
+	* config/mips.c (mips_cl_insn): Add new field complete_p.
+	(create_insn): Initialize complete_p to zero.
+	(BASE_REG_EQ): New.
+	(fix_24k_align_to): New.
+	(fix_24k_store_info): Declare.
+	(fix_24k_sort): New.
+	(fix_24k_record_store_info): New.
+	(nops_for_24k): New.
+	(nops_for_insn): Call nops_for_24k.
+	(append_insn): Move O_constant expression handling.
+	
+	gas/testsuite/
+	* gas/mips/24k-branch-delay-1.d: New.
+	* gas/mips/micromips@24k-branch-delay-1.d: New.
+	* gas/mips/24k-branch-delay-1.s: New.
+	* gas/mips/24k-triple-stores-1.d: New.
+	* gas/mips/micromips@24k-triple-stores-1.d: New.
+	* gas/mips/24k-triple-stores-1.s: New.
+	* gas/mips/24k-triple-stores-2.d: New.
+	* gas/mips/micromips@24k-triple-stores-2.d: New.
+	* gas/mips/24k-triple-stores-2.s: New.
+	* gas/mips/24k-triple-stores-3.d: New.
+	* gas/mips/micromips@24k-triple-stores-3.d: New.
+	* gas/mips/24k-triple-stores-3.s: New.
+	* gas/mips/24k-triple-stores-4.d: New.
+	* gas/mips/micromisp@24k-triple-stores-4.d: New.
+	* gas/mips/24k-triple-stores-4.s: New.
+	* gas/mips/24k-triple-stores-5.d: New.
+	* gas/mips/micromips@24k-triple-stores-5.d: New.
+	* gas/mips/24k-triple-stores-5.s: New.
+	* gas/mips/24k-triple-stores-6.d: New.
+	* gas/mips/micromips@24k-triple-stores-6.d: New.
+	* gas/mips/24k-triple-stores-6.s: New.
+	* gas/mips/24k-triple-stores-7.d: New.
+	* gas/mips/micromips@24k-triple-stores-7.d: New.
+	* gas/mips/24k-triple-stores-7.s: New.
+	* gas/mips/24k-triple-stores-8.d: New.
+	* gas/mips/micromips@24k-triple-stores-8.d: New.
+	* gas/mips/24k-triple-stores-8.s: New.
+	* gas/mips/micromips@24k-triple-stores-9.d: New.
+	* gas/mips/24k-triple-stores-9.s: New.
+	* gas/mips/micromips@24k-triple-stores-10.d: New.
+	* gas/mips/24k-triple-stores-10.s: New.
+	* gas/mips/24k-triple-stores-11.d: New.
+	* gas/mips/micromips@24k-triple-stores-11.d: New.
+	* gas/mips/24k-triple-stores-11.s: New.
+	* gas/mips/mips.exp: Invoke new tests.
+
+2011-04-15  Bernd Schmidt  <bernds@codesourcery.com>
+
+	gas/
+	* config/tc-arm.c (m_profile_p): New function.
+	(parse_psr, do_t_mrs, do_t_msr): Use m_profile_p.
+
+2011-04-15  Paul Brook  <paul@codesourcery.com>
+
+	gas/
+	* config/tc-arm.c (do_t_swi): Do not require OS extension on ARMv7.
+
+	gas/testsuite/
+	* gas/arm/arch7m.d: New test.
+	* gas/arm/arch7m.s: New test.
+
+2011-04-12  Paul Carroll<pcarroll@codesourcery.com>
+
+	Issue #8363
+
+	Backport from FSF:
+
+	binutils/testsuite/binutils-all/arm/
+	* simple.s: Demo issue with objdump with multiple input files, 
+	modified to build with COFF.
+
+2011-04-08  Paul Carroll<pcarroll@codesourcery.com>
+
+	Issue #8363
+
+	Backport from FSF:
+
+	include/
+	* dis-asm.h: Reverting to previous version, removing ARM
+	initialization function.
+
+
+	opcodes/
+	* disassemble.c (disassembler): Reverting to previous version,
+	removing ARM initialization call.
+	* arm-dis.c (print_insn): init vars moved into private_data structure.
+
+	binutils/testsuite/binutils-all/arm/
+	* binutils-all/arm/simple.s: Demo issue with objdump with
+	multiple input files.
+	* binutils-all/arm/objdump.exp: added new ARM test case code.
+
+
+2011-04-05  Paul Brook  <paul@codesourcery.com>
+
+	gas/
+	* config/tc-arm.c (arm_cpus): Add Cortex-R5.
+	(arm_extensions): Allow idiv on ARMv7-R.
+	* doc/c-arm.text: Update idiv extension restrictions.
+
+	include/
+	* opcode/arm.h (ARM_ARCH_V7R_IDIV): Define.
+
+2011-04-04  Julian Brown  <julian@codesourcery.com>
+
+	Issue #10874
+
+	gas/
+	* config/tc-arm.c (parse_psr): Add LHS argument. Add APSR support,
+	including bitmasks for same.
+	(operand_parse_code): Replace OP_PSR with OP_wPSR and OP_rPSR.
+	Remove OP_RVC_PSR.
+	(parse_operands): Likewise.
+	(do_mrs): Tweak error message for constraint.
+	(do_t_mrs): Update constraints for changes to APSR support.
+	(do_t_msr): Likewise. Don't set PSR_f flag here.
+	(insns): Tweak entries for msr and mrs instructions.
+
+	opcodes/
+	* arm-dis.c (psr_name): Fix typo for BASEPRI_MAX.
+	(print_insn_thumb32): Add APSR bitmask support.
+
+	gas/testsuite/
+	* gas/arm/mrs-msr-thumb-v7-m.s: New.
+	* gas/arm/mrs-msr-thumb-v7-m.d: New.
+	* gas/arm/mrs-msr-thumb-v7-m-bad.d: New.
+	* gas/arm/mrs-msr-thumb-v7-m-bad.l: New.
+	* gas/arm/mrs-msr-thumb-v7-m-bad.s: New.
+	* gas/arm/mrs-msr-thumb-v7e-m.d: New.
+	* gas/arm/mrs-msr-thumb-v7e-m.s: New.
+	* gas/arm/mrs-msr-arm-v7-a-bad.d: New.
+	* gas/arm/mrs-msr-arm-v7-a-bad.l: New.
+	* gas/arm/mrs-msr-arm-v7-a-bad.s: New.
+	* gas/arm/mrs-msr-arm-v7-a.d: New.
+	* gas/arm/mrs-msr-arm-v7-a.s: New.
+	* gas/arm/mrs-msr-arm-v6.d: New.
+	* gas/arm/mrs-msr-arm-v6.s: New.
+	* gas/arm/mrs-msr-thumb-v6t2.d: New.
+	* gas/arm/mrs-msr-thumb-v6t2.s: New.
+	* gas/arm/arch7.d: Fix typo in disassembly for BASEPRI_MAX.
+	* gas/arm/arch7.s: Specify bitmask for APSR writes.
+	* gas/arm/archv6m.s: Likewise.
+
+2011-04-04  Paul Brook  <paul@codesourcery.com>
+
+	Backport from FSF:
+
+	2010-11-15  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	PR gas/12198
+	gas/
+	* config/tc-arm.c (arm_arch_v6m_only): New variable.
+	(aeabi_set_public_attributes): Ensure we only set the Operating System
+	Extension when we are on an M-profile core.
+
+	gas/testsuite/
+	* gas/arm/pr12198-1.d: New test.
+	* gas/arm/pr12918-1.s: Likewise.
+	* gas/arm/pr12198-2.d: Likewise.
+	* gas/arm/pr12918-2.s: Likewise.
+
+	incude/opcode/
+	* arm.h (ARM_AEXT_V6M_ONLY): New define.
+	(ARM_AEXT_V6M): Rewrite in terms of ARM_AEXT_V6M_ONLY.
+	(ARM_ARCH_V6M_ONLY): New define.
+
+2011-04-04  Paul Brook   <paul@codesourcery.com>
+
+	Backport from FSF:
+
+	ld/testsuite/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* ld-arm/attr-merge-6.attr: Update for Security Extensions.
+	* ld-arm/attr-merge-7.attr: Likewise.
+
+	bfd/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* bfd-in2.h (BFD_RELOC_ARM_HVC): New enum value.
+
+	2010-10-09  John Tytgat  <john@bass-software.com>
+
+	* reloc.c (BFD_RELOC_ARM_HVC): Add.
+	* libbfd.h: Regenerate.
+
+	opcodes/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	(thumb32_opcodes): Likewise.
+	(banked_regname): New function.
+	(print_insn_arm): Add Virtualization Extensions support.
+	(print_insn_thumb32): Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm-dis.c (arm_opcodes): Support disassembly of UDIV and SDIV in
+	ARM state.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm-dis.c (arm_opcodes): SMC implies Security Extensions.
+	(thumb32_opcodes): Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm-dis.c (arm_opcodes): Add support for pldw.
+	(thumb32_opcodes): Likewise.
+
+	include/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (ARM_EXT_V6Z): Remove.
+	(ARM_EXT_SEC): New define.
+	(ARM_AEXT_V6Z): Use Security Extensions.
+	(ARM_AEXT_V6ZK): Likeiwse.
+	(ARM_AEXT_V6ZT2): Likewise.
+	(ARM_AEXT_V6ZKT2): Likewise.
+	(ARM_AEXT_V7_ARM): Base v7 does not have Security Extensions.
+	(ARM_ARCH_V7A_SEC): New define.
+	(ARM_ARCH_V7A_MP): Rename...
+	(ARM_ARCH_V7A_MP_SEC): ...to this and add Security Extensions.
+
+	include/opcode/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (ARM_EXT_VIRT): New define.
+	(ARM_ARCH_V7A_IDIV_MP_SEC): Rename...
+	(ARM_ARCH_V7A_IDIV_MP_SEC_VIRT): ...to this and include Virtualization
+	Extensions.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (ARM_AEXT_ADIV): New define.
+	(ARM_ARCH_V7A_IDIV_MP_SEC): Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (ARM_EXT_OS): New define.
+	(ARM_AEXT_V6SM): Likewise.
+	(ARM_ARCH_V6SM): Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* arm.h (ARM_EXT_MP): Add.
+	(ARM_ARCH_V7A_MP): Likewise.
+
+	teastsuite/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* gas/arm/armv7-a+virt.d: New test.
+	* gas/arm/armv7-a+virt.s: Likewise.
+	* gas/arm/attr-march-all.d: Update for Virtualization Extensions.
+	* gas/arm/attr-march-armv7-a+sec+virt.d: New test.
+	* gas/arm/attr-march-armv7-a+virt.d: Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* gas/arm/armv7-a+idiv.d: New test.
+	* gas/arm/armv7-a+idiv.s: Likewise.
+	* gas/arm/attr-march-all.d: Update for Integer divide extension.
+	* gas/arm/attr-march-armv7-a+idiv.d: New test.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* gas/arm/archv6s-m-bad.d: New test.
+	* gas/arm/archv6s-m-bad.l: Likewise.
+	* gas/arm/archv6s-m.d: Likewise.
+	* gas/arm/archv6s-m.s: Likewise.
+	* gas/arm/attr-march-armv6-m+os.d: Likewise.
+	* gas/arm/attr-march-armv6s-m.d: Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* gas/arm/attr-march-all.d: Update for Security Extensions..
+	* gas/arm/attr-march-armv6k+sec.d: New test.
+	* gas/arm/attr-march-armv6z.d: Update for Security Extensions.
+	* gas/arm/attr-march-armv6zk.d: Likewise.
+	* gas/arm/attr-march-armv6zkt2.d: Likewise.
+	* gas/arm/attr-march-armv6zt2.d: Likewise.
+	* gas/arm/attr-march-armv7-a+sec.d: New test.
+	* gas/arm/attr-mcpu.d: Update for Security Extensions.
+	* gas/arm/thumb32.d: Likewise.
+	* gas/arm/thumb32.s: Likewise.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* gas/arm/arch7a-mp.d: Add.
+	* gas/arm/arch7ar-mp.s: Likewise.
+	* gas/arm/arch7r-mp.d: Likewise.
+	* gas/arm/armv2-mp-bad.d: Likewise.
+	* gas/arm/armv2-mp-bad.l: Likewise.
+	* gas/arm/attr-march-all.d: Update for MP extension.
+	* gas/arm/attr-march-armv7-a+mp.d: Add.
+	* gas/arm/attr-march-armv7-r+mp.d: Likewise.
+
+	gas/
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_ext_virt): New variable.
+	(arm_reg_type): Add REG_TYPE_RNB for banked registers.
+	(reg_entry): Allow registers to be larger than a byte.
+	(reg_alias): Fix type warning.
+	(parse_operands): Parse banked registers when appropriate.
+	(do_mrs): Add support for Virtualization Extensions.
+	(do_hvc): New function.
+	(do_t_mrs): Add support for Virtualization Extensions.
+	(do_t_msr): Likewise.
+	(do_t_hvc): New function.
+	(SPLRBANK): New define.
+	(reg_names): Add banked registers.
+	(insns): Add support for Virtualization Extensions.
+	(md_apply_fixup): Likewise.
+	(arm_cpus): -mcpu=cortex-a15 implies the Virtualization Extensions.
+	(arm_extensions): Add 'virt' extension.
+	(aeabi_set_public_attributes): Add support for Virtualization
+	Extensions.
+	* doc/c-arm.texi: Document 'virt' extension.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_ext_adiv): New variable.
+	(do_div): New function.
+	(insns): Accept UDIV and SDIV in ARM state.
+	(arm_cpus): The cortex-a15 option has all current v7-A extensions.
+	(arm_extensions): Add 'idiv' extension.
+	(aeabi_set_public_attributes): Update Tag_DIV_use values for the
+	Integer Divide extension.
+	* doc/c-arm.texi: Document the idiv extension.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_ext_v6m): New variable.
+	(arm_ext_m): Add support for OS extension.
+	(arm_ext_os): New variable.
+	(do_t_swi): In v6-M ensure we have the OS extension.
+	(arm_cpus): The cortex-m1 and cortex-m0 options have the OS 
+	extension by default.
+	(arm_archs): Add armv6s-m.
+	(arm_extensions): Add 'os' extension.
+	(cpu_arch_ver): Add support for v6S-M.
+	* doc/c-arm.texi: Document the OS Extension, and v6-m and v6s-m
+	architecture options.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_ext_v6z): Remove.
+	(arm_ext_sec): New variable.
+	(do_t_smc): In Thumb state SMC requires v7-A.
+	(insns): Make SMC depend on Security Extensions.
+	(arm_cpus): All -mcpu=cortex-a* options have the Security Extensions.
+	(arm_extensions): Add 'sec' extension.
+	(cpu_arch_ver): Reorder.
+	(aeabi_set_public_attributes): Emit Tag_Virtualization_use as
+	appropriate.
+	* doc/c-arm.texi: Document Security Extensions.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_ext_mp): Add.
+	(do_pld): Update comment.
+	(insns): Add support for pldw.
+	(arm_cpus): Update cortex-a5, cortex-a9, and cortex-a15 to support
+	MP extension.
+	(arm_extensions): Add 'mp' extension.
+	(aeabi_set_public_attributes): Emit correct build attribute when
+	MP extension is enabled.
+	* doc/c-arm.texi: Update for MP extensions.
+
+	2010-09-23  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (md_pseduo_table): Add .arch_extension directive.
+	(arm_option_extension_value_table): Add.
+	(arm_extensions): Change type.
+	(arm_option_cpu_table): Rename...
+	(arm_option_fpu_table): ...to this.
+	(arm_fpus): Change type.
+	(arm_parse_extension): Enforce alphabetical order.  Allow 
+	extensions to be removed.
+	(arm_parse_arch): Allow extensions to be specified with -march.
+	(s_arm_arch_extension): Add.
+	(s_arm_fpu): Update for type changes.
+	* doc/c-arm.texi: Document changes to infrastructure.
+
+2011-04-04  Paul Brook   <paul@codesourcery.com>
+
+	Backport from FSF:
+
+	2010-09-20  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	gas/
+	* config/tc-arm.c (arm_cpus): Correct canonical names for Cortex CPUs.
+
+	gas/testsuite/
+	* gas/arm/attr-cpu-directive.d: Update test for change in canonical
+	CPU name.
+	* gas/arm/attr-mcpu.d: Likewise.
+
+	ld/
+	* ld-arm/attr-merge-6.attr: Update test for change in canonical CPU
+	name.
+	* ld-arm/attr-merge-7.attr: Likewise.
+	* ld-arm/attr-merge-2.attr: Likewise.
+	* ld-arm/attr-merge-arch-2.attr: Likewise.
+
+2011-04-04  Paul Brook   <paul@codesourcery.com>
+
+	Backport from FSF:
+
+	2010-09-09  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+
+	* config/tc-arm.c (arm_cpus): Add cortex-a15 entry.
+	* doc/c-arm.texi: Document -mcpu=cortex-a15.
+
+2011-04-04  Paul Brook   <paul@codesourcery.com>
+ 
+	Revert Marvell binutils support
+	gas/
+	* config/tc-arm.c (arm_ext_marvell_f, do_marvell_div): Remove
+	(insns): Remove ARM mode udiv/sdiv.
+	(arm_cpus): Remove marvell-f.
+	(arm_archs): Remove marvell-f.
+
+	gas/testsuite/
+	* gas/arm/attr-march-marvell-f.d: Remove.
+	* gas/arm/marvell-f-div.d: Remove.
+	* gas/arm/marvell-f-div.s: Remove.
+
+	include/opcode/
+	* arm.h (ARM_CEXT_MARVELL_F, ARM_ARCH_MARVELL_F): Remove.
+
+2011-03-30  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10835
+
+	* release-notes-csl.xml: Document addr2line bug fix.
+
+2011-03-30  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10835
+
+	* addr2line.c (translate_addresses): Sign extend the pc
+	if sign_extend_vma is enabled.
+
+2011-03-29 Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10144
+
+	gas/testsuite/
+	* gas/mips/micromips@mips32-dsp.d: Add \ to dots.
+	* gas/mips/micromips@mips32-dspr2.d: Likewise.
+
+2011-03-29 Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10144
+
+	gas/testsuite/
+	* gas/mips/micromips@mips32-dsp.d: New.
+	* gas/mips/micromips@mips32-dspr2.d: New.
+	* gas/mips/mips32-dsp.d: Remove -mips32r2.
+	* gas/mips/mips32-dspr2.d: Likewise.
+	* gas/mips/mips.exp: (mips_create_arch): Use -mips64r2
+	for micromips.gedit
+	Use run_dump_test_arches to run dsp tests.
+
+2011-03-25  Maxim Kuvyrkov  <maxim@codesourcery.com>
+
+	Issue #10166
+
+	ld/
+	* emulparams/{elf64btsmip_sym32.sh, elf64ltsmip_sym32.sh}: New
+	emulations which are compatible with 32-bit symbols.
+	* configure.tgt: Enable new emulations for mips*-*-linux-*.
+	* Makefile.am: Update.
+	* Makefile.in: Regenerate.
+
+2011-03-22  Chao-Ying Fu <fu@mips.com>
+            Catherine Moore <clm@codesourcery.com>
+
+	Issue #10144
+
+	* release-notes-csl.xml: New note.
+
+	gas/
+	* config/tc-mips.c (micromips_ip): Support microMIPS
+	DSP instructions.
+	(micromips_macro_build): Likewise.
+	(micromips_macro): Likewise.
+
+	include/
+	* opcode/mips.h (MICROMIPSOP_SH_DSPACC): Define.
+	MICROMIPSOP_MASK_DSPACC: Define.
+	MICROMIPSOP_SH_WRDSP): Define.
+	MICROMIPSOP_MASK_WRDSP): Define.
+	MICROMIPSOP_SH_BP): Define.
+	MICROMIPSOP_MASK_BP): Define.
+	MICROMIPSOP_SH_IMM10): Define.
+	(MICROMIPSOP_MASK_IMM10): Define.
+	(MICROMIPSOP_SH_IMM8): Define.
+	(MICROMIPSOP_MASK_IMM8): Define.
+	(MICROMIPSOP_SH_DSPSFT): Define.
+	(MICROMIPSOP_MASK_DSPSFT): Define.
+	(MICROMIPSOP_SH_SA4): Define.
+	(MICROMIPSOP_MASK_SA4): Define.
+	(MICROMIPSOP_SH_SA3): Define.
+	(MICROMIPSOP_MASK_SA3): Define.
+
+	opcodes/
+	* micromips-opc.c (WR_a): Define.
+	(RD_a): Define.
+	(MOD_a): Define.
+	(DSP_VOLA): Define.
+	(D32): Define.
+	(D33): Define.
+	(micromips_opcodes): Add microMIPS DSP opcodes.
+	* micromips-dis.c (print_insn_micromips): Disassemble
+	microMIPS DSP instructions.
+
+2011-03-22  Joseph Myers  <joseph@codesourcery.com>
+
+	* release-notes-csl.xml (Objdump fix for multiple input files):
+	Restrict release note to ARM targets.
+
+2011-03-08  Paul Carroll <pcarroll@codesourcery.com>
+
+	Issue #8363
+
+	include/
+	* dis-asm.h: Added extern for new arm disassembler initialization
+
+	opcodes/
+	* disassemble.c (disassembler): Added call to initialize the ARM
+	disassembler so it can process a new input file
+	* arm-dis.c (initialize_arm_disassemble): New routine to initialize
+	some variables that are used during disassembly of an input file
+
+	binutils/testsuite/binutils-all/arm/
+	* simple.s: Simple ARM test case for testing multiple input files
+	* objdump.exp: Added test for passing objdump multiple input files
+
+2011-02-03  Paul Carroll <pcarroll@codesourcery.com>
+
+	Issue #6163
+
+	gas/
+	* config/tc-arm.c
+	(encode_thumb32_shifted_operand): Added constraint for shift
+	type and value for Thumb2 ADD{S} and SUB{S} instructions.
+	(do_t_add_sub): Passing flag into encode_thumb32_shifted_operand()
+	if first 2 register operands are both SP.
+	(do_t_arit3, do_t_arit3c, do_t_mov_cmp, do_t_mvn_tst, do_t_orn)
+	(do_t_rsb, do_t_shift): Adding FALSE argument to encode calls
+	since that argument is not used by them.
+
+	gas/testsuite/gas/arm/
+	* add.s, add.d, addthumb2.s, addthumb2.d: Valid ADD{S} and
+	SUB{S} operands.
+	* addthumb2err.s, addthumb2err.d, addthumb2err.l: Invalid ADD{S}
+	and SUB{S} operands.
+
+2011-02-02  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Revert:
+
+	2011-01-30  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (plt_entry): Adjust comments for MIPS16 PLT
+	support removal.
+	(mips_elf_link_hash_table): Likewise.
+	(mips16_o32_exec_plt_entry): Remove variable.
+	(micromips_o32_exec_plt_entry): Rename to...
+	(comp_o32_exec_plt_entry): ... this.
+	(mips_elf_calculate_relocation): Remove MIPS16 PLT support.
+	(_bfd_mips_elf_create_dynamic_sections): Likewise.
+	(_bfd_mips_elf_check_relocs): Likewise.
+	(_bfd_mips_elf_adjust_dynamic_symbol): Likewise.
+	(_bfd_mips_elf_finish_dynamic_symbol): Likewise.
+	(_bfd_mips_elf_get_synthetic_symtab): Likewise.
+
+	opcodes/
+	* mips-dis.c (_print_insn_mips): Remove MIPS16 PLT support.
+
+	* release-notes-csl.xml
+	(Improved MIPS16 and microMIPS library call support): Rename
+	to...
+	(Improved microMIPS library call support): ... this.  Adjust for
+	MIPS16 PLT support removal.
+
+2011-01-30  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.c (plt_entry): Adjust comments for MIPS16 PLT
+	support removal.
+	(mips_elf_link_hash_table): Likewise.
+	(mips16_o32_exec_plt_entry): Remove variable.
+	(micromips_o32_exec_plt_entry): Rename to...
+	(comp_o32_exec_plt_entry): ... this.
+	(mips_elf_calculate_relocation): Remove MIPS16 PLT support.
+	(_bfd_mips_elf_create_dynamic_sections): Likewise.
+	(_bfd_mips_elf_check_relocs): Likewise.
+	(_bfd_mips_elf_adjust_dynamic_symbol): Likewise.
+	(_bfd_mips_elf_finish_dynamic_symbol): Likewise.
+	(_bfd_mips_elf_get_synthetic_symtab): Likewise.
+
+	opcodes/
+	* mips-dis.c (_print_insn_mips): Remove MIPS16 PLT support.
+
+	* release-notes-csl.xml
+	(Improved MIPS16 and microMIPS library call support): Rename
+	to...
+	(Improved microMIPS library call support): ... this.  Adjust for
+	MIPS16 PLT support removal.
+
+2011-01-28  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	bfd/
+	* elfxx-mips.h (_bfd_mips_elf_get_synthetic_symtab): New
+	prototype.
+	* elfxx-mips.c (plt_entry): New structure.
+	(mips_elf_link_hash_entry): Add has_plt_entry member.
+	(mips_elf_link_hash_table): Rename plt_entry_size member to
+	plt_mips_entry_size.  Add plt_comp_entry_size, plt_mips_offset,
+	plt_comp_offset and plt_got_index entries.
+	(mips_exec_plt_entry): Update comment.
+	(mips16_o32_exec_plt_entry): New variable.
+	(micromips_o32_exec_plt_entry): Likewise.
+	(mips_elf_link_hash_newfunc): Initialise has_plt_entry.
+	(mips_elf_output_extsym): Update to use gotplt_union's plist
+	member rather than offset.
+	(mips_elf_gotplt_index): Likewise.  Remove the VxWorks
+	restriction.
+	(mips_elf_calculate_relocation): Handle MIPS16/microMIPS PLT
+	entries.
+	(_bfd_mips_elf_create_dynamic_sections): Likewise.
+	(mips_elf_allocate_lazy_stub): Likewise.
+	(_bfd_mips_vxworks_finish_dynamic_symbol): Likewise.
+	(mips_elf_make_plt_record): New function.
+	(_bfd_mips_elf_check_relocs): Update comment.  Record occurences
+	of JAL relocations that might need a PLT entry.
+	(_bfd_mips_elf_adjust_dynamic_symbol): Update to use
+	gotplt_union's plist member rather than offset.  Handle
+	MIPS16/microMIPS PLT entries.
+	(_bfd_mips_elf_finish_dynamic_symbol): Likewise.
+	(_bfd_mips_elf_link_hash_table_create): Update to use
+	gotplt_union's plist member rather than offset.  Initialize new
+	members of mips_elf_link_hash_table.
+	(_bfd_mips_elf_get_synthetic_symtab): New function.
+	* elf32-mips.c (elf_backend_plt_sym_val): Remove macro.
+	(bfd_elf32_get_synthetic_symtab): New macro.
+
+	ld/
+	* scripttempl/elf.sc: Handle $INITIAL_READWRITE_SECTIONS and
+	$PLT_NEXT_DATA variables.
+	* emulparams/elf32btsmip.sh: Arrange for .got.plt to be placed
+	as close to .plt as possible.
+
+	ld/testsuite/
+	* ld-mips-elf/jalx-2.dd: Update for microMIPS PLT entries support.
+
+	opcodes/
+	* mips-dis.c (is_micromips_mode_p): Handle microMIPS PLT entries.
+	(_print_insn_mips): Handle MIPS16 PLT entries.
+
+	* release-notes-csl.xml
+	(Improved MIPS16 and microMIPS library call support): New.
+
+2011-01-28  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	ld/testsuite/
+	* ld-mips-elf/jalx-2.ld: Include .rel.plt in output.  Place the
+	other sections in the expected order.
+	* ld-mips-elf/jalx-2.dd: Adjust disassembly accordingly.
+
+2011-01-19  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #10367
+
+	Backport from mainline:
+
+	opcodes/
+	2010-10-25  Chao-ying Fu  <fu@mips.com>
+	* mips-opc.c (madd, maddu, msub, msubu, mult, multu): Change D33 to D32.
+
+	gas/testsuite/
+	2010-10-25  Chao-ying Fu  <fu@mips.com>
+	* gas/mips/mips32-dsp.d, gas/mips/mips32-dsp.s: Add madd, maddu, msub,
+	msubu, mult, multu.
+
+2011-01-11  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	Issue #10336
+
+	gas/
+	* config/tc-arm.c: Fix spurious uninitialized variable warning.
+
+2010-12-06  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Issue #10049
+
+	bfd/
+	* elf32-mips.c (RA, OP32_SREG, OP32_TREG): New macros.
+	(bc_insn_32, bz_insn_32, bzal_insn_32): New variables.
+	(beq_insn_32, bz_insn_16): Likewise.
+	(BZ16_VALID_REG): Rename macro to...
+	(OP16_VALID_REG): ... this.
+	(BZ16_REG): New macro.
+	(j_insn_32, jalr_insn_32, jalx_insn_32_bd32): New variables.
+	(jr_insn_16): Likewise.
+	(JR16_REG): New macro.
+	(ADDIU_REG, ADDIUPC_VALID_REG, LWGP16_VALID_REG): Remove macros.
+	(elf32_mips_relax_section): Restrict HI16/LO16 relaxation.
+
+	* release-notes-csl.xml
+	(microMIPS linker code size optimization bug fix): New.
+
+2010-11-25  Bernd Schmidt  <bernds@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	* elf-bfd.h (struct bfd_elf_section_reloc_data): New structure.
+	(struct bfd_elf_section_data): New members REL and RELA; delete
+	members REL_HDR, REL_HDR2, REL_COUNT, REL_COUNT2, REL_IDX,
+	REL_IDX2, REL_HASHES.
+	(_bfd_elf_init_reloc_shdr): Adjust declaration.
+	(_bfd_elf_single_rel_hdr): Declare.
+	(RELOC_AGAINST_DISCARDED_SECTION): Use it.
+	* elf.c (bfd_section_from_shdr): Adjusted to match changes in
+	data structures.
+	(_bfd_elf_init_reloc_shdr): New arg RELDATA.  Remove arg REL_HDR.
+	All callers changed.  Allocate memory for the Elf_Internal_Shdr
+	structure.
+	(_bfd_elf_single_rel_hdr): New function.
+	(struct fake_section_arg): New structure.
+	(elf_fake_section): Expect to see a pointer to it in the third
+	argument.  If doing a relocatable link, allocate both REL and RELA
+	sections as needed.
+	(assign_section_numbers): Adjusted to match changes in
+	data structures.
+	(_bfd_elf_compute_section_file_positions): Call elf_fake_sections
+	with a struct fake_section_args argument.
+	* elfcode.h (elf_write_relocs): Adjusted to match changes in
+	data structures.
+	(elf_slurp_reloc_table): Likewise.
+	* elflink.c (_bfd_elf_link_read_relocs): Likewise.
+	(_bfd_elf_link_size_reloc_section): Remove arg REL_HDR, replace with
+	RELDATA.  Remove argument O.  All callers changed.  Remove code to
+	discover the right rel_hdr and count.
+	(_bfd_elf_link_output_relocs): Adjusted to match changes in
+	data structures.
+	(elf_link_adjust_relocs): Remove args REL_HDR, COUNT and REL_HASH;
+	replace with RELDATA.  All callers changed.
+	(elf_link_input_bfd): Correctly generate rel_hash data when both
+	REL and RELA sections are present.
+	(elf_reloc_link_order): Adjusted to match changes in
+	data structures.
+	(bfd_elf_final_link): Simplify code to count relocs.  Free the
+	hashes array for both REL and RELA.
+	(get_dynamic_reloc_section_name): Use _bfd_elf_single_reloc_hdr
+	* elf32-m32r.c (m32r_elf_fake_sections, elf_backend_fake_sections):
+	Delete.
+	* elf32-tic6x.c (elf32_tic6x_fake_sections, elf_backend_fake_sections):
+	Delete.
+	(elf32_tic6x_rel_relocation_p): Adjusted to match changes in
+	data structures.
+	* elf32-microblaze.c (microblaze_elf_check_relocs): Use
+	_bfd_elf_single_rel_hdr.
+	* elf32-ppc.c (ppc_elf_relax_section): Likewise.
+	* elf32-spu.c (spu_elf_relocate_section): Likewise.
+	* elf64-alpha.c (elf64_alpha_relocate_section): Likewise.
+	* elf64-hppa.c (get_reloc_section): Likewise.
+	* elf64-mips.c (mips_elf64_slurp_reloc_table): Adjusted to match
+	changes in data structures.
+	(mips_elf64_write_relocs): Use _bfd_elf_single_rel_hdr.
+	* elf64-ppc.c (ppc64_elf_edit_opd): Likewise.
+	(ppc64_elf_edit_toc): Likewise.
+	(get_relocs): Adjusted to match changes in data structures.
+	Allocate an Elf_Internal_Shdr structure if necessary.
+	(ppc64_elf_finish_dynamic_sections): Use _bfd_elf_single_rel_hdr.
+	* elf64-sparc.c (elf64_sparc_slurp_reloc_table): Adjusted to match
+	changes in data structures.
+	* elfxx-ia64.c (get_reloc_section): Use _bfd_elf_single_rel_hdr.
+	* elfxx-mips.c (MIPS_RELOC_RELA_P): Remove macro.
+	(mips_elf_rel_relocation_p): Adjusted to match changes in data
+	structures.
+	(_bfd_mips_elf_relocate_section): Use mips_elf_rel_relocation_p rather
+	than MIPS_RELOC_RELOCA_P.
+	* elfxx-sparc.c (_bfd_sparc_elf_check_relocs): Use
+	_bfd_elf_single_rel_hdr.
+	(_bfd_sparc_elf_relocate_section): Likewise.
+
+	ld/
+	* emultempl/xtensaelf.em (replace_insn_sec_with_prop_sec): Use
+	_bfd_elf_single_rel_hdr.
+
+2010-11-24  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue #10085
+	opcodes/
+	* arm-dis.c (thumb32_opcodes): BLX must have bit zero clear.
+
+	gas/testsuite/
+	* gas/arm/blx-bad.s: New.
+	* gas/arm/blx-bad.d: New.
+
+2010-11-23  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gas/
+	* config/tc-mips.c (macro)
+	[M_ACLR_AB, M_ACLR_OB, M_ASET_AB, M_ASET_OB]: Correct bit index
+	decoding.
+
+	gas/testsuite/
+	* gas/mips/mcu.d: Correct patterns according to the bit index
+	decoding fix.
+
+	opcodes/
+	* mips-opc.c (mips_builtin_opcodes): Add TRAP annotation to
+	"aclr", "aset" and "iret".  Remove LDD annotation from "aclr"
+	and "aset".
+	* micromips-opc.c (micromips_opcodes): Likewise.
+
+	* release-notes-csl.xml
+	(MCU ASE instructions assembler bug fixes): New.
+
+2010-11-06  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue #10034 - thumb2 TLS descriptor
+
+	bfd/
+	* elf32-arm.c (elf32_arm_final_link_relocate): Round blx offset to
+	word for R_ARM_THM_TLS_DESCSEQ.
+
+	ld/testsuite/
+	* ld-arm/tls-longplt-lib.d: Fixup.
+	* ld-arm/tls-gdesc.d: Fixup.
+	* ld-arm/tls-thumb1.d: Fixup.
+	* ld-arm/tls-longplt.d: Fixup.	
+
+2010-11-04  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	2010-11-04  Joseph Myers  <joseph@codesourcery.com>
+
+	* elf-attrs.c (_bfd_elf_merge_unknown_attribute_low,
+	_bfd_elf_merge_unknown_attribute_list): New.
+	* elf-bfd.h (struct elf_backend_data): Add
+	obj_attrs_handle_unknown.
+	(_bfd_elf_merge_unknown_attribute_low,
+	_bfd_elf_merge_unknown_attribute_list): Declare.
+	* elf32-arm.c (elf32_arm_obj_attrs_handle_unknown): New.  Split
+	out from elf32_arm_merge_eabi_attributes.
+	(elf32_arm_merge_eabi_attributes): Use
+	_bfd_elf_merge_unknown_attribute_low and
+	_bfd_elf_merge_unknown_attribute_list.
+	(elf_backend_obj_attrs_handle_unknown): Define.
+	* elfxx-target.h (elf_backend_obj_attrs_handle_unknown): Define.
+	(elfNN_bed): Update initializer.
+
+2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* elf32-tic6x.c (elf32_tic6x_obj_attrs_arg_type): Except for
+	Tag_ABI_compatibility, treat odd tags as strings and even ones as
+	integers.
+	(elf32_tic6x_obj_attrs_order, elf32_tic6x_tag_to_array_alignment,
+	elf32_tic6x_array_alignment_to_tag): New.
+	(elf32_tic6x_merge_attributes): Handle more attributes.  Set type
+	for merged attributes.
+	(elf_backend_obj_attrs_order): Define.
+
+	binutils/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* readelf.c (display_tic6x_attribute): Handle more attributes.
+
+	gas/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* config/tc-tic6x.c (OPTION_MPID, OPTION_MPIC, OPTION_MNO_PIC):
+	New enum values.
+	(md_longopts): Add options mpid, mpic and mno-pic.
+	(tic6x_pid_type, tic6x_pid, tic6x_pic, tic6x_pid_type_table,
+	tic6x_pid_types, tic6x_use_pid): New.
+	(md_parse_option): Handle new options.
+	(md_show_usage): Output help text for new options.
+	(tic6x_set_attributes): Set PID and PIC attributes.
+	* doc/as.texinfo: Document -mpid=, -mpic and -mno-pic.
+	* doc/c-tic6x.texi (TIC6X Options): Likewise.
+
+	gas/testsuite/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* gas/tic6x/attr-array-directive-1.d,
+	gas/tic6x/attr-array-directive-1.s,
+	gas/tic6x/attr-array-directive-2.d,
+	gas/tic6x/attr-array-directive-2.s,
+	gas/tic6x/attr-array-directive-3.d,
+	gas/tic6x/attr-array-directive-3.s,
+	gas/tic6x/attr-array-directive-4.d,
+	gas/tic6x/attr-array-directive-4.s,
+	gas/tic6x/attr-conformance-directive-1.d,
+	gas/tic6x/attr-conformance-directive-1.s,
+	gas/tic6x/attr-conformance-directive-2.d,
+	gas/tic6x/attr-conformance-directive-2.s,
+	gas/tic6x/attr-pic-directive-1.d,
+	gas/tic6x/attr-pic-directive-1.s,
+	gas/tic6x/attr-pic-directive-2.d,
+	gas/tic6x/attr-pic-directive-2.s,
+	gas/tic6x/attr-pic-opts-mno-pic.d, gas/tic6x/attr-pic-opts-mpic.d,
+	gas/tic6x/attr-pid-directive-1.d,
+	gas/tic6x/attr-pid-directive-1.s,
+	gas/tic6x/attr-pid-directive-2.d,
+	gas/tic6x/attr-pid-directive-2.s,
+	gas/tic6x/attr-pid-opts-mpid-far.d,
+	gas/tic6x/attr-pid-opts-mpid-near.d,
+	gas/tic6x/attr-pid-opts-mpid-no.d,
+	gas/tic6x/attr-stack-directive-1.d,
+	gas/tic6x/attr-stack-directive-1.s,
+	gas/tic6x/attr-stack-directive-2.d,
+	gas/tic6x/attr-stack-directive-2.s,
+	gas/tic6x/attr-wchar-directive-1.d,
+	gas/tic6x/attr-wchar-directive-1.s,
+	gas/tic6x/attr-wchar-directive-2.d,
+	gas/tic6x/attr-wchar-directive-2.s: New tests.
+
+	include/elf/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* tic6x-attrs.h (Tag_ABI_wchar_t, Tag_ABI_stack_align_needed,
+	Tag_ABI_stack_align_preserved, Tag_ABI_PID, Tag_ABI_PIC,
+	Tag_ABI_array_object_alignment,
+	Tag_ABI_array_object_align_expected, Tag_ABI_conformance): Define.
+
+	ld/testsuite/
+	2010-11-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* ld-tic6x/attr-array-16-16.d, ld-tic6x/attr-array-16-4.d,
+	ld-tic6x/attr-array-16-416.d, ld-tic6x/attr-array-16-48.d,
+	ld-tic6x/attr-array-16-8.d, ld-tic6x/attr-array-16-816.d,
+	ld-tic6x/attr-array-16.s, ld-tic6x/attr-array-4-16.d,
+	ld-tic6x/attr-array-4-4.d, ld-tic6x/attr-array-4-416.d,
+	ld-tic6x/attr-array-4-48.d, ld-tic6x/attr-array-4-8.d,
+	ld-tic6x/attr-array-4-816.d, ld-tic6x/attr-array-4.s,
+	ld-tic6x/attr-array-416-16.d, ld-tic6x/attr-array-416-4.d,
+	ld-tic6x/attr-array-416-416.d, ld-tic6x/attr-array-416-48.d,
+	ld-tic6x/attr-array-416-8.d, ld-tic6x/attr-array-416-816.d,
+	ld-tic6x/attr-array-416.s, ld-tic6x/attr-array-48-16.d,
+	ld-tic6x/attr-array-48-4.d, ld-tic6x/attr-array-48-416.d,
+	ld-tic6x/attr-array-48-48.d, ld-tic6x/attr-array-48-8.d,
+	ld-tic6x/attr-array-48-816.d, ld-tic6x/attr-array-48.s,
+	ld-tic6x/attr-array-8-16.d, ld-tic6x/attr-array-8-4.d,
+	ld-tic6x/attr-array-8-416.d, ld-tic6x/attr-array-8-48.d,
+	ld-tic6x/attr-array-8-8.d, ld-tic6x/attr-array-8-816.d,
+	ld-tic6x/attr-array-8.s, ld-tic6x/attr-array-816-16.d,
+	ld-tic6x/attr-array-816-4.d, ld-tic6x/attr-array-816-416.d,
+	ld-tic6x/attr-array-816-48.d, ld-tic6x/attr-array-816-8.d,
+	ld-tic6x/attr-array-816-816.d, ld-tic6x/attr-array-816.s,
+	ld-tic6x/attr-conformance-10-10.d,
+	ld-tic6x/attr-conformance-10-11.d,
+	ld-tic6x/attr-conformance-10-none.d,
+	ld-tic6x/attr-conformance-10.s, ld-tic6x/attr-conformance-11-10.d,
+	ld-tic6x/attr-conformance-11-11.d,
+	ld-tic6x/attr-conformance-11-none.d,
+	ld-tic6x/attr-conformance-11.s,
+	ld-tic6x/attr-conformance-none-10.d,
+	ld-tic6x/attr-conformance-none-11.d,
+	ld-tic6x/attr-conformance-none-none.d,
+	ld-tic6x/attr-conformance-none.s, ld-tic6x/attr-pic-0.s,
+	ld-tic6x/attr-pic-00.d, ld-tic6x/attr-pic-01.d,
+	ld-tic6x/attr-pic-1.s, ld-tic6x/attr-pic-10.d,
+	ld-tic6x/attr-pic-11.d, ld-tic6x/attr-pid-0.s,
+	ld-tic6x/attr-pid-00.d, ld-tic6x/attr-pid-01.d,
+	ld-tic6x/attr-pid-02.d, ld-tic6x/attr-pid-1.s,
+	ld-tic6x/attr-pid-10.d, ld-tic6x/attr-pid-11.d,
+	ld-tic6x/attr-pid-12.d, ld-tic6x/attr-pid-2.s,
+	ld-tic6x/attr-pid-20.d, ld-tic6x/attr-pid-21.d,
+	ld-tic6x/attr-pid-22.d, ld-tic6x/attr-stack-16-16.d,
+	ld-tic6x/attr-stack-16-8.d, ld-tic6x/attr-stack-16-816.d,
+	ld-tic6x/attr-stack-16.s, ld-tic6x/attr-stack-8-16.d,
+	ld-tic6x/attr-stack-8-8.d, ld-tic6x/attr-stack-8-816.d,
+	ld-tic6x/attr-stack-8.s, ld-tic6x/attr-stack-816-16.d,
+	ld-tic6x/attr-stack-816-8.d, ld-tic6x/attr-stack-816-816.d,
+	ld-tic6x/attr-stack-816.s, ld-tic6x/attr-wchar-0.s,
+	ld-tic6x/attr-wchar-00.d, ld-tic6x/attr-wchar-01.d,
+	ld-tic6x/attr-wchar-02.d, ld-tic6x/attr-wchar-1.s,
+	ld-tic6x/attr-wchar-10.d, ld-tic6x/attr-wchar-11.d,
+	ld-tic6x/attr-wchar-12.d, ld-tic6x/attr-wchar-2.s,
+	ld-tic6x/attr-wchar-20.d, ld-tic6x/attr-wchar-21.d,
+	ld-tic6x/attr-wchar-22.d: New tests.
+
+2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* elf32-tic6x.c (elf32_tic6x_obj_attrs_arg_type): Check
+	Tag_ABI_compatibility not Tag_compatibility.
+	(elf32_tic6x_merge_attributes): Update compatibility attribute
+	name in comment.  Return FALSE if merging common attributes fails.
+
+	binutils/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* readelf.c (display_tic6x_attribute): Use Tag_ABI_compatibility
+	not hardcoded 32.  Display name of this attribute.
+
+	gas/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* doc/c-tic6x.texi (TIC6X Directives): Mention
+	Tag_ABI_compatibility.
+
+	gas/testsuite/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* gas/tic6x/attr-compatibility-directive-1.d,
+	gas/tic6x/attr-compatibility-directive-1.s,
+	gas/tic6x/attr-compatibility-directive-2.d,
+	gas/tic6x/attr-compatibility-directive-2.s: New tests.
+
+	include/elf/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* tic6x-attrs.h (Tag_ABI_compatibility): Define.
+
+	ld/testsuite/
+	2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* ld-tic6x/attr-compatibility-gnu-gnu.d,
+	ld-tic6x/attr-compatibility-gnu-other.d,
+	ld-tic6x/attr-compatibility-gnu.s,
+	ld-tic6x/attr-compatibility-other-gnu.d,
+	ld-tic6x/attr-compatibility-other-other.d,
+	ld-tic6x/attr-compatibility-other.s: New tests.
+
+2010-10-29  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	bfd/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* elf32-tic6x.c (elf32_tic6x_merge_attributes): Check for mismatch
+	of DSBT attributes.
+
+	binutils/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* readelf.c (display_tic6x_attribute): Handle Tag_ABI_DSBT.
+
+	gas/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* config/tc-tic6x.c (OPTION_MDSBT, OPTION_MNO_DSBT): New enum
+	values.
+	(md_longopts): Add mdsbt and mno-dsbt.
+	(tic6x_dsbt): New static variable.
+	(md_parse_option): Handle OPTION_MDSBT and OPTION_MNO_DSBT.
+	(md_show_usage): Output help text for -mdsbt and -mno-dsbt.
+	(TAG): Add comma at the end.
+	(tic6x_set_attributes): Set Tag_ABI_DSBT.
+	* doc/as.texinfo: Document -mdsbt and -mno-dsbt.
+	* doc/c-tic6x.texi (TIC6X Options): Likewise.
+	(TIC6X Directives): Mention Tag_ABI_DSBT.
+
+	gas/testsuite/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* gas/tic6x/attr-dsbt-directive-1.d,
+	gas/tic6x/attr-dsbt-directive-1.s,
+	gas/tic6x/attr-dsbt-directive-2.d,
+	gas/tic6x/attr-dsbt-directive-2.s,
+	gas/tic6x/attr-dsbt-opts-mdsbt.d,
+	gas/tic6x/attr-dsbt-opts-mno-dsbt.d: New tests.
+
+	include/elf/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* tic6x-attrs.h (Tag_ABI_DSBT): New.
+
+	ld/testsuite/
+	2010-10-29  Bernd Schmidt  <bernds@codesourcery.com>
+	            Joseph Myers  <joseph@codesourcery.com>
+
+	* ld-tic6x/attr-dsbt-0.s, ld-tic6x/attr-dsbt-00.d,
+	ld-tic6x/attr-dsbt-01.d, ld-tic6x/attr-dsbt-1.s,
+	ld-tic6x/attr-dsbt-10.d, ld-tic6x/attr-dsbt-11.d: New tests.
+
 2010-10-25  Daniel Jacobowitz  <dan@codesourcery.com>
 
 	Issue #9823 - Broken .debug_ranges sections
@@ -147,6 +2990,91 @@
 	gas/
 	* config/tc-arm.c (do_t_branch): Avoid relaxing branches to constant
 	addresses.
+
+2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gas/
+	2010-09-09  Joseph Myers  <joseph@codesourcery.com>
+
+	* doc/c-tic6x.texi (.c6xabi_attribute): Document directive.
+
+	bfd/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* elf32-tic6x.c (elf32_tic6x_merge_arch_attributes): Update for
+	attribute renaming.
+	(elf_backend_obj_attrs_section): Change to ".c6xabi.attributes".
+
+	binutils/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* readelf.c (display_tic6x_attribute): Update for attribute
+	renaming.
+
+	gas/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* config/tc-tic6x.c (tic6x_arch_attribute, tic6x_arches,
+	md_assemble, tic6x_set_attributes): Update for attribute renaming.
+	* doc/c-tic6x.texi: Update for attribute renaming.
+
+	gas/testsuite/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* gas/tic6x/attr-arch-directive-1.d,
+	gas/tic6x/attr-arch-directive-2.d,
+	gas/tic6x/attr-arch-directive-3.d,
+	gas/tic6x/attr-arch-directive-4.d,
+	gas/tic6x/attr-arch-directive-4.s,
+	gas/tic6x/attr-arch-directive-5.d,
+	gas/tic6x/attr-arch-directive-5.s,
+	gas/tic6x/attr-arch-opts-c62x.d, gas/tic6x/attr-arch-opts-c64x+.d,
+	gas/tic6x/attr-arch-opts-c64x.d, gas/tic6x/attr-arch-opts-c674x.d,
+	gas/tic6x/attr-arch-opts-c67x+.d, gas/tic6x/attr-arch-opts-c67x.d,
+	gas/tic6x/attr-arch-opts-none-1.d,
+	gas/tic6x/attr-arch-opts-none-2.d,
+	gas/tic6x/attr-arch-opts-override-1.d,
+	gas/tic6x/attr-arch-opts-override-2.d: Update for attribute
+	renaming and renumbering.
+
+	include/elf/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* tic6x-attrs.h (Tag_C6XABI_Tag_CPU_arch): Change to Tag_ISA,
+	value 4.
+	* tic6x.h (Values for Tag_C6XABI_Tag_CPU_arch): Rename for
+	attribute renaming.
+
+	ld/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* emulparams/elf32_tic6x_le.sh (ATTRS_SECTIONS): Use
+	.c6xabi.attributes, not __TI_build_attributes.
+
+	ld/testsuite/
+	2010-10-21  Joseph Myers  <joseph@codesourcery.com>
+
+	* ld-tic6x/attr-arch-c62x-c62x.d, ld-tic6x/attr-arch-c62x-c64x+.d,
+	ld-tic6x/attr-arch-c62x-c64x.d, ld-tic6x/attr-arch-c62x-c674x.d,
+	ld-tic6x/attr-arch-c62x-c67x+.d, ld-tic6x/attr-arch-c62x-c67x.d,
+	ld-tic6x/attr-arch-c64x+-c62x.d, ld-tic6x/attr-arch-c64x+-c64x+.d,
+	ld-tic6x/attr-arch-c64x+-c64x.d, ld-tic6x/attr-arch-c64x+-c674x.d,
+	ld-tic6x/attr-arch-c64x+-c67x+.d, ld-tic6x/attr-arch-c64x+-c67x.d,
+	ld-tic6x/attr-arch-c64x-c62x.d, ld-tic6x/attr-arch-c64x-c64x+.d,
+	ld-tic6x/attr-arch-c64x-c64x.d, ld-tic6x/attr-arch-c64x-c674x.d,
+	ld-tic6x/attr-arch-c64x-c67x+.d, ld-tic6x/attr-arch-c64x-c67x.d,
+	ld-tic6x/attr-arch-c674x-c62x.d, ld-tic6x/attr-arch-c674x-c64x+.d,
+	ld-tic6x/attr-arch-c674x-c64x.d, ld-tic6x/attr-arch-c674x-c674x.d,
+	ld-tic6x/attr-arch-c674x-c67x+.d, ld-tic6x/attr-arch-c674x-c67x.d,
+	ld-tic6x/attr-arch-c67x+-c62x.d, ld-tic6x/attr-arch-c67x+-c64x+.d,
+	ld-tic6x/attr-arch-c67x+-c64x.d, ld-tic6x/attr-arch-c67x+-c674x.d,
+	ld-tic6x/attr-arch-c67x+-c67x+.d, ld-tic6x/attr-arch-c67x+-c67x.d,
+	ld-tic6x/attr-arch-c67x-c62x.d, ld-tic6x/attr-arch-c67x-c64x+.d,
+	ld-tic6x/attr-arch-c67x-c64x.d, ld-tic6x/attr-arch-c67x-c674x.d,
+	ld-tic6x/attr-arch-c67x-c67x+.d, ld-tic6x/attr-arch-c67x-c67x.d:
+	Update for attribute renaming.
 
 2010-10-16  Kazu Hirata  <kazu@codesourcery.com>
 

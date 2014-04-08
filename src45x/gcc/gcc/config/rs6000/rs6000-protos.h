@@ -141,7 +141,7 @@ extern void function_arg_advance (CUMULATIVE_ARGS *, enum machine_mode,
 				  tree, int, int);
 extern int function_arg_boundary (enum machine_mode, tree);
 extern rtx function_arg (CUMULATIVE_ARGS *, enum machine_mode, tree, int);
-extern tree altivec_resolve_overloaded_builtin (location_t, tree, void *);
+extern tree rs6000_resolve_overloaded_builtin (location_t, tree, void *);
 extern rtx rs6000_libcall_value (enum machine_mode);
 extern rtx rs6000_va_arg (tree, tree);
 extern int function_ok_for_sibcall (tree);
@@ -167,7 +167,6 @@ extern int rs6000_trampoline_size (void);
 extern alias_set_type get_TOC_alias_set (void);
 extern void rs6000_emit_prologue (void);
 extern void rs6000_emit_load_toc_table (int);
-extern void rs6000_aix_emit_builtin_unwind_init (void);
 extern unsigned int rs6000_dbx_register_number (unsigned int);
 extern void rs6000_emit_epilogue (int);
 extern void rs6000_emit_eh_reg_restore (rtx, rtx);

@@ -823,7 +823,7 @@ ira_implicitly_set_insn_hard_regs (HARD_REG_SET *set)
 static void
 process_single_reg_class_operands (bool in_p, int freq)
 {
-  int i, regno, cost;
+  int i, regno;
   unsigned int px;
   enum reg_class cl;
   rtx operand;
@@ -850,32 +850,46 @@ process_single_reg_class_operands (bool in_p, int freq)
       if (REG_P (operand)
 	  && (regno = REGNO (operand)) >= FIRST_PSEUDO_REGISTER)
 	{
-	  enum machine_mode mode;
 	  enum reg_class cover_class;
 
 	  operand_a = ira_curr_regno_allocno_map[regno];
-	  mode = ALLOCNO_MODE (operand_a);
 	  cover_class = ALLOCNO_COVER_CLASS (operand_a);
 	  if (ira_class_subset_p[cl][cover_class]
-	      && ira_class_hard_regs_num[cl] != 0
-	      && (ira_class_hard_reg_index[cover_class]
-		  [ira_class_hard_regs[cl][0]]) >= 0
-	      && reg_class_size[cl] <= (unsigned) CLASS_MAX_NREGS (cl, mode))
+	      && ira_class_hard_regs_num[cl] != 0)
 	    {
-	      int i, size;
-	      cost
-		= (freq
-		   * (in_p
-		      ? ira_get_register_move_cost (mode, cover_class, cl)
-		      : ira_get_register_move_cost (mode, cl, cover_class)));
-	      ira_allocate_and_set_costs
-		(&ALLOCNO_CONFLICT_HARD_REG_COSTS (operand_a), cover_class, 0);
-	      size = ira_reg_class_nregs[cover_class][mode];
-	      for (i = 0; i < size; i++)
-	        ALLOCNO_CONFLICT_HARD_REG_COSTS (operand_a)
-		  [ira_class_hard_reg_index
-		   [cover_class][ira_class_hard_regs[cl][i]]]
-		  -= cost;
+	      /* View the desired allocation of OPERAND as:
+
+		    (REG:YMODE YREGNO),
+
+		 a simplification of:
+
+		    (subreg:YMODE (reg:XMODE XREGNO) OFFSET).  */
+	      enum machine_mode ymode, xmode;
+	      int xregno, yregno;
+	      HOST_WIDE_INT offset;
+
+	      xmode = recog_data.operand_mode[i];
+	      xregno = ira_class_hard_regs[cl][0];
+	      ymode = ALLOCNO_MODE (operand_a);
+	      offset = subreg_lowpart_offset (ymode, xmode);
+	      yregno = simplify_subreg_regno (xregno, xmode, offset, ymode);
+	      if (yregno >= 0
+		  && ira_class_hard_reg_index[cover_class][yregno] >= 0)
+		{
+		  int cost;
+
+		  ira_allocate_and_set_costs
+		    (&ALLOCNO_CONFLICT_HARD_REG_COSTS (operand_a),
+		     cover_class, 0);
+		  cost
+		    = (freq
+		       * (in_p
+			  ? ira_get_register_move_cost (xmode, cover_class, cl)
+			  : ira_get_register_move_cost (xmode, cl,
+							cover_class)));
+		  ALLOCNO_CONFLICT_HARD_REG_COSTS (operand_a)
+		    [ira_class_hard_reg_index[cover_class][yregno]] -= cost;
+		}
 	    }
 	}
 
@@ -1064,6 +1078,7 @@ process_bb_node_lives (ira_loop_tree_node_t loop_tree_node)
 	      EXECUTE_IF_SET_IN_SPARSESET (allocnos_live, i)
 	        {
 		  ira_allocno_t a = ira_allocnos[i];
+		  HARD_REG_SET this_call_used_reg_set;
 
 		  if (allocno_saved_at_call[i] != last_call_num)
 		    /* Here we are mimicking caller-save.c behaviour
@@ -1075,6 +1090,11 @@ process_bb_node_lives (ira_loop_tree_node_t loop_tree_node)
 		  /* Mark it as saved at the next call.  */
 		  allocno_saved_at_call[i] = last_call_num + 1;
 		  ALLOCNO_CALLS_CROSSED_NUM (a)++;
+		  get_call_reg_set_usage (insn, &this_call_used_reg_set,
+					  call_used_reg_set);
+		  IOR_HARD_REG_SET (ALLOCNO_CROSSED_CALLS_CLOBBERED_REGS (a),
+				    this_call_used_reg_set);
+
 		  /* Don't allocate allocnos that cross setjmps or any
 		     call, if this function receives a nonlocal
 		     goto.  */
@@ -1088,9 +1108,9 @@ process_bb_node_lives (ira_loop_tree_node_t loop_tree_node)
 		  if (can_throw_internal (insn))
 		    {
 		      IOR_HARD_REG_SET (ALLOCNO_TOTAL_CONFLICT_HARD_REGS (a),
-					call_used_reg_set);
+					this_call_used_reg_set);
 		      IOR_HARD_REG_SET (ALLOCNO_CONFLICT_HARD_REGS (a),
-					call_used_reg_set);
+					this_call_used_reg_set);
 		    }
 		}
 	    }

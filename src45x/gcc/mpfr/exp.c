@@ -1,13 +1,13 @@
 /* mpfr_exp -- exponential of a floating-point number
 
-Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,19 +16,19 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "mpfr-impl.h"
 
 /* #define DEBUG */
 
 int
-mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
+mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mpfr_rnd_t rnd_mode)
 {
-  mp_exp_t expx;
-  mp_prec_t precy;
+  mpfr_exp_t expx;
+  mpfr_prec_t precy;
   int inexact;
   MPFR_SAVE_EXPO_DECL (expo);
 
@@ -65,13 +65,13 @@ mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
     /* We must extended the exponent range and save the flags now. */
     MPFR_SAVE_EXPO_MARK (expo);
 
-    mpfr_init2 (e, sizeof (mp_exp_t) * CHAR_BIT);
+    mpfr_init2 (e, sizeof (mpfr_exp_t) * CHAR_BIT);
     mpfr_init2 (bound, 32);
 
-    inexact = mpfr_set_exp_t (e, expo.saved_emax, GMP_RNDN);
+    inexact = mpfr_set_exp_t (e, expo.saved_emax, MPFR_RNDN);
     MPFR_ASSERTD (inexact == 0);
-    mpfr_const_log2 (bound, expo.saved_emax < 0 ? GMP_RNDD : GMP_RNDU);
-    mpfr_mul (bound, bound, e, GMP_RNDU);
+    mpfr_const_log2 (bound, expo.saved_emax < 0 ? MPFR_RNDD : MPFR_RNDU);
+    mpfr_mul (bound, bound, e, MPFR_RNDU);
     if (MPFR_UNLIKELY (mpfr_cmp (x, bound) >= 0))
       {
         /* x > log(2^emax), thus exp(x) > 2^emax */
@@ -80,18 +80,18 @@ mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
         return mpfr_overflow (y, rnd_mode, 1);
       }
 
-    inexact = mpfr_set_exp_t (e, expo.saved_emin, GMP_RNDN);
+    inexact = mpfr_set_exp_t (e, expo.saved_emin, MPFR_RNDN);
     MPFR_ASSERTD (inexact == 0);
-    inexact = mpfr_sub_ui (e, e, 2, GMP_RNDN);
+    inexact = mpfr_sub_ui (e, e, 2, MPFR_RNDN);
     MPFR_ASSERTD (inexact == 0);
-    mpfr_const_log2 (bound, expo.saved_emin < 0 ? GMP_RNDU : GMP_RNDD);
-    mpfr_mul (bound, bound, e, GMP_RNDD);
+    mpfr_const_log2 (bound, expo.saved_emin < 0 ? MPFR_RNDU : MPFR_RNDD);
+    mpfr_mul (bound, bound, e, MPFR_RNDD);
     if (MPFR_UNLIKELY (mpfr_cmp (x, bound) <= 0))
       {
         /* x < log(2^(emin - 2)), thus exp(x) < 2^(emin - 2) */
         mpfr_clears (e, bound, (mpfr_ptr) 0);
         MPFR_SAVE_EXPO_FREE (expo);
-        return mpfr_underflow (y, rnd_mode == GMP_RNDN ? GMP_RNDZ : rnd_mode,
+        return mpfr_underflow (y, rnd_mode == MPFR_RNDN ? MPFR_RNDZ : rnd_mode,
                                1);
       }
 
@@ -101,21 +101,19 @@ mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
     MPFR_SAVE_EXPO_FREE (expo);
   }
 
-  MPFR_CLEAR_FLAGS (y);
-
   expx  = MPFR_GET_EXP (x);
   precy = MPFR_PREC (y);
 
   /* if x < 2^(-precy), then exp(x) i.e. gives 1 +/- 1 ulp(1) */
   if (MPFR_UNLIKELY (expx < 0 && (mpfr_uexp_t) (-expx) > precy))
     {
-      mp_exp_t emin = __gmpfr_emin;
-      mp_exp_t emax = __gmpfr_emax;
+      mpfr_exp_t emin = __gmpfr_emin;
+      mpfr_exp_t emax = __gmpfr_emax;
       int signx = MPFR_SIGN (x);
 
       MPFR_SET_POS (y);
-      if (MPFR_IS_NEG_SIGN (signx) && (rnd_mode == GMP_RNDD ||
-                                       rnd_mode == GMP_RNDZ))
+      if (MPFR_IS_NEG_SIGN (signx) && (rnd_mode == MPFR_RNDD ||
+                                       rnd_mode == MPFR_RNDZ))
         {
           __gmpfr_emin = 0;
           __gmpfr_emax = 0;
@@ -127,13 +125,14 @@ mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
           __gmpfr_emin = 1;
           __gmpfr_emax = 1;
           mpfr_setmin (y, 1);  /* y = 1 */
-          if (MPFR_IS_POS_SIGN (signx) && rnd_mode == GMP_RNDU)
+          if (MPFR_IS_POS_SIGN (signx) && (rnd_mode == MPFR_RNDU ||
+                                           rnd_mode == MPFR_RNDA))
             {
               mp_size_t yn;
               int sh;
 
-              yn = 1 + (MPFR_PREC(y) - 1) / BITS_PER_MP_LIMB;
-              sh = (mp_prec_t) yn * BITS_PER_MP_LIMB - MPFR_PREC(y);
+              yn = 1 + (MPFR_PREC(y) - 1) / GMP_NUMB_BITS;
+              sh = (mpfr_prec_t) yn * GMP_NUMB_BITS - MPFR_PREC(y);
               MPFR_MANT(y)[0] += MPFR_LIMB_ONE << sh;
               inexact = 1;
             }
@@ -146,7 +145,7 @@ mpfr_exp (mpfr_ptr y, mpfr_srcptr x, mp_rnd_t rnd_mode)
     }
   else  /* General case */
     {
-      if (MPFR_UNLIKELY (precy > MPFR_EXP_THRESHOLD))
+      if (MPFR_UNLIKELY (precy >= MPFR_EXP_THRESHOLD))
         /* mpfr_exp_3 saves the exponent range and flags itself, otherwise
            the flag changes in mpfr_exp_3 are lost */
         inexact = mpfr_exp_3 (y, x, rnd_mode); /* O(M(n) log(n)^2) */

@@ -969,6 +969,25 @@ try_fwprop_subst (df_ref use, rtx *loc, rtx new_rtx, rtx def_insn, bool set_reg_
     }
 
   validate_unshare_change (insn, loc, new_rtx, true);
+
+#if _BUILD_C30_
+  /* verify_changes may add clobbers, which cannot be backed out (CW) */
+  if (DF_REF_TYPE (use) == DF_REF_REG_USE
+	   && set
+	   && rtx_cost (SET_SRC (set), SET, speed) > old_cost)
+    {
+      if (dump_file)
+	fprintf (dump_file, "Changes to insn %d not profitable\n",
+		 INSN_UID (insn));
+      ok = false;
+    }
+
+  if (!ok) 
+    ;
+  else
+#endif
+  
+ 
   if (!verify_changes (0))
     {
       if (dump_file)

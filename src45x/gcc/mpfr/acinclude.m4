@@ -1,13 +1,13 @@
 dnl  MPFR specific autoconf macros
 
-dnl  Copyright 2000, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+dnl  Copyright 2000, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 dnl  Contributed by the Arenaire and Cacao projects, INRIA.
 dnl
 dnl  This file is part of the GNU MPFR Library.
 dnl
 dnl  The GNU MPFR Library is free software; you can redistribute it and/or modify
 dnl  it under the terms of the GNU Lesser General Public License as published
-dnl  by the Free Software Foundation; either version 2.1 of the License, or (at
+dnl  by the Free Software Foundation; either version 3 of the License, or (at
 dnl  your option) any later version.
 dnl
 dnl  The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,13 +16,14 @@ dnl  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 dnl  License for more details.
 dnl
 dnl  You should have received a copy of the GNU Lesser General Public License
-dnl  along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-dnl  the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-dnl  MA 02110-1301, USA.
+dnl  along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+dnl  http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+dnl  51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
 dnl  autoconf 2.60 is necessary because of the use of AC_PROG_SED.
 dnl  The following line allows the autoconf wrapper (when installed)
 dnl  to work as expected.
+dnl  If you change the required version, please update README.dev too!
 AC_PREREQ(2.60)
 
 dnl ------------------------------------------------------------
@@ -57,6 +58,9 @@ AC_CHECK_HEADER([stdarg.h],[AC_DEFINE([HAVE_STDARG],1,[Define if stdarg])],
 
 dnl sys/fpu.h - MIPS specific
 AC_CHECK_HEADERS([sys/time.h sys/fpu.h])
+
+dnl Check how to get `alloca'
+AC_FUNC_ALLOCA
 
 dnl SIZE_MAX macro
 gl_SIZE_MAX
@@ -106,20 +110,21 @@ alpha*-*-*)
   fi
 esac
 
-dnl Check for Core2 processor
-case $host in
-x86_64-*linux*)
-  case `sed -n '/^vendor_id/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
-    *Intel*) AC_DEFINE(HAVE_HOST_CORE2,1,[Define if processor is Core 2]) ;;
-  esac
-esac
-
 dnl check for long long
 AC_CHECK_TYPE([long long int],
    AC_DEFINE(HAVE_LONG_LONG, 1, [Define if compiler supports long long]),,)
 
 dnl intmax_t is C99
 AC_CHECK_TYPES([intmax_t])
+if test "$ac_cv_type_intmax_t" = yes; then
+  AC_CACHE_CHECK([for working INTMAX_MAX], mpfr_cv_have_intmax_max, [
+    AC_TRY_COMPILE([#include <stdint.h>], [intmax_t x = INTMAX_MAX;],
+      mpfr_cv_have_intmax_max=yes, mpfr_cv_have_intmax_max=no)
+  ])
+  if test "$mpfr_cv_have_intmax_max" = "yes"; then
+    AC_DEFINE(MPFR_HAVE_INTMAX_MAX,1,[Define if you have a working INTMAX_MAX.])
+  fi
+fi
 
 AC_CHECK_TYPE( [union fpc_csr],
    AC_DEFINE(HAVE_FPC_CSR,1,[Define if union fpc_csr is available]), ,
@@ -448,6 +453,54 @@ BEGIN {
       if (got[1] != "062") continue
       if (got[0] != "020") continue
 
+      # start sequence, with 8-byte body
+      if (got[23] == "001" && \
+          got[22] == "043" && \
+          got[21] == "105" && \
+          got[20] == "147" && \
+          got[19] == "211" && \
+          got[18] == "253" && \
+          got[17] == "315" && \
+          got[16] == "357")
+        {
+          saw = " (" got[15] \
+                 " " got[14] \
+                 " " got[13] \
+                 " " got[12] \
+                 " " got[11] \
+                 " " got[10] \
+                 " " got[9]  \
+                 " " got[8] ")"
+
+          if (got[15] == "301" && \
+              got[14] == "235" && \
+              got[13] == "157" && \
+              got[12] == "064" && \
+              got[11] == "124" && \
+              got[10] == "000" && \
+              got[9] ==  "000" && \
+              got[8] ==  "000")
+            {
+              print "IEEE double, big endian"
+              found = 1
+              exit
+            }
+
+          if (got[15] == "000" && \
+              got[14] == "000" && \
+              got[13] == "000" && \
+              got[12] == "124" && \
+              got[11] == "064" && \
+              got[10] == "157" && \
+              got[9] ==  "235" && \
+              got[8] ==  "301")
+            {
+              print "IEEE double, little endian"
+              found = 1
+              exit
+            }
+        }
+
       # start sequence, with 12-byte body
       if (got[27] == "001" && \
           got[26] == "043" && \
@@ -552,6 +605,50 @@ BEGIN {
               found = 1
               exit
             }
+
+          if (got[23] == "000" && \
+              got[22] == "000" && \
+              got[21] == "000" && \
+              got[20] == "000" && \
+              got[19] == "000" && \
+              got[18] == "000" && \
+              got[17] == "000" && \
+              got[16] == "000" && \
+              got[15] == "000" && \
+              got[14] == "000" && \
+              got[13] == "100" && \
+              got[12] == "105" && \
+              got[11] == "363" && \
+              got[10] == "326" && \
+              got[9]  == "031" && \
+	      got[8]  == "300")
+            {
+              print "IEEE quad, little endian"
+              found = 1
+              exit
+            }
+
+          if (got[23] == "301" && \
+              got[22] == "235" && \
+              got[21] == "157" && \
+              got[20] == "064" && \
+              got[19] == "124" && \
+              got[18] == "000" && \
+              got[17] == "000" && \
+              got[16] == "000" && \
+              got[15] == "000" && \
+              got[14] == "000" && \
+              got[13] == "000" && \
+              got[12] == "000" && \
+              got[11] == "000" && \
+              got[10] == "000" && \
+              got[9]  == "000" && \
+              got[8]  == "000")
+            {
+              print "possibly double-double, big endian"
+              found = 1
+              exit
+            }
         }
     }
 }
@@ -593,6 +690,15 @@ case $mpfr_cv_c_long_double_format in
   "IEEE quad, big endian")
     AC_DEFINE(HAVE_LDOUBLE_IEEE_QUAD_BIG, 1)
     ;;
+  "IEEE quad, little endian")
+    AC_DEFINE(HAVE_LDOUBLE_IEEE_QUAD_LITTLE, 1)
+    ;;
+  "possibly double-double, big endian")
+    AC_MSG_WARN([This format is known on GCC/PowerPC platforms,])
+    AC_MSG_WARN([but due to GCC PR26374, we can't test further.])
+    AC_MSG_WARN([You can safely ignore this warning, though.])
+    # Since we are not sure, we do not want to define a macro.
+    ;;
   unknown* | "not available")
     ;;
   *)
@@ -612,11 +718,6 @@ AC_SUBST(MPFR_LIBM,'')
 case $host in
   *-*-beos* | *-*-cygwin* | *-*-pw32*)
     # According to libtool AC CHECK LIBM, these systems don't have libm
-    ;;
-  *-*-hpux*)
-    # -lM means something subtly different to -lm, SVID style error handling
-    # or something.  FIXME: Why exactly do we want this?
-    AC_CHECK_LIB(M, main, MPFR_LIBM="-lM")
     ;;
   *-*-solaris*)
     # On Solaris the math functions new in C99 are in -lm9x.

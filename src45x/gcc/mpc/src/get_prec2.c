@@ -1,7 +1,7 @@
 /* mpc_get_prec2 -- returns the precisions of the real and of the imaginary
 part through the first two arguments
 
-Copyright (C) 2007, 2009 Andreas Enge, Philippe Th\'eveny
+Copyright (C) INRIA, 2007, 2009, 2010
 
 This file is part of the MPC Library.
 
@@ -23,8 +23,8 @@ MA 02111-1307, USA. */
 #include "mpc-impl.h"
 
 void
-mpc_get_prec2 (mp_prec_t *pr, mp_prec_t *pi, mpc_srcptr x)
+mpc_get_prec2 (mpfr_prec_t *pr, mpfr_prec_t *pi, mpc_srcptr x)
 {
-   *pr = MPFR_PREC (MPC_RE (x));
-   *pi = MPFR_PREC (MPC_IM (x));
+   *pr = MPC_PREC_RE (x);
+   *pi = MPC_PREC_IM (x);
 }

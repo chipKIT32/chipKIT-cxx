@@ -437,7 +437,7 @@ setup_class_hard_regs (void)
       AND_COMPL_HARD_REG_SET (temp_hard_regset, no_unit_alloc_regs);
       CLEAR_HARD_REG_SET (processed_hard_reg_set);
       for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
-	ira_class_hard_reg_index[cl][0] = -1;
+	ira_class_hard_reg_index[cl][i] = -1;
       for (n = 0, i = 0; i < FIRST_PSEUDO_REGISTER; i++)
 	{
 #ifdef REG_ALLOC_ORDER
@@ -2784,8 +2784,7 @@ pseudo_for_reload_consideration_p (int regno)
 {
   /* Consider spilled pseudos too for IRA because they still have a
      chance to get hard-registers in the reload when IRA is used.  */
-  return (reg_renumber[regno] >= 0
-	  || (ira_conflicts_p && flag_ira_share_spill_slots));
+  return (reg_renumber[regno] >= 0 || ira_conflicts_p);
 }
 
 /* Init LIVE_SUBREGS[ALLOCNUM] and LIVE_SUBREGS_USED[ALLOCNUM] using
@@ -3221,9 +3220,12 @@ ira (FILE *f)
   ira_assert (ira_conflicts_p || !loops_p);
 
   saved_flag_ira_share_spill_slots = flag_ira_share_spill_slots;
-  if (too_high_register_pressure_p ())
+  if (too_high_register_pressure_p () || cfun->calls_setjmp)
     /* It is just wasting compiler's time to pack spilled pseudos into
-       stack slots in this case -- prohibit it.  */
+       stack slots in this case -- prohibit it.  We also do this if
+       there is setjmp call because a variable not modified between
+       setjmp and longjmp the compiler is required to preserve its
+       value and sharing slots does not guarantee it.  */
     flag_ira_share_spill_slots = FALSE;
 
   ira_color ();
@@ -3306,10 +3308,18 @@ ira (FILE *f)
   timevar_pop (TV_IRA);
 
   timevar_push (TV_RELOAD);
+
+#ifdef _BUILD_C30_
+  do {
+    build_insn_chain ();
+    reload_completed = !reload (get_insns (), ira_conflicts_p);
+  }  while (reload_in_progress);
+#else
   df_set_flags (DF_NO_INSN_RESCAN);
   build_insn_chain ();
 
   reload_completed = !reload (get_insns (), ira_conflicts_p);
+#endif
 
   finish_subregs_of_mode ();
 

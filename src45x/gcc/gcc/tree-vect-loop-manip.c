@@ -2225,11 +2225,15 @@ vect_create_cond_for_align_checks (loop_vec_info loop_vinfo,
      all zeros followed by all ones.  */
   gcc_assert ((mask != 0) && ((mask & (mask+1)) == 0));
 
+#ifdef _BUILD_C30_
+  /* No, this is not the way to do this.  (CW) */
+#else
   /* CHECKME: what is the best integer or unsigned type to use to hold a
      cast from a pointer value?  */
   psize = TYPE_SIZE (ptr_type_node);
   int_ptrsize_type
     = lang_hooks.types.type_for_size (tree_low_cst (psize, 1), 0);
+#endif
 
   /* Create expression (mask & (dr_1 || ... || dr_n)) where dr_i is the address
      of the first vector of the i'th data reference. */
@@ -2246,6 +2250,14 @@ vect_create_cond_for_align_checks (loop_vec_info loop_vinfo,
       addr_base =
 	vect_create_addr_base_for_vector_ref (ref_stmt, &new_stmt_list,
 					      NULL_TREE, loop);
+
+#ifdef _BUILD_C30_
+      /* work out the correct int_ptrsize_type from the pointer type of
+         the base, works for address space types too (CW) */
+      psize = TYPE_SIZE(TREE_TYPE(addr_base));
+      int_ptrsize_type = 
+        lang_hooks.types.type_for_size (tree_low_cst (psize, 1), 0);
+#endif
       if (new_stmt_list != NULL)
 	gimple_seq_add_seq (cond_expr_stmt_list, new_stmt_list);
 

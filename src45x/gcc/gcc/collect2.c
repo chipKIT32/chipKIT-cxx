@@ -39,6 +39,10 @@ along with GCC; see the file COPYING3.  If not see
 #undef TARGET_64BIT
 #define TARGET_64BIT TARGET_64BIT_DEFAULT
 
+#ifndef COMPILER_PATH_ENV
+#define COMPILER_PATH_ENV "COMPILER_PATH"
+#endif
+
 #ifndef LIBRARY_PATH_ENV
 #define LIBRARY_PATH_ENV "LIBRARY_PATH"
 #endif
@@ -181,7 +185,6 @@ struct head
 int vflag;				/* true if -v */
 static int rflag;			/* true if -r */
 static int strip_flag;			/* true if -s */
-static const char *demangle_flag;
 #ifdef COLLECT_EXPORT_LIST
 static int export_flag;                 /* true if -bE */
 static int aix64_flag;			/* true if -b64 */
@@ -1198,10 +1201,12 @@ main (int argc, char **argv)
 
   num_c_args = argc + 9;
 
+#ifndef HAVE_LD_DEMANGLE
   no_demangle = !! getenv ("COLLECT_NO_DEMANGLE");
 
   /* Suppress demangling by the real linker, which may be broken.  */
-  putenv (xstrdup ("COLLECT_NO_DEMANGLE="));
+  putenv (xstrdup ("COLLECT_NO_DEMANGLE=1"));
+#endif
 
 #if defined (COLLECT2_HOST_INITIALIZATION)
   /* Perform system dependent initialization, if necessary.  */
@@ -1333,7 +1338,7 @@ main (int argc, char **argv)
 #endif
 
   /* Extract COMPILER_PATH and PATH into our prefix list.  */
-  prefix_from_env ("COMPILER_PATH", &cpath);
+  prefix_from_env (COMPILER_PATH_ENV, &cpath);
   prefix_from_env ("PATH", &path);
 
   /* Try to discover a valid linker/nm/strip to use.  */
@@ -1495,12 +1500,6 @@ main (int argc, char **argv)
   /* After the first file, put in the c++ rt0.  */
 
   first_file = 1;
-#ifdef HAVE_LD_DEMANGLE
-  if (!demangle_flag && !no_demangle)
-    demangle_flag = "--demangle";
-  if (demangle_flag)
-    *ld1++ = *ld2++ = demangle_flag;
-#endif
   while ((arg = *++argv) != (char *) 0)
     {
       *ld1++ = *ld2++ = arg;
@@ -1609,16 +1608,16 @@ main (int argc, char **argv)
 	    case '-':
 	      if (strcmp (arg, "--no-demangle") == 0)
 		{
-		  demangle_flag = arg;
+#ifndef HAVE_LD_DEMANGLE
 		  no_demangle = 1;
 		  ld1--;
 		  ld2--;
+#endif
 		}
 	      else if (strncmp (arg, "--demangle", 10) == 0)
 		{
-		  demangle_flag = arg;
-		  no_demangle = 0;
 #ifndef HAVE_LD_DEMANGLE
+		  no_demangle = 0;
 		  if (arg[10] == '=')
 		    {
 		      enum demangling_styles style
@@ -1628,9 +1627,9 @@ main (int argc, char **argv)
 		      else
 			current_demangling_style = style;
 		    }
-#endif
 		  ld1--;
 		  ld2--;
+#endif
 		}
 	      else if (strncmp (arg, "--sysroot=", 10) == 0)
 		target_system_root = arg + 10;
@@ -1763,9 +1762,9 @@ main (int argc, char **argv)
       if (ptr)
 	fprintf (stderr, "COLLECT_GCC         = %s\n", ptr);
 
-      ptr = getenv ("COMPILER_PATH");
+      ptr = getenv (COMPILER_PATH_ENV);
       if (ptr)
-	fprintf (stderr, "COMPILER_PATH       = %s\n", ptr);
+	fprintf (stderr, "%-20s= %s\n", COMPILER_PATH_ENV, ptr);
 
       ptr = getenv (LIBRARY_PATH_ENV);
       if (ptr)

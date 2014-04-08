@@ -278,9 +278,16 @@ static void update_auto_inc_notes (rtx, int, int);
 static int find_reloads_address_1 (enum machine_mode, rtx, int,
 				   enum rtx_code, enum rtx_code, rtx *,
 				   int, enum reload_type,int, rtx);
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+static void find_reloads_address_part (rtx, rtx *, enum reg_class,
+				       enum machine_mode, int,
+				       enum reload_type, int, rtx);
+#else
 static void find_reloads_address_part (rtx, rtx *, enum reg_class,
 				       enum machine_mode, int,
 				       enum reload_type, int);
+#endif
 static rtx find_reloads_subreg_address (rtx, int, int, enum reload_type,
 					int, rtx);
 static void copy_replacements_1 (rtx *, rtx *, int);
@@ -907,10 +914,18 @@ can_reload_into (rtx in, int regno, enum machine_mode mode)
    distinguish them.  */
 
 int
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
+	     enum reg_class rclass, enum machine_mode inmode,
+	     enum machine_mode outmode, int strict_low, int optional,
+	     int opnum, enum reload_type type, rtx insn)
+#else
 push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 	     enum reg_class rclass, enum machine_mode inmode,
 	     enum machine_mode outmode, int strict_low, int optional,
 	     int opnum, enum reload_type type)
+#endif
 {
   int i;
   int dont_share = 0;
@@ -1099,8 +1114,14 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 	 order as the reloads.  Thus if the outer reload is also of type
 	 RELOAD_OTHER, we are guaranteed that this inner reload will be
 	 output before the outer reload.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      push_reload (SUBREG_REG (in), NULL_RTX, &SUBREG_REG (in), (rtx *) 0,
+		   in_class, VOIDmode, VOIDmode, 0, 0, opnum, type, insn);
+#else
       push_reload (SUBREG_REG (in), NULL_RTX, &SUBREG_REG (in), (rtx *) 0,
 		   in_class, VOIDmode, VOIDmode, 0, 0, opnum, type);
+#endif
       dont_remove_subreg = 1;
     }
 
@@ -1179,6 +1200,19 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 	 RELOAD_OTHER, we are guaranteed that this inner reload will be
 	 output after the outer reload.  */
       dont_remove_subreg = 1;
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      push_reload (SUBREG_REG (out), SUBREG_REG (out), &SUBREG_REG (out),
+		   &SUBREG_REG (out),
+		   find_valid_class (outmode, GET_MODE (SUBREG_REG (out)),
+			subreg_regno_offset (REGNO (SUBREG_REG (out)),
+					GET_MODE (SUBREG_REG (out)),
+					SUBREG_BYTE (out),
+					GET_MODE (out)),
+				     REGNO (SUBREG_REG (out))),
+		  VOIDmode, VOIDmode, 0, 0,
+		  opnum, RELOAD_OTHER, insn);
+#else
       push_reload (SUBREG_REG (out), SUBREG_REG (out), &SUBREG_REG (out),
 		   &SUBREG_REG (out),
 		   find_valid_class (outmode, GET_MODE (SUBREG_REG (out)),
@@ -1189,6 +1223,7 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 				     REGNO (SUBREG_REG (out))),
 		   VOIDmode, VOIDmode, 0, 0,
 		   opnum, RELOAD_OTHER);
+#endif
     }
 
   /* If IN appears in OUT, we can't share any input-only reload for IN.  */
@@ -1347,6 +1382,10 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
       rld[i].secondary_in_icode = secondary_in_icode;
       rld[i].secondary_out_icode = secondary_out_icode;
       rld[i].secondary_p = 0;
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      rld[i].insn = insn;
+#endif
 
       n_reloads++;
 
@@ -3358,6 +3397,11 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	      case 'N':
 	      case 'O':
 	      case 'P':
+#ifdef _BUILD_C30_
+              case 'W':
+              case 'Y':
+              case 'Z':
+#endif
 		if (CONST_INT_P (operand)
 		    && CONST_OK_FOR_CONSTRAINT_P (INTVAL (operand), c, p))
 		  win = 1;
@@ -3998,11 +4042,20 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	      }
 
 	    operand_reloadnum[i]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	      = push_reload (XEXP (recog_data.operand[i], 0), NULL_RTX,
+			     &XEXP (recog_data.operand[i], 0), (rtx*) 0,
+			     base_reg_class (VOIDmode, MEM, SCRATCH),
+			     address_mode,
+			     VOIDmode, 0, 0, i, RELOAD_FOR_INPUT, insn);
+#else
 	      = push_reload (XEXP (recog_data.operand[i], 0), NULL_RTX,
 			     &XEXP (recog_data.operand[i], 0), (rtx*) 0,
 			     base_reg_class (VOIDmode, MEM, SCRATCH),
 			     address_mode,
 			     VOIDmode, 0, 0, i, RELOAD_FOR_INPUT);
+#endif
 	    rld[operand_reloadnum[i]].inc
 	      = GET_MODE_SIZE (GET_MODE (recog_data.operand[i]));
 
@@ -4029,6 +4082,25 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	else if (goal_alternative_matched[i] == -1)
 	  {
 	    operand_reloadnum[i]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	      = push_reload ((modified[i] != RELOAD_WRITE
+			      ? recog_data.operand[i] : 0),
+			     (modified[i] != RELOAD_READ
+			      ? recog_data.operand[i] : 0),
+			     (modified[i] != RELOAD_WRITE
+			      ? recog_data.operand_loc[i] : 0),
+			     (modified[i] != RELOAD_READ
+			      ? recog_data.operand_loc[i] : 0),
+			     (enum reg_class) goal_alternative[i],
+			     (modified[i] == RELOAD_WRITE
+			      ? VOIDmode : operand_mode[i]),
+			     (modified[i] == RELOAD_READ
+			      ? VOIDmode : operand_mode[i]),
+			     (insn_code_number < 0 ? 0
+			      : insn_data[insn_code_number].operand[i].strict_low),
+			     0, i, operand_type[i], insn);
+#else
 	      = push_reload ((modified[i] != RELOAD_WRITE
 			      ? recog_data.operand[i] : 0),
 			     (modified[i] != RELOAD_READ
@@ -4045,6 +4117,7 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 			     (insn_code_number < 0 ? 0
 			      : insn_data[insn_code_number].operand[i].strict_low),
 			     0, i, operand_type[i]);
+#endif
 	  }
 	/* In a matching pair of operands, one must be input only
 	   and the other must be output only.
@@ -4053,6 +4126,17 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 		 && modified[goal_alternative_matched[i]] == RELOAD_WRITE)
 	  {
 	    operand_reloadnum[i]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	      = push_reload (recog_data.operand[i],
+			     recog_data.operand[goal_alternative_matched[i]],
+			     recog_data.operand_loc[i],
+			     recog_data.operand_loc[goal_alternative_matched[i]],
+			     (enum reg_class) goal_alternative[i],
+			     operand_mode[i],
+			     operand_mode[goal_alternative_matched[i]],
+			     0, 0, i, RELOAD_OTHER, insn);
+#else
 	      = push_reload (recog_data.operand[i],
 			     recog_data.operand[goal_alternative_matched[i]],
 			     recog_data.operand_loc[i],
@@ -4061,12 +4145,24 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 			     operand_mode[i],
 			     operand_mode[goal_alternative_matched[i]],
 			     0, 0, i, RELOAD_OTHER);
+#endif
 	    operand_reloadnum[goal_alternative_matched[i]] = output_reloadnum;
 	  }
 	else if (modified[i] == RELOAD_WRITE
 		 && modified[goal_alternative_matched[i]] == RELOAD_READ)
 	  {
 	    operand_reloadnum[goal_alternative_matched[i]]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	      = push_reload (recog_data.operand[goal_alternative_matched[i]],
+			     recog_data.operand[i],
+			     recog_data.operand_loc[goal_alternative_matched[i]],
+			     recog_data.operand_loc[i],
+			     (enum reg_class) goal_alternative[i],
+			     operand_mode[goal_alternative_matched[i]],
+			     operand_mode[i],
+			     0, 0, i, RELOAD_OTHER, insn);
+#else
 	      = push_reload (recog_data.operand[goal_alternative_matched[i]],
 			     recog_data.operand[i],
 			     recog_data.operand_loc[goal_alternative_matched[i]],
@@ -4075,6 +4171,7 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 			     operand_mode[goal_alternative_matched[i]],
 			     operand_mode[i],
 			     0, 0, i, RELOAD_OTHER);
+#endif
 	    operand_reloadnum[i] = output_reloadnum;
 	  }
 	else
@@ -4120,6 +4217,25 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	    && (modified[i] == RELOAD_READ
 		|| (! no_output_reloads && ! this_insn_is_asm)))
 	  operand_reloadnum[i]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    = push_reload ((modified[i] != RELOAD_WRITE
+			    ? recog_data.operand[i] : 0),
+			   (modified[i] != RELOAD_READ
+			    ? recog_data.operand[i] : 0),
+			   (modified[i] != RELOAD_WRITE
+			    ? recog_data.operand_loc[i] : 0),
+			   (modified[i] != RELOAD_READ
+			    ? recog_data.operand_loc[i] : 0),
+			   (enum reg_class) goal_alternative[i],
+			   (modified[i] == RELOAD_WRITE
+			    ? VOIDmode : operand_mode[i]),
+			   (modified[i] == RELOAD_READ
+			    ? VOIDmode : operand_mode[i]),
+			   (insn_code_number < 0 ? 0
+			    : insn_data[insn_code_number].operand[i].strict_low),
+			   1, i, operand_type[i], insn);
+#else
 	    = push_reload ((modified[i] != RELOAD_WRITE
 			    ? recog_data.operand[i] : 0),
 			   (modified[i] != RELOAD_READ
@@ -4136,6 +4252,7 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 			   (insn_code_number < 0 ? 0
 			    : insn_data[insn_code_number].operand[i].strict_low),
 			   1, i, operand_type[i]);
+#endif
 	/* If a memory reference remains (either as a MEM or a pseudo that
 	   did not get a hard register), yet we can't make an optional
 	   reload, check if this is actually a pseudo register reference;
@@ -4184,6 +4301,17 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 	    && ((enum reg_class) goal_alternative[goal_alternative_matches[i]]
 		!= NO_REGS))
 	  operand_reloadnum[i] = operand_reloadnum[goal_alternative_matches[i]]
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    = push_reload (recog_data.operand[goal_alternative_matches[i]],
+			   recog_data.operand[i],
+			   recog_data.operand_loc[goal_alternative_matches[i]],
+			   recog_data.operand_loc[i],
+			   (enum reg_class) goal_alternative[goal_alternative_matches[i]],
+			   operand_mode[goal_alternative_matches[i]],
+			   operand_mode[i],
+			   0, 1, goal_alternative_matches[i], RELOAD_OTHER, insn);
+#else
 	    = push_reload (recog_data.operand[goal_alternative_matches[i]],
 			   recog_data.operand[i],
 			   recog_data.operand_loc[goal_alternative_matches[i]],
@@ -4192,6 +4320,7 @@ find_reloads (rtx insn, int replace, int ind_levels, int live_known,
 			   operand_mode[goal_alternative_matches[i]],
 			   operand_mode[i],
 			   0, 1, goal_alternative_matches[i], RELOAD_OTHER);
+#endif
       }
 
   /* Perform whatever substitutions on the operands we are supposed
@@ -4896,9 +5025,15 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 
       if (reg_equiv_constant[regno] != 0)
 	{
+#ifdef _BUILD_C30_
+	  find_reloads_address_part (reg_equiv_constant[regno], loc,
+				     base_reg_class (mode, MEM, SCRATCH),
+				     GET_MODE (ad), opnum, type, ind_levels, insn);
+#else
 	  find_reloads_address_part (reg_equiv_constant[regno], loc,
 				     base_reg_class (mode, MEM, SCRATCH),
 				     GET_MODE (ad), opnum, type, ind_levels);
+#endif
 	  return 1;
 	}
 
@@ -4965,8 +5100,15 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 	return 0;
 
       /* If we do not have one of the cases above, we must do the reload.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      push_reload (ad, NULL_RTX, loc, (rtx*) 0, 
+	           base_reg_class (mode, MEM, SCRATCH),
+		   GET_MODE (ad), VOIDmode, 0, 0, opnum, type, insn);
+#else
       push_reload (ad, NULL_RTX, loc, (rtx*) 0, base_reg_class (mode, MEM, SCRATCH),
 		   GET_MODE (ad), VOIDmode, 0, 0, opnum, type);
+#endif
       return 1;
     }
 
@@ -5065,10 +5207,17 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 	{
 	  /* Must use TEM here, not AD, since it is the one that will
 	     have any subexpressions reloaded, if needed.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	  push_reload (tem, NULL_RTX, loc, (rtx*) 0,
+		       base_reg_class (mode, MEM, SCRATCH), GET_MODE (tem),
+		       VOIDmode, 0, 0, opnum, type, insn);
+#else
 	  push_reload (tem, NULL_RTX, loc, (rtx*) 0,
 		       base_reg_class (mode, MEM, SCRATCH), GET_MODE (tem),
 		       VOIDmode, 0,
 		       0, opnum, type);
+#endif
 	  return ! removed_and;
 	}
       else
@@ -5104,9 +5253,16 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 
 	  /* Reload the displacement into an index reg.
 	     We assume the frame pointer or arg pointer is a base reg.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	  find_reloads_address_part (XEXP (ad, 1), &XEXP (ad, 1),
+				     index_reg_class (mode), GET_MODE (ad),
+				     opnum, type, ind_levels, insn );
+#else
 	  find_reloads_address_part (XEXP (ad, 1), &XEXP (ad, 1),
 				     index_reg_class (mode), GET_MODE (ad),
 				     opnum, type, ind_levels);
+#endif
 	  return 0;
 	}
       else
@@ -5114,9 +5270,17 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 	  /* If the sum of two regs is not necessarily valid,
 	     reload the sum into a base reg.
 	     That will at least work.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	  find_reloads_address_part (ad, loc,
+				     base_reg_class (mode, MEM, SCRATCH),
+				     GET_MODE (ad), 
+				     opnum, type, ind_levels, insn);
+#else
 	  find_reloads_address_part (ad, loc,
 				     base_reg_class (mode, MEM, SCRATCH),
 				     GET_MODE (ad), opnum, type, ind_levels);
+#endif
 	}
       return ! removed_and;
     }
@@ -5197,9 +5361,16 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 	  *loc = ad;
 
 	  cls = base_reg_class (mode, MEM, GET_CODE (addend));
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	  find_reloads_address_part (XEXP (ad, op_index),
+				     &XEXP (ad, op_index), cls, GET_MODE (ad), 
+			             opnum, type, ind_levels, insn);
+#else
 	  find_reloads_address_part (XEXP (ad, op_index),
 				     &XEXP (ad, op_index), cls,
 				     GET_MODE (ad), opnum, type, ind_levels);
+#endif
 	  find_reloads_address_1 (mode,
 				  XEXP (ad, 1 - op_index), 1, GET_CODE (ad),
 				  GET_CODE (XEXP (ad, op_index)),
@@ -5253,8 +5424,14 @@ find_reloads_address (enum machine_mode mode, rtx *memrefloc, rtx ad,
 	    loc = &XEXP (*loc, 0);
 	}
 
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      find_reloads_address_part (ad, loc, base_reg_class (mode, MEM, SCRATCH),
+				 address_mode, opnum, type, ind_levels, insn);
+#else
       find_reloads_address_part (ad, loc, base_reg_class (mode, MEM, SCRATCH),
 				 address_mode, opnum, type, ind_levels);
+#endif
       return ! removed_and;
     }
 
@@ -5556,9 +5733,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	  {
 	    find_reloads_address (GET_MODE (x), loc, XEXP (x, 0), &XEXP (x, 0),
 				  opnum, ADDR_TYPE (type), ind_levels, insn);
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    push_reload (*loc, NULL_RTX, loc, (rtx*) 0,
+			 context_reg_class,
+			 GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
 	    push_reload (*loc, NULL_RTX, loc, (rtx*) 0,
 			 context_reg_class,
 			 GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
 	    return 1;
 	  }
 
@@ -5728,12 +5912,22 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 
 		/* Then reload the memory location into a base
 		   register.  */
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+		reloadnum = push_reload (tem, tem, &XEXP (x, 0),
+					 &XEXP (op1, 0),
+					 base_reg_class (mode, code,
+							 index_code),
+					 GET_MODE (x), GET_MODE (x), 0,
+					 0, opnum, RELOAD_OTHER, insn);
+#else
 		reloadnum = push_reload (tem, tem, &XEXP (x, 0),
 					 &XEXP (op1, 0),
 					 base_reg_class (mode, code,
 							 index_code),
 					 GET_MODE (x), GET_MODE (x), 0,
 					 0, opnum, RELOAD_OTHER);
+#endif
 
 		update_auto_inc_notes (this_insn, regno, reloadnum);
 		return 0;
@@ -5746,11 +5940,20 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	/* We require a base register here...  */
 	if (!regno_ok_for_base_p (regno, GET_MODE (x), code, index_code))
 	  {
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    reloadnum = push_reload (XEXP (op1, 0), XEXP (x, 0),
+				     &XEXP (op1, 0), &XEXP (x, 0),
+				     base_reg_class (mode, code, index_code),
+				     GET_MODE (x), GET_MODE (x), 0, 0,
+				     opnum, RELOAD_OTHER, insn);
+#else
 	    reloadnum = push_reload (XEXP (op1, 0), XEXP (x, 0),
 				     &XEXP (op1, 0), &XEXP (x, 0),
 				     base_reg_class (mode, code, index_code),
 				     GET_MODE (x), GET_MODE (x), 0, 0,
 				     opnum, RELOAD_OTHER);
+#endif
 
 	    update_auto_inc_notes (this_insn, regno, reloadnum);
 	    return 0;
@@ -5772,6 +5975,9 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	  gcc_assert (regno < FIRST_PSEUDO_REGISTER
 		      || reg_equiv_constant[regno] == 0);
 
+#ifdef _BUILD_C30_
+          /* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+#else
 	  /* Handle a register that is equivalent to a memory location
 	     which cannot be addressed directly.  */
 	  if (reg_equiv_memory_loc[regno] != 0
@@ -5797,6 +6003,7 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 		  /* Proceed to reload that, as if it contained a register.  */
 		}
 	    }
+#endif
 
 	  /* If we have a hard register that is ok in this incdec context,
 	     don't make a reload.  If the register isn't nice enough for
@@ -5851,18 +6058,34 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 		  loc = &XEXP (x_orig, 0);
 		  x = XEXP (x, 0);
 		  reloadnum
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+		    = push_reload (x, x, loc, loc,
+				   context_reg_class,
+				   GET_MODE (x), GET_MODE (x), 0, 0,
+				   opnum, RELOAD_OTHER, insn);
+#else
 		    = push_reload (x, x, loc, loc,
 				   context_reg_class,
 				   GET_MODE (x), GET_MODE (x), 0, 0,
 				   opnum, RELOAD_OTHER);
+#endif
 		}
 	      else
 		{
 		  reloadnum
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+		    = push_reload (x, x, loc, (rtx*) 0,
+				   context_reg_class,
+				   GET_MODE (x), GET_MODE (x), 0, 0,
+				   opnum, type, insn);
+#else
 		    = push_reload (x, x, loc, (rtx*) 0,
 				   context_reg_class,
 				   GET_MODE (x), GET_MODE (x), 0, 0,
 				   opnum, type);
+#endif
 		  rld[reloadnum].inc
 		    = find_inc_amount (PATTERN (this_insn), XEXP (x_orig, 0));
 
@@ -5889,9 +6112,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
       find_reloads_address_1 (GET_MODE (XEXP (x, 0)), XEXP (x, 0),
 			      context, code, SCRATCH, &XEXP (x, 0), opnum,
 			      type, ind_levels, insn);
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      push_reload (x, NULL_RTX, loc, (rtx*) 0,
+		   context_reg_class,
+		   GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
       push_reload (x, NULL_RTX, loc, (rtx*) 0,
 		   context_reg_class,
 		   GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
       return 1;
 
     case MEM:
@@ -5909,9 +6139,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 
       find_reloads_address (GET_MODE (x), loc, XEXP (x, 0), &XEXP (x, 0),
 			    opnum, ADDR_TYPE (type), ind_levels, insn);
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+      push_reload (*loc, NULL_RTX, loc, (rtx*) 0,
+		   context_reg_class,
+		   GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
       push_reload (*loc, NULL_RTX, loc, (rtx*) 0,
 		   context_reg_class,
 		   GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
       return 1;
 
     case REG:
@@ -5920,9 +6157,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 
 	if (reg_equiv_constant[regno] != 0)
 	  {
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    find_reloads_address_part (reg_equiv_constant[regno], loc,
+				       context_reg_class, GET_MODE (x), 
+				       opnum, type, ind_levels, insn);
+#else
 	    find_reloads_address_part (reg_equiv_constant[regno], loc,
 				       context_reg_class,
 				       GET_MODE (x), opnum, type, ind_levels);
+#endif
 	    return 1;
 	  }
 
@@ -5960,9 +6204,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	    || !REG_OK_FOR_CONTEXT (context, regno, mode, outer_code,
 				    index_code))
 	  {
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    push_reload (x, NULL_RTX, loc, (rtx*) 0,
+			 context_reg_class,
+			 GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
 	    push_reload (x, NULL_RTX, loc, (rtx*) 0,
 			 context_reg_class,
 			 GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
 	    return 1;
 	  }
 
@@ -5972,9 +6223,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	   from before this insn to after it.  */
 	if (regno_clobbered_p (regno, this_insn, GET_MODE (x), 0))
 	  {
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+	    push_reload (x, NULL_RTX, loc, (rtx*) 0,
+			 context_reg_class,
+			 GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
 	    push_reload (x, NULL_RTX, loc, (rtx*) 0,
 			 context_reg_class,
 			 GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
 	    return 1;
 	  }
       }
@@ -5993,9 +6251,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 	      if (!REG_OK_FOR_CONTEXT (context, regno, mode, outer_code,
 				       index_code))
 		{
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+		  push_reload (x, NULL_RTX, loc, (rtx*) 0,
+			       context_reg_class,
+			       GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
 		  push_reload (x, NULL_RTX, loc, (rtx*) 0,
 			       context_reg_class,
 			       GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
 		  return 1;
 		}
 	    }
@@ -6010,8 +6275,14 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
 		  x = find_reloads_subreg_address (x, 0, opnum,
 						   ADDR_TYPE (type),
 						   ind_levels, insn);
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+		  push_reload (x, NULL_RTX, loc, (rtx*) 0, rclass,
+			       GET_MODE (x), VOIDmode, 0, 0, opnum, type, insn);
+#else
 		  push_reload (x, NULL_RTX, loc, (rtx*) 0, rclass,
 			       GET_MODE (x), VOIDmode, 0, 0, opnum, type);
+#endif
 		  return 1;
 		}
 	    }
@@ -6056,9 +6327,16 @@ find_reloads_address_1 (enum machine_mode mode, rtx x, int context,
    supports.  */
 
 static void
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+find_reloads_address_part (rtx x, rtx *loc, enum reg_class rclass,
+			   enum machine_mode mode, int opnum,
+			   enum reload_type type, int ind_levels, rtx insn)
+#else
 find_reloads_address_part (rtx x, rtx *loc, enum reg_class rclass,
 			   enum machine_mode mode, int opnum,
 			   enum reload_type type, int ind_levels)
+#endif
 {
   if (CONSTANT_P (x)
       && (! LEGITIMATE_CONSTANT_P (x)
@@ -6082,8 +6360,14 @@ find_reloads_address_part (rtx x, rtx *loc, enum reg_class rclass,
 			    opnum, type, ind_levels, 0);
     }
 
+#ifdef _BUILD_C30_
+/* fix for c30-242 (orig), c30-505 (4.5.1 port) */
+  push_reload (x, NULL_RTX, loc, (rtx*) 0, rclass,
+	       mode, VOIDmode, 0, 0, opnum, type, insn);
+#else
   push_reload (x, NULL_RTX, loc, (rtx*) 0, rclass,
 	       mode, VOIDmode, 0, 0, opnum, type);
+#endif
 }
 
 /* X, a subreg of a pseudo, is a part of an address that needs to be
@@ -6205,10 +6489,17 @@ find_reloads_subreg_address (rtx x, int force_replace, int opnum,
 		  && !strict_memory_address_addr_space_p
 			(GET_MODE (x), XEXP (reg_equiv_mem[regno], 0),
 			 MEM_ADDR_SPACE (reg_equiv_mem[regno])))
+#ifdef _BUILD_C30_
+		push_reload (XEXP (tem, 0), NULL_RTX, &XEXP (tem, 0), (rtx*) 0,
+			     base_reg_class (GET_MODE (tem), MEM, SCRATCH),
+			     GET_MODE (XEXP (tem, 0)), VOIDmode, 0, 0,
+			     opnum, type, insn);
+#else
 		push_reload (XEXP (tem, 0), NULL_RTX, &XEXP (tem, 0), (rtx*) 0,
 			     base_reg_class (GET_MODE (tem), MEM, SCRATCH),
 			     GET_MODE (XEXP (tem, 0)), VOIDmode, 0, 0,
 			     opnum, type);
+#endif
 
 	      /* If this is not a toplevel operand, find_reloads doesn't see
 		 this substitution.  We have to emit a USE of the pseudo so

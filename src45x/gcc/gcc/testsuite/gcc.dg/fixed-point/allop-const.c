@@ -12,6 +12,8 @@
 
    Check if all operations on constants are ok.  */
 
+#include "longlong-support.h"
+
 #define ALLOPCONST(TYPE,NAME,POSTFIX) \
 	TYPE NAME ## plus = +0.1 ## POSTFIX; \
 	unsigned TYPE NAME ## u_plus = +0.1u ## POSTFIX; \
@@ -140,8 +142,8 @@
 ALLOPCONST(short _Fract, sf, hr);
 ALLOPCONST(_Fract, f, r);
 ALLOPCONST(long _Fract, lf, lr);
-ALLOPCONST(long long _Fract, llf, llr);
+LLFRACT_TEST (ALLOPCONST(long long _Fract, llf, llr));
 ALLOPCONST(short _Accum, sa, hk);
 ALLOPCONST(_Accum, a, k);
 ALLOPCONST(long _Accum, la, lk);
-ALLOPCONST(long long _Accum, lla, llk);
+LLACCUM_TEST (ALLOPCONST(long long _Accum, lla, llk));

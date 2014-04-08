@@ -416,8 +416,6 @@ do {									\
    Some svr4 assemblers need to also have something extra said about the
    function's return value.  We allow for that here.  */
 
-extern int rs6000_pic_labelno;
-
 /* Override elfos.h definition.  */
 #undef	ASM_DECLARE_FUNCTION_NAME
 #define ASM_DECLARE_FUNCTION_NAME(FILE, NAME, DECL)			\
@@ -623,7 +621,7 @@ SVR4_ASM_SPEC \
 #define CC1_EXTRA_SPEC ""
 
 /* Pass -G xxx to the compiler and set correct endian mode.  */
-#define	CC1_SPEC "%{G*} %(cc1_cpu) \
+#define	CC1_SPEC "%{G*} %(cc1_cpu) %(cc1_float) \
 %{mlittle|mlittle-endian: %(cc1_endian_little);           \
   mbig   |mbig-endian   : %(cc1_endian_big);              \
   mcall-aixdesc |					  \

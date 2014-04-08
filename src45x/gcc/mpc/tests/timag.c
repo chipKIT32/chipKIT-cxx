@@ -1,6 +1,6 @@
 /* timag -- test file for mpc_imag.
 
-Copyright (C) 2008 Philippe Th\'eveny, Andreas Enge
+Copyright (C) INRIA, 2008
 
 This file is part of the MPC Library.
 

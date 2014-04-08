@@ -1,6 +1,6 @@
 /* mpc_get_str -- Convert a complex number into a string.
 
-Copyright (C) 2009 Philippe Th\'eveny, Andreas Enge, Paul Zimmermann
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 
@@ -32,13 +32,13 @@ MA 02111-1307, USA. */
 /* The output format is "(real imag)", the decimal point of the locale is
    used. */
 
-/* mp_prec_t can be either int or long int */
+/* mpfr_prec_t can be either int or long int */
 #if (__GMP_MP_SIZE_T_INT == 1)
 #define MPC_EXP_FORMAT_SPEC "i"
 #elif (__GMP_MP_SIZE_T_INT == 0)
 #define MPC_EXP_FORMAT_SPEC "li"
 #else
-#error "mp_exp_t size not supported"
+#error "mpfr_exp_t size not supported"
 #endif
 
 static char *

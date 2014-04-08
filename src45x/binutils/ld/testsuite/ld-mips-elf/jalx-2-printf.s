@@ -16,7 +16,7 @@ printf:
 	.fmask	0x00000000,0
 	.set	noreorder
 	.set	nomacro
-	
+
 	addiu	$sp,$sp,-8
 	sw	$fp,4($sp)
 	move	$fp,$sp

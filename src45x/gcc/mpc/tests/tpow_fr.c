@@ -1,6 +1,6 @@
 /* test file for mpc_pow_fr.
 
-Copyright (C) 2009 Paul Zimmermann
+Copyright (C) INRIA, 2009
 
 This file is part of the MPC Library.
 

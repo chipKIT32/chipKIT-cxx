@@ -127,6 +127,11 @@
   (and (match_code "reg,subreg")
        (match_test "ST_REG_P (true_regnum (op))")))
 
+(define_predicate "muldiv_target_operand"
+  (if_then_else (match_test "TARGET_MIPS16")
+		(match_operand 0 "hilo_operand")
+		(match_operand 0 "register_operand")))
+
 (define_special_predicate "pc_or_label_operand"
   (match_code "pc,label_ref"))
 
@@ -189,7 +194,9 @@
 })
 
 (define_predicate "move_operand"
-  (match_operand 0 "general_operand")
+  ;; Allow HI and LO to be used as the source of a MIPS16 move.
+  (ior (match_operand 0 "general_operand")
+       (match_operand 0 "hilo_operand"))
 {
   enum mips_symbol_type symbol_type;
 
@@ -296,6 +303,14 @@
   enum mips_symbol_type type;
   return (mips_symbolic_constant_p (op, SYMBOL_CONTEXT_LEA, &type)
 	  && type == SYMBOL_GOT_PAGE_OFST);
+})
+
+(define_predicate "tls_reloc_operand"
+  (match_code "const,symbol_ref,label_ref")
+{
+  enum mips_symbol_type type;
+  return (mips_symbolic_constant_p (op, SYMBOL_CONTEXT_LEA, &type)
+	  && (type == SYMBOL_DTPREL || type == SYMBOL_TPREL));
 })
 
 (define_predicate "symbol_ref_operand"

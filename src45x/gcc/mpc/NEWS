@@ -1,3 +1,27 @@
+Changes in version 0.9:
+  - New functions:
+    - mpc_set_dc, mpc_set_ldc, mpc_get_dc, mpc_get_ldc for converting
+      between mpc type variables and C variables of type double _Complex
+      or long double _Complex
+    - mpc_sin_cos, computing simultaneously the sine and cosine
+  - Speed-ups:
+    - mpc_pow_si through binary exponentiation
+    - mpc_pow_z when the exponent fits in a long
+    - mpc_tan through the use of mpc_sin_cos
+  - Bug fixes:
+    - trigonometric functions: infinite loop due to overflow for large arguments
+    - exp: close to infinite loop for argument close to 0
+    - sqrt: close to infinite loop for argument close to 1
+    - add_si: replaced macro by function, since the macro evaluated the same
+      expression twice
+  - Logging feature for debugging:
+      ./configure --enable-logging
+      #include "mpc-log.h" instead of #include "mpc.h"
+  - Minimally required library versions: gmp 4.3.2, mpfr 2.4.2
+
+Changes in version 0.8.2:
+  - Speed-up of mpc_pow_ui through binary exponentiation
+
 Changes in version 0.8.1:
   - Bug fixes:
     - acosh, asinh, atanh: swap of precisions between real and imaginary parts

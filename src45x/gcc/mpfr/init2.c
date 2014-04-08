@@ -1,13 +1,13 @@
 /* mpfr_init2 -- initialize a floating-point number with given precision
 
-Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,27 +16,27 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "mpfr-impl.h"
 
 void
-mpfr_init2 (mpfr_ptr x, mp_prec_t p)
+mpfr_init2 (mpfr_ptr x, mpfr_prec_t p)
 {
   mp_size_t xsize;
-  mp_ptr tmp;
+  mpfr_limb_ptr tmp;
 
   /* Check if we can represent the number of limbs
    * associated to the maximum of mpfr_prec_t*/
   MPFR_ASSERTN( MP_SIZE_T_MAX >= (MPFR_PREC_MAX/BYTES_PER_MP_LIMB) );
 
-  /* Check for correct BITS_PER_MP_LIMB and BYTES_PER_MP_LIMB */
-  MPFR_ASSERTN( BITS_PER_MP_LIMB == BYTES_PER_MP_LIMB * CHAR_BIT
+  /* Check for correct GMP_NUMB_BITS and BYTES_PER_MP_LIMB */
+  MPFR_ASSERTN( GMP_NUMB_BITS == BYTES_PER_MP_LIMB * CHAR_BIT
                 && sizeof(mp_limb_t) == BYTES_PER_MP_LIMB );
 
-  MPFR_ASSERTN (mp_bits_per_limb == BITS_PER_MP_LIMB);
+  MPFR_ASSERTN (mp_bits_per_limb == GMP_NUMB_BITS);
 
   /* Check for correct EXP NAN, ZERO & INF in both mpfr.h and in mpfr-impl.h */
   MPFR_ASSERTN( __MPFR_EXP_NAN  == MPFR_EXP_NAN  );
@@ -51,8 +51,8 @@ mpfr_init2 (mpfr_ptr x, mp_prec_t p)
      which both have an odd mantissa */
   MPFR_ASSERTN(p >= MPFR_PREC_MIN && p <= MPFR_PREC_MAX);
 
-  xsize = (mp_size_t) ((p - 1) / BITS_PER_MP_LIMB) + 1;
-  tmp   = (mp_ptr) (*__gmp_allocate_func)(MPFR_MALLOC_SIZE(xsize));
+  xsize = (mp_size_t) ((p - 1) / GMP_NUMB_BITS) + 1;
+  tmp   = (mpfr_limb_ptr) (*__gmp_allocate_func)(MPFR_MALLOC_SIZE(xsize));
 
   MPFR_PREC(x) = p;                /* Set prec */
   MPFR_EXP (x) = MPFR_EXP_INVALID; /* make sure that the exp field has a

@@ -42,6 +42,9 @@ struct expressionS;
 #define MAX_RELOC_EXPANSION 3
 #define LOCAL_LABELS_FB 1
 
+#define TC_ADDRESS_BYTES mips_address_bytes
+extern int mips_address_bytes (void);
+
 /* Maximum symbol offset that can be encoded in a BFD_RELOC_GPREL16
    relocation.  */
 #define MAX_GPREL_OFFSET (0x7FF0)
@@ -110,6 +113,9 @@ extern int mips_parse_long_option (const char *);
 #define tc_frob_label(sym) mips_define_label (sym)
 extern void mips_define_label (symbolS *);
 
+#define tc_new_dot_label(sym) mips_record_label (sym)
+extern void mips_record_label (symbolS *);
+
 #define tc_frob_file_before_adjust() mips_frob_file_before_adjust ()
 extern void mips_frob_file_before_adjust (void);
 
@@ -173,7 +179,9 @@ extern enum dwarf2_format mips_dwarf2_format (asection *);
 
 extern int mips_dwarf2_addr_size (void);
 #define DWARF2_ADDR_SIZE(bfd) mips_dwarf2_addr_size ()
-#define DWARF2_FDE_RELOC_SIZE mips_dwarf2_addr_size ()
+#define DWARF2_FDE_RELOC_SIZE (compact_eh ? 4 : mips_dwarf2_addr_size ())
+#define DWARF2_FDE_RELOC_ENCODING(enc) \
+  (enc | (compact_eh ? DW_EH_PE_pcrel : 0))
 
 #define TARGET_USE_CFIPOP 1
 
@@ -185,5 +193,25 @@ extern int tc_mips_regname_to_dw2regnum (char *regname);
 
 #define DWARF2_DEFAULT_RETURN_COLUMN 31
 #define DWARF2_CIE_DATA_ALIGNMENT (-4)
+
+#if defined (OBJ_ELF)
+
+#define tc_make_debug_seg mips_make_debug_seg
+segT mips_make_debug_seg (segT cseg, char *name);
+
+#define tc_cfi_endproc mips_cfi_endproc
+struct fde_entry;
+void mips_cfi_endproc (struct fde_entry *fde);
+
+#define tc_cfi_emit_expr mips_cfi_emit_expr
+void mips_cfi_emit_expr (expressionS *exp, int encoding);
+#define tc_cfi_special_encoding(e) \
+  ((e) == (DW_EH_PE_sdata4 | DW_EH_PE_datarel | DW_EH_PE_indirect) \
+   || (e) == (DW_EH_PE_sdata4 | DW_EH_PE_pcrel))
+
+#define tc_cfi_fix_eh_ref mips_cfi_fix_eh_ref
+void mips_cfi_fix_eh_ref (char *where, expressionS *exp);
+
+#endif /* OBJ_ELF */
 
 #endif /* TC_MIPS */

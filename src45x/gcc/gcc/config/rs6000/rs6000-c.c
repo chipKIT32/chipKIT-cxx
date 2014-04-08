@@ -3212,7 +3212,7 @@ altivec_build_resolved_builtin (tree *args, int n,
 /* Implementation of the resolve_overloaded_builtin target hook, to
    support Altivec's overloaded builtins.  */
 
-tree
+static tree
 altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 				    void *passed_arglist)
 {
@@ -3542,4 +3542,149 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
  bad:
   error ("invalid parameter combination for AltiVec intrinsic");
   return error_mark_node;
+}
+
+/* Return true if the pair of arguments in ARGS is acceptable according
+   to DECLTYPES and FLAGS.  CMPP determines whether this is for the
+   comparison arguments.  */
+
+static bool
+isel_arguments_valid (tree *args, tree *decltypes, int flags, bool cmpp)
+{
+  tree type0 = TREE_TYPE (args[0]);
+  tree type1 = TREE_TYPE (args[1]);
+  tree decltype0 = decltypes[0];
+  tree decltype1 = decltypes[1];
+
+  switch (flags & (cmpp ? ISEL_FLAG_CMP_MASK : ISEL_FLAG_SEL_MASK))
+    {
+      /* For pointer arguments and results, we just need to make sure
+	 we're receiving pointers, and they can be freely converted to
+	 and from void *.  For pointer results, we also need to ensure
+	 that the types of the passed arguments are compatible: this is
+	 similar to what the ?: construct would need to ensure.  */
+    case ISEL_FLAG_CMP_PTR:
+    case ISEL_FLAG_SEL_PTR:
+      {
+	/* Results compatible with each other?  */
+	if (!lang_hooks.types_compatible_p (type0, type1))
+	  return false;
+
+	return (POINTER_TYPE_P (type0)
+		&& POINTER_TYPE_P (type1));
+      }
+      break;
+      /* For signed and unsigned arguments and results, we just need to
+	 make sure that the argument types are compatible with the
+	 declared types; we can insert conversions to make everything
+	 match up.  */
+    case ISEL_FLAG_CMP_SIGNED:
+    case ISEL_FLAG_SEL_SIGNED:
+    case ISEL_FLAG_CMP_UNSIGNED:
+    case ISEL_FLAG_SEL_UNSIGNED:
+      return (lang_hooks.types_compatible_p (type0, decltype0)
+	      && lang_hooks.types_compatible_p (type1, decltype1));
+    default:
+      ;
+    }
+
+  gcc_unreachable ();
+}
+
+/* Determine if FNDECL is a generic isel intrinsic and if it can be
+   resolved to a non-generic version with a proper type using the
+   descriptions found in DESC.  Return a call to the non-generic builtin
+   if so.  */
+
+static tree
+rs6000_resolve_isel_builtin (location_t loc, tree fndecl,
+			     void *passed_arglist,
+			     const struct isel_builtin_desc *desc,
+			     int n_descs)
+{
+  VEC(tree,gc) *arglist = (VEC(tree,gc) *) passed_arglist;
+  unsigned int nargs = VEC_length (tree, arglist);
+  int i;
+  unsigned int fcode = DECL_FUNCTION_CODE (fndecl);
+  const struct isel_builtin_desc *generic = NULL;
+
+  /* Is this even a builtin we care about?  */
+  if (fcode < ISEL_BUILTIN_OVERLOADED_FIRST
+      || fcode > ISEL_BUILTIN_OVERLOADED_LAST)
+    return NULL_TREE;
+
+  if (nargs != 4)
+    {
+      error ("isel intrinsics only accept 4 arguments");
+      return error_mark_node;
+    }
+
+  /* Find the generic builtin we're resolving.  */
+  for (i = 0; i < n_descs; i++)
+    if (desc[i].code == fcode)
+      {
+	generic = &desc[i];
+	break;
+      }
+
+  /* Happens if we're looking for a 64-bit builtin in the 32-bit
+     descriptors.  */
+  if (generic == NULL)
+    return NULL_TREE;
+
+  /* Try all the builtins whose comparison matches the generic one.  */
+  for (i = 0; i < n_descs; i++)
+    {
+      const struct isel_builtin_desc *d = &desc[i];
+      int j;
+      tree *argp = VEC_address (tree, arglist);
+      tree impl_fndecl;
+      tree decltypes[4], t;
+      tree converted_args[4];
+
+      if (d == generic || d->cmp_code != generic->cmp_code)
+	continue;
+
+      impl_fndecl = rs6000_builtin_decls[d->code];
+      t = TYPE_ARG_TYPES (TREE_TYPE (impl_fndecl));
+      for (j = 0 ; t != void_list_node; j++, t = TREE_CHAIN (t))
+	decltypes[j] = TREE_VALUE (t);
+
+      if (!isel_arguments_valid (argp, decltypes, d->arg_flags, true)
+	  || !isel_arguments_valid (argp+2, decltypes+2, d->arg_flags, false))
+	continue;
+
+      /* We got here, we're ok.  Build a new, resolved CALL_EXPR.  */
+      for (j = 0; j < 4; j++)
+	converted_args[j] = fold_convert (decltypes[j], argp[j]);
+
+      return build_call_expr_loc (loc, impl_fndecl, 4,
+				  converted_args[0], converted_args[1],
+				  converted_args[2], converted_args[3]);
+    }
+
+  error ("invalid parameter combination for isel intrinsic");
+  return error_mark_node;
+}
+
+tree
+rs6000_resolve_overloaded_builtin (location_t loc, tree fndecl, void *arglist)
+{
+  tree t;
+
+  t = altivec_resolve_overloaded_builtin (loc, fndecl, arglist);
+  if (t)
+    return t;
+
+  t = rs6000_resolve_isel_builtin (loc, fndecl, arglist,
+				   builtin_iselw, ARRAY_SIZE (builtin_iselw));
+  if (t)
+    return t;
+
+  t = rs6000_resolve_isel_builtin (loc, fndecl, arglist,
+				   builtin_iseld, ARRAY_SIZE (builtin_iseld));
+  if (t)
+    return t;
+
+  return NULL_TREE;
 }

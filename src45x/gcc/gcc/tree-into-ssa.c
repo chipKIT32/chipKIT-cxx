@@ -547,7 +547,17 @@ set_livein_block (tree var, basic_block bb)
      NEED_PHI_STATE_MAYBE.  */
   if (state == NEED_PHI_STATE_NO)
     {
+#ifdef _BUILD_C30_
+      /* actually, bitmap_first_set_bit requries that the bitmap be
+         non empty - it doesn't return -1 if it is empty as the rest
+         of this block implies. */
+      int def_block_index = -1;
+
+      if (!bitmap_empty_p(db_p->def_blocks)) 
+        def_block_index = bitmap_first_set_bit (db_p->def_blocks);
+#else
       int def_block_index = bitmap_first_set_bit (db_p->def_blocks);
+#endif
 
       if (def_block_index == -1
 	  || ! dominated_by_p (CDI_DOMINATORS, bb,

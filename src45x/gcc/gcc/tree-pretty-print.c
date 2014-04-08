@@ -1044,7 +1044,7 @@ dump_generic_node (pretty_printer *buffer, tree node, int spc, int flags,
 	  if (flags & TDF_NOUID)
 	    pp_string (buffer, "<D.xxxx>");
 	  else
-	    pp_printf (buffer, "<D.%u>", DECL_UID (node));
+	    pp_printf (buffer, "<D.%u>", DECL_UID(node));
 	}
       break;
 

@@ -23,7 +23,7 @@ Target Undocumented RejectNegative Joined
 -mabi=ABI	Generate code that conforms to the given ABI
 
 mabicalls
-Target Undocumented Report Mask(ABICALLS) Undocumented
+Target Undocumented Report Mask(ABICALLS) 
 ;Generate code that can be used in SVR4-style dynamic objects
 
 ;mad
@@ -45,6 +45,10 @@ Use Branch Likely instructions, overriding the architecture default
 mflip-mips16
 Target Report Var(TARGET_FLIP_MIPS16)
 Switch on/off MIPS16 ASE on alternating functions for compiler testing
+
+mips16e
+Target Undocumented Var(TARGET_MCHP_MIPS16E)
+Use -mips16 instead of -mips16e
 
 mcheck-zero-division
 Target Report Mask(CHECK_ZERO_DIV)
@@ -70,13 +74,17 @@ Use trap instructions to check for integer divide by zero
 ;Target Report RejectNegative InverseMask(SINGLE_FLOAT, DOUBLE_FLOAT) Undocumented
 ;Allow hardware floating-point instructions to cover both 32-bit and 64-bit operations
 
-;mdsp
-;Target Report Mask(DSP) Undocumented
-;Use MIPS-DSP instructions
+mdsp
+Target Report Mask(DSP) Undocumented
+Use MIPS-DSP instructions
 
-;mdspr2
-;Target Report Mask(DSPR2) Undocumented
-;Use MIPS-DSP REV 2 instructions
+mdspr2
+Target Report RejectNegative Mask(DSPR2)
+Use MIPS-DSP REV 2 instructions
+
+mno-dspr2
+Target Report RejectNegative Var(TARGET_NO_DSPR2) Undocumented
+Reject MIPS-DSP REV 2 instructions
 
 mdebugmips
 Target Undocumented Var(TARGET_DEBUG_MODE)
@@ -103,6 +111,10 @@ Use NewABI-style %reloc() assembly operators
 mextern-sdata
 Target Report Var(TARGET_EXTERN_SDATA) Init(1)
 Use -G for data that is not defined by the current object
+
+mfix-24k
+Target Report Var(TARGET_FIX_24K) Undocumented
+;Work around certain 24K errata
 
 mfix-r4000
 Target Report Mask(FIX_R4000) Undocumented
@@ -172,12 +184,20 @@ When generating -mabicalls code, allow executables to use PLTs and copy relocati
 ;Target Report RejectNegative InverseMask(SOFT_FLOAT_ABI, HARD_FLOAT_ABI) Undocumented
 ;Allow the use of hardware floating-point ABI and instructions
 
+mext=
+Target Joined Var(mchp_import)
+Enable support for importing external code from another vendor
+
+minterlink-compressed
+Target Report Var(TARGET_INTERLINK_COMPRESSED) Init(0)
+Generate code that is link-compatible with MIPS16 and microMIPS code.
+
 minterlink-mips16
-Target Report Var(TARGET_INTERLINK_MIPS16) Init(-1)
-Generate code that can be safely linked with MIPS16 code.
+Target Report
+An alias for minterlink-compressed provided for backward-compatibility.
 
 mjals
-Target Report Var(TARGET_JALS) Init(1) Undocumented
+Target Report Var(TARGET_JALS) Init(0) 
 Generate jals for microMIPS by recognizing that the branch delay slot instruction can be 16 bits.  This implies that the function call cannot switch the current mode during the linking stage, because we don't have jalxs that supports 16-bit branch delay slot instructions.
 
 mips
@@ -197,7 +217,7 @@ Generate MIPS16 code
 ;Use MIPS-3D instructions
 
 mllsc
-Target Report Mask(LLSC)
+Target Report Mask(LLSC) Undocumented
 Use ll, sc and sync instructions
 
 mlocal-sdata
@@ -237,8 +257,12 @@ Target Report Var(TARGET_MT) Undocumented
 Allow the use of MT instructions
 
 mmcu
-Target Report Mask(MCU) Undocumented
+Target Report RejectNegative Mask(MCU)
 Use MCU instructions
+
+mno-mcu
+Target Report RejectNegative Var(TARGET_NO_MCU) Undocumented
+Reject MCU instructions
 
 mno-flush-func
 Target RejectNegative
@@ -320,6 +344,10 @@ mxgot
 Target Report Var(TARGET_XGOT) Undocumented
 Lift restrictions on GOT size
 
+mframe-header-opt
+Target Report Var(flag_frame_header_optimization) Optimization
+Optimize frame header
+
 mno-float
 Target Report RejectNegative Var(TARGET_NO_FLOAT)
 Prevent the use of all floating-point operations
@@ -329,11 +357,11 @@ Target Report RejectNagative Joined Var(mchp_config_data_dir) Undocumented
 
 mdebugger
 Target Var(TARGET_DEBUG_EXEC)
-Allocate space for debugger executive
+Allocate space for debugger executive and enable debugging features
 
-mno-peripheral-libs
-Target RejectNegative Var(TARGET_NOLINK_PERIPHERAL_LIBS)
-Do not link peripheral libraries
+mperipheral-libs
+Target Var(TARGET_LINK_PERIPHERAL_LIBS)
+Link peripheral libraries
 
 mno-mpdebug-lib
 Target RejectNegative Var(TARGET_NOLINK_MPDEBUG_LIBS)
@@ -345,14 +373,53 @@ Enable APPIO debug-support library functions
 
 msmart-io
 Target Var Var(TARGET_MCHP_SMARTIO) Init(0)
-Enable smart-IO library call forwarding level 1
+Enable smart-IO library call forwarding level 0
 
 msmart-io=
 Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(0)
 -msmart-io=LEVEL	Enable smart-IO library call forwarding level LEVEL [0,2]
 
+mxc32cpp-lib
+Target Var Var(TARGET_XC32_LIBCPP) Undocumented
+-mxc32cpp-lib	Use the XC32 Standard C++ Libraries
+
+mtext=
+Target Report RejectNegative Joined Var(mchp_text_scn) Init(NULL)
+-mtext=NAME	Name the text section NAME (default .text)
+
 mprocessor=
-Target Report RejectNegative Joined Var(mchp_processor_string)
+Target Report RejectNegative Joined Var(mchp_processor_string) Init(0)
 -mprocessor=PROCESSOR	Specify the target PIC32 PROCESSOR
 
+mcci
+Target RejectNegative Var(TARGET_CCI)
+-mcci	Use CCI keywords
+
+mprint-builtins
+Target RejectNegative Var(TARGET_PRINT_BUILTINS)
+-mprint-builtins	Print a list of enabled builtin functions
+
+mmips16-exceptions
+Target Var Var(TARGET_MIPS16_EXCEPTIONS) Undocumented
+-mmips16-exceptions	Allow unsupported mips16 exceptions
+
+mno-default-isr-vectors
+Target Var Var(TARGET_DEFAULT_ISR_VECTORS) Undocumented
+-mno-default-isr-vectors	Prevent linking the default ISR vectors to the default handler
+
+msmall-isa
+Target Var Var(TARGET_SMALL_ISA) Init(0)
+-msmall-isa	Use -mips16 or -mmicromips as appropriate for the target specified in the -mprocessor option
+
+mpic32mxlibs
+Target RejectNegative Var Var(TARGET_PIC32MX_LIBS) Undocumented
+-mpic32mxlibs		Use the PIC32MX multilib variant 
+
+mpic32mzlibs
+Target RejectNegative Var Var(TARGET_PIC32MZ_LIBS) Undocumented
+-mpic32mzlibs		Use the PIC32MZ multilib variant
+
+mresource=
+Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented 
+Identify compiler resource file
 

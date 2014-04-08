@@ -30,7 +30,7 @@ along with GCC; see the file COPYING3.  If not see
 
      for (i = 0; i != n; i++)
        {
-         var = ...	
+         var = ...
 
          do other things with var...
        }
@@ -386,7 +386,7 @@ find_static_nonvolatile_declarations (void)
 	     normal, non-static local variable which is then assigned to
 	     STATICVAR in a subsequent statement), don't bother finding
 	     new declarations if we see a GIMPLE_CALL.
-	     
+
 	     In a similar fashion, asm statements that clobber memory
 	     will appear to define static variables.  In general,
 	     however, assuming that asm statements define static
@@ -715,7 +715,7 @@ compute_definedness_for_block (basic_block bb)
 	   the liveness information we require, but for now, we're being
 	   pessimistic.  */
 	sbitmap_zero (data->defined_out);
-      else 
+      else
 	{
 	  struct rls_stmt_info dummy;
 	  void **slot;
@@ -841,7 +841,7 @@ execute_rls (void)
 
       if (dump_file)
         fprintf (dump_file, "found %d static variables to consider\n",
-                 stats.n_statics);
+                 (int)stats.n_statics);
 
       initialize_block_and_statement_dataflow (stats.n_statics);
 
@@ -851,7 +851,7 @@ execute_rls (void)
 
       if (dump_file)
         fprintf (dump_file, "removed %d static variables\n",
-                 stats.n_optimizable);
+                 (int)stats.n_optimizable);
     }
 
   rls_done ();

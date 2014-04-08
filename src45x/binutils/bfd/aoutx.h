@@ -1,6 +1,6 @@
 /* BFD semi-generic back-end for a.out binaries.
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
-   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+   2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011
    Free Software Foundation, Inc.
    Written by Cygnus Support.
 
@@ -269,7 +269,7 @@ NAME (aout, reloc_type_lookup) (bfd *abfd, bfd_reloc_code_real_type code)
   int ext = obj_reloc_entry_size (abfd) == RELOC_EXT_SIZE;
 
   if (code == BFD_RELOC_CTOR)
-    switch (bfd_get_arch_info (abfd)->bits_per_address)
+    switch (bfd_arch_bits_per_address (abfd))
       {
       case 32:
 	code = BFD_RELOC_32;
@@ -798,6 +798,8 @@ NAME (aout, machine_type) (enum bfd_architecture arch,
 	case bfd_mach_mipsisa64r2:
 	case bfd_mach_mips_sb1:
 	case bfd_mach_mips_xlr:
+	case bfd_mach_mips_xlp:
+	case bfd_mach_pic32mx:
 	  /* FIXME: These should be MIPS3, MIPS4, MIPS16, MIPS32, etc.  */
 	  arch_flags = M_MIPS2;
 	  break;
@@ -3210,7 +3212,8 @@ aout_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
 static bfd_boolean
 aout_link_check_ar_symbols (bfd *abfd,
 			    struct bfd_link_info *info,
-			    bfd_boolean *pneeded)
+			    bfd_boolean *pneeded,
+			    bfd **subsbfd)
 {
   struct external_nlist *p;
   struct external_nlist *pend;
@@ -3304,7 +3307,8 @@ aout_link_check_ar_symbols (bfd *abfd,
 		continue;
 	    }
 
-	  if (! (*info->callbacks->add_archive_element) (info, abfd, name))
+	  if (!(*info->callbacks
+		->add_archive_element) (info, abfd, name, subsbfd))
 	    return FALSE;
 	  *pneeded = TRUE;
 	  return TRUE;
@@ -3331,9 +3335,8 @@ aout_link_check_ar_symbols (bfd *abfd,
 			 outside BFD.  We assume that we should link
 			 in the object file.  This is done for the -u
 			 option in the linker.  */
-		      if (! (*info->callbacks->add_archive_element) (info,
-								     abfd,
-								     name))
+		      if (!(*info->callbacks
+			    ->add_archive_element) (info, abfd, name, subsbfd))
 			return FALSE;
 		      *pneeded = TRUE;
 		      return TRUE;
@@ -3342,8 +3345,8 @@ aout_link_check_ar_symbols (bfd *abfd,
 		     symbol.  It is already on the undefs list.  */
 		  h->type = bfd_link_hash_common;
 		  h->u.c.p = (struct bfd_link_hash_common_entry *)
-                      bfd_hash_allocate (&info->hash->table,
-                                         sizeof (struct bfd_link_hash_common_entry));
+		    bfd_hash_allocate (&info->hash->table,
+				       sizeof (struct bfd_link_hash_common_entry));
 		  if (h->u.c.p == NULL)
 		    return FALSE;
 
@@ -3381,7 +3384,8 @@ aout_link_check_ar_symbols (bfd *abfd,
 	     it if the current link symbol is common.  */
 	  if (h->type == bfd_link_hash_undefined)
 	    {
-	      if (! (*info->callbacks->add_archive_element) (info, abfd, name))
+	      if (!(*info->callbacks
+		    ->add_archive_element) (info, abfd, name, subsbfd))
 		return FALSE;
 	      *pneeded = TRUE;
 	      return TRUE;
@@ -3402,21 +3406,36 @@ aout_link_check_archive_element (bfd *abfd,
 				 struct bfd_link_info *info,
 				 bfd_boolean *pneeded)
 {
-  if (! aout_get_external_symbols (abfd))
+  bfd *oldbfd;
+  bfd_boolean needed;
+
+  if (!aout_get_external_symbols (abfd))
     return FALSE;
 
-  if (! aout_link_check_ar_symbols (abfd, info, pneeded))
+  oldbfd = abfd;
+  if (!aout_link_check_ar_symbols (abfd, info, pneeded, &abfd))
     return FALSE;
 
-  if (*pneeded)
+  needed = *pneeded;
+  if (needed)
     {
-      if (! aout_link_add_symbols (abfd, info))
+      /* Potentially, the add_archive_element hook may have set a
+	 substitute BFD for us.  */
+      if (abfd != oldbfd)
+	{
+	  if (!info->keep_memory
+	      && !aout_link_free_symbols (oldbfd))
+	    return FALSE;
+	  if (!aout_get_external_symbols (abfd))
+	    return FALSE;
+	}
+      if (!aout_link_add_symbols (abfd, info))
 	return FALSE;
     }
 
-  if (! info->keep_memory || ! *pneeded)
+  if (!info->keep_memory || !needed)
     {
-      if (! aout_link_free_symbols (abfd))
+      if (!aout_link_free_symbols (abfd))
 	return FALSE;
     }
 
@@ -3534,9 +3553,10 @@ aout_link_includes_newfunc (struct bfd_hash_entry *entry,
    object.  */
 
 static bfd_boolean
-aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
+aout_link_write_other_symbol (struct bfd_hash_entry *bh, void *data)
 {
-  struct aout_final_link_info *finfo = (struct aout_final_link_info *) data;
+  struct aout_link_hash_entry *h = (struct aout_link_hash_entry *) bh;
+  struct aout_final_link_info *flaginfo = (struct aout_final_link_info *) data;
   bfd *output_bfd;
   int type;
   bfd_vma val;
@@ -3551,12 +3571,12 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
 	return TRUE;
     }
 
-  output_bfd = finfo->output_bfd;
+  output_bfd = flaginfo->output_bfd;
 
   if (aout_backend_info (output_bfd)->write_dynamic_symbol != NULL)
     {
       if (! ((*aout_backend_info (output_bfd)->write_dynamic_symbol)
-	     (output_bfd, finfo->info, h)))
+	     (output_bfd, flaginfo->info, h)))
 	{
 	  /* FIXME: No way to handle errors.  */
 	  abort ();
@@ -3570,9 +3590,9 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
 
   /* An indx of -2 means the symbol must be written.  */
   if (h->indx != -2
-      && (finfo->info->strip == strip_all
-	  || (finfo->info->strip == strip_some
-	      && bfd_hash_lookup (finfo->info->keep_hash, h->root.root.string,
+      && (flaginfo->info->strip == strip_all
+	  || (flaginfo->info->strip == strip_some
+	      && bfd_hash_lookup (flaginfo->info->keep_hash, h->root.root.string,
 				  FALSE, FALSE) == NULL)))
     return TRUE;
 
@@ -3620,6 +3640,7 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
     case bfd_link_hash_undefweak:
       type = N_WEAKU;
       val = 0;
+      break;
     case bfd_link_hash_indirect:
       /* We ignore these symbols, since the indirected symbol is
 	 already in the hash table.  */
@@ -3629,7 +3650,7 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
   H_PUT_8 (output_bfd, type, outsym.e_type);
   H_PUT_8 (output_bfd, 0, outsym.e_other);
   H_PUT_16 (output_bfd, 0, outsym.e_desc);
-  indx = add_to_stringtab (output_bfd, finfo->strtab, h->root.root.string,
+  indx = add_to_stringtab (output_bfd, flaginfo->strtab, h->root.root.string,
 			   FALSE);
   if (indx == - (bfd_size_type) 1)
     /* FIXME: No way to handle errors.  */
@@ -3639,12 +3660,12 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
   PUT_WORD (output_bfd, val, outsym.e_value);
 
   amt = EXTERNAL_NLIST_SIZE;
-  if (bfd_seek (output_bfd, finfo->symoff, SEEK_SET) != 0
+  if (bfd_seek (output_bfd, flaginfo->symoff, SEEK_SET) != 0
       || bfd_bwrite ((void *) &outsym, amt, output_bfd) != amt)
     /* FIXME: No way to handle errors.  */
     abort ();
 
-  finfo->symoff += EXTERNAL_NLIST_SIZE;
+  flaginfo->symoff += EXTERNAL_NLIST_SIZE;
   h->indx = obj_aout_external_sym_count (output_bfd);
   ++obj_aout_external_sym_count (output_bfd);
 
@@ -3654,7 +3675,7 @@ aout_link_write_other_symbol (struct aout_link_hash_entry *h, void * data)
 /* Handle a link order which is supposed to generate a reloc.  */
 
 static bfd_boolean
-aout_link_reloc_link_order (struct aout_final_link_info *finfo,
+aout_link_reloc_link_order (struct aout_final_link_info *flaginfo,
 			    asection *o,
 			    struct bfd_link_order *p)
 {
@@ -3677,7 +3698,7 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	r_index = N_ABS | N_EXT;
       else
 	{
-	  BFD_ASSERT (pr->u.section->owner == finfo->output_bfd);
+	  BFD_ASSERT (pr->u.section->owner == flaginfo->output_bfd);
 	  r_index = pr->u.section->target_index;
 	}
     }
@@ -3688,7 +3709,7 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
       BFD_ASSERT (p->type == bfd_symbol_reloc_link_order);
       r_extern = 1;
       h = ((struct aout_link_hash_entry *)
-	   bfd_wrapped_link_hash_lookup (finfo->output_bfd, finfo->info,
+	   bfd_wrapped_link_hash_lookup (flaginfo->output_bfd, flaginfo->info,
 					 pr->u.name, FALSE, FALSE, TRUE));
       if (h != NULL
 	  && h->indx >= 0)
@@ -3701,37 +3722,37 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	     symbol.  */
 	  h->indx = -2;
 	  h->written = FALSE;
-	  if (! aout_link_write_other_symbol (h, (void *) finfo))
+	  if (!aout_link_write_other_symbol (&h->root.root, flaginfo))
 	    return FALSE;
 	  r_index = h->indx;
 	}
       else
 	{
-	  if (! ((*finfo->info->callbacks->unattached_reloc)
-		 (finfo->info, pr->u.name, NULL, NULL, (bfd_vma) 0)))
+	  if (! ((*flaginfo->info->callbacks->unattached_reloc)
+		 (flaginfo->info, pr->u.name, NULL, NULL, (bfd_vma) 0)))
 	    return FALSE;
 	  r_index = 0;
 	}
     }
 
-  howto = bfd_reloc_type_lookup (finfo->output_bfd, pr->reloc);
+  howto = bfd_reloc_type_lookup (flaginfo->output_bfd, pr->reloc);
   if (howto == 0)
     {
       bfd_set_error (bfd_error_bad_value);
       return FALSE;
     }
 
-  if (o == obj_textsec (finfo->output_bfd))
-    reloff_ptr = &finfo->treloff;
-  else if (o == obj_datasec (finfo->output_bfd))
-    reloff_ptr = &finfo->dreloff;
+  if (o == obj_textsec (flaginfo->output_bfd))
+    reloff_ptr = &flaginfo->treloff;
+  else if (o == obj_datasec (flaginfo->output_bfd))
+    reloff_ptr = &flaginfo->dreloff;
   else
     abort ();
 
-  if (obj_reloc_entry_size (finfo->output_bfd) == RELOC_STD_SIZE)
+  if (obj_reloc_entry_size (flaginfo->output_bfd) == RELOC_STD_SIZE)
     {
 #ifdef MY_put_reloc
-      MY_put_reloc (finfo->output_bfd, r_extern, r_index, p->offset, howto,
+      MY_put_reloc (flaginfo->output_bfd, r_extern, r_index, p->offset, howto,
 		    &srel);
 #else
       {
@@ -3747,8 +3768,8 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	r_relative = (howto->type & 32) != 0;
 	r_length = howto->size;
 
-	PUT_WORD (finfo->output_bfd, p->offset, srel.r_address);
-	if (bfd_header_big_endian (finfo->output_bfd))
+	PUT_WORD (flaginfo->output_bfd, p->offset, srel.r_address);
+	if (bfd_header_big_endian (flaginfo->output_bfd))
 	  {
 	    srel.r_index[0] = r_index >> 16;
 	    srel.r_index[1] = r_index >> 8;
@@ -3794,7 +3815,7 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	  buf = (bfd_byte *) bfd_zmalloc (size);
 	  if (buf == NULL)
 	    return FALSE;
-	  r = MY_relocate_contents (howto, finfo->output_bfd,
+	  r = MY_relocate_contents (howto, flaginfo->output_bfd,
 				    (bfd_vma) pr->addend, buf);
 	  switch (r)
 	    {
@@ -3804,10 +3825,10 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	    case bfd_reloc_outofrange:
 	      abort ();
 	    case bfd_reloc_overflow:
-	      if (! ((*finfo->info->callbacks->reloc_overflow)
-		     (finfo->info, NULL,
+	      if (! ((*flaginfo->info->callbacks->reloc_overflow)
+		     (flaginfo->info, NULL,
 		      (p->type == bfd_section_reloc_link_order
-		       ? bfd_section_name (finfo->output_bfd,
+		       ? bfd_section_name (flaginfo->output_bfd,
 					   pr->u.section)
 		       : pr->u.name),
 		      howto->name, pr->addend, NULL, NULL, (bfd_vma) 0)))
@@ -3817,7 +3838,7 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 		}
 	      break;
 	    }
-	  ok = bfd_set_section_contents (finfo->output_bfd, o, (void *) buf,
+	  ok = bfd_set_section_contents (flaginfo->output_bfd, o, (void *) buf,
 					 (file_ptr) p->offset, size);
 	  free (buf);
 	  if (! ok)
@@ -3827,12 +3848,12 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
   else
     {
 #ifdef MY_put_ext_reloc
-      MY_put_ext_reloc (finfo->output_bfd, r_extern, r_index, p->offset,
+      MY_put_ext_reloc (flaginfo->output_bfd, r_extern, r_index, p->offset,
 			howto, &erel, pr->addend);
 #else
-      PUT_WORD (finfo->output_bfd, p->offset, erel.r_address);
+      PUT_WORD (flaginfo->output_bfd, p->offset, erel.r_address);
 
-      if (bfd_header_big_endian (finfo->output_bfd))
+      if (bfd_header_big_endian (flaginfo->output_bfd))
 	{
 	  erel.r_index[0] = r_index >> 16;
 	  erel.r_index[1] = r_index >> 8;
@@ -3851,25 +3872,25 @@ aout_link_reloc_link_order (struct aout_final_link_info *finfo,
 	      | (howto->type << RELOC_EXT_BITS_TYPE_SH_LITTLE);
 	}
 
-      PUT_WORD (finfo->output_bfd, (bfd_vma) pr->addend, erel.r_addend);
+      PUT_WORD (flaginfo->output_bfd, (bfd_vma) pr->addend, erel.r_addend);
 #endif /* MY_put_ext_reloc */
 
       rel_ptr = (void *) &erel;
     }
 
-  amt = obj_reloc_entry_size (finfo->output_bfd);
-  if (bfd_seek (finfo->output_bfd, *reloff_ptr, SEEK_SET) != 0
-      || bfd_bwrite (rel_ptr, amt, finfo->output_bfd) != amt)
+  amt = obj_reloc_entry_size (flaginfo->output_bfd);
+  if (bfd_seek (flaginfo->output_bfd, *reloff_ptr, SEEK_SET) != 0
+      || bfd_bwrite (rel_ptr, amt, flaginfo->output_bfd) != amt)
     return FALSE;
 
-  *reloff_ptr += obj_reloc_entry_size (finfo->output_bfd);
+  *reloff_ptr += obj_reloc_entry_size (flaginfo->output_bfd);
 
   /* Assert that the relocs have not run into the symbols, and that n
      the text relocs have not run into the data relocs.  */
-  BFD_ASSERT (*reloff_ptr <= obj_sym_filepos (finfo->output_bfd)
-	      && (reloff_ptr != &finfo->treloff
+  BFD_ASSERT (*reloff_ptr <= obj_sym_filepos (flaginfo->output_bfd)
+	      && (reloff_ptr != &flaginfo->treloff
 		  || (*reloff_ptr
-		      <= obj_datasec (finfo->output_bfd)->rel_filepos)));
+		      <= obj_datasec (flaginfo->output_bfd)->rel_filepos)));
 
   return TRUE;
 }
@@ -3894,7 +3915,7 @@ aout_reloc_index_to_section (bfd *abfd, int indx)
 /* Relocate an a.out section using standard a.out relocs.  */
 
 static bfd_boolean
-aout_link_input_section_std (struct aout_final_link_info *finfo,
+aout_link_input_section_std (struct aout_final_link_info *flaginfo,
 			     bfd *input_bfd,
 			     asection *input_section,
 			     struct reloc_std_external *relocs,
@@ -3915,18 +3936,18 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
   struct reloc_std_external *rel;
   struct reloc_std_external *rel_end;
 
-  output_bfd = finfo->output_bfd;
+  output_bfd = flaginfo->output_bfd;
   check_dynamic_reloc = aout_backend_info (output_bfd)->check_dynamic_reloc;
 
   BFD_ASSERT (obj_reloc_entry_size (input_bfd) == RELOC_STD_SIZE);
   BFD_ASSERT (input_bfd->xvec->header_byteorder
 	      == output_bfd->xvec->header_byteorder);
 
-  relocatable = finfo->info->relocatable;
+  relocatable = flaginfo->info->relocatable;
   syms = obj_aout_external_syms (input_bfd);
   strings = obj_aout_external_strings (input_bfd);
   sym_hashes = obj_aout_sym_hashes (input_bfd);
-  symbol_map = finfo->symbol_map;
+  symbol_map = flaginfo->symbol_map;
 
   reloc_count = rel_size / RELOC_STD_SIZE;
   rel = relocs;
@@ -3995,7 +4016,7 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 
       if (howto == NULL)
 	{
-	  (*finfo->info->callbacks->einfo)
+	  (*flaginfo->info->callbacks->einfo)
 	    (_("%P: %B: unexpected relocation type\n"), input_bfd);
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -4059,8 +4080,8 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 			    {
 			      h->indx = -2;
 			      h->written = FALSE;
-			      if (! aout_link_write_other_symbol (h,
-								  (void *) finfo))
+			      if (!aout_link_write_other_symbol (&h->root.root,
+								 flaginfo))
 				return FALSE;
 			    }
 			  r_index = h->indx;
@@ -4071,8 +4092,8 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 
 			  name = strings + GET_WORD (input_bfd,
 						     syms[r_index].e_strx);
-			  if (! ((*finfo->info->callbacks->unattached_reloc)
-				 (finfo->info, name, input_bfd, input_section,
+			  if (! ((*flaginfo->info->callbacks->unattached_reloc)
+				 (flaginfo->info, name, input_bfd, input_section,
 				  r_addr)))
 			    return FALSE;
 			  r_index = 0;
@@ -4178,7 +4199,7 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 	      bfd_boolean skip;
 
 	      if (! ((*check_dynamic_reloc)
-		     (finfo->info, input_bfd, input_section, h,
+		     (flaginfo->info, input_bfd, input_section, h,
 		      (void *) rel, contents, &skip, &relocation)))
 		return FALSE;
 	      if (skip)
@@ -4188,7 +4209,7 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 	  /* Now warn if a global symbol is undefined.  We could not
              do this earlier, because check_dynamic_reloc might want
              to skip this reloc.  */
-	  if (hundef && ! finfo->info->shared && ! r_baserel)
+	  if (hundef && ! flaginfo->info->shared && ! r_baserel)
 	    {
 	      const char *name;
 
@@ -4196,8 +4217,8 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 		name = h->root.root.string;
 	      else
 		name = strings + GET_WORD (input_bfd, syms[r_index].e_strx);
-	      if (! ((*finfo->info->callbacks->undefined_symbol)
-		     (finfo->info, name, input_bfd, input_section,
+	      if (! ((*flaginfo->info->callbacks->undefined_symbol)
+		     (flaginfo->info, name, input_bfd, input_section,
 		     r_addr, TRUE)))
 		return FALSE;
 	    }
@@ -4231,8 +4252,8 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 		    s = aout_reloc_index_to_section (input_bfd, r_index);
 		    name = bfd_section_name (input_bfd, s);
 		  }
-		if (! ((*finfo->info->callbacks->reloc_overflow)
-		       (finfo->info, (h ? &h->root : NULL), name,
+		if (! ((*flaginfo->info->callbacks->reloc_overflow)
+		       (flaginfo->info, (h ? &h->root : NULL), name,
 			howto->name, (bfd_vma) 0, input_bfd,
 			input_section, r_addr)))
 		  return FALSE;
@@ -4248,7 +4269,7 @@ aout_link_input_section_std (struct aout_final_link_info *finfo,
 /* Relocate an a.out section using extended a.out relocs.  */
 
 static bfd_boolean
-aout_link_input_section_ext (struct aout_final_link_info *finfo,
+aout_link_input_section_ext (struct aout_final_link_info *flaginfo,
 			     bfd *input_bfd,
 			     asection *input_section,
 			     struct reloc_ext_external *relocs,
@@ -4269,18 +4290,18 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
   struct reloc_ext_external *rel;
   struct reloc_ext_external *rel_end;
 
-  output_bfd = finfo->output_bfd;
+  output_bfd = flaginfo->output_bfd;
   check_dynamic_reloc = aout_backend_info (output_bfd)->check_dynamic_reloc;
 
   BFD_ASSERT (obj_reloc_entry_size (input_bfd) == RELOC_EXT_SIZE);
   BFD_ASSERT (input_bfd->xvec->header_byteorder
 	      == output_bfd->xvec->header_byteorder);
 
-  relocatable = finfo->info->relocatable;
+  relocatable = flaginfo->info->relocatable;
   syms = obj_aout_external_syms (input_bfd);
   strings = obj_aout_external_strings (input_bfd);
   sym_hashes = obj_aout_sym_hashes (input_bfd);
-  symbol_map = finfo->symbol_map;
+  symbol_map = flaginfo->symbol_map;
 
   reloc_count = rel_size / RELOC_EXT_SIZE;
   rel = relocs;
@@ -4321,7 +4342,7 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 
       if (r_type >= TABLE_SIZE (howto_table_ext))
 	{
-	  (*finfo->info->callbacks->einfo)
+	  (*flaginfo->info->callbacks->einfo)
 	    (_("%P: %B: unexpected relocation type\n"), input_bfd);
 	  bfd_set_error (bfd_error_bad_value);
 	  return FALSE;
@@ -4401,8 +4422,8 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 			    {
 			      h->indx = -2;
 			      h->written = FALSE;
-			      if (! aout_link_write_other_symbol (h,
-								  (void *) finfo))
+			      if (!aout_link_write_other_symbol (&h->root.root,
+								 flaginfo))
 				return FALSE;
 			    }
 			  r_index = h->indx;
@@ -4413,8 +4434,8 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 
 			  name = strings + GET_WORD (input_bfd,
 						     syms[r_index].e_strx);
-			  if (! ((*finfo->info->callbacks->unattached_reloc)
-				 (finfo->info, name, input_bfd, input_section,
+			  if (! ((*flaginfo->info->callbacks->unattached_reloc)
+				 (flaginfo->info, name, input_bfd, input_section,
 				  r_addr)))
 			    return FALSE;
 			  r_index = 0;
@@ -4581,7 +4602,7 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 	      bfd_boolean skip;
 
 	      if (! ((*check_dynamic_reloc)
-		     (finfo->info, input_bfd, input_section, h,
+		     (flaginfo->info, input_bfd, input_section, h,
 		      (void *) rel, contents, &skip, &relocation)))
 		return FALSE;
 	      if (skip)
@@ -4592,7 +4613,7 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
              do this earlier, because check_dynamic_reloc might want
              to skip this reloc.  */
 	  if (hundef
-	      && ! finfo->info->shared
+	      && ! flaginfo->info->shared
 	      && r_type != (unsigned int) RELOC_BASE10
 	      && r_type != (unsigned int) RELOC_BASE13
 	      && r_type != (unsigned int) RELOC_BASE22)
@@ -4603,8 +4624,8 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 		name = h->root.root.string;
 	      else
 		name = strings + GET_WORD (input_bfd, syms[r_index].e_strx);
-	      if (! ((*finfo->info->callbacks->undefined_symbol)
-		     (finfo->info, name, input_bfd, input_section,
+	      if (! ((*flaginfo->info->callbacks->undefined_symbol)
+		     (flaginfo->info, name, input_bfd, input_section,
 		     r_addr, TRUE)))
 		return FALSE;
 	    }
@@ -4650,8 +4671,8 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 			s = aout_reloc_index_to_section (input_bfd, r_index);
 			name = bfd_section_name (input_bfd, s);
 		      }
-		    if (! ((*finfo->info->callbacks->reloc_overflow)
-			   (finfo->info, (h ? &h->root : NULL), name,
+		    if (! ((*flaginfo->info->callbacks->reloc_overflow)
+			   (flaginfo->info, (h ? &h->root : NULL), name,
 			    howto_table_ext[r_type].name,
 			    r_addend, input_bfd, input_section, r_addr)))
 		      return FALSE;
@@ -4668,7 +4689,7 @@ aout_link_input_section_ext (struct aout_final_link_info *finfo,
 /* Link an a.out section into the output file.  */
 
 static bfd_boolean
-aout_link_input_section (struct aout_final_link_info *finfo,
+aout_link_input_section (struct aout_final_link_info *flaginfo,
 			 bfd *input_bfd,
 			 asection *input_section,
 			 file_ptr *reloff_ptr,
@@ -4680,7 +4701,7 @@ aout_link_input_section (struct aout_final_link_info *finfo,
   /* Get the section contents.  */
   input_size = input_section->size;
   if (! bfd_get_section_contents (input_bfd, input_section,
-				  (void *) finfo->contents,
+				  (void *) flaginfo->contents,
 				  (file_ptr) 0, input_size))
     return FALSE;
 
@@ -4690,7 +4711,7 @@ aout_link_input_section (struct aout_final_link_info *finfo,
     relocs = aout_section_data (input_section)->relocs;
   else
     {
-      relocs = finfo->relocs;
+      relocs = flaginfo->relocs;
       if (rel_size > 0)
 	{
 	  if (bfd_seek (input_bfd, input_section->rel_filepos, SEEK_SET) != 0
@@ -4702,44 +4723,44 @@ aout_link_input_section (struct aout_final_link_info *finfo,
   /* Relocate the section contents.  */
   if (obj_reloc_entry_size (input_bfd) == RELOC_STD_SIZE)
     {
-      if (! aout_link_input_section_std (finfo, input_bfd, input_section,
+      if (! aout_link_input_section_std (flaginfo, input_bfd, input_section,
 					 (struct reloc_std_external *) relocs,
-					 rel_size, finfo->contents))
+					 rel_size, flaginfo->contents))
 	return FALSE;
     }
   else
     {
-      if (! aout_link_input_section_ext (finfo, input_bfd, input_section,
+      if (! aout_link_input_section_ext (flaginfo, input_bfd, input_section,
 					 (struct reloc_ext_external *) relocs,
-					 rel_size, finfo->contents))
+					 rel_size, flaginfo->contents))
 	return FALSE;
     }
 
   /* Write out the section contents.  */
-  if (! bfd_set_section_contents (finfo->output_bfd,
+  if (! bfd_set_section_contents (flaginfo->output_bfd,
 				  input_section->output_section,
-				  (void *) finfo->contents,
+				  (void *) flaginfo->contents,
 				  (file_ptr) input_section->output_offset,
 				  input_size))
     return FALSE;
 
   /* If we are producing relocatable output, the relocs were
      modified, and we now write them out.  */
-  if (finfo->info->relocatable && rel_size > 0)
+  if (flaginfo->info->relocatable && rel_size > 0)
     {
-      if (bfd_seek (finfo->output_bfd, *reloff_ptr, SEEK_SET) != 0)
+      if (bfd_seek (flaginfo->output_bfd, *reloff_ptr, SEEK_SET) != 0)
 	return FALSE;
-      if (bfd_bwrite (relocs, rel_size, finfo->output_bfd) != rel_size)
+      if (bfd_bwrite (relocs, rel_size, flaginfo->output_bfd) != rel_size)
 	return FALSE;
       *reloff_ptr += rel_size;
 
       /* Assert that the relocs have not run into the symbols, and
 	 that if these are the text relocs they have not run into the
 	 data relocs.  */
-      BFD_ASSERT (*reloff_ptr <= obj_sym_filepos (finfo->output_bfd)
-		  && (reloff_ptr != &finfo->treloff
+      BFD_ASSERT (*reloff_ptr <= obj_sym_filepos (flaginfo->output_bfd)
+		  && (reloff_ptr != &flaginfo->treloff
 		      || (*reloff_ptr
-			  <= obj_datasec (finfo->output_bfd)->rel_filepos)));
+			  <= obj_datasec (flaginfo->output_bfd)->rel_filepos)));
     }
 
   return TRUE;
@@ -4749,7 +4770,7 @@ aout_link_input_section (struct aout_final_link_info *finfo,
    symbol indices into a symbol_map.  */
 
 static bfd_boolean
-aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
+aout_link_write_symbols (struct aout_final_link_info *flaginfo, bfd *input_bfd)
 {
   bfd *output_bfd;
   bfd_size_type sym_count;
@@ -4765,25 +4786,25 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
   bfd_boolean pass;
   bfd_boolean skip_next;
 
-  output_bfd = finfo->output_bfd;
+  output_bfd = flaginfo->output_bfd;
   sym_count = obj_aout_external_sym_count (input_bfd);
   strings = obj_aout_external_strings (input_bfd);
-  strip = finfo->info->strip;
-  discard = finfo->info->discard;
-  outsym = finfo->output_syms;
+  strip = flaginfo->info->strip;
+  discard = flaginfo->info->discard;
+  outsym = flaginfo->output_syms;
 
   /* First write out a symbol for this object file, unless we are
      discarding such symbols.  */
   if (strip != strip_all
       && (strip != strip_some
-	  || bfd_hash_lookup (finfo->info->keep_hash, input_bfd->filename,
+	  || bfd_hash_lookup (flaginfo->info->keep_hash, input_bfd->filename,
 			      FALSE, FALSE) != NULL)
       && discard != discard_all)
     {
       H_PUT_8 (output_bfd, N_TEXT, outsym->e_type);
       H_PUT_8 (output_bfd, 0, outsym->e_other);
       H_PUT_16 (output_bfd, 0, outsym->e_desc);
-      strtab_index = add_to_stringtab (output_bfd, finfo->strtab,
+      strtab_index = add_to_stringtab (output_bfd, flaginfo->strtab,
 				       input_bfd->filename, FALSE);
       if (strtab_index == (bfd_size_type) -1)
 	return FALSE;
@@ -4802,7 +4823,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
   sym = obj_aout_external_syms (input_bfd);
   sym_end = sym + sym_count;
   sym_hash = obj_aout_sym_hashes (input_bfd);
-  symbol_map = finfo->symbol_map;
+  symbol_map = flaginfo->symbol_map;
   memset (symbol_map, 0, (size_t) sym_count * sizeof *symbol_map);
   for (; sym < sym_end; sym++, sym_hash++, symbol_map++)
     {
@@ -4901,7 +4922,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
 		skip = TRUE;
 	      break;
 	    case strip_some:
-	      if (bfd_hash_lookup (finfo->info->keep_hash, name, FALSE, FALSE)
+	      if (bfd_hash_lookup (flaginfo->info->keep_hash, name, FALSE, FALSE)
 		  == NULL)
 		skip = TRUE;
 	      break;
@@ -5129,8 +5150,8 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
 	      /* If we have already included a header file with the
                  same value, then replace this one with an N_EXCL
                  symbol.  */
-	      copy = (bfd_boolean) (! finfo->info->keep_memory);
-	      incl_entry = aout_link_includes_lookup (&finfo->includes,
+	      copy = (bfd_boolean) (! flaginfo->info->keep_memory);
+	      incl_entry = aout_link_includes_lookup (&flaginfo->includes,
 						      name, TRUE, copy);
 	      if (incl_entry == NULL)
 		return FALSE;
@@ -5142,7 +5163,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
 		  /* This is the first time we have seen this header
                      file with this set of stabs strings.  */
 		  t = (struct aout_link_includes_totals *)
-                      bfd_hash_allocate (&finfo->includes.root,
+                      bfd_hash_allocate (&flaginfo->includes.root,
 					 sizeof *t);
 		  if (t == NULL)
 		    return FALSE;
@@ -5191,7 +5212,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
       H_PUT_8 (output_bfd, H_GET_8 (input_bfd, sym->e_other), outsym->e_other);
       H_PUT_16 (output_bfd, H_GET_16 (input_bfd, sym->e_desc), outsym->e_desc);
       copy = FALSE;
-      if (! finfo->info->keep_memory)
+      if (! flaginfo->info->keep_memory)
 	{
 	  /* name points into a string table which we are going to
 	     free.  If there is a hash table entry, use that string.
@@ -5201,7 +5222,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
 	  else
 	    copy = TRUE;
 	}
-      strtab_index = add_to_stringtab (output_bfd, finfo->strtab,
+      strtab_index = add_to_stringtab (output_bfd, flaginfo->strtab,
 				       name, copy);
       if (strtab_index == (bfd_size_type) -1)
 	return FALSE;
@@ -5213,18 +5234,18 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
     }
 
   /* Write out the output symbols we have just constructed.  */
-  if (outsym > finfo->output_syms)
+  if (outsym > flaginfo->output_syms)
     {
       bfd_size_type outsym_size;
 
-      if (bfd_seek (output_bfd, finfo->symoff, SEEK_SET) != 0)
+      if (bfd_seek (output_bfd, flaginfo->symoff, SEEK_SET) != 0)
 	return FALSE;
-      outsym_size = outsym - finfo->output_syms;
+      outsym_size = outsym - flaginfo->output_syms;
       outsym_size *= EXTERNAL_NLIST_SIZE;
-      if (bfd_bwrite ((void *) finfo->output_syms, outsym_size, output_bfd)
+      if (bfd_bwrite ((void *) flaginfo->output_syms, outsym_size, output_bfd)
 	  != outsym_size)
 	return FALSE;
-      finfo->symoff += outsym_size;
+      flaginfo->symoff += outsym_size;
     }
 
   return TRUE;
@@ -5233,7 +5254,7 @@ aout_link_write_symbols (struct aout_final_link_info *finfo, bfd *input_bfd)
 /* Link an a.out input BFD into the output file.  */
 
 static bfd_boolean
-aout_link_input_bfd (struct aout_final_link_info *finfo, bfd *input_bfd)
+aout_link_input_bfd (struct aout_final_link_info *flaginfo, bfd *input_bfd)
 {
   BFD_ASSERT (bfd_get_format (input_bfd) == bfd_object);
 
@@ -5241,16 +5262,16 @@ aout_link_input_bfd (struct aout_final_link_info *finfo, bfd *input_bfd)
   if ((input_bfd->flags & DYNAMIC) != 0
       && aout_backend_info (input_bfd)->link_dynamic_object != NULL)
     return ((*aout_backend_info (input_bfd)->link_dynamic_object)
-	    (finfo->info, input_bfd));
+	    (flaginfo->info, input_bfd));
 
   /* Get the symbols.  We probably have them already, unless
-     finfo->info->keep_memory is FALSE.  */
+     flaginfo->info->keep_memory is FALSE.  */
   if (! aout_get_external_symbols (input_bfd))
     return FALSE;
 
   /* Write out the symbols and get a map of the new indices.  The map
-     is placed into finfo->symbol_map.  */
-  if (! aout_link_write_symbols (finfo, input_bfd))
+     is placed into flaginfo->symbol_map.  */
+  if (! aout_link_write_symbols (flaginfo, input_bfd))
     return FALSE;
 
   /* Relocate and write out the sections.  These functions use the
@@ -5259,17 +5280,17 @@ aout_link_input_bfd (struct aout_final_link_info *finfo, bfd *input_bfd)
      link, which will normally be the case.  */
   if (obj_textsec (input_bfd)->linker_mark)
     {
-      if (! aout_link_input_section (finfo, input_bfd,
+      if (! aout_link_input_section (flaginfo, input_bfd,
 				     obj_textsec (input_bfd),
-				     &finfo->treloff,
+				     &flaginfo->treloff,
 				     exec_hdr (input_bfd)->a_trsize))
 	return FALSE;
     }
   if (obj_datasec (input_bfd)->linker_mark)
     {
-      if (! aout_link_input_section (finfo, input_bfd,
+      if (! aout_link_input_section (flaginfo, input_bfd,
 				     obj_datasec (input_bfd),
-				     &finfo->dreloff,
+				     &flaginfo->dreloff,
 				     exec_hdr (input_bfd)->a_drsize))
 	return FALSE;
     }
@@ -5277,7 +5298,7 @@ aout_link_input_bfd (struct aout_final_link_info *finfo, bfd *input_bfd)
   /* If we are not keeping memory, we don't need the symbols any
      longer.  We still need them if we are keeping memory, because the
      strings in the hash table point into them.  */
-  if (! finfo->info->keep_memory)
+  if (! flaginfo->info->keep_memory)
     {
       if (! aout_link_free_symbols (input_bfd))
 	return FALSE;
@@ -5431,7 +5452,7 @@ NAME (aout, final_link) (bfd *abfd,
   /* Allocate buffers to hold section contents and relocs.  */
   aout_info.contents = (bfd_byte *) bfd_malloc (max_contents_size);
   aout_info.relocs = bfd_malloc (max_relocs_size);
-  aout_info.symbol_map = (int *) bfd_malloc (max_sym_count * sizeof (int *));
+  aout_info.symbol_map = (int *) bfd_malloc (max_sym_count * sizeof (int));
   aout_info.output_syms = (struct external_nlist *)
       bfd_malloc ((max_sym_count + 1) * sizeof (struct external_nlist));
   if ((aout_info.contents == NULL && max_contents_size != 0)
@@ -5450,7 +5471,7 @@ NAME (aout, final_link) (bfd *abfd,
     h = aout_link_hash_lookup (aout_hash_table (info), "__DYNAMIC",
 			       FALSE, FALSE, FALSE);
     if (h != NULL)
-      aout_link_write_other_symbol (h, &aout_info);
+      aout_link_write_other_symbol (&h->root.root, &aout_info);
   }
 
   /* The most time efficient way to do the link would be to read all
@@ -5524,9 +5545,9 @@ NAME (aout, final_link) (bfd *abfd,
     }
 
   /* Write out any symbols that we have not already written out.  */
-  aout_link_hash_traverse (aout_hash_table (info),
-			   aout_link_write_other_symbol,
-			   (void *) &aout_info);
+  bfd_hash_traverse (&info->hash->table,
+		     aout_link_write_other_symbol,
+		     &aout_info);
 
   /* Now handle any relocs we were asked to create by the linker.
      These did not come from any input file.  We must do these after

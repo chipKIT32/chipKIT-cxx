@@ -26,6 +26,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree.h"
 #include "flags.h"
 #include "c-common.h"
+#ifdef _BUILD_MCHP_
+#include "target.h"
+#endif
 #include "output.h"
 #include "toplev.h"
 #include "debug.h"
@@ -33,7 +36,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "ggc.h"
 #include "langhooks.h"
 #include "hosthooks.h"
+#ifndef _BUILD_C30_
 #include "target.h"
+#endif
 #include "opts.h"
 
 /* This is a list of flag variables that must match exactly, and their

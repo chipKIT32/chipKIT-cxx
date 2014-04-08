@@ -50,6 +50,25 @@
 #define DIRS_EQ(A, B) (!strcmp ((A)->canonical_name, (B)->canonical_name))
 #endif
 
+/* By default, the C_INCLUDE_PATH_ENV is "C_INCLUDE_PATH", however
+   in a cross compiler, another environment variable might want to be used
+   to avoid conflicts with the host any host C_INCLUDE_PATH */
+#ifndef C_INCLUDE_PATH_ENV
+#define C_INCLUDE_PATH_ENV "C_INCLUDE_PATH"
+#endif
+
+#ifndef CPLUS_INCLUDE_PATH_ENV
+#define CPLUS_INCLUDE_PATH_ENV "CPLUS_INCLUDE_PATH"
+#endif
+
+#ifndef OBJC_INCLUDE_PATH_ENV
+#define OBJC_INCLUDE_PATH_ENV "OBJC_INCLUDE_PATH"
+#endif
+
+#ifndef OBJCPLUS_INCLUDE_PATH_ENV
+#define OBJCPLUS_INCLUDE_PATH_ENV "OBJCPLUS_INCLUDE_PATH"
+#endif
+
 static const char dir_separator_str[] = { DIR_SEPARATOR, 0 };
 
 static void add_env_var_paths (const char *, int);
@@ -199,7 +218,6 @@ add_standard_paths (const char *sysroot, const char *iprefix,
 
 	  if (p->multilib && imultilib)
 	    str = concat (str, dir_separator_str, imultilib, NULL);
-
 	  add_path (str, SYSTEM, p->cxx_aware, false);
 	}
     }
@@ -448,8 +466,8 @@ register_include_chains (cpp_reader *pfile, const char *sysroot,
 			 int stdinc, int cxx_stdinc, int verbose)
 {
   static const char *const lang_env_vars[] =
-    { "C_INCLUDE_PATH", "CPLUS_INCLUDE_PATH",
-      "OBJC_INCLUDE_PATH", "OBJCPLUS_INCLUDE_PATH" };
+    { C_INCLUDE_PATH_ENV, CPLUS_INCLUDE_PATH_ENV,
+      OBJC_INCLUDE_PATH_ENV, OBJCPLUS_INCLUDE_PATH_ENV };
   cpp_options *cpp_opts = cpp_get_options (pfile);
   size_t idx = (cpp_opts->objc ? 2: 0);
 

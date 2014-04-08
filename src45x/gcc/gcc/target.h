@@ -176,7 +176,11 @@ struct gcc_target
     /* Tell assembler to change to section NAME with attributes FLAGS.
        If DECL is non-NULL, it is the VAR_DECL or FUNCTION_DECL with
        which this section is associated.  */
+#ifdef _BUILD_MCHP_
+    void (* named_section) (const char *name, SECTION_FLAGS_INT flags, tree decl);
+#else
     void (* named_section) (const char *name, unsigned int flags, tree decl);
+#endif
 
     /* Return a mask describing how relocations should be treated when
        selecting sections.  Bit 1 should be set if global relocations
@@ -626,7 +630,11 @@ struct gcc_target
   /* Given a decl, a section name, and whether the decl initializer
      has relocs, choose attributes for the section.  */
   /* ??? Should be merged with SELECT_SECTION and UNIQUE_SECTION.  */
+#ifdef _BUILD_MCHP_
+  SECTION_FLAGS_INT (* section_type_flags) (tree, const char *, int);
+#else
   unsigned int (* section_type_flags) (tree, const char *, int);
+#endif
 
   /* True if new jumps cannot be created, to replace existing ones or
      not, at the current point in the compilation.  */
@@ -970,6 +978,11 @@ struct gcc_target
        calling the function FN_NAME.  */
     rtx (*libcall_value) (enum machine_mode, const_rtx);
 
+    /* Return mode and signedness to use when an libcall argument or
+       result in the given mode is promoted.  */
+    enum machine_mode (*promote_libcall_mode) (enum machine_mode, int *,
+					       const_tree, int);
+
     /* Return an rtx for the argument pointer incoming to the
        current function.  */
     rtx (*internal_arg_pointer) (void);
@@ -1178,6 +1191,12 @@ struct gcc_target
     /* Function to determine if one function can inline another function.  */
     bool (*can_inline_p) (tree, tree);
   } target_option;
+
+  /* Functions related to alignment.  */
+  struct target_align_hooks {
+    /* Function that returns the log2 of the instruction alignment in bytes.  */
+    int (*align_insns) (void);
+  } target_align;
 
   /* For targets that need to mark extra registers as live on entry to
      the function, they should define this target hook and set their

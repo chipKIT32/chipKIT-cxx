@@ -1,13 +1,13 @@
 /* Test file for mpfr_sub_ui
 
-Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +28,7 @@ MA 02110-1301, USA. */
 
 /* checks that x-y gives the right results with 53 bits of precision */
 static void
-check3 (const char *xs, unsigned long y, mp_rnd_t rnd_mode, const char *zs)
+check3 (const char *xs, unsigned long y, mpfr_rnd_t rnd_mode, const char *zs)
 {
   mpfr_t xx,zz;
 
@@ -50,11 +50,11 @@ check3 (const char *xs, unsigned long y, mp_rnd_t rnd_mode, const char *zs)
                then x + y = u + w
 thus if u = o(y-x), v = o(u+x), w = o(v-y), then y-x = u-w */
 static void
-check_two_sum (mp_prec_t p)
+check_two_sum (mpfr_prec_t p)
 {
   unsigned int x;
   mpfr_t y, u, v, w;
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
   int inexact;
 
   mpfr_inits2 (p, y, u, v, w, (mpfr_ptr) 0);
@@ -64,7 +64,7 @@ check_two_sum (mp_prec_t p)
     }
   while (x < 1);
   mpfr_urandomb (y, RANDS);
-  rnd = GMP_RNDN;
+  rnd = MPFR_RNDN;
   inexact = mpfr_sub_ui (u, y, x, rnd);
   mpfr_add_ui (v, u, x, rnd);
   mpfr_sub (w, v, y, rnd);
@@ -96,18 +96,18 @@ check_nans (void)
 
   /* nan - 1 == nan */
   mpfr_set_nan (x);
-  mpfr_sub_ui (y, x, 1L, GMP_RNDN);
+  mpfr_sub_ui (y, x, 1L, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_nan_p (y));
 
   /* +inf - 1 == +inf */
   mpfr_set_inf (x, 1);
-  mpfr_sub_ui (y, x, 1L, GMP_RNDN);
+  mpfr_sub_ui (y, x, 1L, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_inf_p (y));
   MPFR_ASSERTN (mpfr_sgn (y) > 0);
 
   /* -inf - 1 == -inf */
   mpfr_set_inf (x, -1);
-  mpfr_sub_ui (y, x, 1L, GMP_RNDN);
+  mpfr_sub_ui (y, x, 1L, MPFR_RNDN);
   MPFR_ASSERTN (mpfr_inf_p (y));
   MPFR_ASSERTN (mpfr_sgn (y) < 0);
 
@@ -117,13 +117,13 @@ check_nans (void)
 
 #define TEST_FUNCTION mpfr_sub_ui
 #define INTEGER_TYPE  unsigned long
-#define RAND_FUNCTION(x) mpfr_random2(x, MPFR_LIMB_SIZE (x), 1)
+#define RAND_FUNCTION(x) mpfr_random2(x, MPFR_LIMB_SIZE (x), 1, RANDS)
 #include "tgeneric_ui.c"
 
 int
 main (int argc, char *argv[])
 {
-  mp_prec_t p;
+  mpfr_prec_t p;
   int k;
 
   tests_start_mpfr ();
@@ -134,7 +134,7 @@ main (int argc, char *argv[])
     for (k=0; k<200; k++)
       check_two_sum (p);
 
-  check3 ("0.9999999999", 1, GMP_RNDN,
+  check3 ("0.9999999999", 1, MPFR_RNDN,
           "-10000000827403709990903735160827636718750e-50");
 
   test_generic_ui (2, 1000, 100);

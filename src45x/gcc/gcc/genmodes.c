@@ -74,6 +74,9 @@ struct mode_data
   unsigned int counter;		/* Rank ordering of modes */
   unsigned int ibit;		/* the number of integral bits */
   unsigned int fbit;		/* the number of fractional bits */
+#ifdef _BUILD_C30_
+  unsigned int is_target_pointer;/* a target pointer mode */
+#endif
 };
 
 static struct mode_data *modes[MAX_MODE_CLASS];
@@ -85,6 +88,9 @@ static const struct mode_data blank_mode = {
   -1U, -1U, -1U, -1U,
   0, 0, 0, 0, 0, 0,
   "<unknown>", 0, 0, 0, 0
+#ifdef _BUILD_C30_
+  ,0
+#endif
 };
 
 static htab_t modes_by_name;
@@ -440,6 +446,10 @@ make_complex_modes (enum mode_class cl,
       if (m->precision == 1)
 	continue;
 
+#ifdef _BUILD_C30_
+      if (m->is_target_pointer) continue;
+#endif
+
       if (strlen (m->name) >= sizeof buf)
 	{
 	  error ("%s:%d:mode name \"%s\" is too long",
@@ -511,6 +521,10 @@ make_vector_modes (enum mode_class cl, unsigned int width,
       if (cl == MODE_INT && m->precision == 1)
 	continue;
 
+#ifdef _BUILD_C30_
+      if (m->is_target_pointer) continue;
+#endif
+
       if ((size_t)snprintf (buf, sizeof buf, "V%u%s", ncomponents, m->name)
 	  >= sizeof buf)
 	{
@@ -539,17 +553,30 @@ make_special_mode (enum mode_class cl, const char *name,
 }
 
 #define INT_MODE(N, Y) FRACTIONAL_INT_MODE (N, -1U, Y)
+#ifdef _BUILD_C30_
+#define TARGET_POINTER_MODE(N, B, Y) \
+  make_int_mode (#N, B, Y, 1, __FILE__, __LINE__)
+#define FRACTIONAL_INT_MODE(N, B, Y) \
+  make_int_mode (#N, B, Y, 0, __FILE__, __LINE__)
+#else
 #define FRACTIONAL_INT_MODE(N, B, Y) \
   make_int_mode (#N, B, Y, __FILE__, __LINE__)
+#endif
 
 static void
 make_int_mode (const char *name,
 	       unsigned int precision, unsigned int bytesize,
+#ifdef _BUILD_C30_
+               unsigned int is_target_pointer,
+#endif
 	       const char *file, unsigned int line)
 {
   struct mode_data *m = new_mode (MODE_INT, name, file, line);
   m->bytesize = bytesize;
   m->precision = precision;
+#ifdef _BUILD_C30_
+  m->is_target_pointer = is_target_pointer;
+#endif
 }
 
 #define FRACT_MODE(N, Y, F) \
@@ -742,6 +769,22 @@ cmp_modes (const void *a, const void *b)
   const struct mode_data *const m = *(const struct mode_data *const*)a;
   const struct mode_data *const n = *(const struct mode_data *const*)b;
 
+#ifdef _BUILD_C30_
+#ifdef TARGET_POINTER_MODE_FITS
+  if ((m->is_target_pointer) &&
+      (((n->precision != UINT_MAX) &&
+        (n->precision > TARGET_POINTER_MODE_FITS)) ||
+       (n->bytesize > TARGET_POINTER_MODE_BYTES)))
+    return 0;
+  if ((n->is_target_pointer) &&
+      (((m->precision != UINT_MAX) &&
+        (m->precision > TARGET_POINTER_MODE_FITS)) ||
+       (m->bytesize > TARGET_POINTER_MODE_BYTES)))
+    return 0;
+  if (m->is_target_pointer) return 1;
+  if (n->is_target_pointer) return -1;
+#endif
+#endif
   if (m->bytesize > n->bytesize)
     return 1;
   else if (m->bytesize < n->bytesize)
@@ -1033,11 +1076,24 @@ emit_mode_wider (void)
 
   print_decl ("unsigned char", "mode_wider", "NUM_MACHINE_MODES");
 
-  for_all_modes (c, m)
-    tagged_printf ("%smode",
-		   m->wider ? m->wider->name : void_mode->name,
-		   m->name);
+  for_all_modes (c, m) {
+#ifdef _BUILD_C30_
+   struct mode_data *wider_mode;
 
+    if (m->is_target_pointer) wider_mode = 0;
+    else {
+      for (wider_mode = m->wider; wider_mode && wider_mode->is_target_pointer;
+           wider_mode = wider_mode->wider);
+    }
+#endif
+    tagged_printf ("%smode",
+#ifdef _BUILD_C30_
+                   wider_mode ? wider_mode->name : void_mode->name,
+#else
+		   m->wider ? m->wider->name : void_mode->name,
+#endif
+		   m->name);
+  }
   print_closer ();
   print_decl ("unsigned char", "mode_2xwider", "NUM_MACHINE_MODES");
 
@@ -1046,7 +1102,11 @@ emit_mode_wider (void)
       struct mode_data * m2;
 
       for (m2 = m;
+#ifdef _BUILD_C30_
+           m2 && m2 != void_mode && (m2->is_target_pointer == 0);
+#else
 	   m2 && m2 != void_mode;
+#endif
 	   m2 = m2->wider)
 	{
 	  if (m2->bytesize < 2 * m->bytesize)
@@ -1064,7 +1124,11 @@ emit_mode_wider (void)
 
 	  break;
 	}
+#ifdef _BUILD_C30_
+      if ((m2 == void_mode) || (m2 && m2->is_target_pointer == 1))
+#else
       if (m2 == void_mode)
+#endif
 	m2 = 0;
       tagged_printf ("%smode",
 		     m2 ? m2->name : void_mode->name,

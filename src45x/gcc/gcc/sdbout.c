@@ -50,6 +50,20 @@ AT&T C compiler.  From the example below I would conclude the following:
 #include "ggc.h"
 #include "varray.h"
 
+#ifdef _BUILD_C30_
+#ifndef SDBOUT_START_SOURCE_FILE
+#define SDBOUT_START_SOURCE_FILE sdbout_start_source_file
+#endif
+
+#ifndef SDB_END_PROLOGUE
+#define SDB_END_PROLOGUE debug_nothing_int_charstar
+#endif
+
+#ifndef SDB_BEGIN_FUNCTION_LINE
+#define SDB_BEGIN_FUNCTION_LINE(X) (X)
+#endif
+#endif
+
 static GTY(()) tree anonymous_types;
 
 /* Counter to generate unique "names" for nameless struct members.  */
@@ -113,7 +127,11 @@ extern tree current_function_decl;
 
 static void sdbout_init			(const char *);
 static void sdbout_finish		(const char *);
+#ifdef _BUILD_C30_
+extern void sdbout_start_source_file	(unsigned int, const char *);
+#else
 static void sdbout_start_source_file	(unsigned int, const char *);
+#endif
 static void sdbout_end_source_file	(unsigned int);
 static void sdbout_begin_block		(unsigned int, unsigned int);
 static void sdbout_end_block		(unsigned int, unsigned int);
@@ -310,7 +328,11 @@ const struct gcc_debug_hooks sdb_debug_hooks =
   debug_nothing_void,			 /* assembly_start */
   debug_nothing_int_charstar,	         /* define */
   debug_nothing_int_charstar,	         /* undef */
+#ifdef _BUILD_C30_
+  SDBOUT_START_SOURCE_FILE,	         /* start_source_file */
+#else
   sdbout_start_source_file,	         /* start_source_file */
+#endif
   sdbout_end_source_file,	         /* end_source_file */
   sdbout_begin_block,		         /* begin_block */
   sdbout_end_block,		         /* end_block */
@@ -323,7 +345,11 @@ const struct gcc_debug_hooks sdb_debug_hooks =
   sdbout_end_prologue,		         /* end_prologue */
 #else
   sdbout_begin_prologue,	         /* begin_prologue */
+#ifdef _BUILD_C30_
+  SDB_END_PROLOGUE,
+#else
   debug_nothing_int_charstar,	         /* end_prologue */
+#endif
 #endif
   sdbout_end_epilogue,		         /* end_epilogue */
   sdbout_begin_function,	         /* begin_function */
@@ -838,6 +864,15 @@ sdbout_symbol (tree decl, int local)
       if (DECL_NAME (decl) == NULL_TREE)
 	return;
 
+#ifdef _BUILD_C30_
+      /* according to the newest manual; for a VAR_DECL, DECL_ASSEMBLER_NAME
+         can be the register name for the decl for user declared register
+         variables (CW) */
+      if (DECL_REGISTER(decl))
+        name = IDENTIFIER_POINTER (DECL_NAME (decl));
+      else
+#endif
+
       /* Record the name for, starting a symtab entry.  */
       if (local)
 	name = IDENTIFIER_POINTER (DECL_NAME (decl));
@@ -1052,9 +1087,17 @@ sdbout_field_types (tree type)
 static void
 sdbout_one_type (tree type)
 {
+#ifdef _BUILD_C30_
+  /* Why are we chaning sections anyway?  The target may have selected
+     a different section for MANY different reasons, name only being one of
+     them... if we currently aren't in .text, there is a good reason */
+  if (current_function_decl != NULL_TREE)
+    ;
+#else
   if (current_function_decl != NULL_TREE
       && DECL_SECTION_NAME (current_function_decl) != NULL_TREE)
     ; /* Don't change section amid function.  */
+#endif
   else
     switch_to_section (text_section);
 
@@ -1202,6 +1245,17 @@ sdbout_one_type (tree type)
 	  }
 	else			/* record or union type */
 	  for (tem = TYPE_FIELDS (type); tem; tem = TREE_CHAIN (tem))
+#ifdef _BUILD_C30_
+	    {  
+	    const char *name;
+            name =0;
+             
+	    if (DECL_NAME(tem) == 0) {
+	 	/* anonymous structure */
+		if (TREE_TYPE(tem)) name = KNOWN_TYPE_TAG(TREE_TYPE(tem));
+	    } else name = IDENTIFIER_POINTER(DECL_NAME(tem));
+#endif
+
 	    /* Output the name, type, position (in bits), size (in bits)
 	       of each field.  */
 
@@ -1209,14 +1263,20 @@ sdbout_one_type (tree type)
 	       Also omit fields with variable size or position.
 	       Also omit non FIELD_DECL nodes that GNU C++ may put here.  */
 	    if (TREE_CODE (tem) == FIELD_DECL
+#ifdef _BUILD_C30_
+		&& name
+#else
 		&& DECL_NAME (tem)
+#endif
 		&& DECL_SIZE (tem)
 		&& host_integerp (DECL_SIZE (tem), 1)
 		&& host_integerp (bit_position (tem), 0))
 	      {
+#ifndef _BUILD_C30_
 		const char *name;
 
 		name = IDENTIFIER_POINTER (DECL_NAME (tem));
+#endif
 		PUT_SDB_DEF (name);
 		if (DECL_BIT_FIELD_TYPE (tem))
 		  {
@@ -1233,6 +1293,9 @@ sdbout_one_type (tree type)
 		  }
 		PUT_SDB_ENDEF;
 	      }
+#ifdef _BUILD_C30_
+	   }
+#endif
 	/* Output end of a structure,union, or enumeral definition.  */
 
 	PUT_SDB_PLAIN_DEF ("eos");
@@ -1589,7 +1652,11 @@ sdbout_begin_prologue (unsigned int line, const char *file ATTRIBUTE_UNUSED)
 static void
 sdbout_end_prologue (unsigned int line, const char *file ATTRIBUTE_UNUSED)
 {
+#ifdef _BUILD_C30_
+  sdb_begin_function_line = SDB_BEGIN_FUNCTION_LINE(line-1);
+#else
   sdb_begin_function_line = line - 1;
+#endif
   PUT_SDB_FUNCTION_START (line);
   sdbout_parms (DECL_ARGUMENTS (current_function_decl));
   sdbout_reg_parms (DECL_ARGUMENTS (current_function_decl));
@@ -1647,7 +1714,10 @@ sdbout_label (rtx insn)
 
 /* Change to reading from a new source file.  */
 
-static void
+#ifndef _BUILD_C30_
+static 
+#endif
+void
 sdbout_start_source_file (unsigned int line ATTRIBUTE_UNUSED,
 			  const char *filename ATTRIBUTE_UNUSED)
 {

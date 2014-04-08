@@ -1,11 +1,11 @@
 /* tfprintf.c -- test file for mpfr_fprintf and mpfr_vfprintf
 
-Copyright 2008, 2009 Free Software Foundation, Inc.
+Copyright 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -14,9 +14,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #ifdef HAVE_STDARG
 #include <stdarg.h>
@@ -154,13 +154,13 @@ check_mixed (FILE *fout)
   double d = -1.25;
   long double ld = -1.25;
 
-  ptrdiff_t p = 1;
+  ptrdiff_t p = 1, saved_p;
   size_t sz = 1;
 
   mpz_t mpz;
   mpq_t mpq;
   mpf_t mpf;
-  mp_rnd_t rnd = GMP_RNDN;
+  mpfr_rnd_t rnd = MPFR_RNDN;
 
   mp_size_t limb_size = 3;
   mp_limb_t limb[3];
@@ -176,7 +176,7 @@ check_mixed (FILE *fout)
   mpf_set_q (mpf, mpq);
 
   mpfr_init2 (mpfr, prec);
-  mpfr_set_f (mpfr, mpf, GMP_RNDN);
+  mpfr_set_f (mpfr, mpf, MPFR_RNDN);
 
   limb[0] = limb[1] = limb[2] = ~ (mp_limb_t) 0;
 
@@ -199,7 +199,10 @@ check_mixed (FILE *fout)
   check_length_with_cmp (7, mpfr, 15, mpfr_cmp_ui (mpfr, 15), Rg);
 
 #ifndef NPRINTF_T
+  saved_p = p;
   check_vfprintf (fout, "%% a. %RNg, b. %Qx, c. %td%tn", mpfr, mpq, p, &p);
+  if (p != 20)
+    mpfr_fprintf (stderr, "Error in test 8, got '%% a. %RNg, b. %Qx, c. %td'\n", mpfr, mpq, saved_p);
   check_length (8, (long) p, 20, ld); /* no format specifier "%td" in C89 */
 #endif
 
@@ -209,18 +212,18 @@ check_mixed (FILE *fout)
 #endif
 
 #ifndef NPRINTF_HH
-  check_vfprintf (fout, "a. %hhi, b.%RA, c. %hhu%hhn", sch, mpfr, uch, &uch);
-  check_length (10, (unsigned int) uch, 21, u); /* no format specifier "%hhu" in C89 */
+  check_vfprintf (fout, "a. %hhi, b. %RA, c. %hhu%hhn", sch, mpfr, uch, &uch);
+  check_length (10, (unsigned int) uch, 22, u); /* no format specifier "%hhu" in C89 */
 #endif
 
 #if (__GNU_MP_VERSION * 10 + __GNU_MP_VERSION_MINOR) >= 42
   /* The 'M' specifier was added in gmp 4.2.0 */
   check_vfprintf (fout, "a. %Mx b. %Re%Mn", limb[0], mpfr, &limb[0]);
-  if (limb[0] != 14 + BITS_PER_MP_LIMB / 4 || limb[1] != ~ (mp_limb_t) 0
+  if (limb[0] != 14 + GMP_NUMB_BITS / 4 || limb[1] != ~ (mp_limb_t) 0
       || limb[2] != ~ (mp_limb_t) 0)
     {
       printf ("Error in test #11: mpfr_vfprintf did not print %d characters"
-              " as expected\n", 14 + (int) BITS_PER_MP_LIMB / 4);
+              " as expected\n", 14 + (int) GMP_NUMB_BITS / 4);
       exit (1);
     }
 
@@ -229,11 +232,11 @@ check_mixed (FILE *fout)
      and check it doesn't go through */
   check_vfprintf (fout, "a. %Re .b %Nx%Nn", mpfr, limb, limb_size, limb,
                   limb_size - 1);
-  if (limb[0] != 14 + 3 * BITS_PER_MP_LIMB / 4 || limb[1] != (mp_limb_t) 0
+  if (limb[0] != 14 + 3 * GMP_NUMB_BITS / 4 || limb[1] != (mp_limb_t) 0
       || limb[2] != ~ (mp_limb_t) 0)
     {
       printf ("Error in test #12: mpfr_vfprintf did not print %d characters"
-              " as expected\n", 14 + (int) BITS_PER_MP_LIMB / 4);
+              " as expected\n", 14 + (int) GMP_NUMB_BITS / 4);
       exit (1);
     }
 #endif
@@ -273,7 +276,7 @@ check_random (FILE *fout, int nb_tests)
 {
   int i;
   mpfr_t x;
-  mp_rnd_t rnd;
+  mpfr_rnd_t rnd;
   char flag[] =
     {
       '-',
@@ -291,7 +294,7 @@ check_random (FILE *fout, int nb_tests)
       'f',
       'g'
     };
-  mp_exp_t old_emin, old_emax;
+  mpfr_exp_t old_emin, old_emax;
 
   old_emin = mpfr_get_emin ();
   old_emax = mpfr_get_emax ();
@@ -369,7 +372,7 @@ bug_20090316 (FILE *fout)
   mpfr_init2 (x, 53);
 
   /* bug 20090316: fixed in r6112 */
-  mpfr_set_ui_2exp (x, 0x60fa2916, -30, GMP_RNDN);
+  mpfr_set_ui_2exp (x, 0x60fa2916, -30, MPFR_RNDN);
   check (fout, "%-#.4095RDg\n", x);
 
   mpfr_clear (x);

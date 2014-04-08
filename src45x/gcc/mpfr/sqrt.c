@@ -1,13 +1,13 @@
 /* mpfr_sqrt -- square root of a floating-point number
 
-Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,14 +16,14 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include "mpfr-impl.h"
 
 int
-mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
+mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mpfr_rnd_t rnd_mode)
 {
   mp_size_t rsize; /* number of limbs of r */
   mp_size_t rrsize;
@@ -31,17 +31,17 @@ mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
   mp_size_t tsize; /* number of limbs of the sqrtrem remainder */
   mp_size_t k;
   mp_size_t l;
-  mp_ptr rp;
-  mp_ptr up;
-  mp_ptr sp;
-  mp_ptr tp;
+  mpfr_limb_ptr rp;
+  mpfr_limb_ptr up;
+  mpfr_limb_ptr sp;
+  mpfr_limb_ptr tp;
   mp_limb_t sticky0; /* truncated part of input */
   mp_limb_t sticky1; /* truncated part of rp[0] */
   mp_limb_t sticky;
   int odd_exp;
   int sh; /* number of extra bits in rp[0] */
   int inexact; /* return ternary flag */
-  mp_exp_t expr;
+  mpfr_exp_t expr;
   MPFR_TMP_DECL(marker);
 
   MPFR_LOG_FUNC (("x[%#R]=%R rnd=%d", u, u, rnd_mode),
@@ -80,7 +80,6 @@ mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
       MPFR_SET_NAN(r);
       MPFR_RET_NAN;
     }
-  MPFR_CLEAR_FLAGS(r);
   MPFR_SET_POS(r);
 
   rsize = MPFR_LIMB_SIZE(r); /* number of limbs of r */
@@ -143,12 +142,12 @@ mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
 
   expr = (MPFR_GET_EXP(u) + odd_exp) / 2;  /* exact */
 
-  if (rnd_mode == GMP_RNDZ || rnd_mode == GMP_RNDD || sticky == MPFR_LIMB_ZERO)
+  if (rnd_mode == MPFR_RNDZ || rnd_mode == MPFR_RNDD || sticky == MPFR_LIMB_ZERO)
     {
       inexact = (sticky == MPFR_LIMB_ZERO) ? 0 : -1;
       goto truncate;
     }
-  else if (rnd_mode == GMP_RNDN)
+  else if (rnd_mode == MPFR_RNDN)
     {
       /* if sh>0, the round bit is bit (sh-1) of sticky1
                   and the sticky bit is formed by the low sh-1 bits from
@@ -209,7 +208,7 @@ mpfr_sqrt (mpfr_ptr r, mpfr_srcptr u, mp_rnd_t rnd_mode)
                      2nd most significant bit of up[k-1];
                      (b) if the exponent of u is odd, the 1/4 bit is the
                      1st most significant bit of up[k-1]; */
-                  sticky1 = MPFR_LIMB_ONE << (BITS_PER_MP_LIMB - 2 + odd_exp);
+                  sticky1 = MPFR_LIMB_ONE << (GMP_NUMB_BITS - 2 + odd_exp);
                   if (up[k - 1] < sticky1)
                     inexact = -1;
                   else if (up[k - 1] > sticky1)

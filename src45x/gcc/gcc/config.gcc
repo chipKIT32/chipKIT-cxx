@@ -752,7 +752,7 @@ arm*-*-linux*)			# ARM GNU/Linux with ELF
 	    # The EABI requires the use of __cxa_atexit.
 	    default_use_cxa_atexit=yes
 	    case ${target} in
-	    arm-wrs-linux-gnueabi)
+	    arm-wrs-linux-gnueabi) 
 		tm_file="$tm_file arm/wrs-linux.h"
 		tmake_file="$tmake_file arm/t-wrs-linux"
 		tm_defines="$tm_defines TARGET_FLEXLM"
@@ -778,7 +778,7 @@ arm*-*-linux*)			# ARM GNU/Linux with ELF
 	    tmake_file="$tmake_file arm/t-linux"
 	    ;;
 	esac
-	tm_defines="$tm_defines TLS_DIALECT_DEFAULT=TLS_GNU"
+	with_tls=${with_tls:-gnu}
 	tm_file="$tm_file arm/aout.h arm/arm.h"
 	tmake_file="${tmake_file} arm/t-arm-softfp soft-fp/t-softfp"
 	;;
@@ -829,6 +829,8 @@ arm*-*-eabi* | arm*-*-nucleuseabi* | arm*-*-symbianelf* )
 		  tmake_file="${tmake_file} arm/t-cs-eabi"
 	  elif test x$enable_extra_sgxxlite_multilibs = xyes; then
 		  tmake_file="${tmake_file} arm/t-cs-eabi-lite"
+	  elif test x$enable_extra_brewmp_multilibs = xyes; then
+		  tmake_file="${tmake_file} arm/t-brewmp-eabi"
 	  fi
 	  use_gcc_stdint=wrap
 	  ;;
@@ -912,7 +914,7 @@ bfin*-linux-uclibc*)
 	use_collect2=no
 	;;
 bfin*-rtems*)
-	tm_file="${tm_file} dbxelf.h elfos.h bfin/elf.h bfin/rtems.h rtems.h"
+	tm_file="${tm_file} dbxelf.h elfos.h bfin/elf.h bfin/rtems.h rtems.h newlib-stdint.h"
 	tmake_file="bfin/t-bfin t-rtems bfin/t-rtems"
 	;;
 bfin*-*)
@@ -1597,7 +1599,7 @@ lm32-*-elf*)
 	tmake_file="${tmake_file} lm32/t-lm32 lm32/t-fprules-softfp soft-fp/t-softfp"
         ;;
 lm32-*-rtems*)
-	tm_file="dbxelf.h elfos.h ${tm_file} lm32/rtems.h rtems.h"
+	tm_file="dbxelf.h elfos.h ${tm_file} lm32/rtems.h rtems.h newlib-stdint.h"
 	tmake_file="${tmake_file} lm32/t-lm32 lm32/t-fprules-softfp soft-fp/t-softfp"
 	tmake_file="${tmake_file} t-rtems"
          ;;
@@ -1812,7 +1814,7 @@ mips*-*-netbsd*)			# NetBSD/mips, either endian.
 	;;
 mips64*-*-linux* | mipsisa64*-*-linux*)
 	tm_file="dbxelf.h elfos.h svr4.h linux.h glibc-stdint.h ${tm_file} mips/linux.h mips/linux64.h"
-	tmake_file="${tmake_file} mips/t-linux64 mips/t-libgcc-mips16"
+	tmake_file="${tmake_file} mips/t-linux64 mips/t-libgcc-mips16 t-slibgcc-libgcc"
 	case ${target} in
 		mips64-netlogic-linux-gnu)
 			tm_defines="${tm_defines} MIPS_ABI_DEFAULT=ABI_32"
@@ -1845,7 +1847,7 @@ mips64*-*-linux* | mipsisa64*-*-linux*)
 	;;
 mips*-*-linux*)				# Linux MIPS, either endian.
         tm_file="dbxelf.h elfos.h svr4.h linux.h glibc-stdint.h ${tm_file} mips/linux.h"
-	tmake_file="${tmake_file} mips/t-libgcc-mips16"
+	tmake_file="${tmake_file} mips/t-libgcc-mips16 t-slibgcc-libgcc"
 	case ${target} in
         mipsisa32r2*)
 		tm_defines="${tm_defines} MIPS_ISA_DEFAULT=33"
@@ -1853,7 +1855,7 @@ mips*-*-linux*)				# Linux MIPS, either endian.
         mipsisa32*)
 		tm_defines="${tm_defines} MIPS_ISA_DEFAULT=32"
 		;;
-	mips-wrs-linux-gnu)
+	mips-wrs-linux-gnu) 
 		tmake_file="$tmake_file mips/t-linux64 mips/t-wrs-linux"
 		tm_file="$tm_file mips/linux64.h mips/octeon.h mips/wrs-linux.h"
 		tm_defines="$tm_defines TARGET_FLEXLM"
@@ -1863,12 +1865,10 @@ mips*-*-linux*)				# Linux MIPS, either endian.
 		tm_file="$tm_file mips/linux64.h mips/octeon.h mips/montavista-linux.h"
 		;;
 	*)
-		if test x$enable_extra_sgxx_multilibs = xyes; then
-		    tmake_file="$tmake_file mips/t-sgxx-linux"
-		    tm_file="$tm_file mips/cs-sgxx-linux.h"
-		elif test x$enable_extra_sgxxlite_multilibs = xyes; then
-		    tmake_file="$tmake_file mips/t-sgxxlite-linux"
-		    tm_file="$tm_file mips/cs-sgxxlite-linux.h"
+		if test x$enable_extra_sgxxlite_multilibs = xyes \
+		   || test x$enable_extra_sgxx_multilibs = xyes; then
+		    tmake_file="$tmake_file mips/t-linux64 mips/t-sgxx-linux"
+		    tm_file="$tm_file mips/linux64.h mips/cs-sgxx-linux.h"
 		fi
 		;;
         esac
@@ -1922,6 +1922,10 @@ mips*-sde-elf*)
 	  tm_file="$tm_file mips/sdemtk.h"
 	  extra_options="$extra_options mips/sdemtk.opt"
 	  tmake_file="$tmake_file mips/t-sgxx-sde"
+	  if [ "$with_arch_64" != "" ]; then
+	      # Add 64-bit multilibs if --with-arch-64= is defined.
+	      tmake_file="$tmake_file mips/t-sgxx-sde64"
+	  fi
           # SourceryG++ is configured --with-arch=mips32r2.
 	  tm_defines="MIPS_ISA_DEFAULT=33 MIPS_ABI_DEFAULT=ABI_32"
 	fi
@@ -2035,22 +2039,50 @@ pdp11-*-*)
 	tm_file="${tm_file} newlib-stdint.h"
 	use_gcc_stdint=wrap
 	;;
+pic30-*-coff)
+        host_can_use_collect2=no
+        elf=no
+        build_xm_defines="PROGRAM_PREFIX=\\\"pic30-\\\" _BUILD_C30_ _BUILD_MCHP_ ${xm_defines}"
+        host_xm_defines="PROGRAM_PREFIX=\\\"pic30-\\\" _BUILD_C30_ _BUILD_MCHP_ ${xm_defines}"
+        host_xm_defines="OMF=\\\"coff\\\" ${host_xm_defines}"
+        extra_modes=pic30/pic30-modes.h
+        c_target_objs=pic30-c.o
+        extra_objs="${extra_objs} cci-backend.o"
+        LANGUAGES="c"
+        LIBGCCMK=
+        ;;
+pic30-*-elf)
+        host_can_use_collect2=no
+        elf=yes
+        tm_defines="OBJECT_FORMAT_ELF $tm_defines"
+        build_xm_defines="PROGRAM_PREFIX=\\\"pic30-\\\" _BUILD_C30_ _BUILD_MCHP_ ${xm_defines}"
+        host_xm_defines="PROGRAM_PREFIX=\\\"pic30-\\\" _BUILD_C30_ _BUILD_MCHP_ ${xm_defines}"
+        host_xm_defines="OMF=\\\"elf\\\" ${host_xm_defines}"
+        extra_modes=pic30/pic30-modes.h
+        c_target_objs=pic30-c.o
+        extra_objs="${extra_objs} cci-backend.o"
+        LANGUAGES="c"
+        LIBGCCMK=
+        ;;
 pic32*-mchp-elf*)
-	tm_file="elfos.h ${tm_file} mips/elf.h mips/sde.h"
+	tm_file="elfos.h newlib-stdint.h ${tm_file} mips/elf.h mips/sde.h"
 	tm_file="${tm_file} mips/sdemtk.h"
 	tm_file="${tm_file} pic32/mchp.h"
-	tmake_file="${tmake_file} pic32/t-mchp pic32/t-libgcc-mips16"
+	tmake_file="pic32/t-mchp pic32/t-libgcc-mips16 ${tmake_file}"
 	extra_options="pic32/mchp.opt"
 	tm_p_file="${tm_p_file} pic32/mchp-protos.h"
-	extra_objs="${extra_objs} mchp.o"
+	extra_objs="${extra_objs} mchp.o cci-backend.o"
+	#extra_gcc_objs="driver-pic32-elf.o"
+	use_gcc_stdint=none
+	default_use_cxa_atexit=no
 	case "${with_newlib}" in
 	  yes)
 	    # newlib
 	    # FIXME: threading?
-	    tmake_file="${tmake_file} pic32/t-mchplib"
+	    tmake_file="pic32/t-mchplib ${tmake_file} "
 	    ;;
 	  *)
-	    tmake_file="${tmake_file} pic32/t-mchplib"
+	    tmake_file="pic32/t-mchplib ${tmake_file} "
 	    case ${enable_threads} in
 	      "" | yes | mipssde)
 		thread_file='mipssde'
@@ -2061,10 +2093,12 @@ pic32*-mchp-elf*)
 #	case "${host}" in
 #	*mingw*)
 #	   use_collect2=no
-#	   tmake_file="${tmake_file} pic32/t-mchpmingw"
+#	   tmake_file="pic32/t-mchpmingw ${tmake_file} "
 #	   ;;
 #	esac
-	tm_defines="MIPS_ISA_DEFAULT=33 MIPS_ABI_DEFAULT=ABI_32"
+	tm_defines="${tm_defines} MIPS_ISA_DEFAULT=33 MIPS_ABI_DEFAULT=ABI_32 _BUILD_MCHP_=1 _BUILD_C32_=1"
+	build_xm_defines="_BUILD_C32_=1 _BUILD_MCHP_=1 ${xm_defines}"
+	host_xm_defines="_BUILD_C32_=1 _BUILD_MCHP_=1 ${xm_defines}"
 	;;
 picochip-*)
 	tm_file="${tm_file} newlib-stdint.h"
@@ -2225,6 +2259,10 @@ powerpc-*-linux* | powerpc64-*-linux*)
                 tm_file="$tm_file rs6000/montavista-linux.h rs6000/e500.h"
                 tmake_file="$tmake_file rs6000/t-montavista-linux"
                 ;;
+	powerpc-apm-linux*)
+		tm_file="$tm_file rs6000/apm-linux.h"
+		tmake_file="$tmake_file rs6000/t-apm-linux"
+		;;
 	*)
 		if test x$enable_extra_sgxx_multilibs = xyes; then
 		  tm_file="${tm_file} rs6000/cs-linux.h rs6000/e500.h"
@@ -3170,7 +3208,7 @@ case "${target}" in
 		;;
 
 	arm*-*-*)
-		supported_defaults="arch cpu float tune fpu abi mode"
+		supported_defaults="arch cpu float tune fpu abi mode tls"
 		for which in cpu tune; do
 			# See if it matches any of the entries in arm-cores.def
 			eval "val=\$with_$which"
@@ -3249,6 +3287,17 @@ case "${target}" in
 			;;
 		*)
 			echo "Unknown mode used in --with-mode=$with_mode"
+			exit 1
+			;;
+		esac
+
+		case "$with_tls" in
+		"" \
+		| gnu | gnu2)
+			# OK
+			;;
+		*)
+			echo "Unknown TLS method used in --with-tls=$with_tls" 1>&2
 			exit 1
 			;;
 		esac
@@ -3474,7 +3523,7 @@ case "${target}" in
 				tm_defines="${tm_defines} CONFIG_PPC405CR"
 				eval "with_$which=405"
 				;;
-			"" | common \
+			"" | common | native \
 			| power | power[234567] | power6x | powerpc | powerpc64 \
 			| rios | rios1 | rios2 | rsc | rsc1 | rs64a \
 			| 401 | 403 | 405 | 405fp | 440 | 440fp | 464 | 464fp \
@@ -3758,7 +3807,7 @@ case ${target} in
 esac
 
 t=
-all_defaults="abi cpu cpu_32 cpu_64 arch arch_32 arch_64 tune tune_32 tune_64 schedule float mode fpu divide llsc mips-plt synci"
+all_defaults="abi cpu cpu_32 cpu_64 arch arch_32 arch_64 tune tune_32 tune_64 schedule float mode fpu divide llsc mips-plt synci tls"
 for option in $all_defaults
 do
 	eval "val=\$with_"`echo $option | sed s/-/_/g`

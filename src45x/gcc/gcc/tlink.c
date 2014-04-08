@@ -38,6 +38,14 @@ along with GCC; see the file COPYING3.  If not see
 
 #define MAX_ITERATIONS 17
 
+#ifndef COMPILER_PATH_ENV
+#define COMPILER_PATH_ENV "COMPILER_PATH"
+#endif
+
+#ifndef LIBRARY_PATH_ENV
+#define LIBRARY_PATH_ENV "LIBRARY_PATH"
+#endif
+
 /* Defined in the automatically-generated underscore.c.  */
 extern int prepends_underscore;
 
@@ -449,8 +457,8 @@ recompile_files (void)
 {
   file *f;
 
-  putenv (xstrdup ("COMPILER_PATH="));
-  putenv (xstrdup ("LIBRARY_PATH="));
+  putenv (xstrdup (COMPILER_PATH_ENV "="));
+  putenv (xstrdup (LIBRARY_PATH_ENV "="));
 
   while ((f = file_pop ()) != NULL)
     {

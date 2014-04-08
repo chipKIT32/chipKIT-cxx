@@ -1,6 +1,6 @@
 /* mpc_fr_sub -- Substract a complex number from a floating-point number.
 
-Copyright (C) 2008, 2009 Philippe Th\'eveny
+Copyright (C) INRIA, 2008, 2009
 
 This file is part of the MPC Library.
 

@@ -1,6 +1,6 @@
 /* opncls.c -- open and close a BFD.
    Copyright 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 2000,
-   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009
+   2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2012
    Free Software Foundation, Inc.
 
    Written by Cygnus Support.
@@ -38,9 +38,17 @@
 #define S_IXOTH 0001	/* Execute by others.  */
 #endif
 
-/* Counter used to initialize the bfd identifier.  */
+/* Counters used to initialize the bfd identifier.  */
 
-static unsigned int _bfd_id_counter = 0;
+static unsigned int bfd_id_counter = 0;
+static unsigned int bfd_reserved_id_counter = 0;
+
+/*
+CODE_FRAGMENT
+.{* Set to N to open the next N BFDs using an alternate id space.  *}
+.extern unsigned int bfd_use_reserved_id;
+*/
+unsigned int bfd_use_reserved_id = 0;
 
 /* fdopen is a loser -- we should use stdio exclusively.  Unfortunately
    if we do that we can't use fcntl.  */
@@ -56,7 +64,13 @@ _bfd_new_bfd (void)
   if (nbfd == NULL)
     return NULL;
 
-  nbfd->id = _bfd_id_counter++;
+  if (bfd_use_reserved_id)
+    {
+      nbfd->id = --bfd_reserved_id_counter;
+      --bfd_use_reserved_id;
+    }
+  else
+    nbfd->id = bfd_id_counter++;
 
   nbfd->memory = objalloc_create ();
   if (nbfd->memory == NULL)
@@ -113,7 +127,7 @@ _bfd_new_bfd_contained_in (bfd *obfd)
 
 /* Delete a BFD.  */
 
-void
+static void
 _bfd_delete_bfd (bfd *abfd)
 {
   if (abfd->memory)
@@ -121,6 +135,8 @@ _bfd_delete_bfd (bfd *abfd)
       bfd_hash_table_free (&abfd->section_htab);
       objalloc_free ((struct objalloc *) abfd->memory);
     }
+
+  free (abfd->arelt_data);
   free (abfd);
 }
 
@@ -176,6 +192,8 @@ DESCRIPTION
 	If <<NULL>> is returned then an error has occured.   Possible errors
 	are <<bfd_error_no_memory>>, <<bfd_error_invalid_target>> or
 	<<system_call>> error.
+
+	On error, @var{fd} is always closed.
 */
 
 bfd *
@@ -186,11 +204,17 @@ bfd_fopen (const char *filename, const char *target, const char *mode, int fd)
 
   nbfd = _bfd_new_bfd ();
   if (nbfd == NULL)
-    return NULL;
+    {
+      if (fd != -1)
+	close (fd);
+      return NULL;
+    }
 
   target_vec = bfd_find_target (target, nbfd);
   if (target_vec == NULL)
     {
+      if (fd != -1)
+	close (fd);
       _bfd_delete_bfd (nbfd);
       return NULL;
     }
@@ -293,6 +317,8 @@ DESCRIPTION
 
 	Possible errors are <<bfd_error_no_memory>>,
 	<<bfd_error_invalid_target>> and <<bfd_error_system_call>>.
+
+	On error, @var{fd} is closed.
 */
 
 bfd *
@@ -309,6 +335,10 @@ bfd_fdopenr (const char *filename, const char *target, int fd)
   fdflags = fcntl (fd, F_GETFL, NULL);
   if (fdflags == -1)
     {
+      int save = errno;
+
+      close (fd);
+      errno = save;
       bfd_set_error (bfd_error_system_call);
       return NULL;
     }
@@ -511,7 +541,9 @@ opncls_bmmap (struct bfd *abfd ATTRIBUTE_UNUSED,
 	      bfd_size_type len ATTRIBUTE_UNUSED,
 	      int prot ATTRIBUTE_UNUSED,
 	      int flags ATTRIBUTE_UNUSED,
-	      file_ptr offset ATTRIBUTE_UNUSED)
+	      file_ptr offset ATTRIBUTE_UNUSED,
+              void **map_addr ATTRIBUTE_UNUSED,
+              bfd_size_type *map_len ATTRIBUTE_UNUSED)
 {
   return (void *) -1;
 }
@@ -677,8 +709,6 @@ bfd_boolean
 bfd_close (bfd *abfd)
 {
   bfd_boolean ret;
-  bfd *nbfd;
-  bfd *next;
 
   if (bfd_write_p (abfd))
     {
@@ -686,30 +716,10 @@ bfd_close (bfd *abfd)
 	return FALSE;
     }
 
-  /* Close nested archives (if this bfd is a thin archive).  */
-  for (nbfd = abfd->nested_archives; nbfd; nbfd = next)
-    {
-      next = nbfd->archive_next;
-      bfd_close (nbfd);
-    }
-
   if (! BFD_SEND (abfd, _close_and_cleanup, (abfd)))
     return FALSE;
 
-  if ((abfd->flags & BFD_IN_MEMORY) != 0)
-    {
-      /* FIXME: cagney/2004-02-15: Need to implement a BFD_IN_MEMORY io
-	 vector.
-	 Until that's done, at least don't leak memory.  */
-      struct bfd_in_memory *bim = (struct bfd_in_memory *) abfd->iostream;
-
-      if (bim->buffer != NULL)
-	free (bim->buffer);
-      free (bim);
-      ret = TRUE;
-    }
-  else
-    ret = abfd->iovec->bclose (abfd);
+  ret = abfd->iovec->bclose (abfd);
 
   if (ret)
     _maybe_make_executable (abfd);
@@ -766,7 +776,7 @@ SYNOPSIS
 DESCRIPTION
 	Create a new BFD in the manner of <<bfd_openw>>, but without
 	opening a file. The new BFD takes the target from the target
-	used by @var{template}. The format is always set to <<bfd_object>>.
+	used by @var{templ}. The format is always set to <<bfd_object>>.
 */
 
 bfd *
@@ -823,6 +833,8 @@ bfd_make_writable (bfd *abfd)
   bim->buffer = 0;
 
   abfd->flags |= BFD_IN_MEMORY;
+  abfd->iovec = &_bfd_memory_iovec;
+  abfd->origin = 0;
   abfd->direction = write_direction;
   abfd->where = 0;
 
@@ -861,7 +873,6 @@ bfd_make_readable (bfd *abfd)
   if (! BFD_SEND (abfd, _close_and_cleanup, (abfd)))
     return FALSE;
 
-
   abfd->arch_info = &bfd_default_arch_struct;
 
   abfd->where = 0;
@@ -873,7 +884,7 @@ bfd_make_readable (bfd *abfd)
   abfd->section_count = 0;
   abfd->usrdata = NULL;
   abfd->cacheable = FALSE;
-  abfd->flags = BFD_IN_MEMORY;
+  abfd->flags |= BFD_IN_MEMORY;
   abfd->mtime_set = FALSE;
 
   abfd->target_defaulted = TRUE;
@@ -890,7 +901,7 @@ bfd_make_readable (bfd *abfd)
 }
 
 /*
-INTERNAL_FUNCTION
+FUNCTION
 	bfd_alloc
 
 SYNOPSIS
@@ -958,7 +969,7 @@ bfd_alloc2 (bfd *abfd, bfd_size_type nmemb, bfd_size_type size)
 }
 
 /*
-INTERNAL_FUNCTION
+FUNCTION
 	bfd_zalloc
 
 SYNOPSIS
@@ -1525,3 +1536,4 @@ bfd_fill_in_gnu_debuglink_section (bfd *abfd,
 
   return TRUE;
 }
+

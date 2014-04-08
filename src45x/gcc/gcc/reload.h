@@ -149,6 +149,9 @@ struct reload
   /* Nonzero if this reload must use a register not already allocated to a
      group.  */
   unsigned int nongroup:1;
+#ifdef _BUILD_C30_
+  rtx insn;
+#endif
 };
 
 extern struct reload rld[MAX_RELOADS];
@@ -323,9 +326,15 @@ extern int regno_clobbered_p (unsigned int, rtx, enum machine_mode, int);
 extern int earlyclobber_operand_p (rtx);
 
 /* Record one reload that needs to be performed.  */
+#ifdef _BUILD_C30_
+extern int push_reload (rtx, rtx, rtx *, rtx *, enum reg_class,
+			enum machine_mode, enum machine_mode,
+			int, int, int, enum reload_type, rtx insn);
+#else
 extern int push_reload (rtx, rtx, rtx *, rtx *, enum reg_class,
 			enum machine_mode, enum machine_mode,
 			int, int, int, enum reload_type);
+#endif
 
 /* Functions in postreload.c:  */
 extern void reload_cse_regs (rtx);

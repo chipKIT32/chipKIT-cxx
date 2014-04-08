@@ -1,6 +1,6 @@
 /* tdiv -- test file for mpc_div.
 
-Copyright (C) 2002, 2008, 2009 Andreas Enge, Paul Zimmermann, Philippe Th\'eveny
+Copyright (C) INRIA, 2002, 2008, 2009, 2011
 
 This file is part of the MPC Library.
 
@@ -114,7 +114,7 @@ check_regular (void)
 int
 main (void)
 {
-  DECL_FUNC (CCC, f, mpc_div);
+  DECL_FUNC (C_CC, f, mpc_div);
 
   test_start ();
 

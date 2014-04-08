@@ -1,13 +1,13 @@
 /* Test file for mpfr_add_d
 
-Copyright 2007, 2008, 2009 Free Software Foundation, Inc.
+Copyright 2007, 2008, 2009, 2010, 2011 Free Software Foundation, Inc.
 Contributed by the Arenaire and Cacao projects, INRIA.
 
 This file is part of the GNU MPFR Library.
 
 The GNU MPFR Library is free software; you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation; either version 2.1 of the License, or (at your
+the Free Software Foundation; either version 3 of the License, or (at your
 option) any later version.
 
 The GNU MPFR Library is distributed in the hope that it will be useful, but
@@ -16,9 +16,9 @@ or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
 License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the GNU MPFR Library; see the file COPYING.LIB.  If not, write to
-the Free Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston,
-MA 02110-1301, USA. */
+along with the GNU MPFR Library; see the file COPYING.LESSER.  If not, see
+http://www.gnu.org/licenses/ or write to the Free Software Foundation, Inc.,
+51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,24 +40,24 @@ check_regulars (void)
   mpfr_init2 (y, IEEE_DBL_MANT_DIG);
   mpfr_init2 (z, IEEE_DBL_MANT_DIG);
 
-  mpfr_set_str (y, "4096", 10, GMP_RNDN);
+  mpfr_set_str (y, "4096", 10, MPFR_RNDN);
   d = 0.125;
   mpfr_clear_flags ();
-  inexact = mpfr_add_d (x, y, d, GMP_RNDN);
+  inexact = mpfr_add_d (x, y, d, MPFR_RNDN);
   if (inexact != 0)
     {
       printf ("Inexact flag error in mpfr_add_d (1)\n");
       exit (1);
     }
-  mpfr_set_str (z, "4096.125", 10, GMP_RNDN);
+  mpfr_set_str (z, "4096.125", 10, MPFR_RNDN);
   if (mpfr_cmp (z, x))
     {
       printf ("Error in mpfr_add_d (");
-      mpfr_out_str (stdout, 10, 7, y, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 7, y, MPFR_RNDN);
       printf (" + %.20g)\nexpected ", d);
-      mpfr_out_str (stdout, 10, 0, z, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 0, z, MPFR_RNDN);
       printf ("\ngot     ");
-      mpfr_out_str (stdout, 10, 0, x, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 0, x, MPFR_RNDN);
       printf ("\n");
       exit (1);
     }
@@ -67,21 +67,21 @@ check_regulars (void)
   mpfr_set_prec (z, 2);
 
   mpfr_clear_flags ();
-  inexact = mpfr_add_d (x, y, d, GMP_RNDN);
+  inexact = mpfr_add_d (x, y, d, MPFR_RNDN);
   if (inexact == 0)
     {
       printf ("Inexact flag error in mpfr_add_d (2)\n");
       exit (1);
     }
-  mpfr_set_str (z, "4096.125", 10, GMP_RNDN);
+  mpfr_set_str (z, "4096.125", 10, MPFR_RNDN);
   if (mpfr_cmp (z, x))
     {
       printf ("Error in mpfr_add_d (");
-      mpfr_out_str (stdout, 10, 0, y, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 0, y, MPFR_RNDN);
       printf (" + %.20g)\nexpected ", d);
-      mpfr_out_str (stdout, 10, 0, z, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 0, z, MPFR_RNDN);
       printf ("\ngot     ");
-      mpfr_out_str (stdout, 10, 0, x, GMP_RNDN);
+      mpfr_out_str (stdout, 10, 0, x, MPFR_RNDN);
       printf ("\n");
       exit (1);
     }
@@ -101,7 +101,7 @@ check_nans (void)
   /* nan + 1.0 is nan */
   mpfr_set_nan (x);
   mpfr_clear_flags ();
-  inexact = mpfr_add_d (y, x, 1.0, GMP_RNDN);
+  inexact = mpfr_add_d (y, x, 1.0, MPFR_RNDN);
   MPFR_ASSERTN (inexact == 0);
   MPFR_ASSERTN ((__gmpfr_flags ^ MPFR_FLAGS_NAN) == 0);
   MPFR_ASSERTN (mpfr_nan_p (y));
@@ -109,7 +109,7 @@ check_nans (void)
   /* +inf + 1.0 == +inf */
   mpfr_set_inf (x, 1);
   mpfr_clear_flags ();
-  inexact = mpfr_add_d (y, x, 1.0, GMP_RNDN);
+  inexact = mpfr_add_d (y, x, 1.0, MPFR_RNDN);
   MPFR_ASSERTN (inexact == 0);
   MPFR_ASSERTN (__gmpfr_flags == 0);
   MPFR_ASSERTN (mpfr_inf_p (y));
@@ -118,7 +118,7 @@ check_nans (void)
   /* -inf + 1.0 == -inf */
   mpfr_set_inf (x, -1);
   mpfr_clear_flags ();
-  inexact = mpfr_add_d (y, x, 1.0, GMP_RNDN);
+  inexact = mpfr_add_d (y, x, 1.0, MPFR_RNDN);
   MPFR_ASSERTN (inexact == 0);
   MPFR_ASSERTN (__gmpfr_flags == 0);
   MPFR_ASSERTN (mpfr_inf_p (y));
@@ -130,7 +130,7 @@ check_nans (void)
 
 #define TEST_FUNCTION mpfr_add_d
 #define DOUBLE_ARG2
-#define RAND_FUNCTION(x) mpfr_random2(x, MPFR_LIMB_SIZE (x), 1)
+#define RAND_FUNCTION(x) mpfr_random2(x, MPFR_LIMB_SIZE (x), 1, RANDS)
 #include "tgeneric.c"
 
 int

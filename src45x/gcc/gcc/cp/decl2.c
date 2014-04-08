@@ -596,7 +596,7 @@ check_classfn (tree ctype, tree function, tree template_parms)
   int ix;
   bool is_template;
   tree pushed_scope;
-  
+
   if (DECL_USE_TEMPLATE (function)
       && !(TREE_CODE (function) == TEMPLATE_DECL
 	   && DECL_TEMPLATE_SPECIALIZATION (function))
@@ -687,7 +687,7 @@ check_classfn (tree ctype, tree function, tree template_parms)
 	    pop_scope (pushed_scope);
 	  return OVL_CURRENT (fndecls);
 	}
-      
+
       error_at (DECL_SOURCE_LOCATION (function),
 		"prototype for %q#D does not match any in class %qT",
 		function, ctype);
@@ -1011,7 +1011,7 @@ grokbitfield (const cp_declarator *declarator,
 {
   tree value = grokdeclarator (declarator, declspecs, BITFIELD, 0, &attrlist);
 
-  if (value == error_mark_node) 
+  if (value == error_mark_node)
     return NULL_TREE; /* friends went bad.  */
 
   /* Pass friendly classes back.  */
@@ -1272,10 +1272,16 @@ cp_reconstruct_complex_type (tree type, tree bottom)
 void
 cplus_decl_attributes (tree *decl, tree attributes, int flags)
 {
+#if defined(_BUILD_C32_)
+  if (*decl == NULL_TREE || *decl == void_type_node
+      || *decl == error_mark_node)
+    return;
+#else
   if (*decl == NULL_TREE || *decl == void_type_node
       || *decl == error_mark_node
       || attributes == NULL_TREE)
     return;
+#endif
 
   if (processing_template_decl)
     {
@@ -1283,8 +1289,10 @@ cplus_decl_attributes (tree *decl, tree attributes, int flags)
 	return;
 
       save_template_attributes (&attributes, decl);
+#if !defined(_BUILD_C32_)
       if (attributes == NULL_TREE)
 	return;
+#endif
     }
 
   if (TREE_CODE (*decl) == TEMPLATE_DECL)
@@ -1449,7 +1457,7 @@ coerce_new_type (tree type)
       if (TREE_PURPOSE (args))
 	{
 	  /* [basic.stc.dynamic.allocation]
-	     
+
 	     The first parameter shall not have an associated default
 	     argument.  */
 	  error ("the first parameter of %<operator new%> cannot "
@@ -2046,7 +2054,7 @@ determine_visibility (tree decl)
 	  if (DECL_VISIBILITY_SPECIFIED (fn) || ! DECL_CLASS_SCOPE_P (fn))
 	    {
 	      DECL_VISIBILITY (decl) = DECL_VISIBILITY (fn);
-	      DECL_VISIBILITY_SPECIFIED (decl) = 
+	      DECL_VISIBILITY_SPECIFIED (decl) =
 		DECL_VISIBILITY_SPECIFIED (fn);
 	    }
 	  else
@@ -2103,7 +2111,7 @@ determine_visibility (tree decl)
 		    ? TYPE_TEMPLATE_INFO (TREE_TYPE (decl))
 		    : DECL_TEMPLATE_INFO (decl));
       tree args = TI_ARGS (tinfo);
-      
+
       if (args != error_mark_node)
 	{
 	  int depth = TMPL_ARGS_DEPTH (args);
@@ -2670,7 +2678,7 @@ set_guard (tree guard)
   guard_init = integer_one_node;
   if (!same_type_p (TREE_TYPE (guard_init), TREE_TYPE (guard)))
     guard_init = convert (TREE_TYPE (guard), guard_init);
-  return cp_build_modify_expr (guard, NOP_EXPR, guard_init, 
+  return cp_build_modify_expr (guard, NOP_EXPR, guard_init,
 			       tf_warning_or_error);
 }
 
@@ -2937,7 +2945,7 @@ get_priority_info (int priority)
    some optimizers (enabled by -O2 -fprofile-arcs) might crash
    when trying to refer to a temporary variable that does not have
    it's DECL_CONTECT() properly set.  */
-static tree 
+static tree
 fix_temporary_vars_context_r (tree *node,
 			      int  *unused ATTRIBUTE_UNUSED,
 			      void *unused1 ATTRIBUTE_UNUSED)
@@ -2984,7 +2992,7 @@ one_static_initialization_or_destruction (tree decl, tree init, bool initp)
   /* Make sure temporary variables in the initialiser all have
      their DECL_CONTEXT() set to a value different from NULL_TREE.
      This can happen when global variables initialisers are built.
-     In that case, the DECL_CONTEXT() of the global variables _AND_ of all 
+     In that case, the DECL_CONTEXT() of the global variables _AND_ of all
      the temporary variables that might have been generated in the
      accompagning initialisers is NULL_TREE, meaning the variables have been
      declared in the global namespace.
