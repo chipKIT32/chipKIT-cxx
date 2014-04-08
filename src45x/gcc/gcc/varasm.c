@@ -3928,6 +3928,7 @@ mark_constant (rtx *current_rtx, void *data ATTRIBUTE_UNUSED)
           pic30_cache_conversion_state(x, exp);
 #elif defined(TARGET_MCHP_PIC32MX)
           /* we may not have seen this string yet */
+          if (!(exp && (TREE_CODE(exp)==STRING_CST))) exp = 0;
           mchp_cache_conversion_state(x, exp);
 #endif
 	  n_deferred_constants--;

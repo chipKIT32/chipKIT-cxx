@@ -37,6 +37,19 @@ const char bug_report_url[] = "<URL:http://www.microchip.com/chipkit>";
 
 /* const char version_string[] = BASEVER DATESTAMP DEVPHASE REVISION; */
 
-const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.31-20120614";
-const char pkgversion_string[] = PKGVERSION;
+
+#ifdef _BUILD_C32_
+const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.31"; /* chipKIT */
+
+#elif defined(_BUILD_C30_)
+#define version2(X) #X
+#define version(X) version2(X)
+
+char *version_string = BASEVER " " "(XC16, Microchip " version(MCHP_VERSION)
+                       ") Build date: " __DATE__;
+#else
+
+const char version_string[] = BASEVER " " "MPLAB XC Compiler v1.10";
+#endif
+
 
