@@ -4,8 +4,9 @@
    Free Software Foundation, Inc.
    Contributed by J. Grosbach, james.grosbach@microchip.com, and
    T. Kuhrt, tracy.kuhrt@microchip.com
-   Changes by J. Kajita, jason.kajita@microchip.com, and
-   G. Loegel, george.loegel@microchip.com
+   Changes by J. Kajita, jason.kajita@microchip.com,
+   G. Loegel, george.loegel@microchip.com, and
+   S. Bekal, swaroopkumar.bekal@microchip.com
 
 This file is part of GCC.
 
@@ -708,9 +709,6 @@ mchp_subtarget_override_options1 (void)
     TARGET_MCHP_SMARTIO = 0;
     mchp_io_size_val = 0;
 
-  /* Don't emit DWARF3/4 unless specifically selected. */
-  if (dwarf_strict < 0)
-    dwarf_strict = 1;
 }
 
 void
