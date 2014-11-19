@@ -21681,11 +21681,16 @@ dwarf2out_finish (const char *filename)
   /* We can only use the low/high_pc attributes if all of the code was
      in .text.  */
   if (!have_multiple_function_sections
+#if defined (TARGET_MCHP_PIC32MX)
+      || 0)
+#else
       || !(dwarf_version >= 3 || !dwarf_strict))
+#endif
     {
       add_AT_lbl_id (comp_unit_die, DW_AT_low_pc, text_section_label);
       add_AT_lbl_id (comp_unit_die, DW_AT_high_pc, text_end_label);
     }
+
 
   else
     {

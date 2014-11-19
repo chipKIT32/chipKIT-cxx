@@ -376,6 +376,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
  %{mips16: %{!mmips16-exceptions: -fno-exceptions}} \
  %{O2|Os|O3:%{!mtune:-mtune=4kec}} \
  %{D__DEBUG : -mdebugger} \
+ %{fframe-base-loclist : %{!fno-var-tracking : -fvar-tracking}} \
  %{-mit=profile : -fno-inline} \
  %(mchp_cci_cc1_spec) \
  %(subtarget_cc1_spec) \
