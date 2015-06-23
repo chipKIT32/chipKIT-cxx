@@ -1,0 +1,471 @@
+<!-- This file contains a series of release note fragments processed
+     by gnu-notes.  To add a note to it, use "gnu-notes -a
+     $release_config gcc".  The TARGET line should contain a
+     list of shell glob patterns for target names to which the note is
+     relevant; it may be removed if it is relevant to all targets.
+ -->
+
+      <!-- UUID: db8ce3ae-d910-4cc3-91ac-63948002d9e2 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 16265 -->
+      <formalpara components="license">
+        <title>Exception handling bug fix</title>
+        <para>
+          A bug that caused GCC to emit incorrect exception
+	  handling information has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 3ac01d10-905f-4850-857d-3b547c593aa2 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 16185 -->
+      <formalpara>
+        <title>Fix for microMIPS illegal instruction errors</title>
+        <para>
+	  A bug that caused GCC to emit invalid microMIPS store instructions
+	  has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 18336f03-3511-4c4f-99bd-eaa551b1bc2b -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Instrumentation bug fix</title>
+        <para>
+          A bug that caused GCC to instrument functions tagged with
+          <literal>__attribute__((no_instrument_function))</literal>
+          when compiling with <option>-fprofile-arcs</option> has been
+          fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 73aecd45-47b4-43f1-834f-afa05b7ed73c -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 7474 -->
+      <formalpara>
+        <title>Optimized software floating-point routines</title>
+        <para>
+          The software floating-point emulation routines used by GCC when
+          linking with <option>-msoft-float</option> have been updated.
+          The new routines provide significant speed increases.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 900ea345-237d-4f10-8def-05f86655f631 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 16143 -->
+      <formalpara>
+        <title><option>-Weffc++</option> and <option>-Wnon-virtual-dtor</option> interaction</title>
+        <para>
+          The two C++ warning options <option>-Weffc++</option> and
+	  <option>-Wnon-virtual-dtor</option> have been updated to
+	  interoperate correctly and warn about the lack of
+	  virtual destructors only in polymorphic classes.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 2d12f5bd-23fd-4523-a6e5-333fb826d8f9 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>GCC version 4.8.3 prerelease</title>
+        <para>
+	  &csl_prod; for &csl_target_name; is now based on a GCC 4.8.3
+          prerelease snapshot from Mar 20th, 2014, SVN revision 208690.
+          This version includes numerous other bug fixes.  For more
+          information about changes from GCC version 4.8.1 that was
+          included in previous releases, see
+          <uri>http://gcc.gnu.org/gcc-4.8/changes.html</uri>.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 4acbe860-9f8e-4bfa-ba1c-ec0fffaba3bf -->
+      <!-- TARGET: nios2*-elf* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 16082 -->
+      <formalpara>
+        <title>Libraries now built with <option>-mno-gpopt</option></title>
+        <para>
+          Libraries distributed with &csl_prod; for &csl_target_name;
+	  are now built with <option>-mno-gpopt</option> to avoid
+	  GP-relative addressing for small data objects.  This change
+	  prevents linker errors in large applications that occur when
+	  the size of the small data section exceeds the range addressible
+	  via 16-bit offsets from the global pointer.  Note that user
+	  code for such applications may also need to be compiled with
+	  <option>-mno-gpopt</option>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 76f066f5-6c38-4608-846a-165958f4aeda -->
+      <!-- TARGET: nios2* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15567 -->
+      <formalpara>
+        <title>LTO target pragmas</title>
+        <para>
+         A bug where GCC failed to enable target pragmas with
+	 <option>-flto</option> has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 47321a08-98e9-4d4e-805b-3536a61bbf47 -->
+      <!-- TARGET: nios2* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 16009 -->
+      <formalpara>
+        <title>Frame pointer ABI conformance</title>
+        <para>
+	  GCC's conventions for use of the frame pointer register have
+	  been corrected to conform to the Nios II ABI. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 1e59b68e-2404-41bd-868f-8ce07e38415b -->
+      <!-- TARGET: nios2* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15032 -->
+      <formalpara>
+        <title>Support for custom round instruction</title>
+        <para>
+          GCC now supports the custom round instruction via the
+	  <option>-mcustom-round</option> command-line option and
+	  corresponding pragma.  If provided, this is used to implement
+	  the <function>__builtin_lroundf</function> function.  Refer
+	  to the GCC manual for details.
+        </para>
+      </formalpara>
+
+      <!-- UUID: d4aca63a-cae1-408f-ae59-cbc40d7ad245 -->
+      <!-- TARGET: arm-none-linux-gnueabi -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: CB-3083 -->
+      <formalpara>
+        <title>Thread-local storage code generation fix</title>
+        <para>
+          A GCC bug that caused an internal compiler error or wrong code for
+          thread-local storage with the <option>-fPIC</option> option has been
+          fixed. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 470b2d0c-6eef-4d30-ada5-c7f2638cccc2 -->
+      <!-- TARGET: powerpc-eabi -->
+      <!-- SORT: gcc -->
+      <formalpara components="license">
+        <title>New e500v2 little-endian multilib</title>
+        <para>
+          A new multilib that is compatible with the e500v2 microprocessor
+          executing in the little-endian mode has been added.  For more
+          information, refer to <xref linkend="sec-multilibs"/>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 46c327b2-ec3e-43bb-828e-d57ae88d55a7 -->
+      <!-- TARGET: nios2* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15444 -->
+      <formalpara>
+        <title>Large small-data support with <option>-mno-gpopt</option></title>
+        <para>
+	  New compiler options <option>-mgpopt</option> and
+	  <option>-mno-gpopt</option> have been added to explicitly
+	  enable and disable (respectively) GP-relative addressing
+	  for small data.  This fixes an ABI conformance issue and
+	  allows building programs with large small-data sections that
+	  would otherwise result in linker errors.  Refer to the
+	  GCC manual for details on the new options.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 4a65e1d5-32d8-4711-bc01-70a459803ebd -->
+      <!-- TARGET: nios2*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15444-->
+      <formalpara>
+        <title>Large GOT support with <option>-fPIC</option></title>
+        <para>
+	  The Nios II ABI restriction limiting size of the GOT to 64K
+	  has been lifted in order to support programs that make heavy use
+	  of large shared libraries.  Compiling with <option>-fPIC</option>
+	  now  generates code with large-GOT accesses, while
+	  <option>-fpic</option> continues to generate the more efficient
+	  small-GOT accesses.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ebbd77b2-1426-4e4e-bae1-9926c4eb7733 -->
+      <!-- TARGET: nios2*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15568 -->
+      <formalpara>
+        <title>GOT pointer ABI conformance</title>
+        <para>
+          GCC now generates code to initialize the GOT pointer in
+	  position-independent code from <code>_gp_got</code> rather than
+	  <code>_GLOBAL_OFFSET_TABLE_</code>.  This corrects an ABI
+          conformance issue, and also increases the maximum addressible
+	  size of the GOT in code compiled with <option>-fpic</option>
+	  from 32K to 64K.  The included libraries have also been
+	  corrected.  This change has been implemented in a way that
+	  preserves link compatibility with code compiled by older
+	  versions of &csl_prod; for &csl_target_name;, provided the GOT
+	  size is under 32K.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f6fac165-350a-402e-99ca-efdd2bee2781 -->
+      <!-- TARGET: nios2*-linux* -->
+      <!-- SORT: important -->
+      <!-- ISSUE: 14150 -->
+      <formalpara>
+        <title>Linux generic system call ABI support</title>
+        <para>
+	  This release contains libraries that support the new Linux
+	  kernel generic system call ABI. It is not compatible with
+	  prior GNU/Linux toolchain releases.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 00c78c6f-9c4f-4a1c-a168-8c6ebc882497 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>GCC option <option>-mvirt</option></title>
+        <para>
+          GCC now passes the <option>-mvirt</option> command-line
+	  option to GAS.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7d088468-30c6-4215-b1bf-ae2fadcc06aa -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15824, 15823-->
+      <formalpara>
+        <title>microMIPS jump instructions</title>
+        <para>
+          A bug that caused GCC to fail to generate the <code>jrc</code>
+	  and <code>jals</code> instructions in microMIPS mode has
+	  been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: d7b75acb-4e23-4406-95c6-3c83edd3a284 -->
+      <!-- TARGET: mips-sde* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: CB-3077 -->
+      <formalpara components="license">
+        <title>New MIPS II multilib</title>
+        <para>
+          A new multilib that is compatible with the MIPS II architecture
+          has been added.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 3a6c7c53-ee48-4aa9-a1f7-7a812fdeacc6 -->
+      <!-- TARGET: powerpc-*-eabi -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15837 -->
+      <formalpara>
+        <title>Size optimization e500 bug fix</title>
+        <para>
+          A bug with the <option>-Os</option> optimization level that
+	  could lead to incorrect stack handling when targetting e500
+	  variants has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7de356cb-d747-4ce1-8e7b-6840d4fccf9f -->
+      <!-- TARGET: arm-none-eabi -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: CB-2871 -->
+      <formalpara components="license">
+        <title>New ARMv5TE little-endian VFP ABI multilib</title>
+        <para>
+          A new multilib that is compatible with the ARMv5TE architecture
+          and the VFP hardware floating-point ABI has been added.  For more
+          information, refer to <xref linkend="sec-multilibs"/>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 149ad4c3-e0cb-4d36-956b-e64edd41989e -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title><option>-fuse-caller-save</option> fix</title>
+        <para>
+	  A bug in <option>-fuse-caller-save</option> that caused the compiler
+	  to generate incorrect code has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7b2c8534-b1aa-4ea6-8ba6-548d2fff021d -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15731 -->
+      <formalpara>
+        <title>Internal compiler error fix</title>
+        <para>
+          A bug that sometimes caused an internal compiler error when
+          compiling with the <option>-mabi=64</option> option and
+          optimizations enabled has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a16f7a45-ce14-44ac-a7c6-2d9f3e650939 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15666 -->
+      <formalpara>
+        <title>microMIPS delay slots</title>
+        <para>
+          A GCC bug that caused delay slots to remain unfilled when
+	  compiling with <option>-mmicromips</option> has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: b57de72a-304c-4171-afe9-79e5bee64133 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15693 -->
+      <formalpara>
+        <title>Better code for short operations</title>
+        <para>
+	  GCC no longer generates unnecessary type conversions for
+	  conditional moves on short data types.  This fixes a regression
+	  from GCC 4.7.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a5315942-82e1-42ec-9c52-67ab2d290993 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15500 -->
+      <formalpara>
+        <title>MIPS code generation fix</title>
+        <para>
+	  A bug in GCC has been fixed that caused register corruption
+	  with the <option>-fuse-caller-save</option> option for MIPS O32
+	  ABI targets.
+        </para>
+      </formalpara>
+
+      <!-- UUID: e4e6685b-de90-496e-a4ce-97e33939c388 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15569 -->
+      <formalpara>
+        <title>GCC <code>nor</code> instruction tuning</title>
+        <para>
+          GCC has been improved to make better use of <code>nor</code>
+	  instructions in generated code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 20e336e9-b16d-4ef5-8e2a-896793b4f5df -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>MIPS16 debug information bug fix</title>
+        <para>
+          A bug in GCC has been fixed that caused incorrect debug
+          information to be produced for mixed MIPS16 and standard MIPS
+          code.  The bug caused single-stepping problems and incorrect
+          function call backtraces reported while debugging such code with
+          GDB.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 77a23691-d1c9-49ad-8864-34c11ce9ff8e -->
+      <!-- TARGET: mips-sde* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 15371 -->
+      <formalpara>
+        <title>Internal compiler error fix</title>
+        <para>
+          A bug that sometimes caused an internal compiler error
+	  when compiling with <option>-funroll-loops</option>
+	  on a Windows XP host has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8d6bdf16-b48e-4968-8354-cb658f784d43 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: important -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Changes to included libraries</title>
+        <para>
+	  Some library variants built with <option>-mmicromips</option>
+	  and <option>-mnan=2008</option> have been removed from
+	  &csl_prod; for &csl_target_name;.  Please refer to
+	  <xref linkend="sec-multilibs"/> for a list of the
+	  currently-supported multilibs.
+        </para>
+      </formalpara>
+
+      <!-- UUID: edae682a-aefe-4b5d-875b-39acd1005088 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: issue14861, CB-2205 -->
+      <formalpara>
+        <title>Incorrect optimization fix</title>
+        <para>
+          A bug in GCC that caused it to generate wrong code for some
+          conditionally-executed statements has been fixed. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 4732d553-f32c-4679-aaa8-bae1c6a5b8f5 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>GCC <option>-fremove-local-statics</option> option</title>
+        <para>
+          GCC no longer supports the <option>-fremove-local-statics</option>
+	  command-line option.  The optimizations formerly controlled by
+	  this option are now carried out automatically by other
+	  optimization passes.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a50a651c-376f-44c5-9fc8-7e82aef31737 -->
+      <!-- TARGET: arm-none-eabi -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara components="license">
+        <title>Multilib selection</title>
+        <para>
+          Some combinations of link options that do not exactly match
+          those for any provided multilib now select a different multilib
+          than in previous releases.  For information about supported
+          multilibs, refer to <xref linkend="sec-multilibs"/>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: e1bc9381-28b8-461b-9eb3-7086a74a5aa9 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>GCC version 4.8.1</title>
+        <para>
+	  &csl_prod; for &csl_target_name; is now based on GCC
+	  version 4.8.1.  For more information about changes from GCC
+	  version 4.7 that was included in previous releases, see
+	  <uri>http://gcc.gnu.org/gcc-4.8/changes.html</uri>.
+	</para>
+      </formalpara>
+
+<!-- Release notes end here.  -->

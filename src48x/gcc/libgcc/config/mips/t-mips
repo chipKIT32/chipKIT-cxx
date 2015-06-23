@@ -1,0 +1,13 @@
+LIB2_SIDITI_CONV_FUNCS = yes
+
+LIB2FUNCS_EXCLUDE = _fixunssfsi _fixunsdfsi
+
+softfp_float_modes :=
+softfp_int_modes := si di
+softfp_extensions :=
+softfp_truncations :=
+softfp_exclude_libgcc2 := n
+
+LIB2ADD_ST += $(srcdir)/config/mips/lib2funcs.c
+LIB2ADD_ST += $(srcdir)/floatunsisf.c
+LIB2ADD_ST += $(srcdir)/floatunsidf.c

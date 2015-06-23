@@ -1,0 +1,384 @@
+# Multilibs for SourceryG++ arm-none-eabi
+
+MULTILIB_OPTIONS     = mthumb
+MULTILIB_DIRNAMES    = t
+MULTILIB_EXCEPTIONS  = 
+MULTILIB_MATCHES     =
+MULTILIB_REUSE       =
+
+MULTILIB_OPTIONS      += march=armv7/march=armv7-a/march=armv7-m/march=armv7e-m/march=armv5te/march=armv6-m
+MULTILIB_DIRNAMES     += v7 v7a v7m v7em v5te v6m
+MULTILIB_MATCHES      += march?armv7-a=march?armv7a
+MULTILIB_MATCHES      += march?armv7=march?armv7r
+MULTILIB_MATCHES      += march?armv7-m=march?armv7m
+MULTILIB_MATCHES      += march?armv7=march?armv7-r
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a15
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a9
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a8
+MULTILIB_MATCHES      += march?armv7-a=mcpu?cortex-a5
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r4f
+MULTILIB_MATCHES      += march?armv7=mcpu?cortex-r5
+MULTILIB_MATCHES      += march?armv7e-m=mcpu?cortex-m4
+MULTILIB_MATCHES      += march?armv7-m=mcpu?cortex-m3
+MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m1
+MULTILIB_MATCHES      += march?armv6-m=mcpu?cortex-m0
+MULTILIB_MATCHES      += march?armv6-m=march?armv6s-m
+MULTILIB_MATCHES      += march?armv5te=march?armv6
+MULTILIB_MATCHES      += march?armv5te=march?armv6j
+MULTILIB_MATCHES      += march?armv5te=march?armv6k
+MULTILIB_MATCHES      += march?armv5te=march?armv6z
+MULTILIB_MATCHES      += march?armv5te=march?armv6zk
+MULTILIB_MATCHES      += march?armv5te=march?armv6t2
+MULTILIB_MATCHES      += march?armv5te=march?iwmmxt
+MULTILIB_MATCHES      += march?armv5te=march?iwmmxt2
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm9e
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm946e-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm966e-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm968e-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm10e
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1020e
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1022e
+MULTILIB_MATCHES      += march?armv5te=mcpu?xscale
+MULTILIB_MATCHES      += march?armv5te=mcpu?iwmmxt
+MULTILIB_MATCHES      += march?armv5te=mcpu?iwmmxt2
+MULTILIB_MATCHES      += march?armv5te=mcpu?marvell-f
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm926ej-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1026ej-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1136j-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1136jf-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1176jz-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1176jzf-s
+MULTILIB_MATCHES      += march?armv5te=mcpu?mpcorenovfp
+MULTILIB_MATCHES      += march?armv5te=mcpu?mpcore
+MULTILIB_MATCHES      += march?armv5te=mcpu?arm1156t2-s
+
+MULTILIB_OPTIONS      += mfloat-abi=softfp/mfloat-abi=hard
+MULTILIB_DIRNAMES     += softfp hard
+MULTILIB_MATCHES      += mfloat-abi?hard=mhard-float
+
+MULTILIB_OPTIONS      += mfpu=neon/mfpu=vfpv3-d16/mfpu=fpv4-sp-d16
+MULTILIB_DIRNAMES     += neon vfpv4_sp_d16 vfpv3_d16
+MULTILIB_EXCEPTIONS   += mfpu=neon mfpu=fpv4-sp-d16 mfpu=vfpv3-d16
+MULTILIB_MATCHES      += mfpu?neon=mfpu?neon-fp16
+MULTILIB_MATCHES      += mfpu?neon=mfpu?neon-vfpv4
+
+MULTILIB_OPTIONS      += mbig-endian
+MULTILIB_DIRNAMES     += be
+
+# ARMv[6|7|7e]-M  does not have ARM mode.
+MULTILIB_EXCEPTIONS   += march=armv6-m
+MULTILIB_EXCEPTIONS   += march=armv7-m
+MULTILIB_EXCEPTIONS   += march=armv7e-m march=armv7e-m/*
+
+# ARMv[6|7]-M and VFP are incompatible.
+# FIXME:  The compiler should probably error.
+MULTILIB_EXCEPTIONS   += *march=armv6-m/mfloat-abi=softfp
+MULTILIB_EXCEPTIONS   += march=armv6-m*mfpu=neon
+MULTILIB_EXCEPTIONS   += march=armv6-m*mfpu=fpv4-sp-d16
+MULTILIB_EXCEPTIONS   += march=armv6-m*mfpu=vfpv3-d16
+MULTILIB_EXCEPTIONS   += mthumb/march=armv6-m/mfloat-abi=softfp/mfpu=neon
+MULTILIB_EXCEPTIONS   += mthumb/march=armv6-m/mfloat-abi=softfp/mfpu=fpv4-sp-d16
+MULTILIB_EXCEPTIONS   += mthumb/march=armv6-m/mfloat-abi=softfp/mfpu=vfpv3-d16
+MULTILIB_EXCEPTIONS   += *march=armv7-m/mfloat-abi=softfp
+MULTILIB_EXCEPTIONS   += march=armv7-m*mfpu=neon
+MULTILIB_EXCEPTIONS   += march=armv7-m*mfpu=fpv4-sp-d16
+MULTILIB_EXCEPTIONS   += march=armv7-m*mfpu=vfpv3-d16
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7-m/mfloat-abi=softfp/mfpu=neon
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7-m/mfloat-abi=softfp/mfpu=fpv4-sp-d16
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7-m/mfloat-abi=softfp/mfpu=vfpv3-d16
+
+MULTILIB_EXCEPTIONS   += *march=armv7e-m/mfloat-abi=softfp
+MULTILIB_EXCEPTIONS   += *march=armv7e-m*mfpu=neon
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7e-m/mfloat-abi=softfp/mfpu=neon
+MULTILIB_EXCEPTIONS   += mthumb/march=armv7e-m/mfloat-abi=softfp/mfpu=fpv4-sp-d16
+
+# ARMv4t VFP isn't really supported, so use the soft-float libraries.
+MULTILIB_EXCEPTIONS   += mfloat-abi?softfp
+MULTILIB_EXCEPTIONS   += mfloat-abi?softfp/mfpu?neon
+MULTILIB_EXCEPTIONS   += mfloat-abi?softfp/mfpu?fpv4-sp-d16
+MULTILIB_EXCEPTIONS   += mfloat-abi?softfp/mfpu?vfpv3-d16
+
+# We don't have a big-endian ARMv[6|7|7e]-M compatible multilibs.
+MULTILIB_EXCEPTIONS   += *march=armv6-m*mbig-endian
+MULTILIB_EXCEPTIONS   += *march=armv7-m*mbig-endian
+MULTILIB_EXCEPTIONS   += *march=armv7e-m*mbig-endian
+
+# The only -mfloat-abi=hard libraries provided are for little-endian
+# v7-A NEON and v7E-M Thumb-2 with fpv4-sp-d16, and ARMv5TE.
+MULTILIB_EXCEPTIONS   += mfloat-abi=hard*
+MULTILIB_EXCEPTIONS   += */march=armv5te/mfloat-abi=hard*
+MULTILIB_EXCEPTIONS   += march=armv5te/mfloat-abi=hard/*
+MULTILIB_EXCEPTIONS   += *march=armv7/*mfloat-abi=hard*
+MULTILIB_EXCEPTIONS   += *march=armv7-a*mfpu=fpv4-sp-d16*
+MULTILIB_EXCEPTIONS   += march=armv7-a/mfloat-abi=hard
+MULTILIB_EXCEPTIONS   += *march=armv6-m*mfloat-abi=hard*
+MULTILIB_EXCEPTIONS   += *march=armv7-m*mfloat-abi=hard*
+MULTILIB_EXCEPTIONS   += mthumb/mfloat-abi=hard/mfpu=neon*
+MULTILIB_EXCEPTIONS   += mthumb/mfloat-abi=hard/mfpu=fpv4-sp-d16*
+MULTILIB_EXCEPTIONS   += mthumb/mfloat-abi=hard/mfix-cortex-m3-ldrd*
+MULTILIB_EXCEPTIONS   += *mfloat-abi=hard*mbig-endian
+MULTILIB_EXCEPTIONS   += mthumb/*mfloat-abi=hard
+
+# FIXME: We need a sane way of doing this.
+# This isn't really a multilib, it's a hack to add an extra option
+# to the v7-m multilib.
+MULTILIB_OPTIONS      += mfix-cortex-m3-ldrd
+MULTILIB_DIRNAMES     += broken_ldrd
+
+MULTILIB_EXCEPTIONS   += mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += mthumb/mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv6-m*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv7-a*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv7-m*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv7e-m*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *mcpu=*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *mbig-endian*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *mfloat-abi=softfp*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *march=armv5te*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *mfpu=neon*mfix-cortex-m3-ldrd
+MULTILIB_EXCEPTIONS   += *mfpu=fpv4-sp-d16*mfix-cortex-m3-ldrd
+
+# Autogenerated using "reusecalc -b arm-none-eabi-sourceryg++".
+MULTILIB_REUSE += mbig-endian=mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb=mthumb/mfpu.neon
+MULTILIB_REUSE += mthumb=mthumb/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb=mthumb/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb=mthumb/mfloat-abi.softfp
+MULTILIB_REUSE += mthumb=mthumb/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += mthumb=mthumb/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb=mthumb/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mbig-endian=mthumb/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+MULTILIB_REUSE += march.armv5te=march.armv5te/mfpu.neon
+MULTILIB_REUSE += march.armv5te=march.armv5te/mfpu.vfpv3-d16
+MULTILIB_REUSE += march.armv5te=march.armv5te/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv5te/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv5te/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += march.armv5te=march.armv5te/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv5te/mfloat-abi.hard/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv5te/mfloat-abi.hard/mfpu.vfpv3-d16
+MULTILIB_REUSE += mbig-endian=march.armv5te/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv5te/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv5te/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv5te/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv5te/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv5te/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv5te/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb=mthumb/march.armv5te
+MULTILIB_REUSE += mthumb=mthumb/march.armv5te/mfpu.neon
+MULTILIB_REUSE += mthumb=mthumb/march.armv5te/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb=mthumb/march.armv5te/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=mthumb/march.armv5te/mfloat-abi.softfp
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=mthumb/march.armv5te/mfloat-abi.hard
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=mthumb/march.armv5te/mfloat-abi.hard/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=mthumb/march.armv5te/mfloat-abi.hard/mfpu.vfpv3-d16
+MULTILIB_REUSE += mbig-endian=mthumb/march.armv5te/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/march.armv5te/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/march.armv5te/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/march.armv5te/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv5te/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=mthumb/march.armv5te/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfloat-abi.softfp
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv6-m=mthumb/march.armv6-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+
+MULTILIB_REUSE += march.armv5te=march.armv7
+MULTILIB_REUSE += march.armv5te=march.armv7/mfpu.neon
+MULTILIB_REUSE += march.armv5te=march.armv7/mfpu.vfpv3-d16
+MULTILIB_REUSE += march.armv5te=march.armv7/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv7/mfloat-abi.softfp
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv7/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += march.armv5te=march.armv7/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv7/mfloat-abi.hard
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv7/mfloat-abi.hard/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv7/mfloat-abi.hard/mfpu.vfpv3-d16
+MULTILIB_REUSE += mbig-endian=march.armv7/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+MULTILIB_REUSE += march.armv5te=march.armv7-a
+MULTILIB_REUSE += march.armv5te=march.armv7-a/mfpu.neon
+MULTILIB_REUSE += march.armv5te=march.armv7-a/mfpu.vfpv3-d16
+MULTILIB_REUSE += march.armv5te=march.armv7-a/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=march.armv7-a/mfloat-abi.softfp
+MULTILIB_REUSE += march.armv5te=march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv7-a/mfloat-abi.hard
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=march.armv7-a/mfloat-abi.hard/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfloat-abi.softfp/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfloat-abi.softfp/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mbig-endian=march.armv7-a/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7-a/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7-a/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7-a/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7-a/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7-a/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mbig-endian=march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp=mthumb/march.armv7-a/mfloat-abi.softfp
+MULTILIB_REUSE += march.armv7-a/mfloat-abi.softfp/mfpu.neon=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=mthumb/march.armv7-a/mfloat-abi.hard
+MULTILIB_REUSE += march.armv7-a/mfloat-abi.hard/mfpu.neon=mthumb/march.armv7-a/mfloat-abi.hard/mfpu.neon
+MULTILIB_REUSE += march.armv5te/mfloat-abi.hard=mthumb/march.armv7-a/mfloat-abi.hard/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfloat-abi.softfp/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-a/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-a/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-a/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-a/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv7-a/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += march.armv5te/mfloat-abi.softfp/mbig-endian=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-a/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfloat-abi.softfp
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7-m=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfloat-abi.softfp/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfloat-abi.softfp
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.vfpv3-d16
+MULTILIB_REUSE += mthumb/march.armv7e-m=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16
+MULTILIB_REUSE += mthumb/march.armv7e-m/mfloat-abi.hard/mfpu.fpv4-sp-d16=mthumb/march.armv7e-m/mfloat-abi.hard/mfpu.neon
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfloat-abi.softfp/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.neon/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.vfpv3-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mfix-cortex-m3-ldrd=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mfix-cortex-m3-ldrd
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfpu.fpv4-sp-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfloat-abi.softfp/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.neon/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.vfpv3-d16/mbig-endian
+MULTILIB_REUSE += mthumb/march.armv7/mbig-endian=mthumb/march.armv7e-m/mfloat-abi.softfp/mfpu.fpv4-sp-d16/mbig-endian
+
+# As of at least 4.2, gcc passes the wrong -L options if some multilibs are
+# omitted from MULTILIB_OSDIRNAMES
+MULTILIB_OSDIRNAMES    = mthumb=!thumb
+MULTILIB_OSDIRNAMES   += mbig-endian=!be
+MULTILIB_OSDIRNAMES   += march.armv5te=!armv5te
+MULTILIB_OSDIRNAMES   += march.armv5te/mfloat-abi.softfp=!vfp
+MULTILIB_OSDIRNAMES   += march.armv5te/mfloat-abi.hard=!vfp-hard
+MULTILIB_OSDIRNAMES   += march.armv5te/mfloat-abi.softfp/mbig-endian=!vfp-be
+MULTILIB_OSDIRNAMES   += mthumb/march.armv7/mfix-cortex-m3-ldrd=!thumb2
+MULTILIB_OSDIRNAMES   += march.armv7-a/mfloat-abi.softfp/mfpu.neon=!armv7-a-neon
+MULTILIB_OSDIRNAMES   += march.armv7-a/mfloat-abi.hard/mfpu.neon=!armv7-a-hard
+MULTILIB_OSDIRNAMES   += march.armv7-a/mfloat-abi.softfp/mfpu.vfpv3-d16=!armv7-a-vfpv3-d16
+MULTILIB_OSDIRNAMES   += mthumb/march.armv7/mbig-endian=!thumb2-be
+MULTILIB_OSDIRNAMES   += mthumb/march.armv6-m=!armv6-m
+MULTILIB_OSDIRNAMES   += mthumb/march.armv7-m=!armv7-m
+MULTILIB_OSDIRNAMES   += mthumb/march.armv7e-m=!armv7e-m
+MULTILIB_OSDIRNAMES   += mthumb/march.armv7e-m/mfloat-abi.hard/mfpu.fpv4-sp-d16=!armv7e-m-hard
+
+MULTILIB_REQUIRED      = mthumb
+MULTILIB_REQUIRED     += mbig-endian
+MULTILIB_REQUIRED     += march=armv5te
+MULTILIB_REQUIRED     += march=armv5te/mfloat-abi=softfp
+MULTILIB_REQUIRED     += march=armv5te/mfloat-abi=hard
+MULTILIB_REQUIRED     += march=armv5te/mfloat-abi=softfp/mbig-endian
+MULTILIB_REQUIRED     += mthumb/march=armv7/mfix-cortex-m3-ldrd
+MULTILIB_REQUIRED     += march=armv7-a/mfloat-abi=softfp/mfpu=neon
+MULTILIB_REQUIRED     += march=armv7-a/mfloat-abi=hard/mfpu=neon
+MULTILIB_REQUIRED     += march=armv7-a/mfloat-abi=softfp/mfpu=vfpv3-d16
+MULTILIB_REQUIRED     += mthumb/march=armv7/mbig-endian
+MULTILIB_REQUIRED     += mthumb/march=armv6-m
+MULTILIB_REQUIRED     += mthumb/march=armv7-m
+MULTILIB_REQUIRED     += mthumb/march=armv7e-m
+MULTILIB_REQUIRED     += mthumb/march=armv7e-m/mfloat-abi=hard/mfpu=fpv4-sp-d16

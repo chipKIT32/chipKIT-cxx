@@ -1,0 +1,3283 @@
+2014-05-08  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #16265
+
+	* release-note-csl.xml: New note.
+
+	gcc/
+	* dwarf2asm.h (dw2_asm_output_compact_ac_pair_sleb128):
+	Declare arguments as int.
+	* dwarf2asm.c (dw2_asm_output_compact_ac_pair_sleb128):
+	Declare arguments as int.  Remove calls to fprint_whex.
+
+2014-05-08  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gcc/
+	2014-05-08  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc.target/i386/avx256-unaligned-load-2.c,
+	gcc.target/i386/pr49002-1.c, gcc.target/i386/pr53712.c,
+	gcc.target/i386/pr53907.c, gcc.target/i386/pr59539-1.c: Allow
+	packed-single instructions.
+
+2014-05-07  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gcc/
+	2014-05-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* config/i386/sse.md (*mov<mode>_internal)
+	(*<sse>_loadu<ssemodesuffix><avxsizesuffix><mask_name>)
+	(*<sse2_avx_avx512f>_loaddqu<mode><mask_name>)
+	(<sse>_andnot<mode>3, <code><mode>3, *andnot<mode>3)
+	(*<code><mode>3, *andnot<mode>3<mask_name>)
+	(<mask_codefor><code><mode>3<mask_name>): Only consider
+	TARGET_SSE_PACKED_SINGLE_INSN_OPTIMAL for modes of size 16.
+
+2014-04-22  Catherine Moore  <clm@codesourcery.com>
+
+	gcc/testsuite/
+	* gcc.dg/torture/float128-div-underflow.c: Delete.
+	* gcc.dg/torture/float128-mul-underflow.c: Delete.
+	* gcc.dg/torture/float128-truncdf-underflow.c: Delete.
+	* gcc.dg/torture/float128-truncsf-underflow.c: Delete.
+
+2014-04-16  Catherine Moore  <clm@codesourcery.com>
+
+	gcc/
+	* mips.md (*mov<mode>_internal, *movhi_internal, *movqi_internal):
+	Adjust constraints for microMIPS store patterns.
+
+	testsuite/
+	* gcc.target/mips/umips-store16-2.c: New test.
+
+2014-04-15  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* dwarf2asm.c (dw2_asm_output_compact_ac_pair_sleb128)
+	[HAVE_AS_LEB128]: Use fprint_whex to output HOST_WIDE_INT
+	values.
+
+2014-04-14  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #16185
+
+	* release-notes-csl.xml: New note.
+
+	Backport from mainline:
+
+	2014-04-12  Catherine Moore  <clm@codesourcery.com>
+
+	* config/mips/constraints.md: Add new register constraint "kb".
+	* config/mips/mips.md (*mov<mode>_internal): Use constraint "kb".
+	(*movhi_internal): Likewise.
+	(*movqi_internal): Likewise.
+	* config/mips/mips.h (M16_STORE_REGS): New register class.
+	(REG_CLASS_NAMES): Add M16_STORE_REGS.
+	(REG_CLASS_CONTENTS): Likewise.
+	* config/mips/mips.c (mips_regno_to_class): Add M16_STORE_REGS.
+
+2014-04-14  Meador Inge  <meadori@codesourcery.com>
+
+	* release-notes-csl.xml: New note.
+
+	gcc/
+	* tree-profile.c (tree_profiling): Skip functions tagged with
+	"no_instrument".
+
+2014-04-08  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #7474
+
+	* release-notes-csl.xml: New note.
+
+2014-04-08  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2014-02-12  Joseph Myers  <joseph@codesourcery.com>
+
+	* soft-fp/adddf3.c: Update from glibc.
+	* soft-fp/addsf3.c: Likewise.
+	* soft-fp/addtf3.c: Likewise.
+	* soft-fp/divdf3.c: Likewise.
+	* soft-fp/divsf3.c: Likewise.
+	* soft-fp/divtf3.c: Likewise.
+	* soft-fp/double.h: Likewise.
+	* soft-fp/eqdf2.c: Likewise.
+	* soft-fp/eqsf2.c: Likewise.
+	* soft-fp/eqtf2.c: Likewise.
+	* soft-fp/extenddftf2.c: Likewise.
+	* soft-fp/extended.h: Likewise.
+	* soft-fp/extendsfdf2.c: Likewise.
+	* soft-fp/extendsftf2.c: Likewise.
+	* soft-fp/extendxftf2.c: Likewise.
+	* soft-fp/fixdfdi.c: Likewise.
+	* soft-fp/fixdfsi.c: Likewise.
+	* soft-fp/fixdfti.c: Likewise.
+	* soft-fp/fixsfdi.c: Likewise.
+	* soft-fp/fixsfsi.c: Likewise.
+	* soft-fp/fixsfti.c: Likewise.
+	* soft-fp/fixtfdi.c: Likewise.
+	* soft-fp/fixtfsi.c: Likewise.
+	* soft-fp/fixtfti.c: Likewise.
+	* soft-fp/fixunsdfdi.c: Likewise.
+	* soft-fp/fixunsdfsi.c: Likewise.
+	* soft-fp/fixunsdfti.c: Likewise.
+	* soft-fp/fixunssfdi.c: Likewise.
+	* soft-fp/fixunssfsi.c: Likewise.
+	* soft-fp/fixunssfti.c: Likewise.
+	* soft-fp/fixunstfdi.c: Likewise.
+	* soft-fp/fixunstfsi.c: Likewise.
+	* soft-fp/fixunstfti.c: Likewise.
+	* soft-fp/floatdidf.c: Likewise.
+	* soft-fp/floatdisf.c: Likewise.
+	* soft-fp/floatditf.c: Likewise.
+	* soft-fp/floatsidf.c: Likewise.
+	* soft-fp/floatsisf.c: Likewise.
+	* soft-fp/floatsitf.c: Likewise.
+	* soft-fp/floattidf.c: Likewise.
+	* soft-fp/floattisf.c: Likewise.
+	* soft-fp/floattitf.c: Likewise.
+	* soft-fp/floatundidf.c: Likewise.
+	* soft-fp/floatundisf.c: Likewise.
+	* soft-fp/floatunditf.c: Likewise.
+	* soft-fp/floatunsidf.c: Likewise.
+	* soft-fp/floatunsisf.c: Likewise.
+	* soft-fp/floatunsitf.c: Likewise.
+	* soft-fp/floatuntidf.c: Likewise.
+	* soft-fp/floatuntisf.c: Likewise.
+	* soft-fp/floatuntitf.c: Likewise.
+	* soft-fp/gedf2.c: Likewise.
+	* soft-fp/gesf2.c: Likewise.
+	* soft-fp/getf2.c: Likewise.
+	* soft-fp/ledf2.c: Likewise.
+	* soft-fp/lesf2.c: Likewise.
+	* soft-fp/letf2.c: Likewise.
+	* soft-fp/muldf3.c: Likewise.
+	* soft-fp/mulsf3.c: Likewise.
+	* soft-fp/multf3.c: Likewise.
+	* soft-fp/negdf2.c: Likewise.
+	* soft-fp/negsf2.c: Likewise.
+	* soft-fp/negtf2.c: Likewise.
+	* soft-fp/op-1.h: Likewise.
+	* soft-fp/op-2.h: Likewise.
+	* soft-fp/op-4.h: Likewise.
+	* soft-fp/op-8.h: Likewise.
+	* soft-fp/op-common.h: Likewise.
+	* soft-fp/quad.h: Likewise.
+	* soft-fp/single.h: Likewise.
+	* soft-fp/soft-fp.h: Likewise.
+	* soft-fp/subdf3.c: Likewise.
+	* soft-fp/subsf3.c: Likewise.
+	* soft-fp/subtf3.c: Likewise.
+	* soft-fp/truncdfsf2.c: Likewise.
+	* soft-fp/trunctfdf2.c: Likewise.
+	* soft-fp/trunctfsf2.c: Likewise.
+	* soft-fp/trunctfxf2.c: Likewise.
+	* soft-fp/unorddf2.c: Likewise.
+	* soft-fp/unordsf2.c: Likewise.
+	* soft-fp/unordtf2.c: Likewise.
+	* config/aarch64/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING): New
+	macro.
+	* config/arm/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/c6x/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/cris/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/i386/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/ia64/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/lm32/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/mips/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/moxie/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/nds32/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/nios2/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/rs6000/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/score/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/tilegx/sfp-machine32.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/tilegx/sfp-machine64.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+	* config/tilepro/sfp-machine.h (_FP_TININESS_AFTER_ROUNDING):
+	Likewise.
+
+2014-04-08  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-06-16  Jürgen Urban  <JuergenUrban@gmx.de>
+
+	* config/mips/lib2funcs.c: New file.
+	* config/mips/t-mips (LIB2ADD_ST): Add it.
+
+	2014-02-02  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* configure.ac: Check __mips64 when setting host_address.
+	* configure: Regenerate.
+	* config.host (mips*-*-*): Add t-softfp-sfdf, mips/t-softfp-tf,
+	mips/t-mips64 and t-softfp.
+	(mips*-*-linux*): Don't add mips/t-tpbit.
+	* config/mips/t-mips (LIB2_SIDITI_CONV_FUNCS, FPBIT, FPBIT_CFLAGS)
+	(DPBIT, DPBIT_CFLAGS): Delete.
+	* config/mips/sfp-machine.h: New file.
+	* config/mips/t-mips64: Likewise.
+	* config/mips/t-softfp-tf: Likewise.
+	* config/mips/t-tpbit: Delete.
+
+	2014-02-07  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* configure.ac (libgcc_cv_mips_hard_float): New.
+	* configure: Regenerate.
+	* config.host (mips*-*-*): Use t-hardfp-sfdf rather than
+	t-softfp-sfdf for hard-float targets.
+	* config/mips/t-mips (LIB2_SIDITI_CONV_FUNCS): Reinstate.
+	(softfp_float_modes, softfp_int_modes, softfp_extensions)
+	(softfp_truncations, softfp_exclude_libgcc2): New.
+	* config/t-hardfp: New file.
+	* config/t-hardfp-sfdf: Likewise.
+	* config/hardfp.c: Likewise.
+
+2014-04-08  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue 16143
+	gcc/
+	* doc/invoke.texi (Wnon-virtual-dtor): Update to match implementation.
+	(Weffc++): Likewise.
+
+	gcc/cp/
+	* class.c (check_bases_and_members): Warn about non-virtual dtors
+	in public bases only.  Check warn_ecpp before complaining about
+	non-polymorphic bases.
+
+	gcc/testsuite/
+	* g++.dg/warn/Wnvdtor-2.C: Add more cases.
+	* g++.dg/warn/Wnvdtor-3.C: Likewise.
+	* g++.dg/warn/Wnvdtor-4.C: Likewise.
+
+2014-04-07  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2014-02-02  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* doc/extend.texi (__builtin_mips_get_fcsr): Document.
+	(__builtin_mips_set_fcsr): Likewise.
+	* config/mips/mips-ftypes.def: Add MIPS_VOID_FTYPE_USI and
+	MIPS_USI_FTYPE_VOID.
+	* config/mips/mips-protos.h (mips16_expand_get_fcsr): Declare
+	(mips16_expand_set_fcsr): Likewise.
+	* config/mips/mips.c (mips16_get_fcsr_stub): New variable.
+	(mips16_set_fcsr_stub): Likewise.
+	(mips16_get_fcsr_one_only_stub): New class.
+	(mips16_set_fcsr_one_only_stub): Likewise.
+	(mips16_expand_get_fcsr, mips16_expand_set_fcsr): New functions.
+	(mips_code_end): Output the get_fcsr and set_fcsr stubs, if needed.
+	(BUILTIN_AVAIL_MIPS16, AVAIL_ALL): New macros.
+	(hard_float): New availability predicate.
+	(mips_builtins): Add get_fcsr and set_fcsr.
+	(mips_expand_builtin): Check BUILTIN_AVAIL_MIPS16.
+	* config/mips/mips.md (UNSPEC_GET_FCSR, UNSPEC_SET_FCSR): New unspecs.
+	(GET_FCSR_REGNUM, SET_FCSR_REGNUM): New constants.
+	(mips_get_fcsr, *mips_get_fcsr, mips_get_fcsr_mips16_<mode>)
+	(mips_set_fcsr, *mips_set_fcsr, mips_set_fcsr_mips16_<mode>): New
+	patterns.
+
+2014-04-07  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2014-02-02  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/mips/mips.c (mips_one_only_stub): New class.
+	(mips_need_mips16_rdhwr_p): Replace with...
+	(mips16_rdhwr_stub): ...this new variable.
+	(mips16_stub_call_address): New function.
+	(mips16_rdhwr_one_only_stub): New class.
+	(mips_expand_thread_pointer): Use mips16_stub_call_address.
+	(mips_output_mips16_rdhwr): Delete.
+	(mips_finish_stub): New function.
+	(mips_code_end): Use it to handle rdhwr stubs.
+
+2014-04-03  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue 16143.
+	* release-notes-csl.xml: New note.
+
+	* doc/invoke.texi (Wnon-virtual-dtor): Adjust documentation.
+	(Weffc++): Remove Scott's numbering, merge lists and reference
+	Wnon-virtual-dtor.
+
+	c-family/
+	* c.opt (Wnon-virtual-dtor): Auto set when Weffc++.
+
+	cp/
+	* class.c (accessible_nvdtor_p): New.
+	(check_bases): Don't check base destructor here ...
+	(check_bases_and_members): ... check them here.  Trigger on
+	Wnon-virtual-dtor flag.
+	(finish_struct_1): Use accessible_nvdtor_p.
+
+	testsuite/
+	* g++.dg/warn/Wnvdtor.C: Add non-polymorphic case.
+	* g++.dg/warn/Wnvdtor-2.C: New.
+	* g++.dg/warn/Wnvdtor-3.C: New.
+	* g++.dg/warn/Wnvdtor-4.C: New.
+	* g++.dg/warn/Weff1.C: Delete.
+	* g++.old-deja/g++.benjamin/15309-1.C: Delete.
+	* g++.old-deja/g++.benjamin/15309-2.C: Delete.
+
+2014-04-02  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gcc/testsuite/
+	2014-04-02  Joseph Myers  <joseph@codesourcery.cmo>
+
+	* gcc.target/i386/avx2-vpand-3.c,
+	gcc.target/i386/avx256-unaligned-load-2.c: Use -mno-prefer-avx128.
+
+	2014-04-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc.target/i386/funcspec-2.c, gcc.target/i386/funcspec-3.c,
+	gcc.target/i386/funcspec-9.c, gcc.target/i386/isa-1.c,
+	gcc.target/i386/memcpy-strategy-1.c,
+	gcc.target/i386/memcpy-strategy-2.c,
+	gcc.target/i386/memcpy-vector_loop-1.c,
+	gcc.target/i386/memcpy-vector_loop-2.c,
+	gcc.target/i386/memset-vector_loop-1.c,
+	gcc.target/i386/memset-vector_loop-2.c,
+	gcc.target/i386/sse2-init-v2di-2.c, gcc.target/i386/ssetype-1.c,
+	gcc.target/i386/ssetype-2.c, gcc.target/i386/ssetype-5.c: Skip for
+	-march= options different from those in dg-options.
+
+2014-04-02  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gcc/testsuite/
+	2014-04-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc.target/i386/387-3.c, gcc.target/i386/387-4.c,
+	gcc.target/i386/pr30970.c: Use -mtune=generic.
+	* gcc.target/i386/avx2-vpaddb-3.c,
+	gcc.target/i386/avx2-vpaddd-3.c, gcc.target/i386/avx2-vpaddq-3.c,
+	gcc.target/i386/avx2-vpaddw-3.c, gcc.target/i386/avx2-vpmulld-3.c,
+	gcc.target/i386/avx2-vpmullw-3.c, gcc.target/i386/avx2-vpsrad-3.c,
+	gcc.target/i386/avx2-vpsraw-3.c, gcc.target/i386/avx2-vpsrld-3.c,
+	gcc.target/i386/avx2-vpsrlw-3.c, gcc.target/i386/avx2-vpsubb-3.c,
+	gcc.target/i386/avx2-vpsubd-3.c, gcc.target/i386/avx2-vpsubq-3.c,
+	gcc.target/i386/avx2-vpsubw-3.c,
+	gcc.target/i386/avx256-unaligned-load-1.c,
+	gcc.target/i386/avx256-unaligned-load-4.c,
+	gcc.target/i386/avx256-unaligned-store-1.c,
+	gcc.target/i386/avx256-unaligned-store-2.c,
+	gcc.target/i386/avx256-unaligned-store-4.c: Use
+	-mno-prefer-avx128.
+
+2014-04-01  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline:
+
+	2014-04-01  Chung-Lin Tang  <cltang@codesourcery.com>
+	* config/nios2/nios2.md (unspec): Remove UNSPEC_TLS, UNSPEC_TLS_LDM.
+	* config/nios2/nios2.c (nios2_function_profiler): Fix addi operand
+	typo.
+	(nios2_large_got_address): Remove unneeded 'sym' parameter.
+	(nios2_got_address): Update nios2_large_got_address call site.
+	(nios2_delegitimize_address): New function.
+	(TARGET_DELEGITIMIZE_ADDRESS): Define to nios2_delegitimize_address.
+	* config/nios2/linux.h (GLIBC_DYNAMIC_LINKER): Define.
+	(LINK_SPEC): Specify dynamic linker using GNU_USER_DYNAMIC_LINKER.
+
+2014-03-29  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	gcc/testsuite/
+	2014-03-29  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc.dg/pr45416.c: Allow bextr on x86.
+	* gcc.target/i386/fma4-builtin.c, gcc.target/i386/fma4-fma-2.c,
+	gcc.target/i386/fma4-fma.c, gcc.target/i386/fma4-vector-2.c,
+	gcc.target/i386/fma4-vector.c: Use -mno-fma.
+	* gcc.target/i386/l_fma_double_1.c,
+	gcc.target/i386/l_fma_double_2.c,
+	gcc.target/i386/l_fma_double_3.c,
+	gcc.target/i386/l_fma_double_4.c,
+	gcc.target/i386/l_fma_double_5.c,
+	gcc.target/i386/l_fma_double_6.c, gcc.target/i386/l_fma_float_1.c,
+	gcc.target/i386/l_fma_float_2.c, gcc.target/i386/l_fma_float_3.c,
+	gcc.target/i386/l_fma_float_4.c, gcc.target/i386/l_fma_float_5.c,
+	gcc.target/i386/l_fma_float_6.c: Use -mno-fma4.
+	* gcc.target/i386/pr27971.c: Use -mno-tbm.
+	* gcc.target/i386/pr42542-4a.c: Use -mno-avx.
+	* gcc.target/i386/pr59390.c: Use -mno-fma -mno-fma4.
+
+2014-03-26  Julian Brown  <julian@codesourcery.com>
+
+	Backport from mainline (candidate patch):
+
+	include/
+	* dwarf2.h (enum dwarf_calling_convention): Add
+	DW_CC_GNU_thiscall_i386.
+
+	gcc/
+	* config/i386/i386.c (ix86_dwarf_calling_convention): New.
+	(TARGET_DWARF_CALLING_CONVENTION): Define, using above.
+
+2014-03-26  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Backport from FSF trunk:
+
+	2014-01-28  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.in (BUILD_CPPFLAGS): Do not use ALL_CPPFLAGS.
+	* configure.ac <recursive call for build != host>: Define
+	GENERATOR_FILE.  Comment.  Use CXX_FOR_BUILD, CXXFLAGS_FOR_BUILD
+	and LD_FOR_BUILD too.
+	* configure: Regenerate.
+
+2014-03-26  Joseph Myers  <joseph@codesourcery.com>
+
+	Backport from FSF:
+
+	libitm/
+	2014-03-26  Joseph Myers  <joseph@codesourcery.com>
+
+	* libitm.texi (Index): Rename to Library Index.
+
+2014-03-26  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	libgcc/
+	* unwind-dw2-fde.c (_Unwind_Find_registered_Index): Fix
+	uninitialized local variable.
+
+2014-03-26  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Revert:
+
+	2014-01-16  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2014-01-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_hard_regno_mode_ok): Use
+	VALID_AVX256_REG_OR_OI_MODE.
+
+	2013-09-05  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/58139
+	* reginfo.c (choose_hard_reg_mode): Scan through all mode classes
+	looking for widest mode.
+
+2014-03-26  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* release-notes-csl.xml (GCC version 4.8.3 prerelease): New.
+
+2014-03-25  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Backport from mainline:
+
+	2013-04-24  Julian Brown  <julian@codesourcery.com>
+	    	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* dwarf2out.c (gen_enumeration_type_die): Fix HOST_BITS_PER_WIDE_INT
+	dependency behavior in enumeration type DIE generation. Add TODO note
+	to comments about future DW_FORM_sdata/udata re-work of related code.
+
+2014-03-19  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Issue #16082
+
+	* release-notes-csl.xml (Libraries now built with -mno-gpopt):
+	New note.
+	* configure.ac (target_makefile_frag): Set for nios2-*-elf*.
+	* configure: Regenerated.
+
+	config/
+	* mt-nios2-elf: New file.
+
+2014-03-19  Cesar Philippidis  <cesar@codesourcery.com>
+
+	gcc/testsuite/
+	* lib/scanasm.exp (scan-lto-assembler): New procedure.
+	* gcc.target/nios2/custom-fp-lto.c: New test.
+
+2014-03-19  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Issue #15567
+
+	* release-notes-csl.xml (LTO target pragmas): New note.
+
+	gcc/
+	* lto/lto.c (lto_ft_function): Re-build DECL_FUNCTION_SPECIFIC_TARGET.
+
+	Backport from mainline:
+
+	2014-02-14  Richard Biener  <rguenther@suse.de>
+
+	* tree-streamer-out.c (pack_ts_target_option): Remove.
+	(streamer_pack_tree_bitfields): Do not stream
+	TS_TARGET_OPTION.
+	(write_ts_function_decl_tree_pointers): Do not stream
+	DECL_FUNCTION_SPECIFIC_TARGET.
+	* tree-streamer-in.c (unpack_ts_target_option): Remove.
+	(unpack_value_fields): Do not stream TS_TARGET_OPTION.
+	(lto_input_ts_function_decl_tree_pointers): Do not stream
+	DECL_FUNCTION_SPECIFIC_TARGET.
+
+2014-03-17  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Backport from mainline:
+
+	2014-03-13  Cesar Philippidis  <cesar@codesourcery.com>
+
+	gcc/
+	* lto-wrapper.c (maybe_unlink_file): Suppress diagnostic
+	messages.
+
+	2014-03-14  Cesar Philippidis  <cesar@codesourcery.com>
+
+	gcc/testsuite/
+	* lib/gcc-dg.exp (cleanup-saved-temps): Handle LTO temporaries.
+	* lib/lto.exp (lto-execute): Cleanup LTO temporaries.
+	* gcc.dg/lto/save-temps_0.c: New testcase.
+
+2014-03-12  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Issue #16009
+
+	* release-notes-csl.xml (Frame pointer ABI conformance): New note.
+
+	Backport from mainline:
+
+	2014-03-11  Chung-Lin Tang  <cltang@codesourcery.com>
+	gcc/
+	* config/nios2/nios2.c (machine_function): Add fp_save_offset field.
+	(nios2_compute_frame_layout):
+	Add calculation of cfun->machine->fp_save_offset.
+	(nios2_expand_prologue): Correct setting of frame pointer register
+	in prologue.
+	(nios2_expand_epilogue): Update recovery of stack pointer from
+	frame pointer accordingly.
+	(nios2_initial_elimination_offset): Update calculation of offset
+	for eliminating to HARD_FRAME_POINTER_REGNUM.
+
+2014-03-11  Meador Inge  <meadori@codesourcery.com>
+
+	CB-3083
+
+	Backport from trunk:
+
+	gcc/
+
+	2014-03-06  Jakub Jelinek  <jakub@redhat.com>
+	            Meador Inge  <meadori@codesourcery.com>
+
+	PR target/58595
+	* config/arm/arm.c (arm_tls_symbol_p): Remove.
+	(arm_legitimize_address): Call legitimize_tls_address for any
+	arm_tls_referenced_p expression, handle constant addend.  Call it
+	before testing for !TARGET_ARM.
+	(thumb_legitimize_address): Don't handle arm_tls_symbol_p here.
+
+	gcc/testsuite/
+
+	2014-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/58595
+	* gcc.dg/tls/pr58595.c: New test.
+
+2014-03-10  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Issue #15032
+
+	* release-notes-csl.xml (Support for custom round instruction):
+	New note.
+
+	gcc/
+	* config/nios2/nios2.md (UNSPEC_ROUND): New.
+	(lroundsfsi2): New.
+	* config/nios2/nios2.opt (mno-custom-round, mcustom-round=): New.
+	* config/nios2/nios2-opts.h (N2FPU_ALL_CODES): Add round.
+	* config/nios2/nios2.c (N2F_NO_ERRNO): Define.
+	(nios2_fpu_insn): Add entry for round.
+	(N2FPU_NO_ERRNO_P): Define.
+	(nios2_custom_check_insns): Add check for N2F_NO_ERRNO and
+	flag_errno_math.
+	* doc/invoke.texi (Nios II Options): Document -mcustom-round.
+
+	gcc/testsuite/
+	* gcc.target/nios2/custom-fp-conversion.c: Adjust to test that
+	lroundf generates custom round instruction, too.
+
+2014-03-04  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* release-notes-csl.xml (New e500v2 little-endian multilib): New
+	note.
+
+2014-02-28  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* release-notes-csl.xml (Large small-data support with -mno-gpopt):
+	Copy note from nios2-nsyscall branch.
+	(Large GOT support with -fPIC): Likewise.
+	(GOT pointer ABI conformance): Likewise.
+	(Linux generic system call ABI support): Likewise.
+
+2014-02-28  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backport Nios II large-GOT patches (commits 207409 and 207965)
+	from FSF mainline:
+
+	2014-02-02  Sandra Loosemore  <sandra@codesourcery.com>
+
+	gcc/
+	* config/nios2/nios2.md (load_got_register): Initialize GOT
+	pointer from _gp_got instead of _GLOBAL_OFFSET_TABLE_.
+	* config/nios2/nios2.c (nios2_function_profiler): Likewise.
+
+	libgcc/
+	* config/nios2/crti.S (_init): Initialize GOT pointer from
+	_gp_got instead of _GLOBAL_OFFSET_TABLE_.
+
+	2014-02-20  Chung-Lin Tang  <cltang@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+
+	gcc/
+	* config/nios2/nios2.md (unspec): Add UNSPEC_PIC_GOTOFF_SYM enum.
+	* config/nios2/nios2.c (nios2_function_profiler):
+	Add -fPIC (flag_pic == 2) support.
+	(nios2_handle_custom_fpu_cfg): Fix warning parameter.
+	(nios2_large_offset_p): New function.
+	(nios2_unspec_reloc_p): Move up position, update to use
+	nios2_large_offset_p.
+	(nios2_unspec_address): Remove function.
+	(nios2_unspec_offset): New function.
+	(nios2_large_got_address): New function.
+	(nios2_got_address): Add large offset support.
+	(nios2_legitimize_tls_address): Update usage of removed and new
+	functions.
+	(nios2_symbol_binds_local_p): New function.
+	(nios2_load_pic_address): Add -fPIC (flag_pic == 2) support.
+	(nios2_legitimize_address): Update to use nios2_large_offset_p.
+	(nios2_emit_move_sequence): Avoid legitimizing (const (unspec ...)).
+	(nios2_print_operand): Merge H/L processing, add hiadj/lo
+	processing for (const (unspec ...)).
+	(nios2_unspec_reloc_name): Add UNSPEC_PIC_GOTOFF_SYM case.
+
+	gcc/testsuite/
+	* gcc.target/nios2/biggot-1.c: New.
+	* gcc.target/nios2/biggot-2.c: New.
+
+	libgcc/
+	* config/nios2/t-nios2 (CRTSTUFF_T_CFLAGS): Add -mno-gpopt.
+	* config/nios2/crti.S: Remove .file directive.
+	* config/nios2/crtn.S: Likewise.
+
+2014-02-28  Nathan Sidwell  <nathan@codesourcery.com>
+	    Cesar Philippidis  <cesar_philippidis@mentor.com>
+
+	gcc/
+	* config.gcc (arm-rockwell-eabi): Add Rockwell-specific bits.
+	* config/arm/cs-rockwell.h: New.
+	* config/arm/t-cs-rockwell: New.
+
+2014-02-27  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backport Nios II port (commits 206008, 206256, 206257,
+	206274, and 207297) from FSF mainline:
+
+	gcc/
+	2013-12-16  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* opts-common.c (integral_argument): Add support for
+	hexadecimal command option integer arguments. Update comments.
+
+	contrib/
+	2013-12-31  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config-list.mk: Add nios2-elf, nios2-linux-gnu. Corrected
+	ordering of some configs.
+
+	gcc/
+	2013-12-31  Chung-Lin Tang  <cltang@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+	    Based on patches from Altera Corporation
+
+	* config.gcc (nios2-*-*): Add nios2 config targets.
+	* configure.ac (TLS_SECTION_ASM_FLAG): Add nios2 case.
+	("$cpu_type"): Add nios2 as new cpu type.
+	* configure: Regenerate.
+	* config/nios2/nios2.c: New file.
+	* config/nios2/nios2.h: New file.
+	* config/nios2/nios2-opts.h: New file.
+	* config/nios2/nios2-protos.h: New file.
+	* config/nios2/elf.h: New file.
+	* config/nios2/elf.opt: New file.
+	* config/nios2/linux.h: New file.
+	* config/nios2/nios2.opt: New file.
+	* config/nios2/nios2.md: New file.
+	* config/nios2/predicates.md: New file.
+	* config/nios2/constraints.md: New file.
+	* config/nios2/t-nios2: New file.
+	* common/config/nios2/nios2-common.c: New file.
+	* doc/invoke.texi (Nios II options): Document Nios II specific
+	options.
+	* doc/md.texi (Nios II family): Document Nios II specific
+	constraints.
+	* doc/extend.texi (Function Specific Option Pragmas): Document
+	Nios II supported target pragma functionality.
+
+	gcc/testsuite/
+	2013-12-31  Sandra Loosemore  <sandra@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+	    Based on patches from Altera Corporation
+
+	* gcc.dg/stack-usage-1.c (SIZE): Define case for __nios2__.
+	* gcc.dg/20040813-1.c: Skip for nios2-*-*.
+	* gcc.dg/20020312-2.c: Add __nios2__ case.
+	* g++.dg/other/PR23205.C: Skip for nios2-*-*.
+	* g++.dg/other/pr23205-2.C: Skip for nios2-*-*.
+	* g++.dg/cpp0x/constexpr-rom.C: Skip for nios2-*-*.
+	* g++.dg/cpp0x/alias-decl-debug-0.C: Skip for nios2-*-*.
+	* g++.old-deja/g++.jason/thunk3.C: Skip for nios2-*-*.
+	* lib/target-supports.exp (check_profiling_available): Check for
+	nios2-*-elf.
+	* gcc.c-torture/execute/pr47237.x:: Skip for nios2-*-*.
+	* gcc.c-torture/execute/20101011-1.c: Skip for nios2-*-*.
+	* gcc.c-torture/execute/builtins/lib/chk.c (memset): Place
+	char-based memset loop before inline check, to prevent
+	problems when called to initialize .bss. Update comments.
+	* gcc.target/nios2/nios2.exp: New DejaGNU file.
+	* gcc.target/nios2/nios2-custom-1.c: New test.
+	* gcc.target/nios2/nios2-trap-insn.c: New test.
+	* gcc.target/nios2/nios2-builtin-custom.c: New test.
+	* gcc.target/nios2/nios2-builtin-io.c: New test.
+	* gcc.target/nios2/nios2-stack-check-1.c: New test.
+	* gcc.target/nios2/nios2-stack-check-2.c: New test.
+	* gcc.target/nios2/nios2-rdctl.c: New test.
+	* gcc.target/nios2/nios2-wrctl.c: New test.
+	* gcc.target/nios2/nios2-wrctl-zero.c: New test.
+	* gcc.target/nios2/nios2-wrctl-not-zero.c: New test.
+	* gcc.target/nios2/nios2-rdwrctl-1.c: New test.
+	* gcc.target/nios2/nios2-reg-constraints.c: New test.
+	* gcc.target/nios2/nios2-ashlsi3-one_shift.c: New test.
+	* gcc.target/nios2/nios2-mul-options-1.c: New test.
+	* gcc.target/nios2/nios2-mul-options-2.c: New test.
+	* gcc.target/nios2/nios2-mul-options-3.c: New test.
+	* gcc.target/nios2/nios2-mul-options-4.c: New test.
+	* gcc.target/nios2/nios2-nor.c: New test.
+	* gcc.target/nios2/nios2-stxio.c: New test.
+	* gcc.target/nios2/custom-fp-1.c: New test.
+	* gcc.target/nios2/custom-fp-2.c: New test.
+	* gcc.target/nios2/custom-fp-3.c: New test.
+	* gcc.target/nios2/custom-fp-4.c: New test.
+	* gcc.target/nios2/custom-fp-5.c: New test.
+	* gcc.target/nios2/custom-fp-6.c: New test.
+	* gcc.target/nios2/custom-fp-7.c: New test.
+	* gcc.target/nios2/custom-fp-8.c: New test.
+	* gcc.target/nios2/custom-fp-cmp-1.c: New test.
+	* gcc.target/nios2/custom-fp-conversion.c: New test.
+	* gcc.target/nios2/custom-fp-double.c: New test.
+	* gcc.target/nios2/custom-fp-float.c: New test.
+	* gcc.target/nios2/nios2-int-types.c: New test.
+	* gcc.target/nios2/nios2-cache-1.c: New test.
+	* gcc.target/nios2/nios2-cache-2.c: New test.
+
+	libgcc/
+	2013-12-31  Sandra Loosemore  <sandra@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+	    Based on patches from Altera Corporation
+
+	* config.host (nios2-*-*,nios2-*-linux*): Add nios2 host cases.
+	* config/nios2/lib2-nios2.h: New file.
+	* config/nios2/lib2-divmod-hi.c: New file.
+	* config/nios2/linux-unwind.h: New file.
+	* config/nios2/lib2-divmod.c: New file.
+	* config/nios2/linux-atomic.c: New file.
+	* config/nios2/t-nios2: New file.
+	* config/nios2/crti.asm: New file.
+	* config/nios2/t-linux: New file.
+	* config/nios2/lib2-divtable.c: New file.
+	* config/nios2/lib2-mul.c: New file.
+	* config/nios2/tramp.c: New file.
+	* config/nios2/crtn.asm: New file.
+
+	2013-12-31  Chung-Lin Tang  <cltang@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+
+	* MAINTAINERS: Add Sandra Loosemore and Chung-Lin Tang as
+	nios2 port maintainers.
+
+	gcc/
+	2013-12-31  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+
+	* config/nios2/nios2.h (BITS_PER_UNIT): Don't define it.
+
+	[BR]: http://gcc.gnu.org/ml/gcc-patches/2013-12/msg01990.html
+
+	gcc/
+	2014-01-30  Savin Zlobec  <savin.zlobec@gmail.com>
+
+	PR target/59784
+	* config/nios2/nios2.c (nios2_fpu_insn_asm): Fix asm output of
+	SFmode to DFmode case.
+
+2014-02-26  Janis Johnson  <janisjo@codesourcery.com>
+
+	* gcc/testsuite/gcc.target/mips/fho-1.c: Remove option not handled
+	by test infrastructure, skip for irrelevant options.
+
+2014-02-21  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from mainline:
+
+	2014-02-21  Catherine Moore  <clm@codesourcery.com>
+	gcc/
+	* doc/invoke.texi (mvirt, mno-virt): Document.
+	* config/mips/mips.opt (mvirt): New option.
+	* config/mips/mips.h (ASM_SPEC): Pass mvirt to the assembler.
+
+	* release-notes-csl.xml: New note.
+
+2014-02-19  Meador Inge  <meadori@codesourcery.com>
+
+	gcc/
+	* config/mips/t-sgxx-sde (MULTILIB_OPTIONS): Update for MIPS II
+	multilib.
+	(MULTILIB_DIRNAMES): Ditto.
+	(MULTILIB_EXCEPTIONS): Ditto.
+	* config/mips/t-sgxxlite-sde: New file.
+	* config.gcc: Add support for t-sgxxlite-sde.
+	* release-notes-csl.xml: New note.
+
+2014-02-19  Nathan Sidwell  <nathan@codesourcery.com>
+
+	gcc/
+	* config/rs6000/t-cs-eabi (MULTILIB_OPTIONS): Add a little-endian
+	multilib.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Update accordingly.
+
+2014-02-17  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/rs6000/rs6000.c (output_vec_const_move): Handle
+	little-endian code generation.
+	* config/rs6000/spe.md (spe_evmergehi): Rename to...
+	(vec_perm00_v2si): ... this.  Handle little-endian code
+	generation.
+	(spe_evmergehilo): Rename to...
+	(vec_perm01_v2si): ... this.  Handle little-endian code
+	generation.
+	(spe_evmergelo): Rename to...
+	(vec_perm11_v2si): ... this.  Handle little-endian code
+	generation.
+	(spe_evmergelohi): Rename to...
+	(vec_perm10_v2si): ... this.  Handle little-endian code
+	generation.
+	(spe_evmergehi, spe_evmergehilo): New expanders.
+	(spe_evmergelo, spe_evmergelohi): Likewise.
+	(*frob_<SPE64:mode>_<DITI:mode>): Handle little-endian code
+	generation.
+	(*frob_tf_ti): Likewise.
+	(*frob_<mode>_di_2): Likewise.
+	(*frob_tf_di_8_2): Likewise.
+	(*frob_di_<mode>): Likewise.
+	(*frob_ti_tf): Likewise.
+	(*frob_<DITI:mode>_<SPE64:mode>_2): Likewise.
+	(*frob_ti_<mode>_8_2): Likewise.
+	(*frob_ti_tf_2): Likewise.
+	(mov_si<mode>_e500_subreg0): Rename to...
+	(mov_si<mode>_e500_subreg0_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_si<mode>_e500_subreg0_le): New instruction pattern.
+	(*mov_si<mode>_e500_subreg0_elf_low): Rename to...
+	(*mov_si<mode>_e500_subreg0_elf_low_be): ... this.  Restrict to
+	the big endianness only.
+	(*mov_si<mode>_e500_subreg0_elf_low_le): New instruction pattern.
+	(*mov_si<mode>_e500_subreg0_2): Rename to...
+	(*mov_si<mode>_e500_subreg0_2_be): ... this.  Restrict to the
+	big big endianness only.
+	(*mov_si<mode>_e500_subreg0_2_le): New instruction pattern.
+	(*mov_si<mode>_e500_subreg4): Rename to...
+	(*mov_si<mode>_e500_subreg4_be): ... this.  Restrict to the big
+	endianness only.
+	(mov_si<mode>_e500_subreg4_le): New instruction pattern.
+	(*mov_si<mode>_e500_subreg4_elf_low): Rename to...
+	(*mov_si<mode>_e500_subreg4_elf_low_be): ... this.  Restrict to
+	the big endianness only.
+	(*mov_si<mode>_e500_subreg4_elf_low_le): New instruction/splitter
+	pattern.
+	(*mov_si<mode>_e500_subreg4_2): Rename to...
+	(*mov_si<mode>_e500_subreg4_2_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_si<mode>_e500_subreg4_2_le): New instruction pattern.
+	(*mov_sitf_e500_subreg8): Rename to...
+	(*mov_sitf_e500_subreg8_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_sitf_e500_subreg8_le): New instruction pattern.
+	(*mov_sitf_e500_subreg8_2): Rename to...
+	(*mov_sitf_e500_subreg8_2_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_sitf_e500_subreg8_2_le): New instruction pattern.
+	(*mov_sitf_e500_subreg12): Rename to...
+	(*mov_sitf_e500_subreg12_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_sitf_e500_subreg12_le): New instruction pattern.
+	(*mov_sitf_e500_subreg12_2): Rename to...
+	(*mov_sitf_e500_subreg12_2_be): ... this.  Restrict to the big
+	endianness only.
+	(*mov_sitf_e500_subreg12_2_le): New instruction pattern.
+
+	gcc/testsuite/
+	* gcc.target/powerpc/spe-evmerge.c: New file.
+
+2014-02-17  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/rs6000/rs6000.c (rs6000_adjust_atomic_subword): Handle
+	little-endian code generation.
+
+2014-02-17  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/rs6000/rs6000.md: Correct little-endian code generation
+	across `bswap' pattern splitters.
+
+2014-02-17  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/rs6000/rs6000.md: Append `DONE' to preparation
+	statements of `bswap' pattern splitters.
+
+2014-02-04  Joseph Myers  <joseph@codesourcery.com>
+
+	Merge from FSF 4.8 branch:
+
+	gcc/
+	2013-10-16  Ganesh Gopalasubramanian  <Ganesh.Gopalasubramanian@amd.com>
+
+        Backport from mainline
+        2013-10-16  Ganesh Gopalasubramanian
+                    <Ganesh.Gopalasubramanian@amd.com>
+
+        * config/i386/i386.c (ix86_option_override_internal): Enable FMA4
+        for AMD bdver3.
+
+2014-02-04  Joseph Myers  <joseph@codesourcery.com>
+
+	gcc/
+	* config/i386/cs-amd-linux.h, config/i386/t-cs-amd-linux: New
+	files.
+	* config.gcc (x86_64-*-linux* | x86_64-*-kfreebsd*-gnu |
+	x86_64-*-knetbsd*-gnu): Handle --enable-extra-sgxxlite-multilibs.
+
+2014-01-09  Catherine Moore  <clm@codesourcery.com>
+
+
+        Issues 15824, 15823
+
+        Backport from upstream:
+
+        2014-01-08  Catherine Moore  <clm@codesourcery.com>
+
+        gcc/testsuite/
+        * gcc.target/mips/umips-branch-3.c: New test.
+        * gcc.target/mips/umips-branch-4.c: New test.
+
+        gcc/
+        * config/mips/mips.md (simple_return): Attempt to use JRC for microMIPS.
+        * config/mips/mips.h (MIPS_CALL): Attempt to use JALS for microMIPS.
+
+        * release-notes-csl.xml: New note.
+
+2014-01-08  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue #15837
+	* release-notes-csl.xml: New note.
+
+	Apply 2013-08-20  Alan Modra  <amodra@gmail.com>
+	PR target/57865
+	* config/rs6000/rs6000.c (rs6000_emit_prologue): Correct ool_adjust.
+	(rs6000_emit_epilogue): Likewise.
+
+2014-01-02  Meador Inge  <meadori@codesourcery.com>
+
+	CB-2871
+
+	* release-notes-csl.xml: New note.
+
+	gcc/
+	* config/arm/t-cs-eabi (MULTILIB_EXCEPTIONS): Update for ARMv5TE
+	mfloat-abi=hard multilib.
+	(MULTILIB_REUSE): Ditto.
+	(MULTILIB_OSDIRNAMES): Ditto.
+	(MULTILIB_REQUIRED): Ditto.
+
+2013-12-17  Radovan Obradovic  <robradovic@mips.com>
+            Tom de Vries  <tom@codesourcery.com>
+
+	* release-notes-csl.xml: Add note.
+
+	gcc/
+	* config/arm/arm.c (TARGET_FN_OTHER_HARD_REG_USAGE): Redefine as
+	arm_fn_other_hard_reg_usage.
+	(arm_fn_other_hard_reg_usage): New function.
+
+2013-12-02  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	Issue #15731
+	
+	* release-notes-csl.xml: New note.
+	
+	Backport from mainline:
+	
+	2013-08-08  Richard Sandiford  <rdsandiford@googlemail.com>
+	
+	PR rtl-optimization/58079
+	
+	gcc/
+	* combine.c (combine_simplify_rtx): Avoid using SUBST if
+	simplify_comparison has widened a comparison with an integer.
+
+	gcc/testsuite/
+	* gcc.dg/torture/pr58079.c: New test.
+
+2013-12-02  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #15666
+
+	* release-notes-csl.xml: New note.
+
+	Backport from mainline:
+
+	gcc/
+	2013-06-12  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/mips/mips.md (extended_mips16): Include GOT and constant-pool
+	loads.
+	(insn_count): New attribute, with most cases extracted from...
+	(length): ...here.  Redefine most cases in terms of insn_count.
+	(single_insn): Delete.
+	(can_delay): Use insn_count to check for single instructions.
+	(*mul<mode>3_r4300, mul<mode>3_r4000, *mul_acc_si, *mul_acc_si_r3900)
+	(*msac_using_macc, *mul_sub_si, <u>mulsidi3_32bit_r4000)
+	(<u>mulsidi3_64bit_r4000, <su>muldi3_highpart_internal)
+	(<su>mulsi3_highpart_split, <su>muldi3_highpart_internal)
+	(<u>mulditi3_r4000, *div<mode>3, *recip<mode>3, divmod<mode>4)
+	(udivmod<mode>4, sqrt<mode>2, *rsqrt<mode>a, *rsqrt<mode>b)
+	(fix_truncdfsi2_macro, fix_truncsfsi2_macro, *lea_high64)
+	(*lea64, cprestore_<mode>, clear_hazard_<mode>, <unnamed insn>)
+	(casesi_internal_mips16_<mode>, *tls_get_tp_<mode>_split)
+	(tls_get_tp_mips16, *tls_get_tp_mips16_call_<mode>): Use "insn_count"
+	rather than "length".
+	(tls_get_tp_<mode>): Likewise.  Remove redundant "no_delay" attribute.
+	* config/mips/mips-ps-3d.md (mips_c_cond_4s, mips_cabs_cond_4s):
+	Use "insn_count" rather than "length".
+	* config/mips/mips-dsp.md
+	(mips_l<SHORT:size><u>x_ext<GPR:mode>_<P:mode>)
+	(mips_l<GPR:size>x_<P:mode>, *mips_lw<u>x_<P:mode>_ext): Remove
+	length attributes.
+
+	gcc/testsuite/
+	2013-06-12  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* gcc.target/mips/umips-branch-1.c, gcc.target/mips/umips-branch-2.c:
+	New tests.
+
+2013-12-02  Catherine Moore  <clm@codesourcery.com>
+
+
+	Backport from mainline:
+
+	2013-05-19  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/mips/mips.h (BASE_INSN_LENGTH, NOP_INSN_LENGTH): New macros.
+	* config/mips/mips.c (mips_symbol_insns, mips_address_insns)
+	(mips_const_insns, mips_split_const_insns, mips_load_store_insns)
+	(mips_idiv_insns): Update the comments to say that the returned
+	instruction counts are in units of BASE_INSN_LENGTH.
+	(mips_adjust_insn_length): Multiply the mips_load_label_num_insns
+	by BASE_INSN_LENGTH rather than 4.  Add the jump separately,
+	using 2 rather than 4 as the length of indirect MIPS16 and
+	microMIPS jumps.  Use NOP_INSN_LENGTH rather than 4 as the
+	length of a NOP.  Don't divide MIPS16 lengths by 2.
+	(mips16_split_long_branches): Assume a branch is long if the
+	length is greater than 4 rather than 8.
+	* config/mips/mips.md (length): Give MIPS16 lengths directly,
+	rather than multiplying them by 2.  Multiply instruction counts
+	by BASE_INSN_LENGTH rather than 4.
+	(*jump_mips16, tls_get_tp_mips16_<mode>)
+	(*tls_get_tp_mips16_call_<mode>): Divide lengths by 2.
+
+2013-12-02  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from mainline:
+
+	2013-05-10  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/mips/mips-protos.h (m16_uimm3_b, m16_simm4_1, m16_nsimm4_1)
+	(m16_simm5_1, m16_nsimm5_1, m16_uimm5_4, m16_nuimm5_4, m16_simm8_1)
+	(m16_nsimm8_1, m16_uimm8_1, m16_nuimm8_1, m16_uimm8_m1_1, m16_uimm8_4)
+	(m16_nuimm8_4, m16_simm8_8, m16_nsimm8_8): Delete.
+	* config/mips/mips.c (m16_check_op, m16_uimm3_b, m16_simm4_1)
+	(m16_nsimm4_1, m16_simm5_1, m16_nsimm5_1, m16_uimm5_4, m16_nuimm5_4)
+	(m16_simm8_1, m16_nsimm8_1, m16_uimm8_1, m16_nuimm8_1, m16_uimm8_m1_1)
+	(m16_uimm8_4, m16_nuimm8_4, m16_simm8_8, m16_nsimm8_8): Delete.
+	* config/mips/constraints.md (Udb8, Usb5, Usb8, Usd8, Uub8, Uuw5)
+	(Uuw8): New constraints.
+	(Usb4): Move into alphabetical order.
+	* config/mips/predicates.md (db8_operand, sb5_operand, sb8_operand)
+	(sd8_operand, ub8_operand, uw8_operand): New predicates.
+	* config/mips/mips.md (*xor<mode>3, *xor<mode>3_mips16): Name
+	previously unnamed patterns.
+	(*add<mode>3_mips16, *xor<mode>3_mips16, *<optab>si3_mips16)
+	(*ashldi3_mips16, *ashrdi3_mips16, *lshrdi3_mips16)
+	(*slt<u>_<GPR:mode><GPR2:mode>_mips16)
+	(*sle<u>_<GPR:mode><GPR2:mode>_mips16): Use constraints instead
+	of set_attr_alternative/if_then_else.  Use extended_mips16 instead
+	of specific lengths.
+
+2013-11-29  Julian Brown  <julian@codesourcery.com>
+
+	libgcc/
+	* config/aarch64/sfp-machine.h (_FP_QNANNEGATEDP): Set.
+
+2013-11-23  Julian Brown  <julian@codesourcery.com>
+
+	Backport from mainline:
+
+	2013-10-30  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/58854
+	* config/arm/arm.c (arm_expand_epilogue_apcs_frame): Emit blockage.
+
+2013-11-20  Catherine Moore  <clm@codesourcery.com>
+
+	Issue # 15693
+
+	* release-notes-csl.xml: New note.
+
+	Backport from mainline:
+
+	2013-11-18  Andrew Pinski <apinski@cavium.com>
+		    Steve Ellcey  <sellcey@mips.com>
+
+	PR target/56552
+	* config/mips/mips.md (*mov<GPR:mode>_on_<MOVECC:mode>): Remove
+	type restriction from equality_operator on conditonal move.
+	(*mov<SCALARF:mode>_on_<MOVECC:mode>): Ditto.
+	(*mov<GPR:mode>_on_<GPR2:mode>_ne): New.
+
+2013-11-19  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #14149
+
+	Backport from mainline:
+
+	2013-11-19  Catherine Moore  <clm@codesourcery.com>
+
+	* doc/invoke.texi (mfix-rm7000, mno-fix-rm7000): Document.
+	* config/mips/mips.opt (mfix-rm7000): New option.
+	* config/mips/mips.h (ASM_SPEC): Handle mfix-rm7000.
+	* config/mips/mips.c (mips_reorg_process_insns): Disable
+	noreorder for TARGET_FIX_RM7000.
+
+2013-11-12  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Issue #15500
+
+	* release-notes-csl.xml (MIPS code generation fix): New note.
+
+	gcc/
+	* config/mips/mips.c (mips_fn_other_hard_reg_usage): New function.
+	(TARGET_FN_OTHER_HARD_REG_USAGE): Define targhook using new function.
+
+2013-11-06  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #15569
+
+	* release-notes-csl.xml: New note.
+
+	Backport from upstream:
+
+	2013-10-22  Steve Ellcey  <sellcey@mips.com>
+
+	testsuite/
+	* gcc.target/mips/nor.c: New.
+
+	gcc/
+	* config/mips/mips.c (mips_rtx_costs):  Fix cost estimate for nor
+	(AND (NOT OP1) (NOT OP2)).
+
+2013-10-29  James Lemke  <jwlemke@codesourcery.com>
+
+	Commit Cesar's upstream patch.
+	2013-10-28  Cesar Philippidis  <cesar@codesourcery.com>
+
+	libstdc++-v3/
+	* scripts/testsuite_flags.in (cxxflags): Don't use build-time
+	CXXFLAGS and EXTRA_CXX_FLAGS.
+	* testsuite/lib/libstdc++.exp (libstdc++_init): Ensure, at minimum,
+	cxxflags contains "-g -O2".
+
+2013-10-23  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/mips.c (mips16_build_function_stub): Emit source
+	line debug information once the thunk has been produced.
+
+	* release-notes-csl.xml (MIPS16 debug information bug fix): New.
+
+2013-10-21  Catherine Moore  <clm@codesourcery.com>
+
+	gcc/
+	* config/mips-t-sgxx-linux (MULTILIB_EXCEPTIONS): Update
+	to conform to SOW #15.
+	(MULTILIB_OSDIRNAMES): Likewise.
+	* config/mips-t-sgxxlite-linux (MULTILIB_EXCEPTIONS): Update
+	to conform to SOW #15.
+	(MULTILIB_OSDIRNAMES): Likewise.
+
+	* release-notes-csl.xml: Document.
+
+2013-10-18  Janis Johnson  <janisjo@codesourcery.com>
+
+	* release-notes-csl.xml: Fix formatting error.
+
+2013-10-18  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #15371
+
+	* release-notes-csl.xml:  New note.
+
+2013-10-16  Catherine Moore  <clm@codesourcery.com>
+
+	gcc/
+	* config/mips-t-sgxx-sde (MULTILIB_EXCEPTIONS): Update
+	to conform to SOW #15.
+
+	* release-notes-csl.xml: New note.
+
+2013-10-15  Sandra Loosemore  <sandra@codesourcery.com>
+
+	gcc/
+	* config/arm/t-cs-altera: New file.
+	* config.gcc: Use it for arm-altera-eabi*.
+
+2013-10-07  Janis Johnson  <janisjo@codesourcery.com>
+
+	gcc/testsuite/
+	* gcc.target/mips/mips.exp: Add back local code lost in the
+	GCC 4.8 merge.
+
+2013-10-04  James Lemke  <jwlemke@codesourcery.com>
+
+	Apply the following "backlog" patch as posted upstream:
+	http://gcc.gnu.org/ml/gcc-patches/2013-05/msg01797.html
+
+	2013-05-30  Iain Sandoe  <iain@codesourcery.com>
+		    Cesar Philippidis  <cesar@codesourcery.com>
+
+	libgomp/
+	* testsuite/lib/libgomp.exp: Reorder lib loads into dependency order.
+	Do not load_gcc_lib gcc-dg.exp and add a comment as to why.
+	* testsuite/libgomp.c/c.exp: load_gcc_lib gcc-dg.exp.
+	* testsuite/libgomp.fortran/fortran.exp: Likewise.
+	* testsuite/libgomp.graphite/graphite.exp: Likewise.
+	* testsuite/libgomp.c++/c++.exp: load_gcc_lib gcc-dg.exp.
+	Use dg-runtest rather than gfortran-dg-runtest.
+
+2013-09-04  James Lemke  <jwlemke@codesourcery.com>
+
+	gcc/testsuite/lib/
+	* gcc-defs.exp (dg-additional-files-options): Extend regsub for
+	dg-additional-files to also match BOL.
+
+2013-08-29  Janis Johnson  <janisjo@codesourcery.com>
+
+	Backport from FSF mainline:
+
+	2013-08-13  Julian Brown  <julian@codesourcery.com>
+
+	gcc/
+	* config/rs6000/rs6000.c (rs6000_legitimize_reload_address): Don't
+	perform invalid legitimization on greater-than-word-size modes for
+	TARGET_E500_DOUBLE.
+
+2013-08-22  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/mips.opt (mabs2008, mnan2008): New options.
+
+2013-08-22  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/cs-sgxx-linux.h (SYSROOT_SUFFIX_SPEC): Add
+	subdirectory for `-mnan=2008' multilibs.
+	* config/mips/cs-sgxxlite-linux.h (SYSROOT_SUFFIX_SPEC):
+	Likewise.
+	* config/mips/t-sgxx-linux (MULTILIB_OPTIONS): Update for
+	`-mnan=2008' multilibs.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+	(MULTILIB_OSDIRNAMES): Likewise.
+	* config/mips/t-sgxx-sde (MULTILIB_OPTIONS): Likewise.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+	* config/mips/t-sgxxlite-linux (MULTILIB_OPTIONS): Likewise.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+	(MULTILIB_OSDIRNAMES): Likewise.
+
+2013-08-22  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-07-29  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/linux.h (GLIBC_DYNAMIC_LINKER): Handle `-mnan=2008'.
+	(UCLIBC_DYNAMIC_LINKER): New macro.
+	* config/mips/linux64.h (GLIBC_DYNAMIC_LINKER32): Handle
+	`-mnan=2008'.
+	(GLIBC_DYNAMIC_LINKER64, GLIBC_DYNAMIC_LINKERN32): Likewise.
+	(UCLIBC_DYNAMIC_LINKER32): Undefine macro first.  Handle
+	`-mnan=2008'.
+	(UCLIBC_DYNAMIC_LINKER64): Redefine macro.
+	(UCLIBC_DYNAMIC_LINKERN32): Likewise.
+	* config/mips/mips-modes.def: Remove RESET_FLOAT_FORMAT calls
+	for SF and DF modes.  Use ieee_quad_format for TF mode.
+	* config/mips/mips-opts.h (mips_ieee_754_setting): New enum.
+	* config/mips/mips.c (mips_file_start): Output a `.nan' directive.
+	(mips_option_override): Handle `-mnan=legacy'.
+	* config/mips/mips.h (TARGET_CPU_CPP_BUILTINS): Handle
+	`-mabs=2008' and `-mnan=2008'.
+	(OPTION_DEFAULT_SPECS): Add "nan" default.
+	(ASM_SPEC): Handle `-mnan='.
+	[!HAVE_AS_NAN] (HAVE_AS_NAN): New macro.
+	* config/mips/mips.md (abs<mode>2): Handle `-mabs=2008', update
+	comment accordingly.
+	(neg<mode>2): Likewise.
+	* config/mips/mips.opt (mabs, mnan): New options.
+	* doc/install.texi (Configuration): Document `--with-nan=' option.
+	* doc/invoke.texi (Option Summary): List MIPS `-mabs=' and
+	`-mnan=' options.
+	(MIPS Options): Document them.
+	* config.gcc <mips*-*-*>: Handle `--with-nan='.
+	* configure.ac <mips*-*-*>: Check for GAS `-mnan=2008' support.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+	gcc/testsuite/
+	* gcc.target/mips/fabs-2008.c: New test case.
+	* gcc.target/mips/fabs-legacy.c: New test case.
+	* gcc.target/mips/fabsf-2008.c: New test case.
+	* gcc.target/mips/fabsf-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/nan-2008.c: New test case.
+	* gcc.target/mips/nan-legacy.c: New test case.
+	* gcc.target/mips/nanf-2008.c: New test case.
+	* gcc.target/mips/nanf-legacy.c: New test case.
+	* gcc.target/mips/nans-2008.c: New test case.
+	* gcc.target/mips/nans-legacy.c: New test case.
+	* gcc.target/mips/nansf-2008.c: New test case.
+	* gcc.target/mips/nansf-legacy.c: New test case.
+	* gcc.target/mips/mips.exp: Handle `-mabs=' and `-mnan='.
+
+	2013-08-13  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/testsuite/
+	* gcc.target/mips/fabs-2008.c: Correct scan-assembler pattern
+	escapes.
+	* gcc.target/mips/fabs-legacy.c: Likewise.
+	* gcc.target/mips/fabsf-2008.c: Likewise.
+	* gcc.target/mips/fabsf-legacy.c: Likewise.
+	* gcc.target/mips/fneg-2008.c: Likewise.
+	* gcc.target/mips/fneg-legacy.c: Likewise.
+	* gcc.target/mips/fnegf-2008.c: Likewise.
+	* gcc.target/mips/fnegf-legacy.c: Likewise.
+	* gcc.target/mips/nan-2008.c: Likewise.
+	* gcc.target/mips/nan-legacy.c: Likewise.
+	* gcc.target/mips/nanf-2008.c: Likewise.
+	* gcc.target/mips/nanf-legacy.c: Likewise.
+	* gcc.target/mips/nans-2008.c: Likewise.
+	* gcc.target/mips/nans-legacy.c: Likewise.
+	* gcc.target/mips/nansf-2008.c: Likewise.
+	* gcc.target/mips/nansf-legacy.c: Likewise.
+
+	2013-08-13  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/testsuite/
+	* gcc.target/mips/nan-legacy.c: Accept 4294967295 as an
+	alternative to -1.
+	* gcc.target/mips/nans-legacy.c: Likewise.
+
+2013-08-22  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Revert:
+
+	2012-12-13  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/linux.h (GLIBC_DYNAMIC_LINKER): Handle -mnan-2008.
+	(UCLIBC_DYNAMIC_LINKER): New macro.
+	* config/mips/linux64.h (GLIBC_DYNAMIC_LINKER32): Handle
+	-mnan-2008.
+	(GLIBC_DYNAMIC_LINKER64, GLIBC_DYNAMIC_LINKERN32): Likewise.
+	(UCLIBC_DYNAMIC_LINKER32): Undefine macro first.  Handle
+	-mnan-2008.
+	(UCLIBC_DYNAMIC_LINKER64): Redefine macro.
+	(UCLIBC_DYNAMIC_LINKERN32): Likewise.
+	* config/mips/mips-modes.def: Remove RESET_FLOAT_FORMAT calls
+	for SF and DF modes.  Use ieee_quad_format for TF mode.
+	* config/mips/mips.c (mips_file_start): Set the NaN bit in the
+	GNU_MIPS_ABI_FP attribute.
+	(mips_option_override): Handle -mnan-2008.
+	* config/mips/mips.h (TARGET_CPU_CPP_BUILTINS): Handle -mabs-2008
+	and -mnan-2008 options.
+	(OPTION_DEFAULT_SPECS): Add "nan" default.
+	(ASM_SPEC): Handle -mnan-2008 option.
+	(MIPS_TFMODE_FORMAT): New macro.
+	* config/mips/mips.md (abs<mode>2): Handle -mabs-2008, update
+	comment accordingly.
+	(neg<mode>2): Likewise.
+	* config/mips/mips.opt (mabs2008, mnan2008): New options.
+	* doc/install.texi (Configuration): Document --with-nan= option.
+	* doc/invoke.texi (Option Summary): List MIPS -mabs-2008 and
+	-mnan-2008 options.
+	(MIPS Options): Document them.
+	* config.gcc <mips*-*-*>: Handle --with-nan= option.
+	* configure.ac <mips*-*-*>: Check for GAS -mnan-2008 option
+	support.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+	gcc/testsuite/
+	* gcc.target/mips/mips.exp: Handle -mabs-2008 and -mnan-2008.
+	* gcc.target/mips/fabs-2008.c: New test case.
+	* gcc.target/mips/fabs-legacy.c: New test case.
+	* gcc.target/mips/fabsf-2008.c: New test case.
+	* gcc.target/mips/fabsf-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/nan-2008.c: New test case.
+	* gcc.target/mips/nan-legacy.c: New test case.
+	* gcc.target/mips/nanf-2008.c: New test case.
+	* gcc.target/mips/nanf-legacy.c: New test case.
+	* gcc.target/mips/nans-2008.c: New test case.
+	* gcc.target/mips/nans-legacy.c: New test case.
+	* gcc.target/mips/nansf-2008.c: New test case.
+	* gcc.target/mips/nansf-legacy.c: New test case.
+	* lib/target-supports.exp (check_effective_target_mips_nan2008):
+	New procedure.
+
+2013-08-22  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Revert:
+
+	2012-12-13  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/cs-sgxx-linux.h (SYSROOT_SUFFIX_SPEC): Add
+	subdirectory for -mnan2008 multilibs.
+	* config/mips/cs-sgxxlite-linux.h (SYSROOT_SUFFIX_SPEC):
+	Likewise.
+	* config/mips/t-sgxx-linux (MULTILIB_OPTIONS): Update for
+	-mnan2008 multilibs.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+	(MULTILIB_OSDIRNAMES): Likewise.
+	* config/mips/t-sgxxlite-linux (MULTILIB_OPTIONS): Likewise.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+	(MULTILIB_OSDIRNAMES): Likewise.
+
+	2013-04-15  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/t-sgxx-sde (MULTILIB_OPTIONS): Update for
+	-mnan2008 multilibs.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+
+2013-08-13  James Norris  <jnorris@codesourcery.com>
+
+	gcc/
+	* config/i386/i386elf.h: Remove subtarget #define after it was
+	determined the ABI implementation had bit-rotted significantly.
+
+2013-08-13  Nathan Sidwell  <nathan@codesourcery.com>
+
+	gcc/
+	* config/i386/i386elf.h (STARTFILE_SPEC): Swap crti and crtbegin.
+
+rr2013-08-06  Nathan Sidwell  <nathan@codesourcery.com>
+
+	gcc/
+	* config/i386/i386.c (function_value_32): Don't use MMX or SSE
+	regs if those are disabled.
+
+2013-07-19 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2011-10-21  Chung-Lin Tang  <cltang@codesourcery.com>
+	gcc/
+	* config/mips/mips.h (CRT_CALL_STATIC_FUNCTION): Define versions
+	for MIPS16 O32.
+ 
+2013-07-18 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Maxim Kuvyrkov  <maxim@codesourcery.com>
+	Issue #10166
+	gcc/
+	* config/mips/linux64.h (GNU_USER_LINK_EMULATION64): Use
+	compatible linker emulation for -mabi=64 -msym32.
+	gcc/testsuite/
+	* gcc.target/mips/mips-nonpic/main-msym32-mplt-1.c: New test.
+
+2013-07-18 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-05-16  Maciej W. Rozycki  <macro@codesourcery.com>
+	libgcc/
+	* config/arm/sfp-machine.h (_FP_QNANNEGATEDP): New macro.
+	* config/c6x/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/i386/32/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/i386/64/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/ia64/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/lm32/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/moxie/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/rs6000/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/score/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/tilepro/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	* config/mips/sfp-machine.h (_FP_QNANNEGATEDP): Likewise.
+	(_FP_NANFRAC_S): Don't set the quiet bit.
+	(_FP_NANFRAC_D): Likewise.
+	(_FP_NANFRAC_Q): Likewise.
+	* soft-fp/op-common.h (_FP_FRAC_SNANP): New macro.
+	(_FP_FRAC_SNANP_SEMIRAW): Likewise.
+	(_FP_UNPACK_CANONICAL): Use _FP_FRAC_SNANP.
+	(_FP_CHECK_SIGNAN_SEMIRAW): Use _FP_FRAC_SNANP_SEMIRAW.
+	(_FP_SETQNAN): New macro.
+	(_FP_SETQNAN_SEMIRAW): Likewise.
+	(_FP_PACK_SEMIRAW): Use _FP_SETQNAN.
+	(_FP_PACK_CANONICAL): Use _FP_SETQNAN.
+	(_FP_ISSIGNAN): Use _FP_FRAC_SNANP.
+	(FP_EXTEND): Use _FP_FRAC_SNANP.
+	(FP_TRUNC): Use _FP_SETQNAN_SEMIRAW.
+
+2013-07-18 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-04-24  Maciej W. Rozycki  <macro@codesourcery.com>
+		    Catherine Moore  <clm@codesourcery.com
+	libgcc/
+	* config/mips/sfp-machine.h: New file.
+	* config/mips/t-softfp: New file.
+	* config.host <mips*-sde-elf*>: Enable soft-fp in all cases, add
+	mips/t-softfp to tmake_file.
+
+2013-07-18 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	gcc/
+	* config.gcc (mips*-*-linux*):  Enable sgxx multilibs.
+	* config/mips/t-sgxx-linux: New file.
+	* config/mips/cs-sgxxlite-linux.h: New file.
+	* config/mips/cs-sgxx-linux.h: New file.
+	* config/mips/t-sgxxlite-linux: New file.
+
+2013-07-18 Catherine Moore  <clm@codesourcery.com>
+
+	gcc/
+	* config/mips/mips.md (length): Remove duplicate check
+	for extended_mips16.
+
+2013-07-17 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/mips.h (ISA_HAS_FP4): Don't restrict ISA_MIPS32R2
+	to TARGET_FLOAT64.
+	(ISA_HAS_NMADD4_NMSUB4): Remove the MODE argument; don't restrict
+	ISA_MIPS32R2.
+	(ISA_HAS_NMADD3_NMSUB3): Remove the MODE argument.
+	* config/mips/mips.c (mips_rtx_costs): Update according to
+	changes to ISA_HAS_NMADD4_NMSUB4 and ISA_HAS_NMADD3_NMSUB3.
+	* config/mips/mips.md (nmadd4<mode>, nmadd3<mode>): Likewise.
+	(nmadd4<mode>_fastmath, nmadd3<mode>_fastmath): Likewise.
+	(nmsub4<mode>, nmsub3<mode>): Likewise.
+	(nmsub4<mode>_fastmath, nmsub3<mode>_fastmath): Likewise.
+
+2013-07-17 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2012-05-16  Iain Sandoe  <iain@codesourcery.com>
+
+	Issue #10284
+
+	gcc/
+	* config/mips/mips.c (mips_set_current_function): Choose
+	function alignment once the current mode is known.
+
+2013-07-10 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+ 	Maciej W. Rozycki  <macro@codesourcery.com>
+	Issue #11931
+	libgcc/
+	* config/mips/mips16.S (RET_FUNCTION): Set hidden ELF symbol
+	visibility.
+
+	2012-10-05  Catherine Moore  <clm@codesourcery.com>
+	libgcc/
+	* config.host (mips*-*-linux):  Add t-slibgcc-libgcc to tmake_file.
+
+2013-07-09 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	* gcc/config/mips/gnu-user.h (SUBTARGET_OVERRIDE_OPTIONS):
+	Disable thread support for uclibc.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-06-13  Meador Inge  <meadori@codesourcery.com>
+
+	Issue #14861
+	CB-2205
+
+	* release-notes-csl.xml (Incorrect optimization fix): New note.
+
+	gcc/
+	* config/arm/arm.md (conditional move peephole2): Only clobber CC
+	register when it is dead after the peephole window.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Issue #13686
+	Backport from FSF/merge from Sourcery CodeBench 4.7:
+	2013-05-16  Nathan Sidwell  <nathan@codesourcery.com>
+
+	gcc/
+	* varasm.c (default_use_anchors_for_symbol_p): Use decl_replaceable_p.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2012-09-20  Iain Sandoe  <iain@codesourcery.com>
+
+        libstdc++-v3/
+        * testsuite/libstdc++-abi/abi.exp: Defer setting of baseline_subdir
+        until after checking that the test is eligible to be run.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	libstdc++-v3/
+
+	Merge from WRS Linux 4.4:
+
+	2010-05-18  Joseph Myers  <joseph@codesourcery.com>
+	Issue #5256
+	Issue #5834
+	* config/locale/gnu/c_locale.cc,
+	config/locale/gnu/monetary_members.cc,
+	config/locale/gnu/numeric_members.cc,
+	config/locale/gnu/time_members.cc, src/c++98/codecvt.cc,
+	src/c++98/ctype.cc, src/c++98/locale-inst.cc,
+	src/c++98/wlocale-inst.cc: Add aliases for generic
+	locale symbol names.
+	* config/os/gnu-linux/ctype_configure_char.cc: Likweise.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2007-03-30  Paul Brook  <paul@codesourcery.com>
+
+	Issue #8641
+
+	gcc/
+	* calls.c (store_one_arg): Check alignment of mode used for save.
+
+2013-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* release-notes-csl.xml (GCC -fremove-local-statics option):
+	New note.
+
+2013-07-03 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-05-17  Thomas Schwinge  <thomas@codesourcery.com>
+	libgcc/
+	* config.host <mips*-*-*> (tm_file): Set to mips/nan.h.
+	* config/mips/nan.h: New file.
+	* config/mips/t-mips (FPBIT_CFLAGS, DPBIT_CFLAGS): Don't set.
+	* config/mips/t-tpbit (TPBIT_CFLAGS): Likewise.
+
+2013-07-03 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	libgcc/
+	2013-05-06  Thomas Schwinge  <thomas@codesourcery.com>
+	* fp-bit.c (unpack_d, pack_d): Properly preserve and restore a
+	NaN's payload.
+	* fp-bit.h [FLOAT] (QUIET_NAN): Correct value.
+
+2013-07-03 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-04-15  Maciej W. Rozycki  <macro@codesourcery.com>
+	gcc/
+	* config/mips/t-sgxx-sde (MULTILIB_OPTIONS): Update for
+	-mnan2008 multilibs.
+	(MULTILIB_DIRNAMES): Likewise.
+	(MULTILIB_EXCEPTIONS): Likewise.
+
+2013-07-02 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* gcc.target/mips/call-1.c: Accept JALRS and JALR.
+	* gcc.target/mips/call-2.c: Likewise.
+	* gcc.target/mips/call-3.c: Likewise.
+	* gcc.target/mips/lazy-binding-1.c: Likewise.
+
+2013-07-02 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2012-12-13  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	gcc/
+	* config/mips/linux.h (GLIBC_DYNAMIC_LINKER): Handle -mnan-2008.
+	(UCLIBC_DYNAMIC_LINKER): New macro.
+	* config/mips/linux64.h (GLIBC_DYNAMIC_LINKER32): Handle
+	-mnan-2008.
+	(GLIBC_DYNAMIC_LINKER64, GLIBC_DYNAMIC_LINKERN32): Likewise.
+	(UCLIBC_DYNAMIC_LINKER32): Undefine macro first.  Handle
+	-mnan-2008.
+	(UCLIBC_DYNAMIC_LINKER64): Redefine macro.
+	(UCLIBC_DYNAMIC_LINKERN32): Likewise.
+	* config/mips/mips-modes.def: Remove RESET_FLOAT_FORMAT calls
+	for SF and DF modes.  Use ieee_quad_format for TF mode.
+	* config/mips/mips.c (mips_file_start): Set the NaN bit in the
+	GNU_MIPS_ABI_FP attribute.
+	(mips_option_override): Handle -mnan-2008.
+	* config/mips/mips.h (TARGET_CPU_CPP_BUILTINS): Handle -mabs-2008
+	and -mnan-2008 options.
+	(OPTION_DEFAULT_SPECS): Add "nan" default.
+	(ASM_SPEC): Handle -mnan-2008 option.
+	(MIPS_TFMODE_FORMAT): New macro.
+	* config/mips/mips.md (abs<mode>2): Handle -mabs-2008, update
+	comment accordingly.
+	(neg<mode>2): Likewise.
+	* config/mips/mips.opt (mabs2008, mnan2008): New options.
+	* doc/install.texi (Configuration): Document --with-nan= option.
+	* doc/invoke.texi (Option Summary): List MIPS -mabs-2008 and
+	-mnan-2008 options.
+	(MIPS Options): Document them.
+	* config.gcc <mips*-*-*>: Handle --with-nan= option.
+	* configure.ac <mips*-*-*>: Check for GAS -mnan-2008 option
+	support.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	+
+	gcc/testsuite/
+	* gcc.target/mips/mips.exp: Handle -mabs-2008 and -mnan-2008.
+	* gcc.target/mips/fabs-2008.c: New test case.
+	* gcc.target/mips/fabs-legacy.c: New test case.
+	* gcc.target/mips/fabsf-2008.c: New test case.
+	* gcc.target/mips/fabsf-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/fneg-2008.c: New test case.
+	* gcc.target/mips/fneg-legacy.c: New test case.
+	* gcc.target/mips/nan-2008.c: New test case.
+	* gcc.target/mips/nan-legacy.c: New test case.
+	* gcc.target/mips/nanf-2008.c: New test case.
+	* gcc.target/mips/nanf-legacy.c: New test case.
+	* gcc.target/mips/nans-2008.c: New test case.
+	* gcc.target/mips/nans-legacy.c: New test case.
+	* gcc.target/mips/nansf-2008.c: New test case.
+	* gcc.target/mips/nansf-legacy.c: New test case.
+	* lib/target-supports.exp (check_effective_target_mips_nan2008):
+	New procedure.
+
+2013-07-01 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+        	    Tom de Vries  <tom@codesourcery.com>
+	* common.opt (fuse-caller-save): New option.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+        	    Tom de Vries  <tom@codesourcery.com>
+	* reg-notes.def (REG_NOTE (CALL_DECL)): New reg-note REG_CALL_DECL.
+	* calls.c (expand_call, emit_library_call_value_1): Add REG_CALL_DECL
+	reg-note.
+	* combine.c (distribute_notes): Handle REG_CALL_DECL reg-note.
+	* emit-rtl.c (try_split): Same.
+
+	2013-03-29  Radovan Obradovic  <robradovic@mips.com>
+		    Tom de Vries  <tom@codesourcery.com>
+	* rtlanal.c (find_all_hard_reg_sets): Add bool implicit parameter and
+	handle.
+	* rtl.h (find_all_hard_reg_sets): Add bool parameter.
+	* haifa-sched.c (recompute_todo_spec, check_clobbered_conditions): Add
+	new argument to find_all_hard_reg_sets call.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+		    Tom de Vries  <tom@codesourcery.com>
+	* hooks.c (hook_void_hard_reg_set_containerp): New function.
+	* hooks.h (hook_void_hard_reg_set_containerp): Declare.
+	* target.def (fn_other_hard_reg_usage): New DEFHOOK.
+	* doc/tm.texi.in (@node Stack and Calling): Add Miscellaneous Register
+	Hooks to @menu.
+	(@node Miscellaneous Register Hooks): New node.
+	(@hook TARGET_FN_OTHER_HARD_REG_USAGE): New hook.
+	* doc/tm.texi: Regenerate.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+		    Tom de Vries  <tom@codesourcery.com>
+	* config/arm/arm.c (TARGET_FN_OTHER_HARD_REG_USAGE): Redefine as
+	arm_fn_other_hard_reg_usage.
+	(arm_fn_other_hard_reg_usage): New function.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+		    Tom de Vries  <tom@codesourcery.com>
+	* cgraph.h (struct cgraph_node): Add function_used_regs,
+	function_used_regs_initialized and function_used_regs_valid fields.
+	* final.c: Move include of hard-reg-set.h to before rtl.h to declare
+	find_all_hard_reg_sets.
+	(collect_fn_hard_reg_usage, get_call_fndecl, get_call_cgraph_node)
+	(get_call_reg_set_usage): New function.
+	(rest_of_handle_final): Use collect_fn_hard_reg_usage.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+        	    Tom de Vries  <tom@codesourcery.com>
+        * opts.c (default_options_table): Add OPT_LEVELS_2_PLUS entry with
+        OPT_fuse_caller_save.
+
+	2013-03-30  Radovan Obradovic  <robradovic@mips.com>
+        	    Tom de Vries  <tom@codesourcery.com>
+        * doc/invoke.texi (@item Optimization Options): Add -fuse-caller-save to
+        gccoptlist.
+        (@item -fuse-caller-save): New item.
+
+2013-06-27 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	* config/mips/mips-tables.opt: Regenerate.
+	* config/mips/mips-cpus.def: Add m14ke and m14kec.
+	* config/mips/mips.h (BASE_DRIVER_SELF_SPECS): m14ke* implies
+	-mdspr2.
+	* doc/invoke.texi: Add -m14kc.
+ 
+2013-06-27 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2012-03-30  Tom de Vries  <tom@codesourcery.com>
+	gcc/testsuite/
+	* gcc.target/mips/mips.exp: Add frame-header-opt.
+	* gcc.target/mips/fho-1.c: New test.
+
+	2012-06-23  Maciej W. Rozycki  <macro@codesourcery.com>
+	CB-1282
+	gcc/
+	* config/mips/mips.c (mips_compute_frame_info): Calculate
+	initial frame size.
+	(mips_expand_prologue): Don't call mips_compute_frame_info here,
+	don't calculate initial frame size.
+
+	2011-04-22  Zoran Jovanovic  <zoran.jovanovic@rt-rk.com>
+	gcc/
+	* config/mips/mips.opt (mframe-header-opt): New option.
+	* config/mips/mips.c (struct mips_frame_info): Add
+	skip_stack_frame_allocation_p field.
+	(struct machine_function): Add fields callees_use_frame_header_p,
+	uses_frame_header_p, initial_total_size.
+	(struct frame_header_usage): New struct.
+	(frame_header_usage_htab): New variable.
+	(mips_rest_of_frame_header_opt, frame_header_usage_htab_hash)
+	(frame_header_usage_htab_eq, mips_find_if_frame_header_is_used)
+	(mips_callee_use_frame_header, mips_callees_use_frame_header_p)
+	(mips_cfun_use_frame_header_p): New function.
+	(mips_compute_frame_info): Add parameter recalculate.  Move frame to
+	parameter.  Move cprestore_size init up.  Use recalculate.  Use
+	mips_must_initialize_gp_p.
+	(mips_frame_pointer_required, mips_initial_elimination_offset): Add
+	args to call to mips_compute_frame_info.
+	(mips_expand_prologue): Use mips_compute_frame_info.  Move frame init
+	up.  Set initial_total_size.
+	(mips_gp_expand_needed_p): Factor new function out of
+	mips_expand_ghost_gp_insns.
+	(mips_expand_ghost_gp_insns): Use mips_gp_expand_needed_p.
+	(mips_reorg): Use mips_rest_of_frame_header_opt.
+	(mips_override_options): Switch off flag_frame_header_optimization if
+	flag_exceptions or flag_unwind_tables.
+	(mips_get_updated_offset, mips_skip_stack_frame_alloc)
+	(mips_frame_header_update_insn): New function.
+
+	2012-10-06  Tom de Vries  <tom@codesourcery.com>
+	gcc/testsuite/
+	* lib/target-supports.exp (check_effective_target_mips16)
+	(check_effective_target_micromips, check_effective_target_o32): New
+	proc.
+	* gcc.target/mips/mips.exp: (mips_option_groups): Add -save-temps.
+	* gcc.target/mips/fho-1.c: Improve test.
+
+2013-06-27 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	gcc/testsuite/
+	* gcc.c-torture/execute/ieee/ieee.exp: Link with floating
+	point emulation for mips-sde-elf targets.
+
+	gcc/testsuite/
+	* gcc.dg/torture/type-generic-1.c: Link with floating point
+	emulation for target mips-sde-elf.
+	* g++.dg/torture/type-generic-1.C: Add options for mips-sde-elf to
+	enable FPU-exception-handling library.
+
+2013-06-26 Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	libstdc++-v3/
+	* libsupc++/Makefile.in: Regenerate.
+	* libsupc++/eh_compact_pr.cc: New file.
+	* libsupc++/unwind-cxx.h (__gnu_compact_pr2): Declare.
+	(__gnu_compact_pr3): Declare.
+	* libsupc++/eh_personality.cc (compact_get_ttype_entry): New.
+	(check_compact_exception_spec): New.
+	(__cxa_call_unexpected): Handle compact exception specs.
+	* config/abi/pre/gnu.ver: Add __gnu_compact_pr2 and
+	__gnu_compact_pr3.
+	* config/abi/pre/gnu-versioned-namespace.ver: Likewise.
+
+	libgcc/
+	* unwind-pe.h (DW_EH_PE_udata1): Define.
+	(size_of_encoded_value): Process DW_EH_PE_udata1.
+	(read_encoded_value_with_base): Likewise.
+	* unwind-dw2-fde.h (dwarf_eh_bases): Add field eh_encoding.
+	* crtstuff.c: Don't check for __UCLIBC__.
+	* unwind-generic.h (_Unwind_GetEhEncoding): Declare.
+	* unwind-compat.c (__libunwind_Unwind_GetEhEncoding): Declare.
+	(_Unwind_GetEhEncoding): New.
+	* unwind-dw2.c (u1): New.
+	(_Unwind_GetEhEncoding): New.
+	(uw_frame_state_for): Record encoding.
+	* libgcc-std.ver.in: Add _Unwind_GetEhEncoding and
+	__register_frame_info_header_bases.
+
+	gcc/
+	* dwarf2asm.c (dw2_asm_output_comment): New.
+	(dw2_asm_output_compact_region_length): New.
+	(dw2_asm_output_compact_landing_pad): New.
+	(dw2_asm_output_compact_ac_pair_sleb128): New.
+	* dwarf2asm.h (dw2_asm_output_comment): Declare.
+	(dw2_asm_output_compact_region_length): Declare.
+	(dw2_asm_output_compact_landing_pad): Declare.
+	(dw2_asm_output_compact_ac_pair_sleb128): Declare.
+	* defaults.h (TARGET_COMPACT_EH): Provide default.
+	* tree.c (lhd_gcc_personality): Update arguments to
+	build_personality_function.
+	* tree.h (DECL_FUNCTION_PERSONALITY2): Define.
+	(tree_function_decl): New field personality2.
+	(build_personality_function): Update declaration.
+	* cp/cp-lang.c (cp_eh_personality_decl): Update call
+	to build_personality_function.
+	* expr.c (build_personality_function): Build decls for
+	the compact personality functions.
+	* except.c (using_compact_pr): New.
+	(read_sleb128): New.
+	(func_begin_lab): New.
+	(func_end_lab): New.
+	(region_begin_lab): New.
+	(region_end_lab): New.
+	(chain_t, chain_ref, chains): Declare.
+	(compact_info_t, compact_info_ref, compact_info): Declare.
+	(dummy_info_t, dummy_info_ref, dummy_info): Declare.
+	(compact_create_region_start_label): New.
+	(compact_create_region_end_label): New.
+	(compact_emit_region_header): New.
+	(compact_insert_dummy_nothrow): New.
+	(compact_insert_nothrow): New.
+	(compact_insert_continue): New.
+	(compact_insert_cleanup): New.
+	(compact_link_to_dummy): New.
+	(compact_emit_dummies): New.
+	(compact_find_dummy): New.
+	(compact_chains_match): New.
+	(compact_find_chain): New.
+	(compact_insert_dummy): New.
+	(compact_count_intervening_nocount): New.
+	(compact_merge_nothrows): New.
+	(USE_ACTION_EXTENSION): Define.
+	(output_one_function_compact_eh_table): New.
+	(output_function_exception_table): Build a compact eh table if needed.
+	* except.h (eh_compact_header_type): New.
+
+	gcc/testsuite/
+	* g++.dg/eh/catch6.C: New test.
+
+2013-06-24  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	libgcc/
+	* config/mips/mips-unwind.h: New file.
+
+2013-06-24  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	libgcc/
+	* unwind-compact.h: New file.
+	* unwind-compact.c: New file.
+
+2013-06-21  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Paul Brook  <paul@codesourcery.com>
+	Tom de Vries  <tom@codesourcery.com>
+	Catherine Moore  <clm@codesourcery.com>
+	Julian Brown  <julian@codesourcery.com>
+
+	libgcc/
+	* config.host (mips*-sde-elf*): Set md_unwind_hader.
+	* Makefile.in (LIB2ADDEH): Add unwind-compact.c.
+	* unwind-dw2-fde-dip.c: Include unwind-compact.h.
+	(_Unwind_Find_registered_Index): Add declaration.
+	(unw_eh_callback_data): Use struct compact_eh_bases.  Add type.
+	(base_from_cb_data): Use data->bases.
+	(_Unwind_IteratePhdrCallback): Search compact frame headers.
+	Use data->bases.  Set data->type.
+	(_Unwind_Find_FDE): Rename...
+	(_Unwind_Find_Index): To this.  Adjust for compact EH.
+	* unwind-compact.c: New file.
+	* unwind-compact.h: New file.
+	* unwind-dw2-fde.c: Include unwind-compact.h.
+	(__register_frame_info_1, __register_frame_info_header_bases): New
+	functions.
+	(__register_frame_info_bases): Use __register_frame_info_1.
+	(search_object): Search compact unwdind table headers.
+	Set bases->entry.  Return entry type.
+	(_Unwind_Find_FDE): Implement as wrapper around _Unwind_Find_Index.
+	(_Unwind_Find_registered_Index): New function.
+	* unwind-dw2-fde.h (object): Add flag for compact frame headers.
+	(__register_frame_info_header_bases): Add prototype.
+	(compact_eh_bases, compact_entry_type): New.
+	(_Unwind_Find_Index): Add prototype.
+	* crtstuff.c (__register_frame_info_header_bases): Declare
+	(__GNU_EH_FRAME_HDR): Declare.
+	(frame_dummy): Register eh_frame_hdr tables.
+	* config/t-eh-dw2-dip (LIB2ADDEH): Add $(srcdir)/unwind-compact.c.
+	* config/mips/mip16.S (CALL_STUB_RET): Don't use unwind info if
+	using compact EH tables.
+	* config/mips/linux-unwind.h: Include mips-unwind.h.
+	* config/mips/mips-unwind.h: New file.
+	* unwind-dw2.c (__gnu_compact_pr1, uw_frame_state_compact):
+	New functions.
+	(__gnu_compact_pr2, __gnu_compact_pr3): Use weak references.
+	(uw_frame_state_for): Handle compact frame entries.
+
+	gcc/
+	* doc/invoke.texi: Document MIPS -mno-compact-eh.
+	* debug.h (asm_cfi_special_encoding): Add prototype.
+	* dwarf2cfi.c (asm_cfi_special_encoding): New.
+	(dwarf2out_do_cfi_asm): Use asm_cfi_special_encoding.
+	* dwarf2out.c (dwarf2out_do_cfi_startproc): Ditto.
+	* configure.ac: Add HAVE_GAS_EH_FRAME_ENTRY check.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* config/mips/linux.h (MD_HAVE_COMPACT_EH): Define.
+	* config/mips/elf.h (MD_HAVE_COMPACT_EH): Define.
+	* config/mips/sde.h (LINK_EH_SPEC, MIPS_EH_ENCODING): Define.
+	(LINK_SPEC): Use LINK_EH_SPEC.
+	* config/mips/mips.opt: Add -mcompact-eh.
+	* config/mips/mips-protos.h (mips_fixup_cfi_sections): Add
+	prototype.
+	* config/mips/mips.c (done_cfi_sections): New variable.
+	(mips_fixup_cfi_sections, mips_asm_init_sections): New functions.
+	(mips_file_start): Clear done_cfi_sections.
+	(mips_override_options): Disable compact EH if not supported.
+	(TARGET_ASM_INIT_SECTIONS): Define.
+	(TARGET_ASM_FUNCTION_BEGIN_EPILOGUE): Define.
+	(mips_begin_epilogue): New.
+	* config/mips/mips.h (MIPS_CPP_SET_PROCESSOR): Add
+	__GNU_COMPACT_EH__. (ASM_DECLARE_FUNCTION_NAME): Use
+	mips_fixup_cfi_sections. (ASM_PREFERRED_EH_DATA_FORMAT): Define.
+	(ASM_CFI_SPECIAL_ENCODING): New hook.
+	(ASM_MAYBE_OUTPUT_ENCODED_ADDR_RTX): Define.
+	(MIPS_EH_ENCODING): Define.
+	(CRT_GET_RFIB_DATA): Define.
+
+2013-06-21  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2007-09-06  Sandra Loosemore  <sandra@codesourcery.com>
+
+	gcc/
+	* config/mips/mips.opt (mips16e): Add as deprecated alias
+	for -mips16.
+	* doc/invoke.texi (Option Summary, MIPS Options): Document it.
+
+2013-06-21  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-06-04  Catherine Moore  <clm@codesourcery.com>
+
+	* config/mips/mips.opt (meva): New.
+	* config/mips/mips.h (TARGET_CPU_CPP_BUILTINS): Define __mips_eva.
+	(ASM_SPEC): Handle -meva.
+	* doc/invoke.texi (meva):  Document.
+
+2013-06-21  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2012-12-07  Catherine Moore  <clm@codesourcery.com>
+
+	Issue #14263
+
+	gcc/
+	* configure.ac: Fix assembly for explicit JALR relocation check.
+	* configure: Regenerate.
+
+2013-06-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2012-07-03  Iain Sandoe  <iain@codesourcery.com>
+	gcc/
+	* config.gcc (powerpc-mentor-linux): Handle embedded linux
+	multi-lib selection.
+	* config/rs6000/t-cs-mel: New.
+
+	2012-07-05  Iain Sandoe  <iain@codesourcery.com>
+	gcc/
+	* config.gcc (arm*-*-linux*): Handle embedded linux
+	multi-lib selection.
+	* config/arm/t-cs-mel: New.
+
+	2012-07-12  Thomas Schwinge  <thomas@codesourcery.com>
+	gcc/
+	* gcc/config.gcc <mips*-*-linux*>: Handle
+	--enable-sgxx-mel-multilibs.
+	* gcc/config/mips/cs-sgxx-mel.h: New file.
+	* gcc/config/mips/t-sgxx-mel: Likewise.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Issue #10598
+	
+	gcc/
+	* config/mips/mips.h (ADJUST_REG_ALLOC_ORDER): Delete.
+	* config/mips/mips.c (mips_order_regs_for_local_alloc): Delete.
+
+2013-06-21  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from SCB GCC 4.6:
+
+	Maciej W. Rozycki  <macro@codesourcery.com>
+	gcc/
+	* config/mips/mips16.S (DELAYf): Alias to DELAYt for the MIPS IV
+	ISA and up.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	2011-04-05  Nathan Sidwell  <nathan@codesourcery.com>
+
+	Issue #10782
+
+	gcc/testsuite/
+	* gcc.target/mips/loongson-simd.c: Disable micromips too.
+	* gcc.target/mips/mips.exp: Add -m[no-]micromips support.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-04-23  Catherine Moore  <clm@codesourcery.com>
+
+	* config/mips/mips.md (*movhi_internal, *movqi_internal): New
+	operands.  Record compression.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-04-02  Catherine Moore  <clm@codesourcery.com>
+		    Chao-ying Fu <fu@mips.com>
+
+	* config/mips/micromips.md (jraddiusp): New pattern.
+	* config/mips/mips.c (mips_expand_epilogue): Use the JRADDIUSP
+	instruction if possible.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-03-20  Catherine Moore  <clm@codesourcery.com>
+		    Richard Sandiford <rdsandiford@googlemail.com>
+
+	* gcc.target/mips/mips.exp: Add microMIPS support.
+	* gcc.target/mips/umips-movep-2.c: New test.
+	* gcc.target/mips/umips-lwp-2.c: New test.
+	* gcc.target/mips/umips-swp-5.c: New test.
+	* gcc.target/mips/umips-constraints-1.c: New test.
+	* gcc.target/mips/umips-lwp-3.c: New test.
+	* gcc.target/mips/umips-swp-6.c: New test.
+	* gcc.target/mips/umips-constraints-2.c: New test.
+	* gcc.target/mips/umips-save-restore-1.c: New test.
+	* gcc.target/mips/umips-lwp-4.c: New test.
+	* gcc.target/mips/umips-swp-7.c: New test.
+	* gcc.target/mips/umips-save-restore-2.c: New test.
+	* gcc.target/mips/umips-lwp-swp-volatile.c: New test.
+	* gcc.target/mips/umips-lwp-5.c: New test.
+	* gcc.target/mips/umips-save-restore-3.c: New test.
+	* gcc.target/mips/umips-lwp-6.c: New test.
+	* gcc.target/mips/umips-swp-1.c: New test.
+	* gcc.target/mips/umips-lwp-7.c: New test.
+	* gcc.target/mips/umips-swp-2.c: New test.
+	* gcc.target/mips/umips-lwp-8.c: New test.
+	* gcc.target/mips/umips-swp-3.c: New test.
+	* gcc.target/mips/umips-movep-1.c: New test.
+	* gcc.target/mips/umips-lwp-1.c: New test.
+	* gcc.target/mips/umips-swp-4.c: New test.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-03-25  Steve Ellcey  <sellcey@mips.com>
+
+	* config/mips/mmips-cpus.def (74kc, 74kf2_1, 74kf, 74kf, 74kf1_1,
+	74kfx, 74kx, 74kf3_2): Add PTF_AVOID_IMADD.
+	* config/mips/mips.c (mips_option_override): Set IMADD default.
+	* config/mips/mips.h (PTF_AVOID_IMADD): New.
+	(ISA_HAS_MADD_MSUB): Remove MIPS16 check.
+	(GENERATE_MADD_MSUB): Remove TUNE_74K check, add MIPS16 check.
+	* config/mips/mips.md (mimadd): New flag for integer madd/msub.
+	* doc/invoke.texi (-mimadd/-mno-imadd): New.
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-03-25  Catherine Moore  <clm@codesourcery.com>
+
+	* config/mips/constraints.md (u, Udb7 Uead, Uean, Uesp, Uib3,
+	Uuw6, Usb4, ZS, ZT, ZU, ZV, ZW): New constraints.
+	* config/mip/predicates.md (lwsp_swsp_operand,
+	lw16_sw16_operand, lhu16_sh16_operand, lbu16_operand,
+	sb16_operand, db4_operand, db7_operand, ib3_operand,
+	sb4_operand, ub4_operand, uh4_operand, uw4_operand,
+	uw5_operand, uw6_operand, addiur2_operand, addiusp_operand,
+	andi16_operand): New predicates.
+	* config/mips/mips.md (compression): New attribute.
+	(enabled): New attribute.
+	(length): Consider compression in computing length.
+	(shift_compression): New code attribute.
+	(*add<mode>3): New operands. Record compression.
+	(sub<mode>3): Likewise.
+	(one_cmpl<mode>2): Likewise.
+	(*and<mode>3): Likewise.
+	(*ior<mode>3): Likewise.
+	(unnamed pattern for xor): Likewise.
+	(*zero_extend<SHORT:mode><GPR:mode>2): Likewise.
+	(*<optab><mode>3): Likewise.
+	(*mov<mode>_internal: Likewise.
+	* config/mips/mips-protos.h (mips_signed_immediate_p): New.
+	(mips_unsigned_immediate_p): New.
+	(umips_lwsp_swsp_address_p): New.
+	(m16_based_address_p): New.
+	* config/mips/mips-protos.h (mips_signed_immediate_p): New prototype.
+	(mips_unsigned_immediate_p): New prototype.
+	(lwsp_swsp_address_p): New prototype.
+	(m16_based_address_p): New prototype.
+	* config/mips/mips.c (mips_unsigned_immediate_p): New function.
+	(mips_signed_immediate_p): New function.
+	(m16_based_address_p): New function.
+	(lwsp_swsp_address_p): New function.
+	(mips_print_operand_punctuation): Recognize short delay slot insns
+	for microMIPS.add<mode>3"
+
+2013-06-20  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-03-20  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/mips/constraints.md (T): Rename to...
+	(Yf): ...this.
+	(U): Rename to...
+	(Yd): ...this.
+	* config/mips/mips.md (*movdi_64bit, *movdi_64bit_mips16)
+	(*mov<mode>_internal, *mov<mode>_mips16): Update accordingly.
+
+2013-06-19  Bernd Schmidt  <bernds@codesourcery.com>
+
+	gcc/
+    	* tree-ssa-dse.c: Include "hashtab.h".
+    	(struct rls_decl_info, struct rls_stmt_info): New.
+    	(static_variables, defuse_statements, n_statics): New static
+    	variables.
+    	(rls_hash_decl_info, rls_eq_decl_info, rls_free_decl_info,
+    	rls_hash_use_info, rls_eq_use_info, rls_free_use_info, rls_init,
+    	rls_done, note_var_ref, mark_used, remove_local_statics,
+    	find_static_nonvolatile_declarations, maybe_remove_stmt): New static
+    	functions.
+    	(tree_ssa_dse): Call remove_local_statics if appropriate.
+    	* Makefile.in (tree-ssa-dse.o): Update dependencies.
+	* tree-ssa-remove-local-statics.c: Remove file.
+	* c-family/c.opt (-fremove-local-statics): Remove option.
+	* doc/invoke.texi (-fremove-local-statics): Remove documentation.
+	* passes.c (init_optimization_passes): Remove
+	pass_remove_local_statics.
+
+	gcc/testsuite/
+	* g++.dg/remove-local-statics-1.C: Remove -fremove-local-statics.
+	* g++.dg/remove-local-statics-2.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-1.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-2.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-3.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-4.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-5.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-6.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-7.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-8.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-9.C: Remove -fremove-local-statics and
+	the xfail.
+	* gcc.dg/remove-local-statics-10.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-11.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-12.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-13.C: Remove -fremove-local-statics.
+	* gcc.dg/remove-local-statics-14.C: Remove -fremove-local-statics.
+	(test1): Add noclone and noinline attributes.
+	* gcc.dg/remove-local-statics-14b.C: New test.
+	* gcc.dg/remove-local-statics-15.C: Remove -fremove-local-statics
+	and -fdump-tree-remlocstatic-details.  Request DSE dumps instead.
+	Adjust scan-tree-dump and cleanup lines.
+	* gcc.dg/remove-local-statics-16.C: Likewise.
+	* gcc.dg/remove-local-statics-17.C: Likewise.
+	* gcc.dg/remove-local-statics-18.C: Remove -fremove-local-statics.
+	* gcc.dg/tree-ssa/ssa-dse-6.c: Remove -fno-remove-local-statics.
+	(x1, x2): New variables.
+	(foo11): Set them.
+	* gcc.dg/tree-ssa/ssa-lim-10.c: Remove -fno-remove-local-statics.
+
+2013-06-19  Catherine Moore  <clm@codesourcery.com>
+
+	gcc/
+	* config/mips/cs-sgxx-linux.h: Delete.
+	* config/mips/cs-sgxx-mel.h: Delete.
+	* config/mips/cs-sgxxlite-linux.h: Delete.
+	* config/mips/t-sgxx-linux: Delete.
+	* config/mips/t-sgxx-mel: Delete.
+	* config/mips/t-sgxxlite-linux: Delete.
+
+2013-06-19  Catherine Moore  <clm@codesourcery.com>
+
+	Backport from FSF:
+
+	2013-03-20  Catherine Moore  <clm@codesourcery.com>
+	Maciej W. Rozycki  <macro@codesourcery.com>
+	Tom de Vries  <tom@codesourcery.com>
+	Nathan Sidwell <nathan@codesourcery.com>
+	Iain Sandoe  <iain@codesourcery.com>
+	Nathan Froyd  <froydnj@codesourcery.com>
+	Chao-ying Fu <fu@mips.com>
+
+	* doc/extend.texi: (micromips, nomicromips, nocompression):
+	Document new function attributes. 
+	* doc/invoke.texi (minterlink-compressed, mmicromips,
+	m14k, m14ke, m14kec): Document new options.
+	(minterlink-mips16): Update documentation.
+	* doc/md.texi (ZC, ZD): Document new constraints.
+	* configure.ac (gcc_cv_as_micromips): Check if linker
+	supports the .set micromips directive.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* config/mips/mips-tables.opt: Regenerate.
+	* config/mips/micromips.md: New file.
+	* constraints.md (ZC, ZD): New constraints.
+	* config/mips/predicates.md (movep_src_register): New predicate.
+	(movep_src_operand): New predicate.
+	(non_volatile_mem_operand): New predicate.
+	* config/mips/mips.md (multimem): New type.
+	(length): Differentiate between 17-bit and 18-bit branch offsets.
+	(MOVEP1, MOVEP2): New mode iterator.
+ 	(mov_<load>l): Use ZC constraint.
+	(mov_<load>r): Likewise.
+	(mov_<store>l): Likewise.
+	(mov_<store>r): Likewise.
+	(*branch_equality<mode>_inverted): Add microMIPS support.
+	(*branch_equality<mode>): Likewise.
+	(*jump_absolute): Likewise.
+	(indirect_jump_<mode>): Likewise.
+	(tablejump_<mode>): Likewise.
+	(<optab>_internal): Likewise.
+	(sibcall_internal): Likewise.
+	(sibcall_value_internal): Likewise.
+	(prefetch): Use constraint ZD.
+	* config/mips/mips.opt (minterlink-compressed): New option.
+	(minterlink-mips16): Now an alias for minterlink-compressed.
+	(mmicromips): New option.
+	* config/mips/sync.md (sync_compare_and_swap<mode>): Use ZR constraint.
+	(compare_and_swap_12): Likewise.
+	(sync_add<mode>): Likewise.
+	(sync_<optab>_12): Likewise.
+	(sync_old_<optab>_12): Likewise.
+	(sync_new_<optab>_12): Likewise.
+	(sync_nand_12): Likewise.
+	(sync_old_nand_12): Likewise.
+	(sync_new_nand_12): Likewise.
+	(sync_sub<mode>): Likewise.
+	(sync_old_add<mode>): Likewise.
+	(sync_old_sub<mode>): Likewise.
+	(sync_new_add<mode>): Likewise.
+	(sync_new_sub<mode>): Likewise.
+	(sync_<optab><mode>): Likewise.
+	(sync_old_<optab><mode>): Likewise.
+	(sync_new_<optab><mode>): Likewise.
+	(sync_nand<mode>): Likewise.
+	(sync_old_nand<mode>): Likewise.
+	(sync_new_nand<mode>): Likewise.
+	(sync_lock_test_and_set<mode>): Likewise.
+	(test_and_set_12): Likewise.
+	(atomic_compare_and_swap<mode>): Likewise.
+	(atomic_exchange<mode>_llsc): Likewise.
+	(atomic_fetch_add<mode>_llsc): Likewise.
+	* config/mips/mips-cpus.def (m14kc, m14k): New processors.
+	* config/mips/mips-protos.h (umips_output_save_restore): New prototype.
+	(umips_save_restore_pattern_p): Likewise.
+	(umips_load_store_pair_p): Likewise.
+	(umips_output_load_store_pair): Likewise.
+	(umips_movep_target_p): Likewise.
+	(umips_12bit_offset_address_p): Likewise.
+	* config/mips/mips.c (MIPS_MAX_FIRST_STEP): Update for microMIPS.
+	(mips_base_mips16): Rename this...
+	(mips_base_compression_flags): ...to this. Update all uses.
+	(mips_attribute_table): Add micromips, nomicromips and nocompression.
+	(mips_mips16_decl_p): Delete.
+	(mips_nomips16_decl_p): Delete.
+ 	(mips_get_compress_on_flags): New function.
+	(mips_get_compress_off_flags): New function.
+	(mips_get_compress_mode): New function.
+	(mips_get_compress_on_name): New function.
+	(mips_get_compress_off_name): New function.
+	(mips_insert_attributes): Support multiple compression types.
+	(mips_merge_decl_attributes): Likewise.
+	(umips_12bit_offset_address_p): New function.
+	(mips_start_function_definition): Emit .set micromips directive.
+	(mips_call_may_need_jalx_p): New function.
+	(mips_function_ok_for_sibcall): Add microMIPS support.
+	(mips_print_operand_punctuation): Support short delay slots and
+	compact jumps.
+	(umips_swm_mask, umips_swm_encoding): New.
+	(umips_build_save_restore): New function.
+	(mips_for_each_saved_gpr_and_fpr): Add microMIPS support.
+	(was_mips16_p): Remove.
+	(old_compression_mode): New.
+	(mips_set_compression_mode): New function.
+	(mips_set_current_function): Add microMIPS support.
+	(mips_option_override): Likewise.
+	(umips_save_restore_pattern_p): New function.
+	(umips_output_save_restore): New function.
+	(umips_load_store_pair_p_1): New function.
+	(umips_load_store_pair_p): New function.
+	(umips_output_load_store_pair_1): New function.
+	(umips_output_load_store_pair): New function.
+	(umips_movep_target_p) New function.
+	(mips_prepare_pch_save): Add microMIPS support.
+	* config/mips/mips.h (TARGET_COMPRESSION): New.
+	(TARGET_CPU_CPP_BUILTINS): Update macro
+	to use new compression flags and to support microMIPS.
+	(MIPS_ISA_LEVEL_SPEC): Add m14k processors.
+	(MIPS_ARCH_FLOAT_SPEC): Likewise.
+	(ISA_HAS_LWXS): Include TARGET_MICROMIPS.
+	(ISA_HAS_LOAD_DELAY): Exclude TARGET_MICROMIPS.
+	(ASM_SPEC): Support mmicromips and mno-micromips.
+	(M16STORE_REG_P): New macro.
+	(MIPS_CALL): Support TARGET_MICROMIPS.
+	(MICROMIPS_J): New macro.
+	(mips_base_mips16): Rename this...
+	(mips_base_compression_flags): ...to this.
+	(UMIPS_12BIT_OFFSET_P): New macro.
+	* config/mips/t-sde: (MULTILIB_OPTIONS): Add microMIPS.
+	(MULTILIB_DIRNAMES): Likewise.
+
+	libgcc/
+	2013-03-20  Catherine Moore  <clm@codesourcery.com>
+	Joseph Myers  <joseph@codesourcery.com>
+	Chao-ying Fu  <fu@mips.com>
+
+	* config/mips/mips16.S:  Don't build for microMIPS.
+	* config/mips/linux-unwind.h: Handle microMIPS frame.
+	* config/mips/crtn.S (fini, init): New labels.
+
+2013-06-19  Catherine Moore  <clm@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+        gcc/
+        * config.gcc (mips*-sde-elf*):  Enable sgxx multilibs.
+        * config/mips/t-sgxx-sde: New file.
+
+2013-06-18  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Merge from Sourcery CodeBench 4.7:
+
+	Issue #9186 - Contents test failure for Python scripts.
+
+	libstdc++-v3/
+	* python/Makefile.am (pythondir): Use $(tooldir)/share.
+	* python/Makefile.in: Regenerate.
+
+2013-06-13  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2013-06-10  Meador Inge  <meadori@codesourcery.com>
+
+	Issue #14848
+
+	gcc/
+	* config/arm/sync.md (*memory_barrier): Use for Thumb-1.
+
+	gcc/testsuite/
+	* gcc.target/arm/a9-volatile-ordering-erratum-2.c: Only run for
+	Thumb-2 and change test to work for M profile targets.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Issue #14848
+
+	* release-notes-csl.xml (Cortex-A9 erratum): New note.
+
+	gcc/
+	* config/arm/arm.c (arm_option_override): Emit warning if
+	-mfix-cortex-a9-volatile-hazards is used on an incompatible CPU.
+	(any_volatile_loads_p): New.
+	(arm_cortex_a9_errata_reorg): New.
+	(arm_reorg): Call arm_cortex_a9_errata_reorg.
+	* config/arm/arm.opt (mfix-cortex-a9-volatile-hazards): Add option.
+	* config/arm/sync.md (*memory_barrier): Don't use on Thumb-2.
+	(*memory_barrier_t2): New, allow conditional execution on Thumb-2.
+
+	gcc/testsuite/
+	* lib/target-supports.exp (check_effective_target_arm_dmb): New.
+	* gcc.target/arm/a9-volatile-ordering-erratum-1.c: New test.
+	* gcc.target/arm/a9-volatile-ordering-erratum-2.c: New test.
+	* gcc.target/arm/a9-volatile-ordering-erratum-3.c: New test.
+	* gcc.target/arm/a9-volatile-ordering-erratum-4.c: New test.
+
+	gcc/doc/
+	* invoke.texi (-mfix-cortex-a9-volatile-hazards): Add documentation.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Backport from FSF:
+
+	CB-1397
+
+	libgcc/
+	2013-04-04  Meador Inge  <meadori@codesourcery.com>
+
+	* config/arm/bpabi.S (aeabi_ldivmod): Add DWARF information for
+	computing the location of the link register.
+	(aeabi_uldivmod): Ditto.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Julian Brown  <julian@codesourcery.com>
+
+	Issue #12296
+
+	gcc/testsuite/
+	* gcc.target/arm/pr45094.c: Remove -mcpu=cortex-a8, dg-skip-if
+	options.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Julian Brown  <julian@codesourcery.com>
+
+	Issue #10964
+
+	* release-notes-csl.xml (C++ fix for ARMv6-M): Add note.
+
+	gcc/
+	* config/arm/arm.c (arm_output_mi_thunk): Fix offset for
+	TARGET_THUMB1_ONLY.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Issue #14520
+
+	gcc/
+	* config/arm/arm.c (arm_array_mode_supported_p): No array modes for
+	big-endian NEON.
+	(arm_preferred_simd_mode): Don't use NEON vectors for
+	autovectorization in big-endian mode.
+	(arm_autovectorize_vector_sizes): Don't iterate over other vector
+	sizes for big-endian NEON.
+
+	gcc/testsuite/
+	* gcc.target/arm/neon/vect-vcvt.c: XFAIL for arm_little_endian.
+	* gcc.target/arm/neon/vect-vcvtq.c: Likewise.
+	* gcc.target/arm/neon-vshl-imm-1.c: Likewise.
+	* gcc.target/arm/neon-vshr-imm-1.c: Likewise.
+	* gcc.target/arm/neon-vmls-1.c: Likewise.
+	* gcc.target/arm/neon-vmla-1.c: Likewise.
+	* gcc.target/arm/neon-vorn-vbic.c: Likewise.
+	* gcc.target/arm/neon-vlshr-imm-1.c: Likewise.
+	* lib/target-supports.exp (check_vect_support_and_set_flags): Don't
+	run vect tests for big-endian ARM NEON.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2011-10-13  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Issue #11339
+	Issue #12112
+	* release-notes-csl.xml (ARM VFP9-S errata workaround): New note.
+
+	gcc/
+	* config/arm/arm.md (arch): Add vfp9, notvfp9 values. Add comments
+	explaining use.
+	(arch_enabled): Add cases for vfp9, notvfp9.
+	* config/arm/vfp.md (divsf3_vfp,divdf3_vfp,sqrtsf2_vfp,sqrtdf2_vfp):
+	Add alternative with early clobber destination, enabled by vfp9/notvfp9.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Julian Brown  <julian@codesourcery.com>
+
+	gcc/
+	* config/arm/arm.c (neon_vector_mem_operand): Add strict argument.
+	Permit virtual register pre-reload if !strict.
+	(coproc_secondary_reload_class): Adjust for neon_vector_mem_operand
+	change.
+	* config/arm/arm-protos.h (neon_vector_mem_operand): Adjust
+	prototype.
+	* config/arm/neon.md (movmisalign<mode>): Use
+	neon_perm_struct_or_reg_operand instead of
+	neon_struct_or_register_operand.
+	(*movmisalign<mode>_neon_load, *movmisalign<mode>_neon_store): Use
+	neon_permissive_struct_operand instead of neon_struct_operand.
+	* config/arm/constraints.md (Un, Um, Us): Adjust calls to
+	neon_vector_mem_operand.
+	* config/arm/predicates.md (neon_struct_operand): Adjust call to
+	neon_vector_mem_operand.
+	(neon_permissive_struct_operand): New.
+	(neon_struct_or_register_operand): Rename to...
+	(neon_perm_struct_or_reg_operand): This. Adjust call to
+	neon_vector_mem_operand.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Julian Brown  <julian@codesourcery.com>
+
+	gcc/
+	* arm.md (*thumb1_zero_extendhisi2, *arm_zero_extendhisi2)
+	(*arm_zero_extendhisi2_v6, *thumb1_zero_extendqisi2)
+	(*thumb1_zero_extendqisi2_v6, *arm_zero_extendqisi2)
+	(*arm_zero_extendqisi2_v6): Add pool_range, neg_pool_range
+	attributes.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Backport candidate patch from FSF mainline/merge from SCB GCC 4.7:
+
+	2012-09-26  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Issue #10935
+
+        PR target/44557 
+        * config/arm/arm.c (arm_preferred_reload_class): Add CORE_REGS 
+        to Thumb-1 case. 
+
+        testsuite/ 
+        PR target/44557 
+        * gcc.target/arm/pr44557.c: New test. 
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+	
+	Julian Brown  <julian@codesourcery.com>
+
+	gcc/
+	* config/arm/neon-testgen.ml (regexps): Allow any characters
+	in comments after assembly instructions.
+
+	gcc/testsuite/
+	* gcc.target/arm/neon/vfp-shift-a2t2.c: Allow any characters in
+	comments after assembly instructions.
+	* gcc.target/arm/neon/v*.c: Regenerate.
+
+2013-06-12  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Andrew Stubbs  <ams@codesourcery.com>
+	Julian Brown  <julian@codesourcery.com>
+
+	gcc/
+	* config/arm/arm.c (arm_init_libfuncs): Change __gnu_f2h_ieee to
+	__aeabi_f2h, __gnu_f2h_alternative to __aeabi_f2h_alt,
+	__gnu_h2f_ieee to __aeabi_h2f, and __gnu_h2f_alternative to
+	__aeabi_h2f_alt.
+
+	libgcc/
+	* config/arm/fp16.c (__gnu_f2h_internal): Change return type to
+	unsigned int. Change 'sign' variable likewise.
+	(__gnu_h2f_internal): Set to static inline.
+	Change return type to unsigned int. Change 'sign' variable
+	likewise. (ALIAS): New define.
+	(__gnu_f2h_ieee): Change unsigned short to unsigned int.
+	(__gnu_h2f_ieee): Likewise.
+	(__gnu_f2h_alternative): Likewise.
+	(__gnu_h2f_alternative): Likewise.
+	(__aeabi_f2h, __aeabi_h2f): New aliases.
+	(__aeabi_f2h_alt, __aeabi_h2f_alt): Likewise.
+	* config/arm/libgcc-bpabi.ver (__aeabi_f2h, __aeabi_f2h_alt)
+	(__aeabi_h2f, __aeabi_h2f_alt): Set versions.
+	* config/arm/sfp-machine.h (__extendhfsf2): Set to __aeabi_h2f.
+	(__truncsfhf2): Set to __aeabi_f2h.
+	* config/arm/t-bpabi (LIB2ADD_ST): Move fp16.c ...
+	(LIB2ADD): ... to here.
+	* config/arm/t-symbian (LIB2ADD_ST): Move fp16.c ...
+	(LIB2ADD): ... to here.
+
+	gcc/testsuite/
+	* g++.dg/ext/arm-fp16/arm-fp16-ops-5.C: Check for __aeabi_h2f
+	and __aeabi_f2h.
+	* g++.dg/ext/arm-fp16/arm-fp16-ops-6.C: Likewise.
+	* gcc.dg/torture/arm-fp16-ops-5.c: Likewise.
+	* gcc.dg/torture/arm-fp16-ops-6.c: Likewise.
+
+2013-06-05  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* release-notes-csl.xml (GCC version 4.8.1):  Update version in
+	release note to reflect merge from upstream.
+
+2013-06-03  Julian Brown  <julian@codesourcery.com>
+
+	* release-notes-csl.xml (Multilib selection): New note.
+
+	gcc/
+	* config/arm/t-cs-eabi (MULTILIB_DIRNAMES): Add vfpv4_sp_d16 and
+	vfpv3_d16.
+	(MULTILIB_EXCEPTIONS): Add mfpu=fpv4-sp-d16 and mfpu=vfpv3-d16. Add
+	exceptions for combinations of options incompatible with new FPUs.
+	(MULTILIB_REUSE): Replace all with an automatically generated set.
+
+2013-06-03  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2012-09-25  Meador Inge  <meadori@codesourcery.com>
+
+	CB-1481
+
+	gcc/
+	* config/rs6000/t-cs-eabi (MULTILIB_EXCEPTIONS): Remove exceptions
+	for e500v1, e500v2, and e500mc software floating point.
+
+2013-05-24  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backport from FSF mainline:
+
+	2013-05-24  Nathan Sidwell  <nathan@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+
+	gcc/
+	* config.gcc (powerpc-*): Allow native for with-cpu.
+
+2013-05-22  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backport from FSF mainline:
+
+	2013-05-22  Mark Mitchell  <mark@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+
+	libjava/	    
+	* configure.ac (dbexecdir): Base on $(toolexeclibdir), not
+	$(libdir).
+	* Makefile.am (pkgconfigdir): Likewise.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+	* gcj/Makefile.in: Regenerated.
+	* include/Makefile.in: Regenerated.
+	* testsuite/Makefile.in: Regenerated.
+
+	libjava/classpath/
+	* configure.ac: Define host_noncanonical and target_noncanonical.
+	Support --enable-version-specific-runtime-libs.
+	* m4/acinclude.m4 (CLASSPATH_TOOLEXECLIBDIR): Match libjava
+	definition of toolexeclibdir.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+	* doc/api/Makefile.in: Regenerated.
+	* doc/Makefile.in: Regenerated.
+	* examples/Makefile.in: Regenerated.
+	* external/jsr166/Makefile.in: Regenerated.
+	* external/Makefile.in: Regenerated.
+	* external/relaxngDatatype/Makefile.in: Regenerated.
+	* external/sax/Makefile.in: Regenerated.
+	* external/w3c_dom/Makefile.in: Regenerated.
+	* include/Makefile.in: Regenerated.
+	* lib/Makefile.in: Regenerated.
+	* native/fdlibm/Makefile.in: Regenerated.
+	* native/jawt/Makefile.in: Regenerated.
+	* native/jni/Makefile.in: Regenerated.
+	* native/jni/gconf-peer/Makefile.in: Regenerated.
+	* native/jni/gstreamer-peer/Makefile.in: Regenerated.
+	* native/jni/gtk-peer/Makefile.in: Regenerated.
+	* native/jni/java-io/Makefile.in: Regenerated.
+	* native/jni/java-lang/Makefile.in: Regenerated.
+	* native/jni/java-math/Makefile.in: Regenerated.
+	* native/jni/java-net/Makefile.in: Regenerated.
+	* native/jni/java-nio/Makefile.in: Regenerated.
+	* native/jni/java-util/Makefile.in: Regenerated.
+	* native/jni/Makefile.in: Regenerated.
+	* native/jni/midi-alsa/Makefile.in: Regenerated.
+	* native/jni/midi-dssi/Makefile.in: Regenerated.
+	* native/jni/native-lib/Makefile.in: Regenerated.
+	* native/jni/qt-peer/Makefile.in: Regenerated.
+	* native/jni/xmlj/Makefile.in: Regenerated.
+	* native/Makefile.in: Regenerated.
+	* native/plugin/Makefile.in: Regenerated.
+	* resource/Makefile.in: Regenerated.
+	* scripts/Makefile.in: Regenerated.
+	* tools/Makefile.in: Regenerated.
+
+2013-05-22  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Meador Inge  <meadori@codesourcery.com>
+	Julian Brown  <julian@codesourcery.com>
+
+	CB-1888
+
+	* gcc/config/arm/t-cs-eabi (MULTILIB_REUSE): Treat -mthumb
+	-march=armv7-m -mfloat-abi=softfp as -mthumb -march=armv7-m.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2012-09-20  Joseph Myers  <joseph@codesourcery.com>
+
+	gcc/
+	* config/i386/cs-linux.opt (mrh73, mrhel3): Remove.
+	* config/i386/cs-linux.h (SYSROOT_SUFFIX_SPEC): Don't handle
+	-mrhel3 or -mrh73.
+	* config/i386/t-cs-linux (MULTILIB_OPTIONS, MULTILIB_DIRNAMES)
+	(MULTILIB_OSDIRNAMES): Remove -mrh73 and -mrhel3 multilibs.
+	(MULTILIB_EXCEPTIONS): Remove.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	NOTE: TEMPORARILY DISABLED.
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Nathan Froyd  <froydnj@codesourcery.com>
+	Andrew Stubbs  <ams@codesourcery.com>
+	Bernd Schmidt  <bernds@codesourcery.com>
+
+	gcc/
+	* doc/invoke.texi: Document -fremove-local-statics.
+	* Makefile.in (OBJS-common): Add tree-ssa-remove-local-statics.o.
+	* cgraph.c (cgraph_node): Set ever_was_nested in the node and
+	its parent when creating a new node.
+	* cgraph.h (struct cgraph_node): Add 'ever_was_nested'.
+	* passes.c (init_optimization_passes): Add
+	pass_remove_local_statics to the optimization passes.
+	* timevar.def (TV_RLS): New timevar.
+	* toplev.h (flag_remove_local_statics): Declare.
+	* tree-pass.h (pass_remove_local_statics): Declare.
+	* tree-ssa-remove-local-statics.c: New file.
+
+	gcc/c-family/
+	* c.opt (fremove-local-statics): New option (for C and C++).
+
+	gcc/cp/
+	* decl2.c (mark_used): Mark _DECLs as DECL_NONLOCAL if appropriate.
+
+	gcc/testsuite/
+	* g++.dg/remove-local-statics-1.C: New test.
+	* g++.dg/remove-local-statics-2.C: New test.
+	* gcc.dg/remove-local-statics-1.c: New file.
+	* gcc.dg/remove-local-statics-2.c: New file.
+	* gcc.dg/remove-local-statics-3.c: New file.
+	* gcc.dg/remove-local-statics-4.c: New file.
+	* gcc.dg/remove-local-statics-5.c: New file.
+	* gcc.dg/remove-local-statics-6.c: New file.
+	* gcc.dg/remove-local-statics-7.c: New file.
+	* gcc.dg/remove-local-statics-8.c: New file.
+	* gcc.dg/remove-local-statics-9.c: New file.
+	* gcc.dg/remove-local-statics-10.c: New file.
+	* gcc.dg/remove-local-statics-11.c: New file.
+	* gcc.dg/remove-local-statics-12.c: New file.
+	* gcc.dg/remove-local-statics-13.c: New test.
+	* gcc.dg/remove-local-statics-14.c: New test.
+	* gcc.dg/remove-local-statics-15.c: New test.
+	* gcc.dg/remove-local-statics-16.c: New test.
+	* gcc.dg/remove-local-statics-17.c: New test.
+	* gcc.dg/remove-local-statics-18.c: New test.
+	* gcc.dg/tree-ssa/pr21559.c: Compile with -fno-remove-local-statics.
+	* gcc.dg/tree-ssa/ssa-dse-6.c: Likewise.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7, not suitable for upstream:
+
+	2009-05-12  Maxim Kuvyrkov  <maxim@codesourcery.com>
+	gcc/
+	* common.opt (feglibc): New dummy option.
+	* opts.c (common_handle_option): Handle it.
+	* config.gcc: Handle 'eglibc' vendor.
+	* config/t-eglibc: Define multilibs for testing EGLIBC features.
+	* configure.ac (--with-eglibc-configs, EGLICB_CONFIGS): New option and
+	variable.
+	* configure: Regenerate.
+	* Makefile.in (EGLIBC_CONFIGS): Handle
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2007-03-05  Mark Mitchell  <mark@codesourcery.com>
+	* configure.in (*-*-vxworks*): Remove target-libstdc++-v3 from
+	noconfigdirs.
+	* configure: Regenerated.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2007-03-12  Richard Sandiford  <richard@codesourcery.com>
+	gcc/
+	* config/vx-common.h (TARGET_FLEXLM): Define.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Mark Mitchell  <mark@codesourcery.com>
+
+	Issue #7581
+	libstdc++-v3/
+	* acinclude.m4 (GLIBCXX_WITH_CSLIBC): Define it.
+	* configure.ac (GLIBCXX_WITH_CSLIBC): Use it.
+	* configure: Regenerated.
+	* libsupcc+/Makefile.am (sources): Do not add pure.cc if building
+	for CSLIBC.
+	* libsupc++/Makefile.in: Regenerated.
+
+        Issue #9394
+	libstdc++-v3/
+	* acinclude.m4 (GLIBCXX_WITH_CSLIBC): Define _GLIBCXX_CSLIBC in
+	config.h.
+	* configure: Regenerated.
+	* config.h.in: Likewise.
+	* libsupc++/Makefile.am (sources): Add recursive_init_error.cc.
+	* libsupc++/Makefile.in: Regenerated.
+	* libsupc++/guard.cc (throw_recursive_init_exception): Do not throw an
+	exception when building for CSLIBC.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Joseph Myers  <joseph@codesourcery.com>
+
+	gcc/
+	* doc/invoke.texi (-Wno-poison-system-directories): Document.
+	* gcc.c (LINK_COMMAND_SPEC): Pass --no-poison-system-directories
+	if -Wno-poison-system-directories and --error-poison-system-directories
+	if -Werror=poison-system-directories to linker.
+	* incpath.c: Include flags.h. Include toplev.h.
+	(merge_include_chains): If ENABLE_POISON_SYSTEM_DIRECTORIES defined
+	and flag_poison_system_directories is true, warn for use of
+	/usr/include, /usr/local/include or /usr/X11R6/include.
+	* Makefile.in (incpath.o): Depend on $(FLAGS_H) and toplev.h.
+	* common.opt (--Wno-poison-system-directories): New.
+	* configure.ac (--enable-poison-system-directories): New option.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2009-07-01  Joseph Myers  <joseph@codesourcery.com>
+
+	Issue #4168
+
+	gcc/
+	* gcc.c (using_libgcc, executing_linker): New.
+	(execute): Check that libgcc.a exists in the multilib directory
+	when linking.
+	(process_command): Set using_libgcc to 0 for -nodefaultlibs,
+	-nostdlib and -B options.
+	(main): Set executing_linker when processing spec that may run the
+	linker.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Mark Mitchell  <mark@codesourcery.com>
+	Richard Sandiford  <richard@codesourcery.com>
+	Joseph Myers  <joseph@codesourcery.com>
+	Nathan Sidwell  <nathan@codesourcery.com>
+	Nathan Froyd  <froydnj@codesourcery.com>
+	Julian Brown  <julian@codesourcery.com>
+
+	NOT ASSIGNED TO FSF
+	COPYRIGHT CODESOURCERY
+	
+	gcc/
+	* Makefile.in (CSL_LICENSEINC): Define it.
+	(CSL_LICENSELIB): Likewise.
+	(CSL_LICENSE_PROG): Likewise.
+	(LIBS): Depend on CSL_LICENSELIB.
+	(GCC_PASSES): Depend on CSL_LICENSE_PROG.
+	(INCLUDES): Add CSL_LICENSEINC.
+	* acinclude.m4 (--with-license): New option.
+	(--with-csl-license-feature): Likewise.
+	(--with-csl-license-version): Likewise.
+	* common.opt (flicense-me): Add option.
+	(ffeature-proxy): Likewise.
+	* gcc.c (csl/license.h): Include, if required.
+	(license_checked): New variable.
+	Define license_me_flag 1 if not TARGET_FLEXLM.
+	(driver_handle_option): Handle -flicense-me and -ffeature-proxy.
+	Set license_checked for TARGET_FLEXLM.
+	(do_self_spec): Don't call get_feature for -E or -M.
+	(main): Check licenses.
+	* configure.ac (CSL_AC_LICENSE_VERSION): Use it.
+	(CSL_AC_LICENSE): Likewise.
+	(CSL_AC_LICENSE_FEATURE): Likewise.
+	* config.in: Regenerated.
+	* configure: Regenerated.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2008-02-12  Nathan Sidwell  <nathan@codesourcery.com>
+		    Daniel Jacobowitz  <dan@codesourcery.com>
+	libgcc/
+	* config/rs6000/eabi-ci.asm (__init): Add _init func start.
+	(__fini): Also declare _fini for newlib.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	2008-07-02  Nathan Froyd  <froydnj@codesourcery.com>
+	gcc/
+	* config/rs6000/eabi.h (NAME__MAIN, INVOKE__main): Remove.
+	* config/rs6000/t-ppccomm (eabi.S): Remove rule.
+
+	2008-10-13  Andrew Stubbs  <ams@codesourcery.com>
+	gcc/
+	* doc/invoke.texi (PowerPC Options): -meabi option no longer places
+	__eabi function in main.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Paul Brook  <paul@codesourcery.com>
+	Andrew Stubbs  <ams@codesourcery.com>
+
+	gcc/
+	* config/i386/i386elf.h (ENDFILE_SPEC): Add crtn.o.
+	(STARTFILE_SPEC): Remove crt0.o. Add crti.o.
+
+	libgcc/
+	* config.host (i[34567]86-*-elf*): Add crti.o and crtn.o to
+	extra_parts.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Joseph Myers  <joseph@codesourcery.com>
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Nathan Froyd  <froydnj@codesourcery.com>
+	Andrew Stubbs  <ams@codesourcery.com>
+
+	gcc/
+	* config/rs6000/option-defaults.h (OPTION_DEFAULT_SPECS): Handle
+	-te500mc, -te500v1, -te500v2 and -te600.
+	config/rs6000/rs6000.opt (te500mc, te500v1, te500v2, te600): New.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Joseph Myers  <joseph@codesourcery.com>
+	Paul Brook  <paul@codesourcery.com>
+	Daniel Gutson  <dgutson@codesourcery.com>
+	Julian Brown  <julian@codesourcery.com>
+	Sandra Loosemore  <sandra@codesourcery.com>
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Meador Inge  <meadori@codesourcery.com>
+
+	gcc/
+	* config.gcc: Add ARM multilib configurations.
+	* config/arm/nocrt0.h, config/arm/t-cs-eabi,
+	config/arm/t-cs-eabi-lite, config/arm/t-cs-linux,
+	config/arm/t-cs-linux-lite, config/arm/t-cs-uclinux-eabi,
+	config/arm/cs-linux.h: New.
+	* config/arm/t-arm-elf (MULTILIB_MATCHES): Add armv7e-m.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Nathan Froyd  <froydnj@codesourcery.com>
+	Kazu Hirata <kazu@codesourcery.com>
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Nathan Sidwell  <nathan@codesourcery.com>
+	Joseph Myers  <joseph@codesourcery.com>
+
+	gcc/
+	* config.gcc: Add Power multilib configurations. Use
+	rs6000/t-fprules-softfp and soft-fp/t-softfp.
+	* config/rs6000/e500mc.h, config/rs6000/t-cs-eabi,
+	config/rs6000/t-cs-eabi-lite, config/rs6000/t-cs-linux,
+	config/rs6000/t-ppc-e500mc: New.
+	* config/rs6000/cs-linux.h: New.
+	* config/rs6000/eabi.h (CC1_EXTRA_SPEC, ASM_DEFAULT_SPEC): Define.
+	* config/rs6000/sysv4.h (CC1_EXTRA_SPEC): Define and use.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Joseph Myers  <joseph@codesourcery.com>
+
+	gcc/
+	* config.gcc (i[34567]86-*-linux*): Use extra config files if
+	--enable-extra-sgxx-multilibs.
+	* config/i386/cs-linux.h, config/i386/cs-linux.opt,
+	config/i386/t-cs-linux: New.
+	* configure.ac (gcc_cv_libc_provides_ssp): Set to yes for
+	GNU/Linux targets with libssp disabled.
+	* configure: Regenerate.
+
+2013-05-21  Julian Brown  <julian@codesourcery.com>
+
+	Merge from Sourcery CodeBench GCC 4.7:
+
+	Mark Mitchell  <mark@codesourcery.com>
+	Vladimir Prus  <vladimir@codesourcery.com>
+	Joseph Myers  <joseph@codesourcery.com>
+	Carlos O'Donell  <carlos@codesourcery.com>
+	Daniel Jacobowitz  <dan@codesourcery.com>
+	Kazu Hirata  <kazu@codesourcery.com>
+	Pedro Alves  <pedro@codesourcery.com>
+
+	libiberty/
+	* configure.ac: Add cygpath for mingw hosts.
+	* configure: Regenerate.
+	* Makefile.in: Add cygpath.
+	* cygpath.c: New.
+	* lrealpath.c (lrealpath): Use cygpath on Windows.
+	* pex-win32.c (pex_win32_open_read, pex_win32_open_write): Use
+	open not _open.
+
+	include/
+	* libiberty.h (cygpath): Declare.
+
+	config/
+	* mh-mingw (CFLAGS, BOOT_CFLAGS): Do not use -D__USE_MINGW_ACCESS.
+	Add a comment.
+
+2013-05-15  Julian Brown  <julian@codesourcery.com>
+
+	* release-notes-csl.xml: New.
+
+Local Variables:
+mode: change-log
+change-log-default-name: "ChangeLog.csl"
+End:

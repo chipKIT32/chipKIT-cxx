@@ -1,0 +1,468 @@
+; Options for the MIPS32r2 PIC32 port of the compiler
+;
+; Copyright (C) 2005, 2007, 2008 Free Software Foundation, Inc.
+;
+; This file is part of GCC.
+;
+; GCC is free software; you can redistribute it and/or modify it under
+; the terms of the GNU General Public License as published by the Free
+; Software Foundation; either version 3, or (at your option) any later
+; version.
+;
+; GCC is distributed in the hope that it will be useful, but WITHOUT
+; ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+; License for more details.
+;
+; You should have received a copy of the GNU General Public License
+; along with GCC; see the file COPYING3.  If not see
+; <http://www.gnu.org/licenses/>.
+
+mabi=
+Target Undocumented RejectNegative Joined
+-mabi=ABI	Generate code that conforms to the given ABI
+
+mabicalls
+Target Undocumented Report Mask(ABICALLS) 
+;Generate code that can be used in SVR4-style dynamic objects
+
+;mad
+;Target Report Var(TARGET_MAD)
+;Use PMC-style 'mad' instructions
+
+march=
+Target Undocumented RejectNegative Joined Var(mips_arch_string)
+-march=ISA	Generate code for the given ISA
+
+mbranch-cost=
+Target RejectNegative Joined UInteger Var(mips_branch_cost)
+-mbranch-cost=COST	Set the cost of branches to roughly COST instructions
+
+mbranch-likely
+Target Report Mask(BRANCHLIKELY)
+Use Branch Likely instructions, overriding the architecture default
+
+mflip-mips16
+Target Report Var(TARGET_FLIP_MIPS16)
+Switch on/off MIPS16 ASE on alternating functions for compiler testing
+
+;mips16e
+;Target Undocumented Var(TARGET_MCHP_MIPS16E)
+;Use -mips16 instead of -mips16e
+
+mcheck-zero-division
+Target Report Mask(CHECK_ZERO_DIV)
+Trap on integer divide by zero
+
+mcode-readable=
+Target RejectNegative Joined Undocumented
+-mcode-readable=SETTING	Specify when instructions are allowed to access code
+
+mdivide-breaks
+Target Report RejectNegative Mask(DIVIDE_BREAKS)
+Use branch-and-break sequences to check for integer divide by zero
+
+mdivide-traps
+Target Report RejectNegative InverseMask(DIVIDE_BREAKS, DIVIDE_TRAPS)
+Use trap instructions to check for integer divide by zero
+
+;mdmx
+;Target Report RejectNegative Var(TARGET_MDMX)
+;Allow the use of MDMX instructions
+
+mdouble-float
+Target Report RejectNegative InverseMask(SINGLE_FLOAT, DOUBLE_FLOAT) Undocumented
+Allow hardware floating-point instructions to cover both 32-bit and 64-bit operations
+
+mdsp
+Target Report Mask(DSP) Undocumented
+Use MIPS-DSP instructions
+
+mdspr2
+Target Report RejectNegative Mask(DSPR2)
+Use MIPS-DSP REV 2 instructions
+
+mno-dspr2
+Target Report RejectNegative Var(TARGET_NO_DSPR2) Undocumented
+Reject MIPS-DSP REV 2 instructions
+
+mdebugmips
+Target Undocumented Var(TARGET_DEBUG_MODE)
+
+mdebugdmips
+Target Undocumented Var(TARGET_DEBUG_D_MODE)
+
+meb
+Target Report RejectNegative Mask(BIG_ENDIAN) Undocumented
+;Use big-endian byte order
+
+mel
+Target Report RejectNegative InverseMask(BIG_ENDIAN, LITTLE_ENDIAN) Undocumented
+Use little-endian byte order
+
+membedded-data
+Target Report Var(TARGET_EMBEDDED_DATA) Init(1)
+Use ROM instead of RAM
+
+mexplicit-relocs
+Target Report Mask(EXPLICIT_RELOCS) Undocumented
+Use NewABI-style %reloc() assembly operators
+
+mextern-sdata
+Target Report Var(TARGET_EXTERN_SDATA) Init(1)
+Use -G for data that is not defined by the current object
+
+mfix-24k
+Target Report Var(TARGET_FIX_24K) Undocumented
+;Work around certain 24K errata
+
+mfix-r4000
+Target Report Mask(FIX_R4000) Undocumented
+;Work around certain R4000 errata
+
+mfix-r4400
+Target Report Mask(FIX_R4400) Undocumented
+;Work around certain R4400 errata
+
+mfix-r10000
+Target Report Mask(FIX_R10000) Undocumented
+;Work around certain R10000 errata
+
+mfix-sb1
+Target Report Var(TARGET_FIX_SB1) Undocumented
+;Work around errata for early SB-1 revision 2 cores
+
+mfix-vr4120
+Target Report Var(TARGET_FIX_VR4120) Undocumented
+;Work around certain VR4120 errata
+
+mfix-vr4130
+Target Report Var(TARGET_FIX_VR4130) Undocumented
+;Work around VR4130 mflo/mfhi errata
+
+mfix4300
+Target Report Var(TARGET_4300_MUL_FIX) Undocumented
+;Work around an early 4300 hardware bug
+
+mfp-exceptions
+Target Report Mask(FP_EXCEPTIONS) Undocumented
+FP exceptions are enabled
+
+mfp32
+Target Report RejectNegative InverseMask(FLOAT64) Undocumented
+Use 32-bit floating-point registers
+
+mfp64
+Target Report RejectNegative Mask(FLOAT64) Undocumented
+Use 64-bit floating-point registers
+
+mflush-func=
+Target RejectNegative Joined Var(mips_cache_flush_func) Init(CACHE_FLUSH_FUNC)
+-mflush-func=FUNC	Use FUNC to flush the cache before calling stack trampolines
+
+mfused-madd
+Target Report Mask(FUSED_MADD) Undocumented
+Generate floating-point multiply-add instructions
+
+;mgp32
+;Target Report RejectNegative InverseMask(64BIT) Undocumented
+;Use 32-bit general registers
+
+;mgp64
+;Target Report RejectNegative Mask(64BIT) Undocumented
+;Use 64-bit general registers
+
+mgpopt
+Target Report Var(TARGET_GPOPT) Init(1)
+Use GP-relative addressing to access small data
+
+mplt
+Target Report Var(TARGET_PLT)
+When generating -mabicalls code, allow executables to use PLTs and copy relocations
+
+mhard-float
+Target Report RejectNegative InverseMask(SOFT_FLOAT_ABI, HARD_FLOAT_ABI) Undocumented
+Allow the use of hardware floating-point ABI and instructions
+
+mext=
+Target Joined Var(mchp_import)
+Enable support for importing external code from another vendor
+
+minterlink-compressed
+Target Report Var(TARGET_INTERLINK_COMPRESSED) Init(0)
+Generate code that is link-compatible with MIPS16 and microMIPS code.
+
+minterlink-mips16
+Target Report
+An alias for minterlink-compressed provided for backward-compatibility.
+
+mjals
+Target Report Var(TARGET_JALS) Init(0) 
+Generate jals for microMIPS by recognizing that the branch delay slot instruction can be 16 bits.  This implies that the function call cannot switch the current mode during the linking stage, because we don't have jalxs that supports 16-bit branch delay slot instructions.
+
+mips
+Target RejectNegative Joined Undocumented
+-mipsN	Generate code for ISA level N
+
+mips16
+Target Report RejectNegative Mask(MIPS16)
+Generate MIPS16 code
+
+;mips16e
+;Target Report RejectNegative Mask(MIPS16) MaskExists
+;Deprecated; alias for -mips16
+
+;mips3d
+;Target Report RejectNegative Mask(MIPS3D) Undocumented
+;Use MIPS-3D instructions
+
+mllsc
+Target Report Mask(LLSC) Undocumented
+Use ll, sc and sync instructions
+
+mlocal-sdata
+Target Report Var(TARGET_LOCAL_SDATA) Init(1)
+Use -G for object-local data
+
+mlong-calls
+Target Report Var(TARGET_LONG_CALLS)
+Use indirect calls
+
+mlong32
+Target Report RejectNegative InverseMask(LONG64, LONG32) Undocumented
+Use a 32-bit long type
+
+mlong64
+Target Report RejectNegative Mask(LONG64) Undocumented
+;Use a 64-bit long type
+
+mmcount-ra-address
+Target Report Var(TARGET_MCOUNT_RA_ADDRESS)
+Pass the address of the ra save location to _mcount in $12
+
+mmemcpy
+Target Report Mask(MEMCPY)
+Don't optimize block moves
+
+mmicromips
+Target Report Mask(MICROMIPS) Undocumented
+Use microMIPS instructions
+
+mmips-tfile
+Target Undocumented
+Use the mips-tfile postpass
+
+mmt
+Target Report Var(TARGET_MT) Undocumented
+Allow the use of MT instructions
+
+mmcu
+Target Report RejectNegative Mask(MCU)
+Use MCU instructions
+
+mno-mcu
+Target Report RejectNegative Var(TARGET_NO_MCU) Undocumented
+Reject MCU instructions
+
+mno-flush-func
+Target RejectNegative
+Do not use a cache-flushing function before calling stack trampolines
+
+;mno-mdmx
+;Target Report RejectNegative InverseVar(MDMX) Undocumented
+;Do not use MDMX instructions
+
+mno-mips16
+Target Report RejectNegative InverseMask(MIPS16)
+Generate normal-mode code
+
+;mno-mips3d
+;Target Report RejectNegative InverseMask(MIPS3D) Undocumented
+;Do not use MIPS-3D instructions
+
+mpaired-single
+Target Report Mask(PAIRED_SINGLE_FLOAT) Undocumented
+Use paired-single floating-point instructions
+
+mr10k-cache-barrier=
+Target Joined RejectNegative Undocumented
+;-mr10k-cache-barrier=SETTING	Specify when r10k cache barriers should be inserted
+
+mrelax-pic-calls
+Target Report Mask(RELAX_PIC_CALLS)
+Try to allow the linker to turn PIC calls into direct calls
+
+mshared
+Target Report Var(TARGET_SHARED) Init(1)
+When generating -mabicalls code, make the code suitable for use in shared libraries
+
+msingle-float
+Target Report RejectNegative Mask(SINGLE_FLOAT) Undocumented
+Restrict the use of hardware floating-point instructions to 32-bit operations
+
+;msmartmips
+;Target Report Mask(SMARTMIPS) Undocumented
+;Use SmartMIPS instructions
+
+msoft-float
+Target Report RejectNegative Mask(SOFT_FLOAT_ABI) Undocumented
+Prevent the use of all hardware floating-point instructions
+
+msplit-addresses
+Target Report Mask(SPLIT_ADDRESSES)
+Optimize lui/addiu address loads
+
+msym32
+Target Report Var(TARGET_SYM32) Undocumented
+Assume all symbols have 32-bit values
+
+msynci
+Target Report Mask(SYNCI) Undocumented
+Use synci instruction to invalidate i-cache
+
+mtune=
+Target RejectNegative Joined Var(mips_tune_string) Undocumented
+-mtune=PROCESSOR	Optimize the output for PROCESSOR
+
+;muclibc
+;Target RejectNegative Var(building_for_uclibc) Undocumented
+;Building with -muclibc
+
+muninit-const-in-rodata
+Target Report Var(TARGET_UNINIT_CONST_IN_RODATA)
+Put uninitialized constants in ROM (needs -membedded-data)
+
+;mvr4130-align
+;Target Report Mask(VR4130_ALIGN) Undocumented
+;Perform VR4130-specific alignment optimizations
+
+;mwarn-framesize=
+;Target RejectNegative Joined
+;Warn if a single function's framesize exceeds the given framesize
+
+mxgot
+Target Report Var(TARGET_XGOT) Undocumented
+Lift restrictions on GOT size
+
+mframe-header-opt
+Target Report Var(flag_frame_header_optimization) Optimization
+Optimize frame header
+
+mno-float
+Target Report RejectNegative Var(TARGET_NO_FLOAT)
+Prevent the use of all floating-point operations
+
+mconfig-data-dir=
+Target Report RejectNagative Joined Var(mchp_config_data_dir) Undocumented
+
+mdebugger
+Target Var(TARGET_DEBUG_EXEC)
+Allocate space for debugger executive and enable debugging features
+
+mreserve=
+Target Report RejectNegative Joined
+-mreserve=MEM	Reserve memory for use by the debug tool
+
+mperipheral-libs
+Target Var(TARGET_LINK_PERIPHERAL_LIBS)
+Link peripheral libraries
+
+mno-mpdebug-lib
+Target RejectNegative Var(TARGET_NOLINK_MPDEBUG_LIBS)
+Do not link MPLAB REAL ICE and MPLAB ICD 3 debug-support library
+
+mappio-debug
+Target Var(TARGET_APPIO_DEBUG)
+Enable APPIO debug-support library functions
+
+msmart-io
+Target Var Var(TARGET_MCHP_SMARTIO) Init(1)
+Enable smart-IO library call forwarding level 1
+
+msmart-io=
+Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(1)
+-msmart-io=LEVEL	Enable smart-IO library call forwarding level LEVEL [0,2]
+
+mlegacy-libc
+Target Var Var(TARGET_LEGACY_LIBC)
+-legacy-libc	Use legacy lib/include directory
+
+mrelaxed-math
+Target Var Var(TARGET_RELAXED_MATH) 
+-relaxed-math	Use alternative floating-point support routines
+
+mxc32cpp-lib
+Target Var Var(TARGET_XC32_LIBCPP) Undocumented
+-mxc32cpp-lib	Use the XC32 Standard C++ Libraries
+
+mtext=
+Target Report RejectNegative Joined Var(mchp_text_scn) Init(NULL)
+-mtext=NAME	Name the text section NAME (default .text)
+
+mit=
+Target Report RejectNegative Joined Var(mchp_it_transport)
+-mit=TRANSPORT	Enable instrumented trace for MPLAB REAL ICE
+
+mprocessor=
+Target Report RejectNegative Joined Var(mchp_processor_string) Init(0)
+-mprocessor=PROCESSOR	Specify the target PIC32 PROCESSOR
+
+mlicense-warning
+Target Var Var(TARGET_LICENSE_WARNING) Undocumented Init(1)
+-mlicense-warning	Emit the license warning when appropriate
+
+mcci
+Target RejectNegative Var(TARGET_CCI)
+-mcci	Use CCI keywords
+
+mprint-builtins
+Target RejectNegative Var(TARGET_PRINT_BUILTINS)
+-mprint-builtins	Print a list of enabled builtin functions
+
+mmips16-exceptions
+Target Var Var(TARGET_MIPS16_EXCEPTIONS) Undocumented
+-mmips16-exceptions	Allow unsupported mips16 exceptions
+
+mno-default-isr-vectors
+Target Var Var(TARGET_DEFAULT_ISR_VECTORS) Undocumented
+-mno-default-isr-vectors	Prevent linking the default ISR vectors to the default handler
+
+msmall-isa
+Target Var Var(TARGET_SMALL_ISA) Init(0)
+-msmall-isa	Use -mips16 or -mmicromips as appropriate for the target specified in the -mprocessor option
+
+mpic32mxlibs
+Target RejectNegative Var Var(TARGET_PIC32MX_LIBS) Undocumented
+-mpic32mxlibs		Use the PIC32MX multilib variant 
+
+mpic32mzlibs
+Target RejectNegative Var Var(TARGET_PIC32MZ_LIBS) Undocumented
+-mpic32mzlibs		Use the PIC32MZ multilib variant
+
+mpic32mmlibs
+Target RejectNegative Var Var(TARGET_PIC32MM_LIBS) Undocumented
+-mpic32mmlibs		Use the PIC32MM multilib variant
+
+mresource=
+Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented 
+Identify compiler resource file
+
+mno-fallback
+Target Report RejectNegative Var Var(TARGET_NO_FALLBACKLICENSE)
+--nofallback		Require a MPLAB XC32 Standard or Pro license and do not fall back to a lesser license
+
+; -mcode-xonly is a traditional alias for -mcode-readable=pcrel and
+; -mno-data-in-code is a traditional alias for -mcode-readable=no.
+
+mno-data-in-code
+Target RejectNegative Alias(mcode-readable=, no)
+
+mcode-xonly
+Target RejectNegative Alias(mcode-readable=, pcrel)
+
+mmemorysummary=
+Target Joined Var(TARGET_MEMORY_SUMMARY) Undocumented
+
+mfill=
+Target Joined Var(TARGET_MEMORY_FILL) Undocumented
+

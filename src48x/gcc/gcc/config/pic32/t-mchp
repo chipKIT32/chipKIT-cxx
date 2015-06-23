@@ -1,0 +1,80 @@
+# We must build libgcc2.a with -G 0, in case the user wants to link
+# without the $gp register. Use -fno-optimize-sibling-calls in case
+# we have a mixed mips16/non-mips16 environment where a plain "jump"
+# instuction won't work across the divide (no jx instruction).
+# Compile libraries with -mcode-xonly, so that they are link-compatible
+# with both -mcode-readable=pcrel and -mcode-readable=yes.
+TARGET_LIBGCC2_CFLAGS = -msmart-io=0
+
+# Don't let CTOR_LIST end up in sdata section.
+CRTSTUFF_T_CFLAGS = -G 0 -D_BUILD_C32_ -minterlink-compressed
+
+# Build the multilibs.
+LIBGCC = stmp-multilib
+INSTALL_LIBGCC = install-multilib
+
+MULTILIB_OPTIONS = Os/O3 mips16/mmicromips mno-float/mfp64
+MULTILIB_DIRNAMES = size speed mips16 micromips no-float fpu64
+MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e
+MULTILIB_EXCLUSIONS = mcode-readable=no/!mips16
+MULTILIB_EXCLUSIONS += *mno-float/*mfp64*
+MULTILIB_EXCLUSIONS += *mips16/*mfp64*
+MULTILIB_EXCEPTIONS = *mpic32mxlibs*/*mmicromips* 
+MULTILIB_EXCEPTIONS += *mpic32mmlibs*/*mips16* 
+MULTILIB_EXCEPTIONS += *mpic32mmlibs*/*mmicromips* 
+MULTILIB_EXCEPTIONS += *mpic32mzlibs*/*mips16* 
+MULTILIB_EXCEPTIONS += *mprocessor=32MX*/*mmicromips* 
+MULTILIB_EXCEPTIONS += *mprocessor=32MZ*/*mips16*
+MULTILIB_EXCEPTIONS += *mprocessor=32MM*/*mmicromips* 
+MULTILIB_EXCEPTIONS += *mprocessor=32MM*/*mips16*
+MULTILIB_EXCEPTIONS += !mprocessor=*/*msmall-isa*
+MULTILIB_EXCEPTIONS += *msoft-float/*mno-float*
+MULTILIB_EXCEPTIONS += *msoft-float/*mfp64*
+MULTILIB_EXCEPTIONS += *mno-float/*mfp64*
+MULTILIB_EXCEPTIONS += *mips16/*mfp64*
+
+EXTRA_MULTILIB_PARTS = crtbegin.o crtend.o
+
+MULTILIB_EXTRA_OPTS = mno-jals G0 fno-optimize-sibling-calls fno-common mmips16-exceptions minterlink-compressed D_BUILD_C32_
+
+#Microchip SHA APIs used by mchp.c
+sha256.o: $(srcdir)/config/mchp-cci/sha256.c \
+  $(srcdir)/config/mchp-cci/sha256.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES)\
+	 $(srcdir)/config/mchp-cci/sha256.c
+
+mchp_sha.o: $(srcdir)/config/mchp-cci/mchp_sha.c \
+  $(srcdir)/config/mchp-cci/mchp_sha.h 
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) \
+	 $(srcdir)/config/mchp-cci/mchp_sha.c
+
+# Microchip PIC32-specific format checking and pragmas
+mchp.o: $(srcdir)/config/pic32/mchp.c $(srcdir)/config/pic32/mchp.h \
+  $(srcdir)/config/mchp-cci/cci.h \
+  $(srcdir)/config/mchp-cci/xclm_public.h \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  tree.h c-family/c-format.h intl.h $(CPPLIB_H) c-family/c-pragma.h $(TM_H) $(TM_P_H) \
+  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
+  $(srcdir)/config/mips/mips-machine-function.h $(srcdir)/config/pic32/mchp-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/pic32/mchp.c
+
+mchp-pragmas.o: $(srcdir)/config/pic32/mchp-pragmas.c \
+  $(srcdir)/config/mchp-cci/cci.c \
+  $(srcdir)/config/mchp-cci/cci.h \
+  $(srcdir)/config/pic32/mchp-pragmas.h \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  tree.h c-family/c-format.h intl.h $(CPPLIB_H) c-family/c-pragma.h $(TM_H) $(TM_P_H) \
+  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
+  $(srcdir)/config/mips/mips-machine-function.h $(srcdir)/config/pic32/mchp-protos.h
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/pic32/mchp-pragmas.c
+
+cci-backend.o: $(srcdir)/config/mchp-cci/cci-backend.c \
+  $(srcdir)/config/mchp-cci/cci-backend.h \
+  $(CONFIG_H) $(SYSTEM_H) coretypes.h \
+  tree.h c-family/c-format.h intl.h $(CPPLIB_H) $(TM_H) $(TM_P_H) \
+  toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H)
+	$(COMPILER) -c $(ALL_COMPILERFLAGS) $(ALL_CPPFLAGS) $(INCLUDES) \
+	  $(srcdir)/config/mchp-cci/cci-backend.c
+

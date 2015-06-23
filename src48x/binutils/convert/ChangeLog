@@ -1,0 +1,213 @@
+2008-03-11  Thiemo Seufer  <ths@mips.com>
+
+	* bin.c, conv.texi, convert.c, elf.h, elfio.c, elfmips.h,
+	elfout.c, idtbin.c, lsifast.c, mipsflash.c, srec.c, stagbin.c:
+	Update license to GPL v3.
+
+2007-07-02  Maciej W. Rozycki  <macro@mips.com>
+
+	* Makefile.am (AUTOMAKE_OPTIONS): Use "cygnus" rather than
+	"foreign".
+	* Makefile.in: Regenerate.
+
+2004-10-08  Nigel Stephens  <nigel@mips.com>
+
+	* elfout.c (ElfEnd): Use ehdr.e_phnum to calculate offset of
+	section header, otherwise we are out by one.
+
+2004-10-04  Nigel Stephens  <nigel@mips.com>
+
+	* Makefile.am: Use "cygnus" automake options, so that info file
+	gets created in build directory, not source directory.
+
+	* Makefile.in: Rebuilt.
+
+2004-09-09  Nigel Stephens  <nigel@mips.com>
+
+	* elfout.c (ElfEnd): Set paddr field in program header as well as vaddr.
+	Set number of program header entries to the actual number of
+	entries created (1 less than the number of sections. Use
+	ehdr.e_phnum and ehdr.e_shnum to select the number of program and
+	section headers to be written out.
+
+Tue Oct 21 12:13:43 2003  Nigel Stephens  <nigel@mips.com>
+
+	* conv.info: Gets built in source dir.
+
+Sat Oct  4 00:34:44 2003  Nigel Stephens  <nigel@mips.com>
+
+	* Makefile.am: Added conv.texi and html build rule.
+
+	* conv.texi: New Texinfo doc file for conv only.
+
+Tue Aug 19 13:07:43 2003  Nigel Stephens  <nigel@mips.com>
+
+	Changed to GPL copyright headers.
+
+Tue Aug  5 22:18:41 2003  Nigel Stephens  <nigel@mips.com>
+
+	Added BSD-style copyright headers.
+
+Wed Jul  9 03:31:06 2003  Nigel Stephens  <nigel@mips.com>
+
+	* mipsflash.c: New MIPS flash download format. Needs some more
+	work before prime-time.
+
+	* convert.c: Use const char * where necessary.
+	(formats): Add description of each format to table.
+	Add mips flash download format.
+	(usage): Output format descriptions.
+	(main): Output format descriptions if we get a bas format name.
+
+	* Makefile.am (conv_SOURCES): Added mipsflash.c
+
+Thu Apr 24 15:09:32 2003  Nigel Stephens  <nigel@mips.com>
+
+	* elfout.c (ElfStart): Set ehdr.e_version to EV_CURRENT, not EV_NONE.
+
+Wed Dec 18 16:47:42 2002  Nigel Stephens  <nigel@mips.com>
+
+	* acinclude.m4 (CONV_BINARY_FOPEN): Match cygwin* not cygwin32*.
+
+	* configure: Rebuilt.
+	* config.h.in: Rebuilt.
+	* aclocal.m4: Rebuilt.
+
+Mon Nov 18 11:04:04 2002  Nigel Stephens  <nigel@mips.com>
+
+	* configure.in (AC_REPLACE_FUNCS): Removed, used libiberty
+	versions of getopt and strtoul.
+
+	* Makefile.am (EXTRA_conv_SOURCES): Line removed, we don't have
+	our own getopt.h now.
+	(LIBIBERTY): New variable.
+	(conv_LDADD): Set to LIBIBERTY, not LDADD.
+
+	* Makefile.in, configure, config.h.in: Rebuilt.
+
+	* getopt.h: Removed.
+	* getopt.c: Removed.
+	* strtoul.c: Removed.
+
+Tue Oct 15 12:57:11 2002  Nigel Stephens  <nigel@mips.com>
+
+	* elfout.c: New "relocated" ELF output format, mainly so that we
+	can give a PROM image to MIPSsim.
+
+	* convert.c: Add endianness argument to start function entries in
+	table.
+	(formats): Add "relf" format.
+	(progname): Make it global.
+	(promflag): Similarly.
+	(prombase): Similarly.
+	(usage): Add -EB/-EL.
+	(xmalloc): New error checking interface to malloc.
+	(convertSymbols): Use xmalloc(), and free malloced data when
+	returning.
+	(main): Handle -EB/-EL argument, only relevant for raw binary
+	input files. In other cases set bigendian flag from the ELF input
+	file. Pass bigendian flag to format "start" function. Use
+	xmalloc/free.
+
+	* configure.in (AC_CHECK_HEADERS): Add stdlib.h
+
+	* config.h.in: Add HAVE_STDLIB_H
+
+	* lsifast.c (LsiStart): Use xmalloc().
+	(LsiEnd): Use free().
+	* bin.c: Similarly.
+	* stagbin.c: Similarly.
+
+	* sysdep.h: Fix up definitions of alloca(). Add definition of
+	xmalloc().
+
+	* Makefile.am (conv_SOURCES): Add elfout.c
+	(install-exec-local): Don't add .exe extension on twice.
+
+Fri Jun  7 13:58:49 2002  Nigel Stephens  <nigel@algor.co.uk>
+
+	* Makefile.am (html): Do nothing target.
+
+	* Makefile.in: Rebuilt.
+
+Mon Mar 18 19:13:08 2002  Nigel Stephens  <nigel@algor.co.uk>
+
+	* Makefile.am: Add manual install step to install program with
+	additional target alias name.
+
+	* Makefile.in: Rebuilt.
+
+Tue Nov  7 00:35:37 2000  Chris Dearman  <chris@algor.co.uk>
+
+	* convert.c (main): Convert promlimit to physical address when
+	parsing -a base:limit option. Exit with error if promlimit!=0
+	&& promlimit<=prombase.
+
+Tue Jul 18 15:19:09 2000  Nigel Stephens  <nigel@algor.co.uk>
+
+	* convert.c (main): Sort the program header into physical/load
+	address order - the linker sorts it into virtual address order.
+	(phcompar): New comparison function for qsort().
+
+Fri Nov 19 16:42:57 1999  Nigel Stephens  <nigel@algor.co.uk>
+
+	* All: Added copyright messages.
+
+Thu Nov 11 15:25:54 1999  Nigel Stephens  <nigel@algor.co.uk>
+
+	* convert.c (main): Allow byte selection when not in PROM mode.
+
+Mon Oct 25 14:21:47 1999  Nigel Stephens  <nigel@algor.co.uk>
+
+	* Makefile.am: Add no-dependencies to AUTOMAKE_OPTIONS
+
+Thu Sep  9 18:12:11 1999  Nigel Stephens  <nigel@algor.co.uk>
+
+	* convert.c (convertSegment): Change in read/write flag of segment
+	will cause it to be moved to next 16 byte boundary.
+
+Wed Jun  3 16:35:32 1998  Nigel Stephens  <nigel@algor.co.uk>
+
+	* configure.in (AC_CANONICAL_SYSTEM): No longer needed by
+	AM_CYGWIN32.  Use AM_EXEEXT instead of AM_CYGWIN32.
+
+Tue May 12 15:42:10 1998  Nigel Stephens  <nigel@algor.co.uk>
+
+	* configure.in: Bump version number to 3.0.3
+
+	* Makefile.am: Change automake options to --foreign.
+
+Fri Apr 17 14:26:29 1998  Nigel Stephens  <nigel@algor.co.uk>
+
+	* Makefile.am: Moved over to automake/autoconf.
+
+Mon Jan 26 15:40:18 1998  Nigel Stephens  <nigel@algor.co.uk>
+
+	* convert.c (convertSymbols): Flag MIPS16 symbols by making symbol
+	address odd.
+	(main): Do all PROM resident segments first, irrespective of what
+	type they are.
+
+Mon Jul  7 18:04:50 1997  Nigel Stephens  <nigel@algor.co.uk>
+
+	SDE-MIPS version 2.2.1 released.
+
+Tue May 20 18:07:32 1997  Nigel Stephens  <nigel@algor.co.uk>
+
+	SDE-MIPS version 2.2 released.
+
+Tue May 20 14:39:41 1997  Nigel Stephens  <nigel@algor.co.uk>
+
+	* convert.c: Realign segment when the PF_X flag changes.
+
+Wed Apr 30 17:59:56 1997  Nigel Stephens  <nigel@algor.co.uk>
+
+	SDE-MIPS version 2.2-beta released.
+
+Thu Apr 24 13:52:08 1997  Nigel Stephens  <nigel@algor.co.uk>
+
+	* elfio.c: Added functions to read and write .reginfo and .gptab
+	sections.
+
+	* elfmips.h: Added prototypes for above, and defined new
+	architecture flags and SDE-MIPS special flags.

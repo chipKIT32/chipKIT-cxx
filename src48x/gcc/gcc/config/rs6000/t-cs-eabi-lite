@@ -1,0 +1,36 @@
+# Multilibs for powerpc embedded ELF targets.
+
+MULTILIB_OPTIONS	= te500v1/te500v2/te600 \
+			  msoft-float mno-powerpc-gfxopt
+
+MULTILIB_DIRNAMES	= te500v1 te500v2 te600 \
+			  nof nogfxopt
+
+MULTILIB_EXCEPTIONS	= *te600*/*msoft-float* \
+			  *te500v1*/*msoft-float* \
+			  *te500v2*/*msoft-float* \
+			  *te600*/*mno-powerpc-gfxopt* \
+			  *te500v1*/*mno-powerpc-gfxopt* \
+			  *te500v2*/*mno-powerpc-gfxopt* \
+			  *msoft-float*/*mno-powerpc-gfxopt*
+
+MULTILIB_EXTRA_OPTS	= mno-eabi mstrict-align
+
+MULTILIB_MATCHES	= ${MULTILIB_MATCHES_FLOAT} \
+			  ${MULTILIB_MATCHES_ENDIAN} \
+			  mno-powerpc-gfxopt=mcpu?405fp \
+			  mno-powerpc-gfxopt=mcpu?440fp \
+			  mno-powerpc-gfxopt=mcpu?464fp \
+			  mno-powerpc-gfxopt=mcpu?505 \
+			  mno-powerpc-gfxopt=mcpu?601 \
+			  mno-powerpc-gfxopt=mcpu?e300c3 \
+			  mno-powerpc-gfxopt=mcpu?common \
+			  mno-powerpc-gfxopt=mcpu?titan \
+			  mno-powerpc-gfxopt=mcpu?power \
+			  mno-powerpc-gfxopt=mcpu?power2 \
+			  mno-powerpc-gfxopt=mcpu?powerpc \
+			  mno-powerpc-gfxopt=mcpu?rios \
+			  mno-powerpc-gfxopt=mcpu?rios1 \
+			  mno-powerpc-gfxopt=mcpu?rios2 \
+			  mno-powerpc-gfxopt=mcpu?rsc \
+			  mno-powerpc-gfxopt=mcpu?rsc1

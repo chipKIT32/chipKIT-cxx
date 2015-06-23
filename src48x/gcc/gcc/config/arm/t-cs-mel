@@ -1,0 +1,10 @@
+# We build 2 multilibs for Mentor Embedded Linux.
+#  ./     (default)
+#  v7/	  -march=armv7-a
+
+MULTILIB_OPTIONS     = march=armv7-a
+MULTILIB_DIRNAMES    = v7a
+MULTILIB_EXCEPTIONS  =
+MULTILIB_MATCHES     =
+MULTILIB_ALIASES     =
+MULTILIB_OSDIRNAMES  =

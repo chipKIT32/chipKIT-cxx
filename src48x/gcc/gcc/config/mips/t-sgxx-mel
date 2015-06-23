@@ -1,0 +1,13 @@
+MULTILIB_OPTIONS = march=xlp EL mabi=64
+MULTILIB_DIRNAMES = xlp el 64
+MULTILIB_MATCHES = EL=mel EB=meb
+
+# XLP only with -mabi=64, and only big-endian.
+MULTILIB_EXCEPTIONS  = march=xlp
+MULTILIB_EXCEPTIONS += march=xlp/EL
+MULTILIB_EXCEPTIONS += march=xlp/EL/mabi=64
+
+MULTILIB_OSDIRNAMES  = mabi.64=../lib64
+MULTILIB_OSDIRNAMES += EL=!el
+MULTILIB_OSDIRNAMES += EL/mabi.64=../lib64/el
+MULTILIB_OSDIRNAMES += march.xlp/mabi.64=../lib64/xlp
