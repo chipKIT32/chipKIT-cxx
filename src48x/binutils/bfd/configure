@@ -12114,7 +12114,7 @@ if test "${with_pkgversion+set}" = set; then :
       *)   PKGVERSION="($withval) " ;;
      esac
 else
-  PKGVERSION="(Microchip Technology) "
+  PKGVERSION="(chipKIT) "
 
 fi
 
