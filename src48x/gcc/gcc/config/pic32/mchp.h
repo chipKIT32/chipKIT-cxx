@@ -41,8 +41,6 @@ along with GCC; see the file COPYING3.  If not see
 #define MCHP_DEBUG
 #endif
 
-#define XCLM_FULL_CHECKOUT 1
-
 extern const char *pic32_text_scn;
 extern int         mchp_profile_option;
 
@@ -56,6 +54,11 @@ enum pic32_isa_mode
 
 #undef DEFAULT_SIGNED_CHAR
 #define DEFAULT_SIGNED_CHAR 1
+
+/* Default to short double rather than long double */
+/* chipKIT */
+#undef TARGET_SHORT_DOUBLE
+#define TARGET_SHORT_DOUBLE 0 
 
 #define MCHP_CONFIGURATION_DATA_FILENAME "configuration.data"
 #define MCHP_CONFIGURATION_HEADER_MARKER \
@@ -101,10 +104,10 @@ do {                     \
 #define LIBSTDCXX_STATIC "supc++"
 
 /* For C++, use the libxcpp library */
-#undef MATH_LIBRARY
-#define MATH_LIBRARY  "xcpp"
-#undef MATH_LIBRARY_PROFILE
-#define MATH_LIBRARY_PROFILE MATH_LIBRARY
+// #undef MATH_LIBRARY
+// #define MATH_LIBRARY  "xcpp"
+// #undef MATH_LIBRARY_PROFILE
+// #define MATH_LIBRARY_PROFILE MATH_LIBRARY
 
 #define XC32CPPLIB_OPTION "-mxc32cpp-lib"
 
@@ -218,10 +221,12 @@ do {                     \
 #define LINK_LIBGCC_SPEC "\
  %D -L %s%{mprocessor=*:./proc/%*; :./proc/32MXGENERIC} %{mdebugger:%{!mreserve=data*:--defsym _DEBUGGER=1}}"
 
+#if 0 /* chipKIT */
 #ifndef TARGET_EXTRA_PRE_INCLUDES
 extern void pic32_system_include_paths(const char *root, const char *system,
                                        int nostdinc);
 #define TARGET_EXTRA_PRE_INCLUDES pic32_system_include_paths
+#endif
 #endif
 
 #ifdef DIR_SEPARATOR
@@ -1212,8 +1217,10 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #define TARGET_APPLY_PRAGMA mchp_apply_pragmas
 
 /* Initialize the GCC target structure.  */
+#if 0 /* chipKIT */
 #undef TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE
 #define TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE mchp_override_options_after_change
+#endif
 
 /* True if we can optimize sibling calls.  For simplicity, we only
    handle cases in which call_insn_operand will reject invalid

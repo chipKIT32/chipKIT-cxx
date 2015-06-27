@@ -51,7 +51,6 @@ mchp_sha.o: $(srcdir)/config/mchp-cci/mchp_sha.c \
 # Microchip PIC32-specific format checking and pragmas
 mchp.o: $(srcdir)/config/pic32/mchp.c $(srcdir)/config/pic32/mchp.h \
   $(srcdir)/config/mchp-cci/cci.h \
-  $(srcdir)/config/mchp-cci/xclm_public.h \
   $(CONFIG_H) $(SYSTEM_H) coretypes.h \
   tree.h c-family/c-format.h intl.h $(CPPLIB_H) c-family/c-pragma.h $(TM_H) $(TM_P_H) \
   toplev.h libfuncs.h langhooks.h sched-int.h function.h $(C_COMMON_H) \
