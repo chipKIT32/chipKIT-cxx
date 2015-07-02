@@ -87,16 +87,12 @@ do {                     \
  * peripheral library if -mno-peripheral-libs option is not specified, but
  * the -mprocessor option is specified.
  */
+ /* chipKIT */
 #undef  LIB_SPEC
-#define LIB_SPEC "--start-group -lpic32 %{!mno-mpdebug-lib:-ldebug} \
- %{mxc32cpp-lib:%{!mno-xc32cpp-lib:-lxcpp -lsupc++}} -lpic32 \
- %{mrelaxed-math : %{mfp64:%emay not use both -mrelaxed-math and -mhard-float}} \
- %{mrelaxed-math : %{!mfp64 :-lrcfops}} \
- %{mfp64 : -lmfd -lm -le ; : -lm -le}  %{mdspr2*: -ldspr2 -ldsp } %{mprocessor=32MX*: -ldsp } %{mprocessor=32MM*: -ldsp } -lgcc \
- %{mperipheral-libs:-lmchp_peripheral %{mprocessor=*:-lmchp_peripheral_%*}} \
- %{mlegacy-libc:%{!mno-legacy-libc:%{!mxc32cpp-lib:-llega-c}}} %{mno-legacy-libc:%{!mxc32cpp-lib:-lc}} \
- %{!mlegacy-libc:%{!mxc32cpp-lib:-lc}} -lpic32 \
- --end-group"
+#define LIB_SPEC "--start-group -lc -lsupc++ -lpic32 -lgcc \
+%{!mno-peripheral-libs:-lmchp_peripheral \
+%{mprocessor=*:-lmchp_peripheral_%*}} \
+--end-group"
 
 #undef LIBSTDCXX
 #define LIBSTDCXX "supc++"
