@@ -49,6 +49,7 @@ extern "C" {
 
 #include <stdio.h>
 
+
 /* If the OS supports it, ensure that the supplied stream is setup to
    avoid any multi-threaded locking.  Otherwise leave the FILE pointer
    unchanged.  If the stream is NULL do nothing.  */
@@ -105,9 +106,16 @@ extern int countargv (char**);
    declaration without arguments.  If it is 0, we checked and failed
    to find the declaration so provide a fully prototyped one.  If it
    is 1, we found it so don't provide any declaration at all.  */
+#if defined(HAVE_DECL_BASENAME) && !HAVE_DECL_BASENAME && defined(__linux__)
+#undef HAVE_DECL_BASENAME
+#define HAVE_DECL_BASENAME 1
+#endif
+
 #if !HAVE_DECL_BASENAME
 #if defined (__GNU_LIBRARY__ ) || defined (__linux__) || defined (__FreeBSD__) || defined (__OpenBSD__) || defined(__NetBSD__) || defined (__CYGWIN__) || defined (__CYGWIN32__) || defined (__MINGW32__) || defined (HAVE_DECL_BASENAME)
+#ifndef basename
 extern char *basename (const char *);
+#endif
 #else
 /* Do not allow basename to be used if there is no prototype seen.  We
    either need to use the above prototype or have one from
