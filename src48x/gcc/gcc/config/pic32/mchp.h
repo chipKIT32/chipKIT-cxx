@@ -87,11 +87,10 @@ do {                     \
  * peripheral library if -mno-peripheral-libs option is not specified, but
  * the -mprocessor option is specified.
  */
+
  /* chipKIT */
 #undef  LIB_SPEC
-#define LIB_SPEC "--start-group -lc -lsupc++ -lpic32 -lgcc \
-%{!mno-peripheral-libs:-lmchp_peripheral \
-%{mprocessor=*:-lmchp_peripheral_%*}} \
+#define LIB_SPEC "--start-group -lpic32 -lm -lsupc++ -lgcc -lc -lpic32 \
 --end-group"
 
 #undef LIBSTDCXX
@@ -386,7 +385,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 
 #define CC1PLUS_SPEC " \
  %{!fenforce-eh-specs:-fno-enforce-eh-specs} \
- %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=c++11} -msmart-io=0 }} \
+ %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=gnu++11} -msmart-io=0 }} \
  %(subtarget_cc1plus_spec) \
 "
 
