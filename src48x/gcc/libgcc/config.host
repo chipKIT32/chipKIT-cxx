@@ -158,6 +158,7 @@ mips*-*-*)
 pic32*-*-*)
         cpu_type=mips
 		tmake_file="mips/t-mips"
+		tmake_file="${tmake_file} t-softfp"
         tm_file=mips/nan.h
         ;;
 nios2*-*-*)

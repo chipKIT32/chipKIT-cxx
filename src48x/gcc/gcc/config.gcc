@@ -3929,9 +3929,12 @@ case ${target} in
                 then
                         target_cpu_default2="MASK_SPLIT_ADDRESSES"
                 fi
-                tm_defines="TARGET_ENDIAN_DEFAULT=0 _BUILD_C32_=1 _BUILD_MCHP_=1 ${tm_defines}"
-                tm_defines="US_SOFTWARE_GOFAST ${tm_defines}"
-                tmake_file="pic32/t-fastmath ${tmake_file}"
+				tm_defines="TARGET_ENDIAN_DEFAULT=0 _BUILD_C32_=1 _BUILD_MCHP_=1 ${tm_defines}"
+				if test "x$enable_gofast" = xyes
+				then
+					tm_defines="US_SOFTWARE_GOFAST ${tm_defines}"
+					tmake_file="pic32/t-fastmath ${tmake_file}"
+				fi
                 ;;
 	powerpc*-*-* | rs6000-*-*)
 		# FIXME: The PowerPC port uses the value set at compile time,
