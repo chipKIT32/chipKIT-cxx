@@ -90,8 +90,7 @@ do {                     \
 
  /* chipKIT */
 #undef  LIB_SPEC
-#define LIB_SPEC "--start-group -lpic32 -lm -lsupc++ -lgcc -lc -lpic32 \
---end-group"
+#define LIB_SPEC "--start-group -lc -lsupc++ -lpic32 -lgcc -lm --end-group"
 
 #undef LIBSTDCXX
 #define LIBSTDCXX "supc++"
@@ -1235,7 +1234,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #define PIC32_SUPPORT_CRYPTO_ATTRIBUTE 1
 
 #undef COLLECT2_RELATIVE_LD_FILE_NAME
-#define COLLECT2_RELATIVE_LD_FILE_NAME "../../../../xc32-ld"
+#define COLLECT2_RELATIVE_LD_FILE_NAME "../../../../pic32-ld"
 
 #if defined(__MINGW32__)
 #define MCHP_CONVERT_BACKSLASH(string)  \
