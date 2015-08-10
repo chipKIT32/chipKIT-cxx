@@ -376,11 +376,11 @@ Target Var(TARGET_APPIO_DEBUG)
 Enable APPIO debug-support library functions
 
 msmart-io
-Target Var Var(TARGET_MCHP_SMARTIO) Init(1)
-Enable smart-IO library call forwarding level 1
+Target Var Var(TARGET_MCHP_SMARTIO) Init(0)
+Enable smart-IO library call forwarding level 0
 
 msmart-io=
-Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(1)
+Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(0)
 -msmart-io=LEVEL	Enable smart-IO library call forwarding level LEVEL [0,2]
 
 mlegacy-libc
