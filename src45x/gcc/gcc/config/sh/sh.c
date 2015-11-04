@@ -974,7 +974,7 @@ sh_override_options (void)
     sh_fix_range (sh_fixed_range_str);
 
   /* This target defaults to strict volatile bitfields.  */
-  if (flag_strict_volatile_bitfields < 0)
+  if (flag_strict_volatile_bitfields < 0 && abi_version_at_least(2))
     flag_strict_volatile_bitfields = 1;
 }
 
@@ -2037,8 +2037,6 @@ expand_cbranchdi4 (rtx *operands, enum rtx_code comparison)
 	  lsw_taken_prob = prob;
 	}
     }
-  operands[1] = op1h;
-  operands[2] = op2h;
   operands[4] = NULL_RTX;
   if (reload_completed
       && ! arith_reg_or_0_operand (op2h, SImode)
@@ -2047,8 +2045,10 @@ expand_cbranchdi4 (rtx *operands, enum rtx_code comparison)
 	  || msw_skip != LAST_AND_UNUSED_RTX_CODE))
     {
       emit_move_insn (scratch, operands[2]);
-      operands[2] = scratch;
+      op2h = scratch;
     }
+  operands[1] = op1h;
+  operands[2] = op2h;
   if (msw_taken != LAST_AND_UNUSED_RTX_CODE)
     expand_cbranchsi4 (operands, msw_taken, msw_taken_prob);
   if (msw_skip != LAST_AND_UNUSED_RTX_CODE)
@@ -5344,7 +5344,8 @@ barrier_align (rtx barrier_or_label)
 	}
       if (prev
 	  && JUMP_P (prev)
-	  && JUMP_LABEL (prev))
+	  && JUMP_LABEL (prev)
+	  && !ANY_RETURN_P (JUMP_LABEL (prev)))
 	{
 	  rtx x;
 	  if (jump_to_next
@@ -6043,7 +6044,7 @@ split_branches (rtx first)
 			JUMP_LABEL (insn) = far_label;
 			LABEL_NUSES (far_label)++;
 		      }
-		    redirect_jump (insn, NULL_RTX, 1);
+		    redirect_jump (insn, ret_rtx, 1);
 		    far_label = 0;
 		  }
 	      }

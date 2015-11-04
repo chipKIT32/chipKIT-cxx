@@ -137,6 +137,28 @@ int vms_file_stats_name (const char *, long long *, long *, char *, int *);
 /* Save the result of dwarf2out_do_frame across PCH.  */
 static GTY(()) bool saved_do_cfi_asm = 0;
 
+#if defined(TARGET_MCHP_PIC32MX)
+static void
+unbackslashify (char *s)
+{
+  char *save_s, *s2;
+  save_s = s;
+  while ((s = strchr (s, '\\')) != NULL) {
+    *s = '/';
+  }
+
+  /* Remove double slashes */
+  s = s2 =  save_s;
+  while ((s = strchr(s, '/')) != NULL) {
+    if (*(s+1) == '/') {
+      strcpy(s, (s+1));
+    }
+    s++;
+  }
+  return;
+}
+#endif
+
 /* Decide whether we want to emit frame unwind information for the current
    translation unit.  */
 
@@ -472,7 +494,6 @@ static void output_cfi (dw_cfi_ref, dw_fde_ref, int);
 static void output_cfi_directive (dw_cfi_ref);
 static void output_call_frame_info (int);
 static void dwarf2out_note_section_used (void);
-static void flush_queued_reg_saves (void);
 static bool clobbers_queued_reg_save (const_rtx);
 static void dwarf2out_frame_debug_expr (rtx, const char *);
 
@@ -1397,7 +1418,7 @@ compute_barrier_args_size_1 (rtx insn, HOST_WIDE_INT cur_args_size,
     {
       rtx dest = JUMP_LABEL (insn);
 
-      if (dest)
+      if (dest && !ANY_RETURN_P (dest))
 	{
 	  if (barrier_args_size [INSN_UID (dest)] < 0)
 	    {
@@ -1708,8 +1729,8 @@ queue_reg_save (const char *label, rtx reg, rtx sreg, HOST_WIDE_INT offset)
 
 /* Output all the entries in QUEUED_REG_SAVES.  */
 
-static void
-flush_queued_reg_saves (void)
+void
+dwarf2out_flush_queued_reg_saves (void)
 {
   struct queued_reg_save *q;
 
@@ -2658,7 +2679,7 @@ dwarf2out_frame_debug (rtx insn, bool after_p)
       size_t i;
 
       /* Flush any queued register saves.  */
-      flush_queued_reg_saves ();
+      dwarf2out_flush_queued_reg_saves ();
 
       /* Set up state for generating call frame debug info.  */
       lookup_cfa (&cfa);
@@ -2686,7 +2707,7 @@ dwarf2out_frame_debug (rtx insn, bool after_p)
     }
 
   if (!NONJUMP_INSN_P (insn) || clobbers_queued_reg_save (insn))
-    flush_queued_reg_saves ();
+    dwarf2out_flush_queued_reg_saves ();
 
   if (!RTX_FRAME_RELATED_P (insn))
     {
@@ -2786,13 +2807,13 @@ dwarf2out_frame_debug (rtx insn, bool after_p)
      We could probably check just once, here, but this is safer than
      removing the check above.  */
   if (clobbers_queued_reg_save (insn))
-    flush_queued_reg_saves ();
+    dwarf2out_flush_queued_reg_saves ();
 }
 
-/* Determine if we need to save and restore CFI information around this
-   epilogue.  If SIBCALL is true, then this is a sibcall epilogue.  If
-   we do need to save/restore, then emit the save now, and insert a
-   NOTE_INSN_CFA_RESTORE_STATE at the appropriate place in the stream.  */
+/* Determine if we need to save and restore CFI information around
+   this epilogue.  If we do need to save/restore, then emit the save
+   now, and insert a NOTE_INSN_CFA_RESTORE_STATE at the appropriate
+   place in the stream.  */
 
 void
 dwarf2out_begin_epilogue (rtx insn)
@@ -2807,8 +2828,10 @@ dwarf2out_begin_epilogue (rtx insn)
       if (!INSN_P (i))
 	continue;
 
-      /* Look for both regular and sibcalls to end the block.  */
-      if (returnjump_p (i))
+      /* Look for both regular and sibcalls to end the block.  Various
+	 optimization passes may cause us to jump to a common epilogue
+	 tail, so we also accept simplejumps.  */
+      if (returnjump_p (i) || simplejump_p (i))
 	break;
       if (CALL_P (i) && SIBLING_CALL_P (i))
 	break;
@@ -10508,7 +10531,7 @@ output_die (dw_die_ref die)
 	      }
 
 	    dw2_asm_output_data (HOST_BITS_PER_WIDE_INT / HOST_BITS_PER_CHAR,
-				 first, name);
+				 first, "%s", name);
 	    dw2_asm_output_data (HOST_BITS_PER_WIDE_INT / HOST_BITS_PER_CHAR,
 				 second, NULL);
 	  }
@@ -12895,11 +12918,18 @@ const_ok_for_output_1 (rtx *rtlp, void *data ATTRIBUTE_UNUSED)
       /* If delegitimize_address couldn't do anything with the UNSPEC, assume
 	 we can't express it in the debug info.  */
 #ifdef ENABLE_CHECKING
-      inform (current_function_decl
-	      ? DECL_SOURCE_LOCATION (current_function_decl)
-	      : UNKNOWN_LOCATION,
-	      "non-delegitimized UNSPEC %d found in variable location",
-	      XINT (rtl, 1));
+      /* Don't complain about TLS UNSPECs, those are just too hard to
+	 delegitimize.  */
+      if (XVECLEN (rtl, 0) != 1
+	  || GET_CODE (XVECEXP (rtl, 0, 0)) != SYMBOL_REF
+	  || SYMBOL_REF_DECL (XVECEXP (rtl, 0, 0)) == NULL
+	  || TREE_CODE (SYMBOL_REF_DECL (XVECEXP (rtl, 0, 0))) != VAR_DECL
+	  || !DECL_THREAD_LOCAL_P (SYMBOL_REF_DECL (XVECEXP (rtl, 0, 0))))
+	inform (current_function_decl
+		? DECL_SOURCE_LOCATION (current_function_decl)
+		: UNKNOWN_LOCATION,
+		"non-delegitimized UNSPEC %d found in variable location",
+		XINT (rtl, 1));
 #endif
       expansion_failed (NULL_TREE, rtl,
 			"UNSPEC hasn't been delegitimized.\n");
@@ -15585,7 +15615,8 @@ rtl_for_decl_init (tree init, tree type)
     ;
   /* Vectors only work if their mode is supported by the target.
      FIXME: generic vectors ought to work too.  */
-  else if (TREE_CODE (type) == VECTOR_TYPE && TYPE_MODE (type) == BLKmode)
+  else if (TREE_CODE (type) == VECTOR_TYPE
+	   && !VECTOR_MODE_P (TYPE_MODE (type)))
     ;
   /* If the initializer is something that we know will expand into an
      immediate RTL constant, expand it now.  We must be careful not to
@@ -16335,6 +16366,9 @@ add_comp_dir_attribute (dw_die_ref die)
 {
   const char *wd = get_src_pwd ();
   char *wd1;
+#if defined (TARGET_MCHP_PIC32MX)
+  char *real_path;
+#endif
 
   if (wd == NULL)
     return;
@@ -16350,8 +16384,15 @@ add_comp_dir_attribute (dw_die_ref die)
       wd1 [wdlen + 1] = 0;
       wd = wd1;
     }
-
+#if defined (TARGET_MCHP_PIC32MX)
+    /* MPLAB IDE v8 currently expects only forward slashes in .file filename */
+    real_path = xstrdup (remap_debug_filename (wd));
+    unbackslashify (real_path);
+    add_AT_string (die, DW_AT_comp_dir, real_path);
+    free (real_path);
+#else
     add_AT_string (die, DW_AT_comp_dir, remap_debug_filename (wd));
+#endif
 }
 
 /* Return the default for DW_AT_lower_bound, or -1 if there is not any
@@ -16640,6 +16681,62 @@ add_bit_offset_attribute (dw_die_ref die, tree decl)
      is different on big-endian and little-endian machines, the computation
      below must take account of these differences.  */
   highest_order_object_bit_offset = object_offset_in_bytes * BITS_PER_UNIT;
+#ifdef _BUILD_C30_
+  {
+    /*
+    ** For any given bit-field, the "containing object" is a hypothetical
+    ** object (of some integral or enum type) within which the given bit-field
+    ** lives.  The type of this hypothetical "containing object" is always the
+    ** same as the  declared type of the individual bit-field itself (for GCC
+    ** anyway ... the DWARF spec doesn't actually mandate this).  Note that it
+    ** is the size (in bytes) of the hypothetical "containing object" which
+    ** will be given in the DW_AT_byte_size attribute for this bit-field.
+    **
+    ** The DW_AT_bit_offset attribute is a constant value that specifies
+    ** the number of bits to the left of the leftmost (most significant)
+    ** bit of the bit field value. Since, for GCC, the containing object
+    ** for a bit field is always the same as the declared type, we can
+    ** calculate the bit-offset using the following:
+    ** - the field size (the number of bits in the field)
+    ** - the starting bit position of the field
+    ** - the containing object size (the size of the containing type)
+    ** We are not concerned with the containing object's alignment, since this
+    ** does not affect the number of bits in the containing object.
+    ** The only nuance is that the starting bit position of the field
+    ** may be greater that the size of the containing object type, so
+    ** the bit position of the high-order bit of the field needs to be
+    ** normalized before calculating the bit-offset.
+    **
+    ** This code replaces the original calculation, which is opaque
+    ** and incorrect.
+    */
+    tree field_size_tree;
+    unsigned HOST_WIDE_INT field_size_in_bits;
+    unsigned HOST_WIDE_INT type_size_in_bits;
+
+    field_size_tree = DECL_SIZE (decl);
+    if (! field_size_tree)
+    {
+      field_size_tree = bitsize_zero_node;
+    }
+    if (host_integerp (field_size_tree, 1))
+    {
+      field_size_in_bits = tree_low_cst (field_size_tree, 1);
+    }
+    else
+    {
+      field_size_in_bits = BITS_PER_WORD;
+    }
+    type_size_in_bits = simple_type_size_in_bits (type);
+    if (type_size_in_bits == 0)
+    {
+      type_size_in_bits = BITS_PER_WORD;
+    }
+    highest_order_field_bit_offset = bitpos_int + field_size_in_bits;
+    highest_order_field_bit_offset %= type_size_in_bits;
+    bit_offset = type_size_in_bits - highest_order_field_bit_offset;
+  }
+#else
   highest_order_field_bit_offset = bitpos_int;
 
   if (! BYTES_BIG_ENDIAN)
@@ -16652,6 +16749,7 @@ add_bit_offset_attribute (dw_die_ref die, tree decl)
     = (! BYTES_BIG_ENDIAN
        ? highest_order_object_bit_offset - highest_order_field_bit_offset
        : highest_order_field_bit_offset - highest_order_object_bit_offset);
+#endif
 
   add_AT_unsigned (die, DW_AT_bit_offset, bit_offset);
 }
@@ -18045,22 +18143,56 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	{
 	  dw_loc_descr_ref op = new_loc_descr (DW_OP_call_frame_cfa, 0, 0);
 	  add_AT_loc (subr_die, DW_AT_frame_base, op);
+          /* Compute a displacement from the "steady-state frame pointer" to
+	     the CFA.  The former is what all stack slots and argument slots
+	     will reference in the rtl; the later is what we've told the
+	     debugger about.  We'll need to adjust all frame_base references
+	     by this displacement.  */
+          compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
 	}
       else
 	{
+#if defined(_BUILD_MCHP_)
+          if (flag_frame_base_loclist)
+          {
+            dw_loc_list_ref list = convert_cfa_to_fb_loc_list (cfa_fb_offset);
+            if (list->dw_loc_next)
+              add_AT_loc_list (subr_die, DW_AT_frame_base, list);
+            else
+              add_AT_loc (subr_die, DW_AT_frame_base, list->expr);
+
+            /* Compute a displacement from the "steady-state frame pointer" to
+               the CFA.  The former is what all stack slots and argument slots
+               will reference in the rtl; the later is what we've told the
+               debugger about.  We'll need to adjust all frame_base references
+               by this displacement.  */
+            compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+          }
+          else
+          {
+            rtx fp_reg;
+            fp_reg
+              = frame_pointer_needed ? hard_frame_pointer_rtx : stack_pointer_rtx;
+            add_AT_loc (subr_die, DW_AT_frame_base,
+              reg_loc_descriptor (fp_reg, VAR_INIT_STATUS_INITIALIZED));
+          }
+#else
 	  dw_loc_list_ref list = convert_cfa_to_fb_loc_list (cfa_fb_offset);
 	  if (list->dw_loc_next)
 	    add_AT_loc_list (subr_die, DW_AT_frame_base, list);
-	  else
+ 	  else
 	    add_AT_loc (subr_die, DW_AT_frame_base, list->expr);
-	}
-
-      /* Compute a displacement from the "steady-state frame pointer" to
-	 the CFA.  The former is what all stack slots and argument slots
-	 will reference in the rtl; the later is what we've told the
-	 debugger about.  We'll need to adjust all frame_base references
-	 by this displacement.  */
-      compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+#endif
+       }
+	    
+#if !defined(_BUILD_MCHP_)
+       /* Compute a displacement from the "steady-state frame pointer" to
+	  the CFA.  The former is what all stack slots and argument slots
+	  will reference in the rtl; the later is what we've told the
+	  debugger about.  We'll need to adjust all frame_base references
+	  by this displacement.  */
+       compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+#endif
 
       if (cfun->static_chain_decl)
 	add_AT_location_description (subr_die, DW_AT_static_link,
@@ -18718,7 +18850,15 @@ gen_compile_unit_die (const char *filename)
 
   if (filename)
     {
+#if defined (TARGET_MCHP_PIC32MX)
+      char *real_path;
+      real_path = xstrdup(filename);
+      unbackslashify (real_path);
+      add_name_attribute (die, real_path);
+      free (real_path);
+#else
       add_name_attribute (die, filename);
+#endif
       /* Don't add cwd for <built-in>.  */
       if (!IS_ABSOLUTE_PATH (filename) && filename[0] != '<')
 	add_comp_dir_attribute (die);
@@ -19145,6 +19285,10 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
 	     out yet, use a NULL context for now; it will be fixed up in
 	     decls_for_scope.  */
 	  context_die = lookup_decl_die (TYPE_CONTEXT (type));
+	  /* A declaration DIE doesn't count; nested types need to go in the
+	     specification.  */
+	  if (context_die && is_declaration_die (context_die))
+	    context_die = NULL;
 	  need_pop = 0;
 	}
       else
@@ -19597,7 +19741,7 @@ gen_decl_die (tree decl, tree origin, dw_die_ref context_die)
 	  && (current_function_decl == NULL_TREE
 	      || DECL_ARTIFICIAL (decl_or_origin)))
 	break;
-
+ 
 #if 0
       /* FIXME */
       /* This doesn't work because the C frontend sets DECL_ABSTRACT_ORIGIN
@@ -19630,16 +19774,20 @@ gen_decl_die (tree decl, tree origin, dw_die_ref context_die)
       else if (debug_info_level > DINFO_LEVEL_TERSE)
 	{
 	  /* Before we describe the FUNCTION_DECL itself, make sure that we
-	     have described its return type.  */
+	     have its containing type.  */
+	  if (!origin)
+	    origin = decl_class_context (decl);
+	  if (origin != NULL_TREE)
+	    gen_type_die (origin, context_die);
+
+	  /* And its return type.  */
 	  gen_type_die (TREE_TYPE (TREE_TYPE (decl)), context_die);
 
 	  /* And its virtual context.  */
 	  if (DECL_VINDEX (decl) != NULL_TREE)
 	    gen_type_die (DECL_CONTEXT (decl), context_die);
 
-	  /* And its containing type.  */
-	  if (!origin)
-	    origin = decl_class_context (decl);
+	  /* Make sure we have a member DIE for decl.  */
 	  if (origin != NULL_TREE)
 	    gen_type_die_for_member (origin, decl, context_die);
 
@@ -20166,11 +20314,33 @@ maybe_emit_file (struct dwarf_file_data * fd)
       last_emitted_file = fd;
 
       if (DWARF2_ASM_LINE_DEBUG_INFO)
-	{
+	{ 
+#if defined (TARGET_MCHP_PIC32MX)
+	  char *str;
+	  char *real_path;
 	  fprintf (asm_out_file, "\t.file %u ", fd->emitted_number);
+	  str = xstrdup (remap_debug_filename (fd->filename));
+	  /* Call lrealpath on str for chipKIT compiler */
+	  real_path = lrealpath (str);
+	  /* MPLAB IDE v8 currently expects only forward slashes in .file filename */
+	  unbackslashify (real_path);
 	  output_quoted_string (asm_out_file,
-				remap_debug_filename (fd->filename));
+				real_path );
 	  fputc ('\n', asm_out_file);
+	  free (real_path);
+#else
+	  char *str;
+	  fprintf (asm_out_file, "\t.file %u ", fd->emitted_number);
+	  str = xstrdup (remap_debug_filename (fd->filename));
+
+#if defined(TARGET_MCHP_PIC32MX)
+	  /* MPLAB IDE v8 currently expects only forward slashes in .file filename */
+	  unbackslashify (str);
+#endif
+	  output_quoted_string (asm_out_file,
+				str );
+	  fputc ('\n', asm_out_file);
+#endif
 	}
     }
 
@@ -20469,13 +20639,23 @@ dwarf2out_source_line (unsigned int line, const char *filename,
     {
       int file_num = maybe_emit_file (lookup_filename (filename));
 
-      switch_to_section (current_function_section ());
+      switch_to_section (current_function_section ()); /* TODO */
 
       /* If requested, emit something human-readable.  */
       if (flag_debug_asm)
-	fprintf (asm_out_file, "\t%s %s:%d\n", ASM_COMMENT_START,
-		 filename, line);
-
+      {
+#if defined (TARGET_MCHP_PIC32MX)
+      char *real_path;
+      real_path = xstrdup(filename);
+      unbackslashify (real_path);
+	  fprintf (asm_out_file, "\t%s %s:%d\n", ASM_COMMENT_START,
+		   real_path, line);
+	  free (real_path);
+#else
+	  fprintf (asm_out_file, "\t%s %s:%d\n", ASM_COMMENT_START,
+		   filename, line);
+#endif
+      }
       if (DWARF2_ASM_LINE_DEBUG_INFO)
 	{
 	  /* Emit the .loc directive understood by GNU as.  */
@@ -20559,13 +20739,21 @@ dwarf2out_start_source_file (unsigned int lineno, const char *filename)
       dw_die_ref bincl_die;
 
       bincl_die = new_die (DW_TAG_GNU_BINCL, comp_unit_die, NULL);
+      
+#if defined (TARGET_MCHP_PIC32MX)
+      char *real_path;
+      real_path = xstrdup(remap_debug_filename (filename));
+      unbackslashify (real_path);
+      add_AT_string (bincl_die, DW_AT_name, real_path);
+      free (real_path);
+#else
       add_AT_string (bincl_die, DW_AT_name, remap_debug_filename (filename));
+#endif
     }
 
   if (debug_info_level >= DINFO_LEVEL_VERBOSE)
     {
       int file_num = maybe_emit_file (lookup_filename (filename));
-
       switch_to_section (debug_macinfo_section);
       dw2_asm_output_data (1, DW_MACINFO_start_file, "Start new file");
       dw2_asm_output_data_uleb128 (lineno, "Included from line number %d",
@@ -20719,6 +20907,7 @@ dwarf2out_init (const char *filename ATTRIBUTE_UNUSED)
 			       DEBUG_LINE_SECTION_LABEL, 0);
   ASM_GENERATE_INTERNAL_LABEL (ranges_section_label,
 			       DEBUG_RANGES_SECTION_LABEL, 0);
+
   switch_to_section (debug_abbrev_section);
   ASM_OUTPUT_LABEL (asm_out_file, abbrev_section_label);
   switch_to_section (debug_info_section);
@@ -20742,7 +20931,6 @@ dwarf2out_init (const char *filename ATTRIBUTE_UNUSED)
       switch_to_section (cold_text_section);
       ASM_OUTPUT_LABEL (asm_out_file, cold_text_section_label);
     }
-
 }
 
 /* Called before cgraph_optimize starts outputtting functions, variables
@@ -21338,7 +21526,16 @@ dwarf2out_finish (const char *filename)
 
   /* Add the name for the main input file now.  We delayed this from
      dwarf2out_init to avoid complications with PCH.  */
+#if defined (TARGET_MCHP_PIC32MX)
+      char *real_path;
+      real_path = xstrdup(remap_debug_filename (filename));
+      unbackslashify (real_path);
+      add_name_attribute (comp_unit_die, real_path);
+      free (real_path);
+#else
   add_name_attribute (comp_unit_die, remap_debug_filename (filename));
+#endif
+  
   if (!IS_ABSOLUTE_PATH (filename))
     add_comp_dir_attribute (comp_unit_die);
   else if (get_AT (comp_unit_die, DW_AT_comp_dir) == NULL)
@@ -21471,7 +21668,7 @@ dwarf2out_finish (const char *filename)
     add_sibling_attributes (node->die);
   for (ctnode = comdat_type_list; ctnode != NULL; ctnode = ctnode->next)
     add_sibling_attributes (ctnode->root_die);
-
+    
   /* Output a terminator label for the .text section.  */
   switch_to_section (text_section);
   targetm.asm_out.internal_label (asm_out_file, TEXT_END_LABEL, 0);
@@ -21484,11 +21681,16 @@ dwarf2out_finish (const char *filename)
   /* We can only use the low/high_pc attributes if all of the code was
      in .text.  */
   if (!have_multiple_function_sections
+#if defined (TARGET_MCHP_PIC32MX)
+      || 0)
+#else
       || !(dwarf_version >= 3 || !dwarf_strict))
+#endif
     {
       add_AT_lbl_id (comp_unit_die, DW_AT_low_pc, text_section_label);
       add_AT_lbl_id (comp_unit_die, DW_AT_high_pc, text_end_label);
     }
+
 
   else
     {
@@ -21655,7 +21857,11 @@ dwarf2out_finish (const char *filename)
   /* If we emitted any DW_FORM_strp form attribute, output the string
      table too.  */
   if (debug_str_hash)
-    htab_traverse (debug_str_hash, output_indirect_string, NULL);
+    {
+      switch_to_section (debug_str_section);
+      htab_traverse (debug_str_hash, output_indirect_string, NULL);
+      switch_to_section (text_section);
+    }
 }
 #else
 

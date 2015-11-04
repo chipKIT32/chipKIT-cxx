@@ -137,7 +137,9 @@ hexify_file (char *filename, char *target)
   char *hex_file;
 
   if (get_file_size (filename) < 1)
-    return;
+    { exit_status = 1;
+      return;
+    }
 
   abfd = bfd_openr (filename, target);
   if (abfd == NULL)
@@ -361,6 +363,7 @@ write_section (bfd *abfd, asection *sect, PTR fp)
   /* if section is load-able and has contents */
   if ((sect->flags & SEC_LOAD) &&
       (sect->flags & SEC_HAS_CONTENTS) &&
+      ((sect->flags & SEC_NEVER_LOAD) == 0) &&
       (total > 0))
   {
     start = sect->lma;

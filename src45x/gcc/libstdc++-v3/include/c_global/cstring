@@ -97,6 +97,8 @@ _GLIBCXX_BEGIN_NAMESPACE(std)
   using ::strstr;
 
 #ifndef __CORRECT_ISO_CPP_STRING_H_PROTO
+
+#if 0
   inline void*
   memchr(void* __s, int __c, size_t __n)
   { return __builtin_memchr(__s, __c, __n); }
@@ -116,6 +118,7 @@ _GLIBCXX_BEGIN_NAMESPACE(std)
   inline char*
   strstr(char* __s1, const char* __s2)
   { return __builtin_strstr(__s1, __s2); }
+#endif
 #endif
 
 _GLIBCXX_END_NAMESPACE

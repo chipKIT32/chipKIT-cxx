@@ -26,6 +26,7 @@
 extern void arm_override_options (void);
 extern void arm_optimization_options (int, int);
 extern int use_return_insn (int, rtx);
+extern bool use_simple_return_p (void);
 extern enum reg_class arm_regno_class (int);
 extern void arm_load_pic_register (unsigned long);
 extern int arm_volatile_func (void);
@@ -137,7 +138,7 @@ extern int arm_address_offset_is_imm (rtx);
 extern const char *output_add_immediate (rtx *);
 extern const char *arithmetic_instr (rtx, int);
 extern void output_ascii_pseudo_op (FILE *, const unsigned char *, int);
-extern const char *output_return_instruction (rtx, int, int);
+extern const char *output_return_instruction (rtx, bool, bool, bool);
 extern void arm_poke_function_name (FILE *, const char *);
 extern void arm_print_operand (FILE *, rtx, int);
 extern void arm_print_operand_address (FILE *, rtx);
@@ -230,6 +231,8 @@ struct tune_params
   bool (*rtx_costs) (rtx, RTX_CODE, RTX_CODE, int *, bool);
   bool (*sched_adjust_cost) (rtx, rtx, rtx, int *);
   int constant_limit;
+  bool prefer_constant_pool;
+  int (*branch_cost) (bool, bool);
 };
 
 extern const struct tune_params *current_tune;

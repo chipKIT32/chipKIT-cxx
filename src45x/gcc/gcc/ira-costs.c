@@ -1775,17 +1775,27 @@ ira_tune_allocno_costs_and_cover_classes (void)
 	      regno = ira_class_hard_regs[cover_class][j];
 	      rclass = REGNO_REG_CLASS (regno);
 	      cost = 0;
-	      if (! ira_hard_reg_not_in_set_p (regno, mode, call_used_reg_set)
-		  || HARD_REGNO_CALL_PART_CLOBBERED (regno, mode))
-		cost += (ALLOCNO_CALL_FREQ (a)
-			 * (ira_memory_move_cost[mode][rclass][0]
+
+	      /* If regno is not clobbered by call set its cost to zero.
+		 This is to make this regno preferable choice for
+		 allocation.  */
+	      if (! ira_hard_reg_not_in_set_p
+		  (regno, mode, ALLOCNO_CROSSED_CALLS_CLOBBERED_REGS (a)))
+		{
+		  if (! ira_hard_reg_not_in_set_p (regno, mode,
+						   call_used_reg_set)
+		      || HARD_REGNO_CALL_PART_CLOBBERED (regno, mode))
+		    cost += (ALLOCNO_CALL_FREQ (a)
+			     * (ira_memory_move_cost[mode][rclass][0]
 			    + ira_memory_move_cost[mode][rclass][1]));
 #ifdef IRA_HARD_REGNO_ADD_COST_MULTIPLIER
-	      cost += ((ira_memory_move_cost[mode][rclass][0]
-			+ ira_memory_move_cost[mode][rclass][1])
-		       * ALLOCNO_FREQ (a)
-		       * IRA_HARD_REGNO_ADD_COST_MULTIPLIER (regno) / 2);
+		  cost += ((ira_memory_move_cost[mode][rclass][0]
+			    + ira_memory_move_cost[mode][rclass][1])
+			   * ALLOCNO_FREQ (a)
+			   * IRA_HARD_REGNO_ADD_COST_MULTIPLIER (regno) / 2);
 #endif
+		}
+
 	      reg_costs[j] += cost;
 	      if (min_cost > reg_costs[j])
 		min_cost = reg_costs[j];

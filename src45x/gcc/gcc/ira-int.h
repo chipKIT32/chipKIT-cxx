@@ -335,6 +335,8 @@ struct ira_allocno
   int call_freq;
   /* Accumulated number of the intersected calls.  */
   int calls_crossed_num;
+  /* Registers clobbered by intersected calls.  */
+  HARD_REG_SET crossed_calls_clobbered_regs;
   /* TRUE if the allocno assigned to memory was a destination of
      removed move (see ira-emit.c) at loop exit because the value of
      the corresponding pseudo-register is not changed inside the
@@ -441,6 +443,8 @@ struct ira_allocno
 #define ALLOCNO_HARD_REGNO(A) ((A)->hard_regno)
 #define ALLOCNO_CALL_FREQ(A) ((A)->call_freq)
 #define ALLOCNO_CALLS_CROSSED_NUM(A) ((A)->calls_crossed_num)
+#define ALLOCNO_CROSSED_CALLS_CLOBBERED_REGS(A) \
+  ((A)->crossed_calls_clobbered_regs)
 #define ALLOCNO_MEM_OPTIMIZED_DEST(A) ((A)->mem_optimized_dest)
 #define ALLOCNO_MEM_OPTIMIZED_DEST_P(A) ((A)->mem_optimized_dest_p)
 #define ALLOCNO_SOMEWHERE_RENAMED_P(A) ((A)->somewhere_renamed_p)

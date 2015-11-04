@@ -500,6 +500,17 @@ copy_reference_ops_from_ref (tree ref, VEC(vn_reference_op_s, heap) **result)
       memset (&temp, 0, sizeof (temp));
       /* We do not care for spurious type qualifications.  */
       temp.type = TYPE_MAIN_VARIANT (TREE_TYPE (ref));
+#ifdef _BUILD_C30_
+      /* Uhm.  Yes we do, especially if they are address space qualifications 
+         (CW) */
+      if (TYPE_ADDR_SPACE(TREE_TYPE(ref))) {
+        tree new_type = 
+          build_variant_type_copy(TYPE_MAIN_VARIANT(TREE_TYPE(ref)));
+   
+        TYPE_ADDR_SPACE(new_type) = TYPE_ADDR_SPACE(TREE_TYPE(ref));
+        temp.type = new_type;
+      }
+#endif
       temp.opcode = TREE_CODE (ref);
       temp.op0 = TMR_INDEX (ref);
       temp.op1 = TMR_STEP (ref);
@@ -524,6 +535,17 @@ copy_reference_ops_from_ref (tree ref, VEC(vn_reference_op_s, heap) **result)
       memset (&temp, 0, sizeof (temp));
       /* We do not care for spurious type qualifications.  */
       temp.type = TYPE_MAIN_VARIANT (TREE_TYPE (ref));
+#ifdef _BUILD_C30_
+      /* Uhm.  Yes we do, especially if they are address space qualifications 
+         (CW) */
+      if (TYPE_ADDR_SPACE(TREE_TYPE(ref))) {
+        tree new_type = 
+          build_variant_type_copy(TYPE_MAIN_VARIANT(TREE_TYPE(ref)));
+   
+        TYPE_ADDR_SPACE(new_type) = TYPE_ADDR_SPACE(TREE_TYPE(ref));
+        temp.type = new_type;
+      }
+#endif
       temp.opcode = TREE_CODE (ref);
 
       switch (temp.opcode)
@@ -573,6 +595,7 @@ copy_reference_ops_from_ref (tree ref, VEC(vn_reference_op_s, heap) **result)
 	case COMPLEX_CST:
 	case VECTOR_CST:
 	case REAL_CST:
+	case FIXED_CST:
 	case CONSTRUCTOR:
 	case VAR_DECL:
 	case PARM_DECL:

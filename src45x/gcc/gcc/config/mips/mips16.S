@@ -88,8 +88,13 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 	OPCODE, OP2;				\
 	.set	reorder
 
+#if __mips >= 4
+/* Coprocessor moves are interlocked from the MIPS IV ISA up.  */
+#define DELAYf(T, OPCODE, OP2) DELAYt (T, OPCODE, OP2)
+#else
 /* Use "OPCODE. OP2" and jump to T.  */
 #define DELAYf(T, OPCODE, OP2) OPCODE, OP2; jr T
+#endif
 
 /* MOVE_SF_BYTE0(D)
 	Move the first single-precision floating-point argument between
@@ -474,10 +479,25 @@ STARTFN (__mips16_fix_truncdfsi)
 #endif /* !__mips_single_float */
 
 /* Define a function NAME that moves a return value of mode MODE from
-   FPRs to GPRs.  */
+   FPRs to GPRs.
+
+   We hide these functions because they use $2 and $3 as arguments
+   diverging from the standard SysV ABI and as such would require
+   severe pessimisation of MIPS16 PLT entries just for this single
+   special case.  By making them hidden they become local to the
+   module using them and consequently PLT entries are never made for
+   them.
+
+   Four functions are actually generated, taking 2, 3, 3, and 5
+   instructions respectively (16, 16, 16, and 32 bytes respectively
+   after rounding up to a multiple of 16 bytes), which essentially
+   defeats any benefit from dynamic linking as a PLT entry itself
+   takes 16 bytes, and then the extra GOT entries and overhead of
+   indirect calls further add to it.  */
 
 #define RET_FUNCTION(NAME, MODE)	\
 STARTFN (NAME);				\
+	.hidden NAME;			\
 	MOVE_##MODE##_RET (t, $31);	\
 	ENDFN (NAME)
 
@@ -711,5 +731,19 @@ CALL_STUB_RET (__mips16_call_stub_dc_9, 9, DC)
 CALL_STUB_RET (__mips16_call_stub_dc_10, 10, DC)
 #endif
 #endif /* !__mips_single_float */
+
+#ifdef L_m16rdhwr
+STARTFN (__mips16_rdhwr)
+	/* Forced always hidden, to avoid exporting from shared libgcc.  */
+	.hidden	__mips16_rdhwr
+	.set	push
+	.set	mips32r2
+	.set	noreorder
+	rdhwr	$3,$29
+	.set	pop
+	j	$31
+	ENDFN (__mips16_rdhwr)
+#endif
+
 #endif
 #endif /* __mips_micromips */

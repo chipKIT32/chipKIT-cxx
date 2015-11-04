@@ -5,11 +5,883 @@
      relevant; it may be removed if it is relevant to all targets.
  -->
 
+      <!-- UUID: 2ebd46ae-bdce-4e01-b2f4-76c06d5233f8 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12802 -->
+      <formalpara>
+        <title>GCC optimization bug fix</title>
+        <para>
+          A bug in the GCC optimizer has been fixed that caused incorrect
+          code to be generated for some cases of multiplication by a
+          constant when compiling with <option>-O2</option> or
+          <option>-O3</option>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 738a7b7b-1d20-4ca1-a0bd-cb388a01b667 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12720 -->
+      <formalpara>
+        <title>GCC wrong code fix</title>
+        <para>
+	  An optimizer bug has been fixed that caused GCC to generate code
+	  with incorrect scheduling of memory reference instructions. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 1771cce6-5750-4315-b38f-0104b73c24e1 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12719 -->
+      <formalpara>
+        <title>GCC crash bug fix</title>
+        <para>
+          A GCC bug has been fixed that caused an internal compiler error
+          when a MIPS16 function was inlined into a MIPS32 function.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 637a4b99-647a-4597-b9f0-6a001dba6ed3 -->
+      <!-- TARGET: mips-linux-gnu -->
+      <!-- SORT: important -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>MIPS64 support and multilibs</title>
+        <para>
+	  &csl_prod; for &csl_target_name; now provides full support for
+	  MIPS64 revision 2 processors, including new libraries for the
+	  N64 ABI (<option>-mabi=64</option>).  Please
+	  refer to <xref linkend="sec-multilibs"/> for a list of the
+	  currently-supported multilibs.
+       </para>
+      </formalpara>
+
+      <!-- UUID: 925851fc-57f3-4431-89b4-fdf502fbc882 -->
+      <!-- TARGET: mips-sde-elf -->
+      <!-- SORT: important -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Changes to included libraries</title>
+        <para>
+          Library variants built with <option>-mfp64</option>,
+	  <option>-mno-float</option>, and <option>-mcode-readable=no</option>
+	  have been removed from &csl_prod; for &csl_target_name;.  Please
+	  refer to <xref linkend="sec-multilibs"/> for a list of the
+	  currently-supported multilibs.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 41831a87-683a-4df3-9355-84437ca6c50c -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12534 -->
+      <formalpara>
+        <title>Fix for compiler hang</title>
+        <para>
+          A bug that caused GCC to become stuck in an infinite
+	  loop in the optimizer has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: c3ed841a-9fc6-4d17-89fd-1da8fa756495 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12139 -->
+      <formalpara>
+        <title>Optimization bug fix</title>
+        <para>
+	  A compiler bug has been fixed that affected some programs using
+	  type-aliased assignments to pointer variables.  The bug caused
+	  incorrect code to be generated when compiled with
+	  <option>-O2</option> or <option>-O3</option>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: e4058870-7f59-4223-833d-4ae0c7ffaa91 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11931 -->
+      <formalpara>
+        <title>MIPS16 register corruption fix</title>
+        <para>
+          A bug in the <literal>libgcc</literal> shared library has been
+          fixed that caused MIPS16 functions returning floating-point values
+          to corrupt the <literal>v0</literal> and <literal>v1</literal>
+          registers.  Affected programs must be re-linked.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 583551c2-15cf-4c0d-a2bf-c60d28d8811e -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>MIPS16 support and multilibs</title>
+        <para>
+	  &csl_prod; now includes full support for MIPS16 code on
+	  &csl_target_name; targets. New multilibs built as MIPS16 code have
+	  been added to provide reduced code size and improved processor
+	  performance on MIPS16 targets. For details about the new libraries,
+	  refer to <xref linkend="sec-multilibs"/>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: dba4764f-9254-4b70-a91f-a2340eae0cc4 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>MIPS16 Thread-Local Storage support added</title>
+	<para>
+	  &csl_prod; now supports use of the <code>__thread</code> storage
+	  specifier for Thread-Local Storage (TLS) when compiling and linking
+	  with <option>-mips16</option>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: d73a5711-d369-4db6-a78c-f17e729497a1 -->
+      <!-- TARGET: mips*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara features="openmp_base;openmp_addon">
+        <title>OpenMP fix for MIPS Linux targets</title>
+        <para>
+	  A bug has been fixed in the OpenMP library (libgomp) that caused
+	  incorrect behavior during restart of futex system calls. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: d014e5ea-38b6-431d-a0d9-47ec7053b502 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 12036 -->
+      <formalpara>
+        <title>MIPS16 branch bug fix</title>
+        <para>
+          A compiler bug that caused incorrect code to be generated for
+	  MIPS16 branches with offsets greater than 65534 or less than
+	  -65536 has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 62831151-597d-4d65-bc75-b253cda277d3 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11339 12112 -->
+      <formalpara features="armfloat">
+        <title>ARM VFP9-S errata workaround</title>
+        <para>
+	  A compiler workaround for ARM Errata Notice GENC-010704
+	  (760019: Canceled FDIV or FSQRT can be executed twice) has been
+	  implemented.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 70ba074e-ce1f-4af7-9acf-4384c045f746 -->
+      <!-- TARGET: mips* sh* sparc* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11755 -->
+      <formalpara>
+        <title>Wrong-code bug fix</title>
+        <para>
+          A compiler bug that caused incorrect code to be generated for some
+          branches with <option>-mbranch-likely</option> optimization enabled
+          has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 05ffa245-9f4a-47a3-9297-3f126c67b2b7 -->
+      <!-- TARGET: powerpc-eabi -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11325 -->
+      <formalpara>
+        <title>New 603 - No Graphics, 32-bit multilib</title>
+        <para>
+          A new multilib that is compatible with processors that do not
+          implement the optional PowerPC Graphics instructions has been
+          added.  For more information, refer to
+          <xref linkend="sec-multilibs"/>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: c2fd168f-b0b3-4c64-be16-797f4a3711e1 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11564 -->
+      <formalpara>
+        <title>Map file name demangling bug fix</title>
+        <para>
+	  GCC now properly passes the 
+	  <option>--demangle</option> and <option>--no-demangle</option>
+	  options to the linker to control map file output.  The default
+	  behavior on all hosts is now to demangle C++ names.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7547f19a-82cd-40c8-bef3-fb74f7c978c3 -->
+      <!-- TARGET: m68k*-elf m68k*-uclinux -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 6233 6234 9116 -->
+      <formalpara>
+        <title>Support for MCF51AG, MCF51JE and MCF51MM ColdFire
+	  processors</title>
+        <para>
+          &csl_sgxx; now supports the Freescale MCF51AG, MCF51JE and
+	  MCF51MM families of ColdFire microcontrollers.  Use the
+	  <option>-mcpu=51ag</option>, <option>-mcpu=51je</option> and
+	  <option>-mcpu=51mm</option> options to generate code for these
+	  devices.
+          <phrase features="cs3">
+            CS3 board support for MCF51AG96, MCF51AG128, MCF51JE128,
+	    MCF51JE256, MCF51MM128 and MCF51MM256 microcontrollers has
+	    also been added.
+          </phrase>
+        </para>
+      </formalpara>
+
+      <!-- UUID: 0cc56d11-5b1d-494a-b9cf-5bd1b5e5d499 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11669 -->
+      <formalpara>
+        <title>MIPS16 switch statement compilation fix</title>
+        <para>
+          A bug has been fixed that caused very large <code>switch</code>
+          statements to be compiled incorrectly for MIPS16.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f11560e5-0bd2-48a1-ae00-095272925fc5 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Smaller exception handling tables</title>
+        <para>
+	  The compiler now marks exception handling information for template
+	  functions so that the linker can remove duplicates. This also
+	  affects non-inlined inline functions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: b12fb6c4-f932-4643-b7fd-47f74e777ec7 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11548 -->
+      <formalpara>
+        <title>MIPS16 static data bug fix</title>
+        <para>
+          A compiler bug has been fixed that caused static data to be
+          accessed incorrectly from position-independent MIPS16 code in
+          rare cases.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 07bfb7f7-1ead-4a86-9b07-acc7e6e99dc1 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11590 -->
+      <formalpara>
+        <title>Code generation bug fix</title>
+        <para>
+          A compiler bug that caused incorrect assembly code to be
+          generated for <code>movt</code> instructions has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 81d0518e-6a20-40d0-a23e-c9dc34385eec -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11063 -->
+      <formalpara>
+        <title>Packed volatile structure fix</title>
+        <para>
+	  A compiler bug that resulted in incorrect code for volatile
+	  accesses to packed structure fields has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8ac113fc-8e4b-43a0-9511-6495b2200d22 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11516 -->
+      <formalpara>
+        <title>Support for MIPS M14Ke and M14Kec processors</title>
+        <para>
+          &csl_prod; now supports the MIPS M14Ke and M14Kec processors.
+          To compile for these targets, use the
+          <option>-march=m14ke -mmicromips</option> or
+          <option>-march=m14kec -mmicromips</option>
+          command-line options.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 1dc0d98f-9e47-4b6c-8414-d0c33c093452 -->
+      <!-- TARGET: arm-none-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11371 -->
+      <formalpara>
+        <title>Fixed-point support in big-endian mode</title>
+        <para>
+          Compiler support for fixed-point operations has been improved
+          for big-endian ARM targets.  Previously, incorrect code was
+          generated in several cases, particularly when passing and
+          returning fixed-point values to/from functions.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ca00044b-141f-4279-85dd-932449b4a9b1 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11372 -->
+      <formalpara>
+        <title>Compiler crash bug fix</title>
+        <para>
+	  A GCC bug has been fixed that caused internal compiler
+	  errors in some situations when generating conditional
+	  versions of floating-point operations.
+        </para>
+      </formalpara>
+
+      <!-- UUID: cf675343-acb2-406e-9e06-5f011e3032af -->
+      <!-- TARGET: mips-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10390 -->
+      <formalpara>
+        <title>MIPS16 bug fix</title>
+        <para>
+          A GCC bug that caused undefined references to functions
+	  with the prefix <literal>__fn_local</literal> when compiling
+	  with <option>-mips16</option> <option>-mhard-float</option>
+	  has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f5bfd49e-62a5-441a-9a6e-c550951450eb -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 11148 -->
+      <formalpara>
+        <title>Compiler crash bug fix</title>
+        <para>
+	  A GCC bug has been fixed that caused internal compiler
+	  errors when generating ARM/Thumb-2 shift operations.
+        </para>
+      </formalpara>
+
+      <!-- UUID: c817d313-425c-4e57-93a2-3d349386ca23 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Improved function call profiling</title>
+        <para>
+          The compiler now supports
+          the <option>-finstrument-function-calls</option> option.
+          Please see the GCC documentation for more details.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 15a4cdf3-791d-457a-969e-f47cc964f8ba -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10109 -->
+      <formalpara>
+        <title>Interprocedural stack optimization.</title>
+        <para>
+          The compiler has a new experimental optimization that generates code
+          that claims less stack space.  To switch this optimization on, use
+          <option>-mframe-header-opt</option>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 49a5400c-e55b-46b0-a0b2-06959ab48874 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10109 -->
+      <formalpara>
+        <title>Interprocedural register optimization.</title>
+        <para>
+          The compiler has a new experimental optimization that generates
+          better code for functions that only call functions in the same
+          object.  To switch this optimization on, use
+          <option>-fuse-caller-save</option>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a88e0a32-729a-4692-9712-2cc4f0ee519a -->
+      <!-- TARGET: mips*-sde* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10598-->
+      <formalpara>
+        <title>Improved DSP code</title>
+        <para>
+	  The compiler now makes better use of DSP accumulator registers when
+          compiling with <option>-mdsp</option> or <option>-mdspr2</option>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 7ee63134-8c32-45ff-bf6f-1f42f4f9114e -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10787 -->
+      <formalpara>
+        <title>Fixed-point arithmetic support</title>
+        <para>
+          Experimental compiler support has been added for fixed-point
+          arithmetic on ARM, as described in the draft ISO/IEC technical
+          report TR 18037.  Specialized instructions defined in recent
+          architecture versions for performing saturating arithmetic,
+          etc. are used when available, but are not a prerequisite for
+          using the new language features.  See
+	  <xref linkend="sec-arm-fixed-point"/> for further details.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 37d5a728-7886-4128-843b-10939d051419 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10917 -->
+      <formalpara>
+        <title>Inline assembly and volatile fields</title>
+        <para>
+	  A bug has been fixed that caused the compiler to incorrectly
+	  reject inline <code>asm</code> statements referring to volatile
+	  class/struct fields with errors such as <literal>error: output
+	  number 1 not directly addressable</literal>.
+	</para>
+      </formalpara>
+
+      <!-- UUID: 1a7e5926-4959-436f-8043-e646168ee59f -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>Variable Length Array (VLA) alignment bug</title>
+        <para>
+	  A compiler bug that resulted in incorrectly aligned variable length
+	  arrays (VLA) in leaf functions has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8112377d-d85d-4a52-a7b2-63bfc07369b7 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: issue10944 -->
+      <formalpara>
+        <title>C++ constructor bug fix</title>
+        <para>
+          A compiler bug has been fixed that caused incorrect code for C++
+          constructors for some class hierarchies that use virtual inheritance
+          and include empty classes.  At runtime, the incorrect constructors
+          resulted in memory corruption or other errors.
+        </para>
+      </formalpara>
+
+      <!-- UUID: da7f4b8d-db01-40bc-8c11-f1dcc279417c -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10954 -->
+      <formalpara>
+        <title>microMIPS branches</title>
+        <para>
+          A compiler bug that caused sub-optimal branch instructions
+	  to be generated in microMIPS mode has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a1c36c53-7d95-4ae4-919a-e0ac5f20a286 -->
+      <!-- TARGET: arm-none-* arm-uclinuxeabi-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 9845 -->
+      <formalpara>
+        <title>Internal compiler error with pointer casting</title>
+        <para>
+          A compiler bug has been fixed that caused internal compiler
+          errors when accessing double-word memory locations with
+	  casted pointers under ARM mode.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ddcb1d48-ca05-4769-aa78-c2e470fe7f27 -->
+      <!-- TARGET: arm-none-* arm-uclinuxeabi-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10935 -->
+      <formalpara>
+        <title>Internal compiler error under Thumb mode</title>
+        <para>
+          A compiler bug has been fixed that caused internal compiler
+          errors when generating Thumb code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 3600ea18-5085-41ee-82e0-84b900fce96f -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Cortex-R5 support</title>
+        <para>
+          &csl_sgxx; now includes support for ARM Cortex-R5
+          processors.  To compile for these processors,
+          use <option>-mcpu=cortex-r5</option>. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: b8e08b2f-f7f5-4652-adaa-c1d3057373ee -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 4220 -->
+      <formalpara>
+        <title>Unaligned access support</title>
+        <para>
+          The compiler now generates more efficient code for accessing
+          packed data structures and for copying small blocks of
+          unaligned data when targeting architectures that permit
+          unaligned word/halfword accesses.  This feature can be
+          controlled by the <option>-munaligned-access</option> and
+          <option>-mno-unaligned-access</option> options, and is enabled
+          by default for ARMv6 processors and above, except for ARMv6-M.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 25ee3896-fc82-44e3-8332-7bd0250bde0e -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: -->
+      <formalpara>
+        <title>MIPS32r2 floating-point multiply-accumulate restrictions lifted</title>
+        <para>
+          Following clarifications to the MIPS architecture specification,
+          GCC has been updated to allow floating-point multiply-accumulate
+          instructions on MIPS32r2 processors in all configurations.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a157572f-945b-4731-bf99-7f9f68c5808b -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 3772 -->
+      <formalpara>
+        <title>Thumb debug information fix</title>
+        <para>
+	  A compiler bug that resulted in incorrect debug information
+	  for Thumb code has been fixed.  The incorrect information
+	  prevented single stepping through some code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 05aa7cc1-a522-449a-bb0f-bf6c17042713 -->
+      <!-- TARGET: mips*-linux-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10166 -->
+      <formalpara>
+        <title>Improved support for 32-bit symbols when using 64-bit ABI</title>
+        <para>
+          &csl_prod; has been improved to handle Procedure Linkage Table (PLT)
+	  entries for 32-bit function symbols when compiling for N64 ABI.
+	  Effectively, the toolchain now supports building applications with
+	  <option>-mabi=64 -msym32 -mplt</option> compiler options, which may
+	  improve performance of certain applications.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 6f7989af-3884-42a2-9e3f-bf9a414e58a3 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 9669 -->
+      <formalpara>
+        <title>Incorrect C++ warning fixed</title>
+        <para>
+          A bug in GCC has been fixed that caused spurious warnings
+	  about lambda expressions in C++ code that does not use them.
+        </para>
+      </formalpara>
+
+      <!-- UUID: c6e6c23f-8b27-4bf4-bdcc-e75df139e24f -->
+      <!-- TARGET: arm-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10483 -->
+      <formalpara features="armfloat">
+        <title>Incorrect code for built-in comparison functions</title>
+        <para>
+          A bug has been fixed that sometimes caused GCC's built-in
+	  comparison functions,
+	  such as <function>__builtin_isgreaterequal</function>, to
+	  incorrectly raise exceptions when invoked on unordered
+	  floating-point arguments.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 56acea98-253e-4544-8239-c36242d5071f -->
+      <!-- TARGET: * -->
+      <formalpara>
+        <title>GCC version 4.5.2</title>
+        <para>
+          &csl_prod; for &csl_target_name; is now based on GCC version 4.5.2.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 83a49c9a-e488-43a5-83e1-ae46591db98e -->
+      <!-- TARGET: powerpc* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Array alignment for Altivec</title>
+        <para>
+          When compiling for Altivec (<option>-maltivec</option> option), 
+          stack-allocated arrays arrays 16 bytes or larger are 
+          now aligned to at least 16 bytes. This improves performance 
+          as Altivec instructions can be used to access them.
+        </para>
+      </formalpara>
+
+      <!-- UUID: dd1d981f-2efb-4ca4-a4ac-8a50fcb5a4bb -->
+      <!-- TARGET: arm-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10439 -->
+      <formalpara>
+        <title>C++ exception handling</title>
+        <para>
+          A defect in the implementation of the EH-ABI specification
+	  has been fixed.  The defect affected the catching of pointer
+	  types in code generated by the ARM <trademark
+	  class="registered">RealView</trademark> compiler but using
+	  the &csl_sgxx; runtime libraries.  The fix also retains
+	  backward compatibility with existing GCC-compiled code.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ef24077b-c316-4c87-8c3d-aaaa139ff139 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10417 -->
+      <formalpara>
+        <title>GCC bug where accesses to volatile structure fields are optimized away</title>
+        <para>
+          A bug has been fixed where accesses to volatile fields of a structure
+	  were sometimes incorrectly optimized away if the structure instance
+	  was defined as non-volatile.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 42380e70-13bb-4681-8dc1-ad451ab08015 -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10448 -->
+      <formalpara features="armfloat">
+        <title>Internal compiler error with NEON intrinsics</title>
+        <para>
+          A compiler bug has been fixed that caused internal compiler
+          errors when using certain NEON intrinsics.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 64ee0276-09cf-44a2-af7a-fea6e61582c5 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: issue10287 -->
+      <formalpara>
+        <title>GCC code generation bug for casts to <code>volatile</code>
+          types</title>
+        <para>
+          A compiler bug has been fixed that sometimes caused incorrect code
+          for references to pointers to types with <code>volatile</code> casts.
+        </para>
+      </formalpara>
+
+      <!-- UUID: f863c6ba-7c1f-4a1c-a303-f0faa163c64d -->
+      <!-- TARGET: sh-* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10377 -->
+      <formalpara>
+        <title>Internal compiler error fix</title>
+        <para>
+          A bug has been fixed that caused compiler crashes when
+	  optimizing comparisons of <type>long long</type> types.
+        </para>
+      </formalpara>
+
+      <!-- UUID: b8a2663e-d1c2-40ce-afbf-1c20f2e00c7f -->
+      <!-- TARGET: arm-*-linux* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10472 -->
+      <formalpara>
+        <title>GCC fix for thread-local storage</title>
+        <para>
+          A compiler optimization bug has been fixed that affected
+	  accesses to thread-local storage.  The bug resulted in
+	  assembler errors of the form <literal>symbol `.LPIC2' is
+	  already defined</literal>.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8cdd0c9e-6143-4667-8f33-b1c518c5d743 -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>GCC microMIPS code size improvement</title>
+        <para>
+          GCC has been improved to generate smaller code around function
+          calls.
+        </para>
+      </formalpara>
+
+      <!-- UUID: a9dc0840-94c9-4962-a1fd-67e43c80c12b -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10061 -->
+      <formalpara features="armfloat">
+        <title>GCC fixes for NEON in big-endian mode</title>
+        <para>
+          Several compiler bugs have been fixed that could lead to
+          incorrect code when using NEON in big-endian mode. The problems
+          only manifested when using the auto-vectorizer (enabled by
+          default at the <option>-O3</option> optimization level) with
+          the <option>-mvectorize-with-neon-quad</option> option.
+        </para>
+      </formalpara>
+
+      <!-- UUID: ba69786c-174f-4114-9362-94b3a8466eba -->
+      <!-- TARGET: powerpc-apm-linux-gnu -->
+      <!-- SORT: gcc -->
+      <!-- ISSUE: 10402 -->
+      <formalpara>
+        <title>Default software float-point libraries</title>
+        <para>
+          A defect that incorrectly caused hardware floating-point
+	  libraries to be selected for some processors without
+ 	  floating-point units has been corrected.  GCC now uses the
+	  <option>-mcpu</option> option to select an appropriate
+	  floating-point library by default. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: f6b14e12-414a-4db7-a609-557080dfa71b -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Internal compiler error fixes</title>
+        <para>
+          Two bugs have been fixed that caused compiler crashes in rare cases.
+          The first bug involved code with multiple comparison operations,
+          and the second one involved <type>char</type> to <type>int</type>
+          conversion. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: f6b14e12-414a-4db7-a609-557080dfa71b -->
+      <!-- TARGET: arm* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Internal compiler error fixes</title>
+        <para>
+          Two bugs have been fixed that caused compiler crashes in rare cases.
+          The first bug involved code with multiple comparison operations,
+          and the second one involved <type>char</type> to <type>int</type>
+          conversion. 
+        </para>
+      </formalpara>
+
+      <!-- UUID: 6c449926-9b59-4263-afb4-fb225b5811e4 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Incorrect optimization fix</title>
+        <para>
+          An optimizer bug that in rare cases caused incorrect code to
+	  be generated for complex AND and OR expressions containing
+	  redundant subexpressions has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 6a26fa35-aa00-44be-9b12-f03854d0e6ae -->
+      <!-- TARGET: mips* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+	<title>Improvements to synchronization primitives</title>
+	<para>
+	  GCC's <function>__sync</function> built-in functions
+	  have been improved to make better use of MIPS atomic instructions.
+	  <phrase components="glibc">
+	    In addition, some of GLIBC's atomic macros have been improved to
+	    make use of the <function>__sync</function> built-in functions.
+	  </phrase>
+	</para>
+      </formalpara>
+
+      <!-- UUID: 2227445c-a233-443f-804d-d9092c02f945 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>Compiler optimization improvements</title>
+        <para>
+          The compiler has been enhanced with a number of optimization
+	  improvements, including:
+	  <itemizedlist>
+	    <listitem>  <!-- NetLogic XLR optimization item -->
+	      Smaller and faster code for compound conditionals.
+	    </listitem>
+	    <listitem target-arch="mips;sh;sparc">	<!-- NetLogic XLR optimization item -->
+	      Improved filling of branch delay slots.
+	    </listitem>
+	    <listitem>	<!-- NetLogic XLR optimization item -->
+	      Removal of superfluous sign and zero extensions.
+	    </listitem>
+	    <listitem target-arch="arm">
+	      Improved code for multiply-and-accumulate operations on ARM.
+	    </listitem>
+	    <listitem target-arch="arm" target-os="none">
+	      Faster code when tuning for Cortex-M series processors.
+	    </listitem>
+	  </itemizedlist>
+        </para>
+      </formalpara>
+
+      <!-- UUID: 1decdab1-aab4-4fa0-bfa1-6101c4ec5b45 -->
+      <!-- TARGET: * -->
+      <!-- SORT: gcc -->
+      <formalpara>
+	<title>GCC fixes for <option>-fstrict-volatile-bitfields</option></title>
+        <para>
+	  GCC now honors <option>-fstrict-volatile-bitfields</option>
+	  when a bitfield is not declared volatile initially, but an
+	  object including bit fields is cast to volatile.
+	  Also, a bug was fixed that caused incorrect code to be generated
+	  for some stores to volatile bit fields when
+	  <option>-fstrict-volatile-bitfields</option> is enabled.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8d4e10bf-1750-432d-ad95-f3c1d159302b -->
+      <!-- TARGET: powerpc* -->
+      <formalpara>
+        <title>Floating-point code generation fix for e500</title>
+        <para>
+          An optimizer bug that sometimes caused GCC to generate
+          incorrect code for floating-point arithmetic on e500
+          processors has been fixed.
+        </para>
+      </formalpara>
+
+      <!-- UUID: 8959e58f-8546-4e68-915d-42668db665b4 -->
+      <!-- TARGET: powerpc* -->
+      <!-- SORT: gcc -->
+      <formalpara>
+        <title>New <function>__builtin_isel</function> functions</title>
+        <para>
+          GCC now supports a family
+          of <function>__builtin_isel</function> builtin functions,
+          which expand inline into <literal>isel</literal> instructions.
+          These new builtins are only supported on processors that
+          support the <literal>isel</literal> instruction.  For more
+          information, please see the GCC manual.
+        </para>
+      </formalpara>
+
       <!-- UUID: 63434f9d-a4eb-479d-9d21-b2be752955b2 -->
       <!-- TARGET: * -->
       <!-- SORT: gcc -->
       <formalpara>
-        <title>New <option>-fstrict-volatile-bitfields</option></title>
+        <title>New <option>-fstrict-volatile-bitfields</option> option</title>
         <para>
           The compiler has a new
 	  option, <option>-fstrict-volatile-bitfields</option>, which

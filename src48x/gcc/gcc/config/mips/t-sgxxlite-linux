@@ -1,0 +1,34 @@
+MULTILIB_OPTIONS = muclibc mmicromips/mips16 msoft-float/mnan=2008 EL mabi=64
+MULTILIB_DIRNAMES = uclibc micromips mips16 soft-float nan2008 el 64
+MULTILIB_MATCHES = EL=mel EB=meb
+
+MULTILIB_EXCEPTIONS  = *mnan=2008/*mabi=64*
+MULTILIB_EXCEPTIONS += *mmicromips*/*mabi=64*
+MULTILIB_EXCEPTIONS += *mmicromips*/*mnan=2008*
+MULTILIB_EXCEPTIONS +=  mmicromips mmicromips/EL mmicromips/msoft-float
+MULTILIB_EXCEPTIONS += *mips16*/*mabi=64*
+MULTILIB_EXCEPTIONS += *mips16*/*mnan=2008*
+MULTILIB_EXCEPTIONS += *muclibc*/*micromips*
+MULTILIB_EXCEPTIONS += *muclibc*/*mips16* 
+MULTILIB_EXCEPTIONS += *muclibc*/*mabi=64*
+
+MULTILIB_OSDIRNAMES  = mabi.64=../lib64
+MULTILIB_OSDIRNAMES += EL=!el
+MULTILIB_OSDIRNAMES += EL/mabi.64=../lib64/el
+MULTILIB_OSDIRNAMES += msoft-float=!soft-float
+MULTILIB_OSDIRNAMES += msoft-float/mabi.64=../lib64/soft-float
+MULTILIB_OSDIRNAMES += msoft-float/EL=!soft-float/el
+MULTILIB_OSDIRNAMES += msoft-float/EL/mabi.64=../lib64/soft-float/el
+MULTILIB_OSDIRNAMES += mnan.2008=!nan2008
+MULTILIB_OSDIRNAMES += mnan.2008/EL=!nan2008/el
+MULTILIB_OSDIRNAMES += mmicromips/msoft-float/EL=!micromips/soft-float/el
+MULTILIB_OSDIRNAMES += mips16=!mips16
+MULTILIB_OSDIRNAMES += mips16/EL=!mips16/el
+MULTILIB_OSDIRNAMES += mips16/msoft-float=!mips16/soft-float
+MULTILIB_OSDIRNAMES += mips16/msoft-float/EL=!mips16/soft-float/el
+MULTILIB_OSDIRNAMES += muclibc=!uclibc
+MULTILIB_OSDIRNAMES += muclibc/EL=!uclibc/el
+MULTILIB_OSDIRNAMES += muclibc/msoft-float=!uclibc/soft-float
+MULTILIB_OSDIRNAMES += muclibc/msoft-float/EL=!uclibc/soft-float/el
+MULTILIB_OSDIRNAMES += muclibc/mnan.2008=!uclibc/nan2008
+MULTILIB_OSDIRNAMES += muclibc/mnan.2008/EL=!uclibc/nan2008/el

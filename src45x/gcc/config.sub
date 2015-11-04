@@ -285,7 +285,7 @@ case $basic_machine in
 	| nios | nios2 \
 	| ns16k | ns32k \
 	| or32 \
-	| pdp10 | pdp11 | pj | pjl \
+	| pdp10 | pdp11 | pic30 | pj | pjl \
 	| powerpc | powerpc64 | powerpc64le | powerpcle | ppcbe \
 	| pyramid \
 	| rx \
@@ -1245,6 +1245,10 @@ case $basic_machine in
 	mac | mpw | mac-mpw)
 		basic_machine=m68k-apple
 		;;
+        pic30*)
+                basic_machine=pic30-none
+                os=-elf
+                ;;
 	pmac | pmac-mpw)
 		basic_machine=powerpc-apple
 		;;

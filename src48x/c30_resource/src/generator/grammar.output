@@ -1,0 +1,758 @@
+Grammar
+
+    0 $accept: start $end
+
+    1 start: resource_info_block T_RESOURCE_INFO_START resource_data
+
+    2 resource_info_block: tool_chain tool_version resource_version field_count field_sizes
+
+    3 tool_chain: T_TOOL_CHAIN '=' STR_LIT
+
+    4 tool_version: T_TOOL_VERSION '=' VERSION_LIT
+
+    5 resource_version: T_RESOURCE_VERSION '=' CHAR_LIT
+    6                 | T_RESOURCE_VERSION '=' INT_LIT
+
+    7 field_count: T_FIELD_COUNT '=' INT_LIT
+
+    8 field_int_lit_list: INT_LIT
+    9                   | INT_LIT ',' field_int_lit_list
+
+   10 field_sizes: T_FIELD_SIZES '=' '{' field_int_lit_list '}'
+
+   11 integer_op_3: INT_LIT
+   12             | INT_LIT '*' INT_LIT
+   13             | INT_LIT '/' INT_LIT
+   14             | '(' integer_op ')'
+
+   15 integer_op_2: integer_op_2 '+' integer_op_3
+   16             | integer_op_2 '-' integer_op_3
+   17             | integer_op_3
+
+   18 integer_op_1: integer_op_1 LSHIFT integer_op_2
+   19             | integer_op_1 RSHIFT integer_op_2
+   20             | integer_op_2
+
+   21 integer_op: integer_op '&' integer_op_1
+   22           | integer_op '^' integer_op_1
+   23           | integer_op '|' integer_op_1
+   24           | integer_op_1
+
+   25 data_item: STR_LIT
+   26          | CHAR_LIT
+   27          | VERSION_LIT
+   28          | integer_op
+
+   29 an_item: data_item
+
+   30 data_list: an_item
+   31          | data_list ',' an_item
+
+   32 resource_data_item: '{' data_list '}'
+
+   33 resource_data: resource_data_item
+   34              | resource_data resource_data_item
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'&' (38) 21
+'(' (40) 14
+')' (41) 14
+'*' (42) 12
+'+' (43) 15
+',' (44) 9 31
+'-' (45) 16
+'/' (47) 13
+'=' (61) 3 4 5 6 7 10
+'^' (94) 22
+'{' (123) 10 32
+'|' (124) 23
+'}' (125) 10 32
+error (256)
+INT_LIT (258) 6 7 8 9 11 12 13
+VERSION_LIT (259) 4 27
+STR_LIT (260) 3 25
+CHAR_LIT (261) 5 26
+T_TOOL_CHAIN (262) 3
+T_TOOL_VERSION (263) 4
+T_RESOURCE_VERSION (264) 5 6
+T_FIELD_COUNT (265) 7
+T_FIELD_SIZES (266) 10
+T_RESOURCE_INFO_START (267) 1
+LSHIFT (268) 18
+RSHIFT (269) 19
+
+
+Nonterminals, with rules where they appear
+
+$accept (28)
+    on left: 0
+start (29)
+    on left: 1, on right: 0
+resource_info_block (30)
+    on left: 2, on right: 1
+tool_chain (31)
+    on left: 3, on right: 2
+tool_version (32)
+    on left: 4, on right: 2
+resource_version (33)
+    on left: 5 6, on right: 2
+field_count (34)
+    on left: 7, on right: 2
+field_int_lit_list (35)
+    on left: 8 9, on right: 9 10
+field_sizes (36)
+    on left: 10, on right: 2
+integer_op_3 (37)
+    on left: 11 12 13 14, on right: 15 16 17
+integer_op_2 (38)
+    on left: 15 16 17, on right: 15 16 18 19 20
+integer_op_1 (39)
+    on left: 18 19 20, on right: 18 19 21 22 23 24
+integer_op (40)
+    on left: 21 22 23 24, on right: 14 21 22 23 28
+data_item (41)
+    on left: 25 26 27 28, on right: 29
+an_item (42)
+    on left: 29, on right: 30 31
+data_list (43)
+    on left: 30 31, on right: 31 32
+resource_data_item (44)
+    on left: 32, on right: 33 34
+resource_data (45)
+    on left: 33 34, on right: 1 34
+
+
+state 0
+
+    0 $accept: . start $end
+
+    T_TOOL_CHAIN  shift, and go to state 1
+
+    start                go to state 2
+    resource_info_block  go to state 3
+    tool_chain           go to state 4
+
+
+state 1
+
+    3 tool_chain: T_TOOL_CHAIN . '=' STR_LIT
+
+    '='  shift, and go to state 5
+
+
+state 2
+
+    0 $accept: start . $end
+
+    $end  shift, and go to state 6
+
+
+state 3
+
+    1 start: resource_info_block . T_RESOURCE_INFO_START resource_data
+
+    T_RESOURCE_INFO_START  shift, and go to state 7
+
+
+state 4
+
+    2 resource_info_block: tool_chain . tool_version resource_version field_count field_sizes
+
+    T_TOOL_VERSION  shift, and go to state 8
+
+    tool_version  go to state 9
+
+
+state 5
+
+    3 tool_chain: T_TOOL_CHAIN '=' . STR_LIT
+
+    STR_LIT  shift, and go to state 10
+
+
+state 6
+
+    0 $accept: start $end .
+
+    $default  accept
+
+
+state 7
+
+    1 start: resource_info_block T_RESOURCE_INFO_START . resource_data
+
+    '{'  shift, and go to state 11
+
+    resource_data_item  go to state 12
+    resource_data       go to state 13
+
+
+state 8
+
+    4 tool_version: T_TOOL_VERSION . '=' VERSION_LIT
+
+    '='  shift, and go to state 14
+
+
+state 9
+
+    2 resource_info_block: tool_chain tool_version . resource_version field_count field_sizes
+
+    T_RESOURCE_VERSION  shift, and go to state 15
+
+    resource_version  go to state 16
+
+
+state 10
+
+    3 tool_chain: T_TOOL_CHAIN '=' STR_LIT .
+
+    $default  reduce using rule 3 (tool_chain)
+
+
+state 11
+
+   32 resource_data_item: '{' . data_list '}'
+
+    INT_LIT      shift, and go to state 17
+    VERSION_LIT  shift, and go to state 18
+    STR_LIT      shift, and go to state 19
+    CHAR_LIT     shift, and go to state 20
+    '('          shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 24
+    integer_op    go to state 25
+    data_item     go to state 26
+    an_item       go to state 27
+    data_list     go to state 28
+
+
+state 12
+
+   33 resource_data: resource_data_item .
+
+    $default  reduce using rule 33 (resource_data)
+
+
+state 13
+
+    1 start: resource_info_block T_RESOURCE_INFO_START resource_data .
+   34 resource_data: resource_data . resource_data_item
+
+    '{'  shift, and go to state 11
+
+    $default  reduce using rule 1 (start)
+
+    resource_data_item  go to state 29
+
+
+state 14
+
+    4 tool_version: T_TOOL_VERSION '=' . VERSION_LIT
+
+    VERSION_LIT  shift, and go to state 30
+
+
+state 15
+
+    5 resource_version: T_RESOURCE_VERSION . '=' CHAR_LIT
+    6                 | T_RESOURCE_VERSION . '=' INT_LIT
+
+    '='  shift, and go to state 31
+
+
+state 16
+
+    2 resource_info_block: tool_chain tool_version resource_version . field_count field_sizes
+
+    T_FIELD_COUNT  shift, and go to state 32
+
+    field_count  go to state 33
+
+
+state 17
+
+   11 integer_op_3: INT_LIT .
+   12             | INT_LIT . '*' INT_LIT
+   13             | INT_LIT . '/' INT_LIT
+
+    '*'  shift, and go to state 34
+    '/'  shift, and go to state 35
+
+    $default  reduce using rule 11 (integer_op_3)
+
+
+state 18
+
+   27 data_item: VERSION_LIT .
+
+    $default  reduce using rule 27 (data_item)
+
+
+state 19
+
+   25 data_item: STR_LIT .
+
+    $default  reduce using rule 25 (data_item)
+
+
+state 20
+
+   26 data_item: CHAR_LIT .
+
+    $default  reduce using rule 26 (data_item)
+
+
+state 21
+
+   14 integer_op_3: '(' . integer_op ')'
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 24
+    integer_op    go to state 36
+
+
+state 22
+
+   17 integer_op_2: integer_op_3 .
+
+    $default  reduce using rule 17 (integer_op_2)
+
+
+state 23
+
+   15 integer_op_2: integer_op_2 . '+' integer_op_3
+   16             | integer_op_2 . '-' integer_op_3
+   20 integer_op_1: integer_op_2 .
+
+    '+'  shift, and go to state 37
+    '-'  shift, and go to state 38
+
+    $default  reduce using rule 20 (integer_op_1)
+
+
+state 24
+
+   18 integer_op_1: integer_op_1 . LSHIFT integer_op_2
+   19             | integer_op_1 . RSHIFT integer_op_2
+   24 integer_op: integer_op_1 .
+
+    LSHIFT  shift, and go to state 39
+    RSHIFT  shift, and go to state 40
+
+    $default  reduce using rule 24 (integer_op)
+
+
+state 25
+
+   21 integer_op: integer_op . '&' integer_op_1
+   22           | integer_op . '^' integer_op_1
+   23           | integer_op . '|' integer_op_1
+   28 data_item: integer_op .
+
+    '&'  shift, and go to state 41
+    '^'  shift, and go to state 42
+    '|'  shift, and go to state 43
+
+    $default  reduce using rule 28 (data_item)
+
+
+state 26
+
+   29 an_item: data_item .
+
+    $default  reduce using rule 29 (an_item)
+
+
+state 27
+
+   30 data_list: an_item .
+
+    $default  reduce using rule 30 (data_list)
+
+
+state 28
+
+   31 data_list: data_list . ',' an_item
+   32 resource_data_item: '{' data_list . '}'
+
+    ','  shift, and go to state 44
+    '}'  shift, and go to state 45
+
+
+state 29
+
+   34 resource_data: resource_data resource_data_item .
+
+    $default  reduce using rule 34 (resource_data)
+
+
+state 30
+
+    4 tool_version: T_TOOL_VERSION '=' VERSION_LIT .
+
+    $default  reduce using rule 4 (tool_version)
+
+
+state 31
+
+    5 resource_version: T_RESOURCE_VERSION '=' . CHAR_LIT
+    6                 | T_RESOURCE_VERSION '=' . INT_LIT
+
+    INT_LIT   shift, and go to state 46
+    CHAR_LIT  shift, and go to state 47
+
+
+state 32
+
+    7 field_count: T_FIELD_COUNT . '=' INT_LIT
+
+    '='  shift, and go to state 48
+
+
+state 33
+
+    2 resource_info_block: tool_chain tool_version resource_version field_count . field_sizes
+
+    T_FIELD_SIZES  shift, and go to state 49
+
+    field_sizes  go to state 50
+
+
+state 34
+
+   12 integer_op_3: INT_LIT '*' . INT_LIT
+
+    INT_LIT  shift, and go to state 51
+
+
+state 35
+
+   13 integer_op_3: INT_LIT '/' . INT_LIT
+
+    INT_LIT  shift, and go to state 52
+
+
+state 36
+
+   14 integer_op_3: '(' integer_op . ')'
+   21 integer_op: integer_op . '&' integer_op_1
+   22           | integer_op . '^' integer_op_1
+   23           | integer_op . '|' integer_op_1
+
+    ')'  shift, and go to state 53
+    '&'  shift, and go to state 41
+    '^'  shift, and go to state 42
+    '|'  shift, and go to state 43
+
+
+state 37
+
+   15 integer_op_2: integer_op_2 '+' . integer_op_3
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 54
+
+
+state 38
+
+   16 integer_op_2: integer_op_2 '-' . integer_op_3
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 55
+
+
+state 39
+
+   18 integer_op_1: integer_op_1 LSHIFT . integer_op_2
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 56
+
+
+state 40
+
+   19 integer_op_1: integer_op_1 RSHIFT . integer_op_2
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 57
+
+
+state 41
+
+   21 integer_op: integer_op '&' . integer_op_1
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 58
+
+
+state 42
+
+   22 integer_op: integer_op '^' . integer_op_1
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 59
+
+
+state 43
+
+   23 integer_op: integer_op '|' . integer_op_1
+
+    INT_LIT  shift, and go to state 17
+    '('      shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 60
+
+
+state 44
+
+   31 data_list: data_list ',' . an_item
+
+    INT_LIT      shift, and go to state 17
+    VERSION_LIT  shift, and go to state 18
+    STR_LIT      shift, and go to state 19
+    CHAR_LIT     shift, and go to state 20
+    '('          shift, and go to state 21
+
+    integer_op_3  go to state 22
+    integer_op_2  go to state 23
+    integer_op_1  go to state 24
+    integer_op    go to state 25
+    data_item     go to state 26
+    an_item       go to state 61
+
+
+state 45
+
+   32 resource_data_item: '{' data_list '}' .
+
+    $default  reduce using rule 32 (resource_data_item)
+
+
+state 46
+
+    6 resource_version: T_RESOURCE_VERSION '=' INT_LIT .
+
+    $default  reduce using rule 6 (resource_version)
+
+
+state 47
+
+    5 resource_version: T_RESOURCE_VERSION '=' CHAR_LIT .
+
+    $default  reduce using rule 5 (resource_version)
+
+
+state 48
+
+    7 field_count: T_FIELD_COUNT '=' . INT_LIT
+
+    INT_LIT  shift, and go to state 62
+
+
+state 49
+
+   10 field_sizes: T_FIELD_SIZES . '=' '{' field_int_lit_list '}'
+
+    '='  shift, and go to state 63
+
+
+state 50
+
+    2 resource_info_block: tool_chain tool_version resource_version field_count field_sizes .
+
+    $default  reduce using rule 2 (resource_info_block)
+
+
+state 51
+
+   12 integer_op_3: INT_LIT '*' INT_LIT .
+
+    $default  reduce using rule 12 (integer_op_3)
+
+
+state 52
+
+   13 integer_op_3: INT_LIT '/' INT_LIT .
+
+    $default  reduce using rule 13 (integer_op_3)
+
+
+state 53
+
+   14 integer_op_3: '(' integer_op ')' .
+
+    $default  reduce using rule 14 (integer_op_3)
+
+
+state 54
+
+   15 integer_op_2: integer_op_2 '+' integer_op_3 .
+
+    $default  reduce using rule 15 (integer_op_2)
+
+
+state 55
+
+   16 integer_op_2: integer_op_2 '-' integer_op_3 .
+
+    $default  reduce using rule 16 (integer_op_2)
+
+
+state 56
+
+   15 integer_op_2: integer_op_2 . '+' integer_op_3
+   16             | integer_op_2 . '-' integer_op_3
+   18 integer_op_1: integer_op_1 LSHIFT integer_op_2 .
+
+    '+'  shift, and go to state 37
+    '-'  shift, and go to state 38
+
+    $default  reduce using rule 18 (integer_op_1)
+
+
+state 57
+
+   15 integer_op_2: integer_op_2 . '+' integer_op_3
+   16             | integer_op_2 . '-' integer_op_3
+   19 integer_op_1: integer_op_1 RSHIFT integer_op_2 .
+
+    '+'  shift, and go to state 37
+    '-'  shift, and go to state 38
+
+    $default  reduce using rule 19 (integer_op_1)
+
+
+state 58
+
+   18 integer_op_1: integer_op_1 . LSHIFT integer_op_2
+   19             | integer_op_1 . RSHIFT integer_op_2
+   21 integer_op: integer_op '&' integer_op_1 .
+
+    LSHIFT  shift, and go to state 39
+    RSHIFT  shift, and go to state 40
+
+    $default  reduce using rule 21 (integer_op)
+
+
+state 59
+
+   18 integer_op_1: integer_op_1 . LSHIFT integer_op_2
+   19             | integer_op_1 . RSHIFT integer_op_2
+   22 integer_op: integer_op '^' integer_op_1 .
+
+    LSHIFT  shift, and go to state 39
+    RSHIFT  shift, and go to state 40
+
+    $default  reduce using rule 22 (integer_op)
+
+
+state 60
+
+   18 integer_op_1: integer_op_1 . LSHIFT integer_op_2
+   19             | integer_op_1 . RSHIFT integer_op_2
+   23 integer_op: integer_op '|' integer_op_1 .
+
+    LSHIFT  shift, and go to state 39
+    RSHIFT  shift, and go to state 40
+
+    $default  reduce using rule 23 (integer_op)
+
+
+state 61
+
+   31 data_list: data_list ',' an_item .
+
+    $default  reduce using rule 31 (data_list)
+
+
+state 62
+
+    7 field_count: T_FIELD_COUNT '=' INT_LIT .
+
+    $default  reduce using rule 7 (field_count)
+
+
+state 63
+
+   10 field_sizes: T_FIELD_SIZES '=' . '{' field_int_lit_list '}'
+
+    '{'  shift, and go to state 64
+
+
+state 64
+
+   10 field_sizes: T_FIELD_SIZES '=' '{' . field_int_lit_list '}'
+
+    INT_LIT  shift, and go to state 65
+
+    field_int_lit_list  go to state 66
+
+
+state 65
+
+    8 field_int_lit_list: INT_LIT .
+    9                   | INT_LIT . ',' field_int_lit_list
+
+    ','  shift, and go to state 67
+
+    $default  reduce using rule 8 (field_int_lit_list)
+
+
+state 66
+
+   10 field_sizes: T_FIELD_SIZES '=' '{' field_int_lit_list . '}'
+
+    '}'  shift, and go to state 68
+
+
+state 67
+
+    9 field_int_lit_list: INT_LIT ',' . field_int_lit_list
+
+    INT_LIT  shift, and go to state 65
+
+    field_int_lit_list  go to state 69
+
+
+state 68
+
+   10 field_sizes: T_FIELD_SIZES '=' '{' field_int_lit_list '}' .
+
+    $default  reduce using rule 10 (field_sizes)
+
+
+state 69
+
+    9 field_int_lit_list: INT_LIT ',' field_int_lit_list .
+
+    $default  reduce using rule 9 (field_int_lit_list)

@@ -590,8 +590,8 @@ extern void fancy_abort (const char *, int, const char *) ATTRIBUTE_NORETURN;
 #define abort() fancy_abort (__FILE__, __LINE__, __FUNCTION__)
 
 /* Use gcc_assert(EXPR) to test invariants.  */
-#if ENABLE_ASSERT_CHECKING
 #ifndef gcc_assert
+#if ENABLE_ASSERT_CHECKING
 #define gcc_assert(EXPR) 						\
    ((void)(!(EXPR) ? fancy_abort (__FILE__, __LINE__, __FUNCTION__), 0 : 0))
 #elif (GCC_VERSION >= 4005)

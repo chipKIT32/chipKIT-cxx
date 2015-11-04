@@ -1,0 +1,178 @@
+.TH conv 1 "29 Jul 2003" "MIPS SDE" "Programmer's Manual"
+.de BP
+.sp
+.ti -.2i
+\(**
+..
+.SH NAME
+conv \- ELF object file converter
+.SH SYNOPSIS
+.B conv
+.RB [ \-lvypr ]
+.RB [ "\-a \fIaddr" [ /\fIsize ]]
+.RB [ "\-a \fIaddr" [ :\fIlimit ]]
+.RB [ "\-R \fIoffs" ]
+.RB [ "\-f \fIfmt" ]
+.RB [ "\-i \fIoffs" ]
+.RB [ "\-w \fIwidth" ]
+.RB [ "\-b \fIbyte,..." ]
+.br
+.RB [ "\-s \fIsize" ]
+.RB [ "\-x \fIseg,..." ]
+.RB [ "\-o \fIofile" ]
+.RI [ ifile ]
+.SH DESCRIPTION
+The
+.I conv
+command takes ELF executable
+.I ifile
+and converts it into an ASCII or encoded binary format, suitable for
+downloading onto a PROM programmer or evaluation board.  It can take
+horizontal and/or vertical slices through the file, to cater for PROM
+programmers that do not have this facility or memory capacity.
+.SH OPTIONS
+.TP 10
+.B \-l
+Lists the segments in the ELF file's program header, for possible use
+in the
+.B \-x
+option below; does not produce any other output.
+.TP 10
+.B \-v
+Selects verbose mode, which makes the program report its actions as it
+converts the file.
+.TP 10
+.B \-p
+Selects PROM mode: output addresses start at zero; the read-only
+segments are converted first and the other segments are concatenated
+to them (aligned to 16 byte boundaries).  If this option is not given,
+then the segments are converted in program header order, and the
+output addresses are the data's actual virtual addresses.
+.TP 10
+.B \-y
+Requests symbol output: for formats which support this the file's
+symbol table is also converted and sent to the output file.
+.TP 10
+.B \-a \fIaddr\fR[/\fIsize\fR]
+.TP 10
+.B \-a \fIaddr\fR[:\fIlimit\fR]
+Specifies the physical address range of the PROM, for use with the
+.B \-p
+option.  All input data located between \fIaddr\fP and \fIlimit\fP
+(i.e.  between \fIaddr\fP and \fIaddr\fP+\fIsize\fP) are deemed to be
+intended for PROM execution, and are placed at the relevant offset
+from \fIaddr\fP.  Segments outside of this address range are assumed
+to be intended for relocation to RAM, and are concatenated to the end
+of the last read-only segment.  The default value for \fIaddr\fP is
+0x1fc00000, and the default \fIsize\fP is 0x400000 (i.e. 4Mb).
+.TP 10
+.B \-r
+Selects raw binary input mode, which ignores any ELF headers and
+converts the whole input file into the output format, starting at the
+selected PROM base address.
+.TP 10
+.B \-R \fIoffs\fR
+Selects raw binary input mode as above, but places the input
+at offset \fIoffs\fP from the PROM base address.
+.TP 10
+.B \-f \fIfmt\fP
+Selects the output format, from the list below.  If not specified then
+the environment variable
+.B DLTYPE
+is used.  The default if neither of these are specified is
+.BR srec .
+.RS
+.TP 10
+.B srec, s3
+Motorola S-records, using S3 and S7 (32-bit address) records; symbol
+output can be provided via S4 records, as supported by LSI PMON.
+.TP 10
+.B s2
+Same as above, except using S2 and S8 (24-bit address) records, to
+suit some PROM programmers.
+.TP 10
+.B s1
+Same as above, except using S1 and S9 (16-bit address) records.
+.TP 10
+.B lsi
+High density (radix 64) ASCII encoding for downloading by the
+.I LSI PMON
+monitor; symbol output is supported.
+.TP 10
+.B idt
+Binary S-record format for downloading by the
+.I IDT/sim
+monitor.
+.TP 10
+.B stagbin
+Proprietary binary format for
+.I Stag
+PROM programmers.
+.TP 10
+.B bin
+Raw binary output, suitable for further conversion by another user
+program.
+.RE
+.TP 10
+.BI \-w " width"
+Specifies the width of CPU data bus in bits (default: 32).
+.TP 10
+.BI \-b " byte,..."
+The input file is read in multiples of
+.I width
+bits, and then these bytes are selected from it.  The
+default is
+.RB `` 0,1,2,3 '',
+which sends all bytes in their file order.  To
+perform a byte swap specify
+.RB `` 3,2,1,0 ''.
+To program four PROMs with
+consecutive bytes, run
+.I convert
+four times with
+.RB `` \-b0 '',
+.RB `` \-b1 '',
+.RB `` \-b2 ''
+and
+.RB `` \-b3 ''.
+.IP
+To handle interleaved PROMs, multiply the PROM width by the interleave,
+(e.g.
+.RB `` \-w64 ''
+for two-way interleave on a 32-bit bus), and then run
+.I conv
+interleave \(mu byte-width times
+(e.g.
+.RB `` \-b0 ''
+to
+.RB `` \-b7 '').
+.br
+.ne 4
+.TP 10
+.BI \-i " offs"
+.TP 10
+.BI \-s " size"
+Specified together to split a large program into multiple PROMs.  The
+.B \-i
+flag specifies the initial offset, and
+.B \-s
+the size of the PROM.  For example for two 128K proms:
+.nf
+.in +5
+conv -f s3 -i 0x00000 -s 0x20000 -o prom.s31 prom
+conv -f s3 -i 0x20000 -s 0x20000 -o prom.s32 prom
+.in 0
+.fi
+.TP 10
+.BI \-x " seg,..."
+Exclude the following segments from the output; the segment numbers
+can be determined using the
+.B \-l
+option above.
+.TP 10
+.BI "\-o " oname
+Selects
+.I oname
+as the output file, default is standard output.
+.SH SEE ALSO
+edown(1)

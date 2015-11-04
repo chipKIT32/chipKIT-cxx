@@ -118,8 +118,8 @@ extern int errno;
 #undef alloca
 #define alloca(x) __builtin_alloca(x)
 
-#ifdef ENABLE_RUNTIME_CHECKING
 #ifndef gcc_assert
+#ifdef ENABLE_RUNTIME_CHECKING
 #define gcc_assert(EXPR) ((void)(!(EXPR) ? abort (), 0 : 0))
 #else
 /* Include EXPR, so that unused variable warnings do not occur.  */

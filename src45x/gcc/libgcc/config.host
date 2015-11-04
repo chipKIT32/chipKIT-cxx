@@ -211,15 +211,15 @@ arm*-*-netbsdelf*)
 arm*-*-netbsd*)
 	;;
 arm*-*-linux*)			# ARM GNU/Linux with ELF
-	tmake_file="${tmake_file} arm/t-divmod-ef"
+	tmake_file="${tmake_file} arm/t-divmod-ef arm/t-fixed-point"
 	;;
 arm*-*-uclinux*)		# ARM ucLinux
-	tmake_file="${tmake_file} arm/t-divmod-ef"
+	tmake_file="${tmake_file} arm/t-divmod-ef arm/t-fixed-point"
 	;;
 arm*-*-ecos-elf)
 	;;
 arm*-*-eabi* | arm*-*-nucleuseabi* | arm*-*-symbianelf* )
-	tmake_file="${tmake_file} arm/t-divmod-ef"
+	tmake_file="${tmake_file} arm/t-divmod-ef arm/t-fixed-point"
 	;;
 arm*-*-rtems*)
 	;;
@@ -351,6 +351,8 @@ ia64*-*-elf*)
 	tmake_file="ia64/t-ia64"
 	;;
 ia64*-*-freebsd*)
+	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtfastmath.o"
+	tmake_file="ia64/t-ia64"
 	;;
 ia64*-*-linux*)
 	extra_parts="crtbegin.o crtend.o crtbeginS.o crtendS.o crtfastmath.o"
@@ -477,6 +479,10 @@ powerpc-*-eabisimaltivec*)
 powerpc-*-eabisim*)
 	;;
 powerpc-*-elf*)
+	tmake_file="${tmake_file} rs6000/t-ppccomm"
+	if test x"${ppc_has_spe}" = xyes; then
+		tmake_file="${tmake_file} rs6000/t-spe-fprules"
+	fi
 	;;
 powerpc-*-eabialtivec*)
 	;;

@@ -137,6 +137,9 @@ lrealpath (const char *filename)
 #if defined (_WIN32)
   {
     char buf[MAX_PATH];
+#if defined (CHIPKIT_PIC32)
+    char bufShort[MAX_PATH];
+#endif
     char* basename;
 
     if (_access (filename, F_OK) != 0)
@@ -148,16 +151,22 @@ lrealpath (const char *filename)
 	if (cygpath (filename, cygbuf) && _access (cygbuf, F_OK) == 0)
 	  filename = cygbuf;
       }
-
+#if defined (CHIPKIT_PIC32)
+    DWORD len = GetFullPathName (filename, MAX_PATH, bufShort, &basename);
+    len = GetLongPathName (bufShort, buf, MAX_PATH);
+#else
     DWORD len = GetFullPathName (filename, MAX_PATH, buf, &basename);
+#endif
     if (len == 0 || len > MAX_PATH - 1)
       return strdup (filename);
     else
       {
+#if !defined (CHIPKIT_PIC32)
 	/* The file system is case-preserving but case-insensitive,
 	   Canonicalize to lowercase, using the codepage associated
 	   with the process locale.  */
         CharLowerBuff (buf, len);
+#endif
         return strdup (buf);
       }
   }

@@ -1,0 +1,9 @@
+/* Generated from ./not_equal.cloog by CLooG 0.15 64 bits in 0.10s. */
+for (s0=0;s0<=N;s0++) {
+  for (s1=-M;s1<=-1;s1++) {
+    S1(i = s0,j = s1) ;
+  }
+  for (s1=1;s1<=M;s1++) {
+    S1(i = s0,j = s1) ;
+  }
+}

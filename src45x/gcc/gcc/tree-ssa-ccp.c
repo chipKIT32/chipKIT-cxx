@@ -1813,7 +1813,21 @@ maybe_fold_offset_to_array_ref (location_t loc, tree base, tree offset,
   array_type = TREE_TYPE (base);
   if (TREE_CODE (array_type) != ARRAY_TYPE)
     return NULL_TREE;
+
   elt_type = TREE_TYPE (array_type);
+#ifdef _BUILD_C30_
+  /* The element type should have the same address space as the base type */
+  if (TYPE_ADDR_SPACE(array_type)) {
+     elt_type = build_variant_type_copy(elt_type);
+
+     if ((TYPE_ADDR_SPACE(elt_type)) &&
+         (TYPE_ADDR_SPACE(elt_type) !=
+          TYPE_ADDR_SPACE(array_type)))
+       error("Array element in different address space than array");
+
+     TYPE_ADDR_SPACE(elt_type) = TYPE_ADDR_SPACE(array_type);
+   }
+#endif
   if (!useless_type_conversion_p (orig_type, elt_type))
     return NULL_TREE;
 
@@ -1979,6 +1993,21 @@ maybe_fold_offset_to_component_ref (location_t loc, tree record_type,
 	continue;
 
       field_type = TREE_TYPE (f);
+#ifdef _BUILD_C30_
+      /* The field_type needs to have the address space as the 'base', since
+         the object recieves these qualifers and not the type.  We should copy
+         the type and add them in. */
+      if (TYPE_ADDR_SPACE(TREE_TYPE(base))) {
+        field_type = build_variant_type_copy(field_type);
+     
+        if ((TYPE_ADDR_SPACE(field_type)) &&
+            (TYPE_ADDR_SPACE(field_type) !=
+             TYPE_ADDR_SPACE(TREE_TYPE(base))))
+          error("Structure field in different address space than structure object");
+
+        TYPE_ADDR_SPACE(field_type) = TYPE_ADDR_SPACE(TREE_TYPE(base));
+      }
+#endif
 
       /* Here we exactly match the offset being checked.  If the types match,
 	 then we can return that field.  */
@@ -3508,14 +3537,11 @@ and_var_with_comparison_1 (gimple stmt,
 	  /* Handle the OR case, where we are redistributing:
 	     (inner1 OR inner2) AND (op2a code2 op2b)
 	     => (t OR (inner2 AND (op2a code2 op2b)))  */
-	  else
-	    {
-	      if (integer_onep (t))
-		return boolean_true_node;
-	      else
-		/* Save partial result for later.  */
-		partial = t;
-	    }
+	  else if (integer_onep (t))
+	    return boolean_true_node;
+
+	  /* Save partial result for later.  */
+	  partial = t;
 	}
       
       /* Compute the second partial result, (inner2 AND (op2a code op2b)) */
@@ -3536,6 +3562,10 @@ and_var_with_comparison_1 (gimple stmt,
 		return inner1;
 	      else if (integer_zerop (t))
 		return boolean_false_node;
+	      /* If both are the same, we can apply the identity
+		 (x AND x) == x.  */
+	      else if (partial && same_bool_result_p (t, partial))
+		return t;
 	    }
 
 	  /* Handle the OR case. where we are redistributing:
@@ -3945,7 +3975,7 @@ or_var_with_comparison_1 (gimple stmt,
 	     => (t OR inner2)
 	     If the partial result t is a constant, we win.  Otherwise
 	     continue on to try reassociating with the other inner test.  */
-	  if (innercode == TRUTH_OR_EXPR)
+	  if (is_or)
 	    {
 	      if (integer_onep (t))
 		return boolean_true_node;
@@ -3956,14 +3986,11 @@ or_var_with_comparison_1 (gimple stmt,
 	  /* Handle the AND case, where we are redistributing:
 	     (inner1 AND inner2) OR (op2a code2 op2b)
 	     => (t AND (inner2 OR (op2a code op2b)))  */
-	  else
-	    {
-	      if (integer_zerop (t))
-		return boolean_false_node;
-	      else
-		/* Save partial result for later.  */
-		partial = t;
-	    }
+	  else if (integer_zerop (t))
+	    return boolean_false_node;
+
+	  /* Save partial result for later.  */
+	  partial = t;
 	}
       
       /* Compute the second partial result, (inner2 OR (op2a code op2b)) */
@@ -3977,13 +4004,18 @@ or_var_with_comparison_1 (gimple stmt,
 	{
 	  /* Handle the OR case, where we are reassociating:
 	     (inner1 OR inner2) OR (op2a code2 op2b)
-	     => (inner1 OR t)  */
-	  if (innercode == TRUTH_OR_EXPR)
+	     => (inner1 OR t)
+	     => (t OR partial)  */
+	  if (is_or)
 	    {
 	      if (integer_zerop (t))
 		return inner1;
 	      else if (integer_onep (t))
 		return boolean_true_node;
+	      /* If both are the same, we can apply the identity
+		 (x OR x) == x.  */
+	      else if (partial && same_bool_result_p (t, partial))
+		return t;
 	    }
 	  
 	  /* Handle the AND case, where we are redistributing:
@@ -4000,13 +4032,13 @@ or_var_with_comparison_1 (gimple stmt,
 		     operand to the redistributed AND expression.  The
 		     interesting case is when at least one is true.
 		     Or, if both are the same, we can apply the identity
-		     (x AND x) == true.  */
+		     (x AND x) == x.  */
 		  if (integer_onep (partial))
 		    return t;
 		  else if (integer_onep (t))
 		    return partial;
 		  else if (same_bool_result_p (t, partial))
-		    return boolean_true_node;
+		    return t;
 		}
 	    }
 	}

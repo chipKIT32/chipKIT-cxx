@@ -177,6 +177,9 @@ typedef struct change_t
 static change_t *changes;
 static int changes_allocated;
 
+#ifdef _BUILD_C30_
+static int verifying_changes = 0;
+#endif
 static int num_changes = 0;
 
 /* Validate a proposed change to OBJECT.  LOC is the location in the rtl
@@ -324,6 +327,15 @@ insn_invalid_p (rtx insn)
       newpat = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (num_clobbers + 1));
       XVECEXP (newpat, 0, 0) = pat;
       add_clobbers (newpat, icode);
+#ifdef _BUILD_C30_
+      /* bug? if we make this conversion and then cancel_changes,
+         shouldn't cancel changes undo the parallel?
+
+         If we are calling from verify_changes record this so that
+         cancel_changes can undo it */
+      if (verifying_changes)
+        validate_change_1(insn, &PATTERN(insn), newpat, 1, 0);
+#endif
       PATTERN (insn) = pat = newpat;
     }
 
@@ -356,6 +368,9 @@ verify_changes (int num)
   int i;
   rtx last_validated = NULL_RTX;
 
+#ifdef _BUILD_C30_
+  verifying_changes = 1;
+#endif
   /* The changes have been applied and all INSN_CODEs have been reset to force
      rerecognition.
 
@@ -444,6 +459,9 @@ verify_changes (int num)
       last_validated = object;
     }
 
+#ifdef _BUILD_C30_
+  verifying_changes = 0;
+#endif
   return (i == num_changes);
 }
 
@@ -555,7 +573,11 @@ simplify_while_replacing (rtx *loc, rtx to, rtx object,
          simplify_gen_binary to try to simplify it.
          ??? We may want later to remove this, once simplification is
          separated from this function.  */
+#ifdef _BUILD_C30_
+      if (CONST_INT_P (XEXP (x, 1)))
+#else
       if (CONST_INT_P (XEXP (x, 1)) && XEXP (x, 1) == to)
+#endif
 	validate_change (object, loc,
 			 simplify_gen_binary
 			 (PLUS, GET_MODE (x), XEXP (x, 0), XEXP (x, 1)), 1);
@@ -2201,6 +2223,9 @@ preprocess_constraints (void)
 		case 's': case 'i': case 'n':
 		case 'I': case 'J': case 'K': case 'L':
 		case 'M': case 'N': case 'O': case 'P':
+#ifdef _BUILD_C30_
+                case 'W': case 'Y': case 'Z':
+#endif
 		  /* These don't say anything we care about.  */
 		  break;
 
@@ -2588,6 +2613,11 @@ constrain_operands (int strict)
 	      case 'N':
 	      case 'O':
 	      case 'P':
+#ifdef _BUILD_C30_
+	      case 'W':
+	      case 'Y':
+	      case 'Z':
+#endif
 		if (CONST_INT_P (op)
 		    && CONST_OK_FOR_CONSTRAINT_P (INTVAL (op), c, p))
 		  win = 1;

@@ -203,7 +203,7 @@ if (have_save) {
 		}
 	}
 } else {
-	var_target_int[n_target_int++] = "int target_flags";
+	var_target_int[n_target_int++] = "unsigned long long int target_flags";
 }
 
 for (i = 0; i < n_target_other; i++) {
@@ -260,7 +260,7 @@ for (i = 0; i < n_extra_masks; i++) {
 }
 
 for (var in masknum) {
-	if (masknum[var] > 31) {
+	if (masknum[var] > 63) {
 		if (var == "")
 			print "#error too many target masks"
 		else

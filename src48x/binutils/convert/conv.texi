@@ -1,0 +1,232 @@
+\input texinfo       @c                    -*- Texinfo -*-
+@c  Copyright 1993-2003,2008
+@c  Free Software Foundation, Inc.
+@c  Contributed by MIPS Technologies, Inc.
+@setfilename conv.info
+
+@ifinfo
+@format
+START-INFO-DIR-ENTRY
+* Convert: (conv). 	The MIPS SDE tool "sde-conv"
+END-INFO-DIR-ENTRY
+@end format
+@end ifinfo
+
+@ifinfo
+Copyright @copyright{} 1998-2003 MIPS Technologies, Inc. All Rights Reserved.
+@end ifinfo
+
+@synindex ky cp
+@c
+@c This file documents the MIPS ELF converter
+@c
+@c Copyright (C) 1998-2003 MIPS Technologies, Inc.  All Rights Reserved.
+@c
+@c
+
+@setchapternewpage odd
+@settitle MIPS SDE ELF Conversion Tool
+@titlepage
+@finalout
+@title MIPS SDE ELF Conversion Tool
+@subtitle @code{sde-conv}
+@subtitle Version 5.0
+@sp 1
+@subtitle October 2003
+@author MIPS Technologies Inc
+@page
+
+@tex
+\def\$#1${{#1}} % Kluge: collect RCS revision info without $...$
+\xdef\manvers{\$Revision$} % For use in headers, footers too
+{\parskip=0pt \hfill MIPS Technologies Inc\par \hfill \manvers\par \hfill
+\TeX{}info \texinfoversion\par }
+@end tex
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1998-2003 MIPS Technologies, Inc.  All Rights Reserved.
+
+@end titlepage
+
+@node Top, (dir), (dir), (dir)
+@chapter conv
+
+@kindex conv
+@kindex sde-conv
+@cindex convert ELF files
+
+@smallexample
+sde-conv [ -l ] [ -v ] [ -y ] [ -p ] [ -r ]
+         [ -a @var{addr}[/@var{size}] ]
+         [ -a @var{addr}[:@var{limit}] ]
+         [ -f @var{fmt} ] [ -R @var{offs} ]
+         [ -w @var{width} ] [ -b @var{byte},... ]
+         [ -i @var{offs} ] [ -s @var{size} ]
+         [ -x @var{seg},... ] [ -o @var{ofile} ] @var{ifile}
+@end smallexample
+
+The @code{sde-conv} utility takes ELF executable @var{ifile}
+and converts it into an ASCII or encoded binary format, suitable for
+downloading onto a PROM programmer or evaluation board.  It can take
+horizontal and/or vertical slices through the file, to cater for PROM
+programmers that do not have this facility or memory capacity.
+
+@table @code
+
+@item -o @var{ofile}
+Selects @var{ofile}
+as the output file, the default is the standard output.  Note: you must
+use this for the binary output format.
+
+@cindex list program segments
+@item -l
+Lists the segments in the ELF file's program header, for possible use
+in the @code{-x} option below; does not produce any other output.
+
+@item -v
+Selects verbose mode, which makes the program report its actions as it
+converts the file.
+
+@cindex output symbol data
+@item -y
+Requests symbol output: for formats which support this the file's
+symbol table is also converted and sent to the output file.
+
+@cindex specify PROM address
+@item -a @var{addr}
+@itemx -a @var{addr}:@var{limit}
+@itemx -a @var{addr}/@var{size}
+Selects PROM output mode and specifies the physical address range of the
+PROM.  All input data located between @var{addr} and @var{limit} (or
+between @var{addr} and @var{addr}+@var{size}) are deemed to be
+PROM-resident, and are mapped to their relative offset from @var{addr}.
+Segments outside of this address range are assumed to be intended for
+relocation to RAM, and they are concatenated to the end of the last
+PROM-resident segment (rounded to the next 16 byte boundary).  The
+default value for @var{addr} is @code{1fc00000}, and the default
+@var{size} is @code{400000} (i.e. 4Mb).
+
+Note that if the code segment has a load address that doesn't fall
+inside the ROM then it will get treated like an initialised data
+segment.  It will get mapped to the start of the ROM (the reset
+exception address) if it was linked with the lowest address, and then
+your reset code can be carefully written to copy the code segment
+from ROM to RAM.
+
+@cindex create PROM image
+@item -p
+Selects PROM output mode, equivalent to @samp{-a@ 1fc00000/400000}.
+
+@cindex raw binary input
+@item -r
+Selects raw binary input mode, which ignores any ELF headers and
+converts the whole input file into the output format, starting at the
+selected PROM base address.
+
+@item -R @var{offs}
+Selects raw binary input mode as above, but places the input
+at offset @var{offs} from the PROM base address.
+
+@cindex output file format
+@item -f @var{fmt}
+Selects the output format, from the list below.  If not specified then
+the environment variable @code{DLTYPE}
+is used.  The default if neither of these are specified is
+@code{srec}.
+
+@table @code
+@cindex Motorola
+@cindex S-records
+@item srec
+@itemx s3
+Motorola S-records, using S3 and S7 (32-bit address) records. Symbol
+output is provided via S4 records, as supported by LSI PMON, if the
+@code{-y} option is also used.
+
+@item s2
+Same as above, except using S2 and S8 (24-bit address) records, to
+suit some PROM programmers.
+
+@item s1
+Same as above, except using S1 and S9 (16-bit address) records.
+
+@cindex LSI PMON format
+@item lsi
+High density (radix 64) ASCII encoding for downloading by the
+@samp{LSI PMON}
+monitor; symbol output is supported with the @code{-y} option.
+
+@cindex IDT/sim binary format
+@item idt
+Binary S-record format for downloading by the @samp{IDT/sim} monitor.
+
+@cindex Stag binary format
+@item stagbin
+@itemx sbin
+Proprietary binary format for @samp{Stag} PROM programmers.
+
+@cindex MIPS flash format
+@cindex fl
+@item fl
+MIPS flash file format, suitable for downloading to a Malta
+or SEAD-2 board.
+
+@cindex raw binary output
+@item bin
+Raw binary output, suitable for further conversion by another user
+program.
+
+@cindex relocated ELF
+@cindex relf
+@item relf
+Relocated ELF executable object file output, with the code and data
+relocated to their new addresses in ROM, as selected by the @samp{-p} or
+@samp{-a} options. This can be used to generate a ROM image which can be
+loaded by gdb's MDI interface. Note that symbols and other debug
+information are not copied to the new file, and the file's entrypoint
+address is set to the base ROM address.
+@end table
+
+@cindex PROM width
+@item -w @var{width}
+Specifies the width of CPU data bus in bits (default: 32).
+
+@cindex byte select
+@cindex interleaved PROMS
+@item -b @var{byte},...
+The input file is read in multiples of @var{width} bits, and then these
+bytes are selected from it.  The default is @samp{0,1,2,3}, which sends
+all bytes in their file order.  To perform a byte swap specify
+@samp{3,2,1,0}.  To program four PROMs with consecutive bytes, run
+@code{conv} four times with @samp{-b0}, @samp{-b1}, @samp{-b2} and
+@samp{-b3}.
+
+To handle interleaved PROMs, multiply the PROM width by the interleave,
+(e.g. @samp{-w64} for two-way interleave on a 32-bit bus), and then run
+@code{conv} interleave times byte-width times
+(e.g. @samp{-b0} to @samp{-b7}).
+
+@cindex split into multiple PROMS
+@item -i @var{offs}
+@itemx -s @var{size}
+Specified together to split a large program into multiple PROMs.  The
+@code{-i}
+flag specifies the initial offset, and
+@code{-s}
+the size of the PROM.  For example for two 128K proms:
+
+@quotation
+@smallexample
+conv -f s3 -i 0x00000 -s 0x20000 -o prom.s3.1 prom
+conv -f s3 -i 0x20000 -s 0x20000 -o prom.s3.2 prom
+@end smallexample
+@end quotation
+
+@cindex select program segments
+@item -x @var{seg},...
+Exclude the following segments from the output; the segment numbers
+can be determined using the @code{-l} option described above.
+
+@end table
+
+@bye

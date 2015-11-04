@@ -705,9 +705,9 @@ indirect_ref_may_alias_decl_p (tree ref1, tree ptr1,
     return ranges_overlap_p (offset1, max_size1, offset2, max_size2);
 
   /* The only way to access a variable is through a pointer dereference
-     of the same alias set or a subset of it.  */
+     of the same alias set or a conflicting set.  */
   if (base1_alias_set != base2_alias_set
-      && !alias_set_subset_of (base1_alias_set, base2_alias_set))
+      && !alias_sets_conflict_p (base1_alias_set, base2_alias_set))
     return false;
 
   /* Do access-path based disambiguation.  */

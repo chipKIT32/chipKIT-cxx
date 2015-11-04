@@ -1,7 +1,8 @@
 /* Medium-level subroutines: convert bit-field store and extract
    and shifts, multiplies and divides to rtl instructions.
    Copyright (C) 1987, 1988, 1989, 1992, 1993, 1994, 1995, 1996, 1997, 1998,
-   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010
+   1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010,
+   2011
    Free Software Foundation, Inc.
 
 This file is part of GCC.
@@ -41,7 +42,7 @@ along with GCC; see the file COPYING3.  If not see
 
 static void store_fixed_bit_field (rtx, unsigned HOST_WIDE_INT,
 				   unsigned HOST_WIDE_INT,
-				   unsigned HOST_WIDE_INT, rtx);
+				   unsigned HOST_WIDE_INT, rtx, bool);
 static void store_split_bit_field (rtx, unsigned HOST_WIDE_INT,
 				   unsigned HOST_WIDE_INT, rtx);
 static rtx extract_fixed_bit_field (enum machine_mode, rtx,
@@ -369,7 +370,8 @@ check_predicate_volatile_ok (enum insn_code icode, int opno,
 
 static bool
 store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
-		   unsigned HOST_WIDE_INT bitnum, enum machine_mode fieldmode,
+		   unsigned HOST_WIDE_INT bitnum, bool packedp,
+		   enum machine_mode fieldmode,
 		   rtx value, bool fallback_p)
 {
   unsigned int unit
@@ -616,7 +618,7 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 
 	  if (!store_bit_field_1 (op0, MIN (BITS_PER_WORD,
 					    bitsize - i * BITS_PER_WORD),
-				  bitnum + bit_offset, word_mode,
+				  bitnum + bit_offset, false, word_mode,
 				  value_word, fallback_p))
 	    {
 	      delete_insns_since (last);
@@ -720,7 +722,7 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
       /* On big-endian machines, we count bits from the most significant.
 	 If the bit field insn does not, we must invert.  */
 
-      if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
+      if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN && !MEM_P (xop0))
 	xbitpos = unit - bitsize - xbitpos;
 
       /* We have been counting XBITPOS within UNIT.
@@ -825,7 +827,7 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 	  /* Fetch that unit, store the bitfield in it, then store
 	     the unit.  */
 	  tempreg = copy_to_reg (xop0);
-	  if (store_bit_field_1 (tempreg, bitsize, xbitpos,
+	  if (store_bit_field_1 (tempreg, bitsize, xbitpos, false,
 				 fieldmode, orig_value, false))
 	    {
 	      emit_move_insn (xop0, tempreg);
@@ -838,7 +840,7 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
   if (!fallback_p)
     return false;
 
-  store_fixed_bit_field (op0, offset, bitsize, bitpos, value);
+  store_fixed_bit_field (op0, offset, bitsize, bitpos, value, packedp);
   return true;
 }
 
@@ -849,11 +851,51 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 
 void
 store_bit_field (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
-		 unsigned HOST_WIDE_INT bitnum, enum machine_mode fieldmode,
-		 rtx value)
+		 unsigned HOST_WIDE_INT bitnum, bool packedp,
+		 enum machine_mode fieldmode, rtx value)
 {
-  if (!store_bit_field_1 (str_rtx, bitsize, bitnum, fieldmode, value, true))
+  if (!store_bit_field_1 (str_rtx, bitsize, bitnum, packedp, fieldmode, value,
+			  true))
     gcc_unreachable ();
+}
+
+static void
+warn_misaligned_bitfield (bool struct_member, bool packedp)
+{
+  static bool informed_about_misalignment = false;
+  bool warned;
+
+  if (packedp)
+    {
+      if (struct_member)
+	warning_at (input_location, OPT_fstrict_volatile_bitfields,
+			     "multiple accesses to volatile structure member"
+			     " because of packed attribute");
+      else
+	warning_at (input_location, OPT_fstrict_volatile_bitfields,
+			     "multiple accesses to volatile structure bitfield"
+			     " because of packed attribute");
+    }
+  else
+    {
+      if (struct_member)
+	warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
+			     "mis-aligned access used for structure member");
+      else
+	warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
+			     "mis-aligned access used for structure bitfield");
+    }
+
+  if (! informed_about_misalignment && warned && !packedp)
+    {
+      informed_about_misalignment = true;
+      inform (input_location,
+	      "When a volatile object spans multiple type-sized locations,"
+	      " the compiler must choose between using a single mis-aligned"
+	      " access to preserve the volatility, or using multiple aligned"
+	      " accesses to avoid runtime faults.  This code may fail at"
+	      " runtime if the hardware does not allow this access.");
+    }
 }
 
 /* Use shifts and boolean operations to store VALUE
@@ -868,7 +910,8 @@ store_bit_field (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 static void
 store_fixed_bit_field (rtx op0, unsigned HOST_WIDE_INT offset,
 		       unsigned HOST_WIDE_INT bitsize,
-		       unsigned HOST_WIDE_INT bitpos, rtx value)
+		       unsigned HOST_WIDE_INT bitpos, rtx value,
+		       bool packedp)
 {
   enum machine_mode mode;
   unsigned int total_bits = BITS_PER_WORD;
@@ -899,6 +942,7 @@ store_fixed_bit_field (rtx op0, unsigned HOST_WIDE_INT offset,
 	 includes the entire field.  If such a mode would be larger than
 	 a word, we won't be doing the extraction the normal way.
 	 We don't want a mode bigger than the destination.  */
+      bool realign = true;
 
       mode = GET_MODE (op0);
       if (GET_MODE_BITSIZE (mode) == 0
@@ -908,7 +952,25 @@ store_fixed_bit_field (rtx op0, unsigned HOST_WIDE_INT offset,
       if (MEM_VOLATILE_P (op0)
           && GET_MODE_BITSIZE (GET_MODE (op0)) > 0
 	  && flag_strict_volatile_bitfields > 0)
-	mode = GET_MODE (op0);
+	{
+	  /* We must use the specified access size.  */
+	  mode = GET_MODE (op0);
+	  total_bits = GET_MODE_BITSIZE (mode);
+	  if (bitpos + bitsize <= total_bits
+	      && bitpos + bitsize 
+		 + (offset % (total_bits / BITS_PER_UNIT)) * BITS_PER_UNIT
+		 > total_bits)
+	    {
+	      realign = false;
+	      if (STRICT_ALIGNMENT)
+		{
+		  warn_misaligned_bitfield (bitsize == GET_MODE_BITSIZE (mode),
+					    packedp);
+		  if (packedp)
+		    mode = VOIDmode;
+		}
+	    }
+	}
       else
 	mode = get_best_mode (bitsize, bitpos + offset * BITS_PER_UNIT,
 			      MEM_ALIGN (op0), mode, MEM_VOLATILE_P (op0));
@@ -916,7 +978,8 @@ store_fixed_bit_field (rtx op0, unsigned HOST_WIDE_INT offset,
       if (mode == VOIDmode)
 	{
 	  /* The only way this should occur is if the field spans word
-	     boundaries.  */
+	     boundaries, or container bondaries with
+	     -fstrict-volatile-bitfields.  */
 	  store_split_bit_field (op0, bitsize, bitpos + offset * BITS_PER_UNIT,
 				 value);
 	  return;
@@ -934,12 +997,15 @@ store_fixed_bit_field (rtx op0, unsigned HOST_WIDE_INT offset,
 		     * BITS_PER_UNIT);
 	}
 
-      /* Get ref to an aligned byte, halfword, or word containing the field.
-	 Adjust BITPOS to be position within a word,
-	 and OFFSET to be the offset of that word.
-	 Then alter OP0 to refer to that word.  */
-      bitpos += (offset % (total_bits / BITS_PER_UNIT)) * BITS_PER_UNIT;
-      offset -= (offset % (total_bits / BITS_PER_UNIT));
+      if (realign)
+	{
+	  /* Get ref to an aligned byte, halfword, or word containing the field.
+	     Adjust BITPOS to be position within a word,
+	     and OFFSET to be the offset of that word.
+	     Then alter OP0 to refer to that word.  */
+	  bitpos += (offset % (total_bits / BITS_PER_UNIT)) * BITS_PER_UNIT;
+	  offset -= (offset % (total_bits / BITS_PER_UNIT));
+	}
       op0 = adjust_address (op0, mode, offset);
     }
 
@@ -1143,7 +1209,7 @@ store_split_bit_field (rtx op0, unsigned HOST_WIDE_INT bitsize,
       /* OFFSET is in UNITs, and UNIT is in bits.
          store_fixed_bit_field wants offset in bytes.  */
       store_fixed_bit_field (word, offset * unit / BITS_PER_UNIT, thissize,
-			     thispos, part);
+			     thispos, part, false);
       bitsdone += thissize;
     }
 }
@@ -1564,7 +1630,7 @@ extract_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 
       /* On big-endian machines, we count bits from the most significant.
 	 If the bit field insn does not, we must invert.  */
-      if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN)
+      if (BITS_BIG_ENDIAN != BYTES_BIG_ENDIAN && !MEM_P (xop0))
 	xbitpos = unit - bitsize - xbitpos;
 
       /* Now convert from counting within UNIT to counting in EXT_MODE.  */
@@ -1793,41 +1859,12 @@ extract_fixed_bit_field (enum machine_mode tmode, rtx op0,
 	{
 	  if (STRICT_ALIGNMENT)
 	    {
-	      static bool informed_about_misalignment = false;
-	      bool warned;
-
+	      warn_misaligned_bitfield (bitsize == total_bits, packedp);
 	      if (packedp)
 		{
-		  if (bitsize == total_bits)
-		    warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
-					 "multiple accesses to volatile structure member"
-					 " because of packed attribute");
-		  else
-		    warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
-					 "multiple accesses to volatile structure bitfield"
-					 " because of packed attribute");
-
 		  return extract_split_bit_field (op0, bitsize,
 						  bitpos + offset * BITS_PER_UNIT,
 						  unsignedp);
-		}
-
-	      if (bitsize == total_bits)
-		warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
-				     "mis-aligned access used for structure member");
-	      else
-		warned = warning_at (input_location, OPT_fstrict_volatile_bitfields,
-				     "mis-aligned access used for structure bitfield");
-
-	      if (! informed_about_misalignment && warned)
-		{
-		  informed_about_misalignment = true;
-		  inform (input_location,
-			  "When a volatile object spans multiple type-sized locations,"
-			  " the compiler must choose between using a single mis-aligned access to"
-			  " preserve the volatility, or using multiple aligned accesses to avoid"
-			  " runtime faults.  This code may fail at runtime if the hardware does"
-			  " not allow this access.");
 		}
 	    }
 	}
@@ -3090,9 +3127,11 @@ expand_mult_const (enum machine_mode mode, rtx op0, HOST_WIDE_INT val,
       switch (alg->op[opno])
 	{
 	case alg_shift:
-	  accum = expand_shift (LSHIFT_EXPR, mode, accum,
-				build_int_cst (NULL_TREE, log),
-				NULL_RTX, 0);
+	  tem = expand_shift (LSHIFT_EXPR, mode, accum,
+			      build_int_cst (NULL_TREE, log),
+			      NULL_RTX, 0);
+	  /* REG_EQUAL note will be attached to the following insn.  */
+	  emit_move_insn (accum, tem);
 	  val_so_far <<= log;
 	  break;
 
@@ -3353,12 +3392,17 @@ expand_widening_mult (enum machine_mode mode, rtx op0, rtx op1, rtx target,
 		      int unsignedp, optab this_optab)
 {
   bool speed = optimize_insn_for_speed_p ();
+  rtx cop1;
 
   if (CONST_INT_P (op1)
-      && (INTVAL (op1) >= 0
+      && GET_MODE (op0) != VOIDmode
+      && (cop1 = convert_modes (mode, GET_MODE (op0), op1,
+				this_optab == umul_widen_optab))
+      && CONST_INT_P (cop1)
+      && (INTVAL (cop1) >= 0
 	  || GET_MODE_BITSIZE (mode) <= HOST_BITS_PER_WIDE_INT))
     {
-      HOST_WIDE_INT coeff = INTVAL (op1);
+      HOST_WIDE_INT coeff = INTVAL (cop1);
       int max_cost;
       enum mult_variant variant;
       struct algorithm algorithm;

@@ -191,7 +191,7 @@ static GTY(()) int common_mode_defined;
 
 /* Label number of label created for -mrelocatable, to call to so we can
    get the address of the GOT section */
-int rs6000_pic_labelno;
+static int rs6000_pic_labelno;
 
 #ifdef USING_ELFOS_H
 /* Which abi to adhere to */
@@ -2362,6 +2362,8 @@ rs6000_override_options (const char *default_cpu)
   set_masks &= ~target_flags_explicit;
 
   /* Identify the processor type.  */
+  if (default_cpu && !strcmp (default_cpu, "native"))
+    default_cpu = 0;
   rs6000_select[0].string = default_cpu;
   rs6000_cpu = TARGET_POWERPC64 ? PROCESSOR_DEFAULT64 : PROCESSOR_DEFAULT;
 
@@ -3734,6 +3736,8 @@ rs6000_file_start (void)
   if ((TARGET_DEFAULT ^ target_flags) & MASK_64BIT)
     default_cpu = 0;
 #endif
+  if (default_cpu && !strcmp (default_cpu, "native"))
+    default_cpu = 0;
 
   if (flag_verbose_asm)
     {
@@ -5440,7 +5444,7 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
     }
   else
     {
-      rtx r3, got, tga, tmp1, tmp2, eqv;
+      rtx r3, got, tga, tmp1, tmp2, call_insn;
 
       /* We currently use relocations like @got@tlsgd for tls, which
 	 means the linker will handle allocation of tls entries, placing
@@ -5480,6 +5484,7 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
 	{
 	  r3 = gen_rtx_REG (Pmode, 3);
 	  tga = rs6000_tls_get_addr ();
+	  emit_library_call_value (tga, dest, LCT_CONST, Pmode, 1, r3, Pmode);
 
 	  if (DEFAULT_ABI == ABI_AIX && TARGET_64BIT)
 	    insn = gen_tls_gd_aix64 (r3, got, addr, tga, const0_rtx);
@@ -5489,21 +5494,18 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
 	    insn = gen_tls_gd_sysvsi (r3, got, addr, tga, const0_rtx);
 	  else
 	    gcc_unreachable ();
-
-	  start_sequence ();
-	  insn = emit_call_insn (insn);
-	  RTL_CONST_CALL_P (insn) = 1;
-	  use_reg (&CALL_INSN_FUNCTION_USAGE (insn), r3);
+	  call_insn = last_call_insn ();
+	  PATTERN (call_insn) = insn;
 	  if (DEFAULT_ABI == ABI_V4 && TARGET_SECURE_PLT && flag_pic)
-	    use_reg (&CALL_INSN_FUNCTION_USAGE (insn), pic_offset_table_rtx);
-	  insn = get_insns ();
-	  end_sequence ();
-	  emit_libcall_block (insn, dest, r3, addr);
+	    use_reg (&CALL_INSN_FUNCTION_USAGE (call_insn),
+		     pic_offset_table_rtx);
 	}
       else if (model == TLS_MODEL_LOCAL_DYNAMIC)
 	{
 	  r3 = gen_rtx_REG (Pmode, 3);
 	  tga = rs6000_tls_get_addr ();
+	  tmp1 = gen_reg_rtx (Pmode);
+	  emit_library_call_value (tga, tmp1, LCT_CONST, Pmode, 1, r3, Pmode);
 
 	  if (DEFAULT_ABI == ABI_AIX && TARGET_64BIT)
 	    insn = gen_tls_ld_aix64 (r3, got, tga, const0_rtx);
@@ -5513,19 +5515,12 @@ rs6000_legitimize_tls_address (rtx addr, enum tls_model model)
 	    insn = gen_tls_ld_sysvsi (r3, got, tga, const0_rtx);
 	  else
 	    gcc_unreachable ();
-
-	  start_sequence ();
-	  insn = emit_call_insn (insn);
-	  RTL_CONST_CALL_P (insn) = 1;
-	  use_reg (&CALL_INSN_FUNCTION_USAGE (insn), r3);
+	  call_insn = last_call_insn ();
+	  PATTERN (call_insn) = insn;
 	  if (DEFAULT_ABI == ABI_V4 && TARGET_SECURE_PLT && flag_pic)
-	    use_reg (&CALL_INSN_FUNCTION_USAGE (insn), pic_offset_table_rtx);
-	  insn = get_insns ();
-	  end_sequence ();
-	  tmp1 = gen_reg_rtx (Pmode);
-	  eqv = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, const0_rtx),
-				UNSPEC_TLSLD);
-	  emit_libcall_block (insn, tmp1, r3, eqv);
+	    use_reg (&CALL_INSN_FUNCTION_USAGE (call_insn),
+		     pic_offset_table_rtx);
+
 	  if (rs6000_tls_size == 16)
 	    {
 	      if (TARGET_64BIT)
@@ -10013,12 +10008,18 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
       || arg2 == error_mark_node)
     return const0_rtx;
 
-  switch (icode)
+  /* Check and prepare argument depending on the instruction code.
+
+     Note that a switch statement instead of the sequence of tests
+     would be incorrect as many of the CODE_FOR values could be
+     CODE_FOR_nothing and that would yield multiple alternatives
+     with identical values.  We'd never reach here at runtime in
+     this case.  */
+  if (icode == CODE_FOR_altivec_vsldoi_v4sf
+      || icode == CODE_FOR_altivec_vsldoi_v4si
+      || icode == CODE_FOR_altivec_vsldoi_v8hi
+      || icode == CODE_FOR_altivec_vsldoi_v16qi)
     {
-    case CODE_FOR_altivec_vsldoi_v4sf:
-    case CODE_FOR_altivec_vsldoi_v4si:
-    case CODE_FOR_altivec_vsldoi_v8hi:
-    case CODE_FOR_altivec_vsldoi_v16qi:
       /* Only allow 4-bit unsigned literals.  */
       STRIP_NOPS (arg2);
       if (TREE_CODE (arg2) != INTEGER_CST
@@ -10027,16 +10028,16 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  error ("argument 3 must be a 4-bit unsigned literal");
 	  return const0_rtx;
 	}
-      break;
-
-    case CODE_FOR_vsx_xxpermdi_v2df:
-    case CODE_FOR_vsx_xxpermdi_v2di:
-    case CODE_FOR_vsx_xxsldwi_v16qi:
-    case CODE_FOR_vsx_xxsldwi_v8hi:
-    case CODE_FOR_vsx_xxsldwi_v4si:
-    case CODE_FOR_vsx_xxsldwi_v4sf:
-    case CODE_FOR_vsx_xxsldwi_v2di:
-    case CODE_FOR_vsx_xxsldwi_v2df:
+    }
+  else if (icode == CODE_FOR_vsx_xxpermdi_v2df
+           || icode == CODE_FOR_vsx_xxpermdi_v2di
+           || icode == CODE_FOR_vsx_xxsldwi_v16qi
+           || icode == CODE_FOR_vsx_xxsldwi_v8hi
+           || icode == CODE_FOR_vsx_xxsldwi_v4si
+           || icode == CODE_FOR_vsx_xxsldwi_v4sf
+           || icode == CODE_FOR_vsx_xxsldwi_v2di
+           || icode == CODE_FOR_vsx_xxsldwi_v2df)
+    {
       /* Only allow 2-bit unsigned literals.  */
       STRIP_NOPS (arg2);
       if (TREE_CODE (arg2) != INTEGER_CST
@@ -10045,10 +10046,10 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  error ("argument 3 must be a 2-bit unsigned literal");
 	  return const0_rtx;
 	}
-      break;
-
-    case CODE_FOR_vsx_set_v2df:
-    case CODE_FOR_vsx_set_v2di:
+    }
+  else if (icode == CODE_FOR_vsx_set_v2df
+           || icode == CODE_FOR_vsx_set_v2di)
+    {
       /* Only allow 1-bit unsigned literals.  */
       STRIP_NOPS (arg2);
       if (TREE_CODE (arg2) != INTEGER_CST
@@ -10057,10 +10058,6 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  error ("argument 3 must be a 1-bit unsigned literal");
 	  return const0_rtx;
 	}
-      break;
-
-    default:
-      break;
     }
 
   if (target == 0
@@ -10989,6 +10986,289 @@ spe_expand_evsel_builtin (enum insn_code icode, tree exp, rtx target)
   return target;
 }
 
+/* isel builtins are a bit funny, because we want the user to be able to do:
+
+   char *p, *q, *r;
+   int x, y, z;
+   unsigned int a, b, c;
+   ...
+   p = __builtin_iseleq (i, j, q, r);
+   x = __builtin_iseleq (i, j, y, z);
+   a = __builtin_iseleq (i, j, b, c);
+
+   and, of course, i and j may be of several different types depending on the
+   condition.
+
+   We handle this by having generic builtins that
+   TARGET_RESOLVE_OVERLOADED_BUILTIN takes and turns into calls to our
+   specific builtins.  */
+
+/* Macros to help constructing the isel_builtin_desc arrays.
+   These closely mirror the macros in rs6000-builtins.def.  */
+/* HACK: Use VOIDmode here as a constant approximation to Pmode and fix
+   at runtime.  We can't use Pmode because in biarch its definition is
+   not constant.  */
+#define ISEL_Pmode VOIDmode
+#define ISEL_BASE(FLAGS, ARG, RESULT, PRED, CMP, MODE, RMODE)		\
+  { NULL, FLAGS, RS6000_BUILTIN_ISEL_##PRED##CMP##_##ARG##_##RESULT,	\
+      PRED, MODE, RMODE },
+#define ISEL_P_RESULT(FLAGS, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_BASE (FLAGS | ISEL_FLAG_SEL_PTR, ARG, PP, PRED,		\
+	     CMP, MODE, ISEL_Pmode)
+#define ISEL_S_RESULT(FLAGS, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_BASE (FLAGS | ISEL_FLAG_SEL_SIGNED, ARG, SS, PRED,		\
+	     CMP, MODE, RMODE)
+#define ISEL_U_RESULT(FLAGS, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_BASE (FLAGS | ISEL_FLAG_SEL_UNSIGNED, ARG, UU, PRED,		\
+	     CMP, MODE, RMODE)
+
+#define ISEL_EXPAND_ARG(FLAG, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_P_RESULT (FLAG, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_S_RESULT (FLAG, ARG, PRED, CMP, MODE, RMODE)		\
+  ISEL_U_RESULT (FLAG, ARG, PRED, CMP, MODE, RMODE)
+#define ISEL_PTR_ARG(PRED, CMP, MODE)				\
+  ISEL_EXPAND_ARG (ISEL_FLAG_CMP_PTR, PP, PRED, CMP, ISEL_Pmode, MODE)
+#define ISEL_SIGNED_ARG(PRED, CMP, MODE)			\
+  ISEL_EXPAND_ARG (ISEL_FLAG_CMP_SIGNED, SS, PRED, CMP, MODE, MODE)
+#define ISEL_UNSIGNED_ARG(PRED, CMP, MODE)			\
+  ISEL_EXPAND_ARG (ISEL_FLAG_CMP_UNSIGNED, UU, PRED, CMP, MODE, MODE)
+
+#define ISEL_EQ(CMP, MODE)					\
+  ISEL_PTR_ARG (EQ, CMP, MODE)					\
+  ISEL_SIGNED_ARG (EQ, CMP, MODE)				\
+  ISEL_UNSIGNED_ARG (EQ, CMP, MODE)
+#define ISEL_LT(CMP, MODE) ISEL_SIGNED_ARG (LT, CMP, MODE)
+#define ISEL_GT(CMP, MODE) ISEL_SIGNED_ARG (GT, CMP, MODE)
+#define ISEL_LTU(CMP, MODE)					\
+  ISEL_PTR_ARG (LTU, CMP, MODE)					\
+  ISEL_UNSIGNED_ARG (LTU, CMP, MODE)
+#define ISEL_GTU(CMP, MODE)					\
+  ISEL_PTR_ARG (GTU, CMP, MODE)					\
+  ISEL_UNSIGNED_ARG (GTU, CMP, MODE)
+
+const struct isel_builtin_desc builtin_iselw[32] = {
+  ISEL_EQ (CMPW, SImode)
+  ISEL_LT (CMPW, SImode)
+  ISEL_GT (CMPW, SImode)
+  ISEL_LTU (CMPW, SImode)
+  ISEL_GTU (CMPW, SImode)
+  { "__builtin_iseleq", 0, RS6000_BUILTIN_ISELEQ, EQ, SImode, SImode },
+  { "__builtin_isellt", 0, RS6000_BUILTIN_ISELLT, LT, SImode, SImode },
+  { "__builtin_iselgt", 0, RS6000_BUILTIN_ISELGT, GT, SImode, SImode },
+  { "__builtin_iselltu", 0, RS6000_BUILTIN_ISELLTU, LTU, SImode, SImode },
+  { "__builtin_iselgtu", 0, RS6000_BUILTIN_ISELGTU, GTU, SImode, SImode }
+};
+
+const struct isel_builtin_desc builtin_iseld[32] = {
+  ISEL_EQ (CMPD, DImode)
+  ISEL_LT (CMPD, DImode)
+  ISEL_GT (CMPD, DImode)
+  ISEL_LTU (CMPD, DImode)
+  ISEL_GTU (CMPD, DImode)
+  { "__builtin_isel64eq", 0, RS6000_BUILTIN_ISELEQD, EQ, DImode, DImode },
+  { "__builtin_isel64lt", 0, RS6000_BUILTIN_ISELLTD, LT, DImode, DImode },
+  { "__builtin_isel64gt", 0, RS6000_BUILTIN_ISELGTD, GT, DImode, DImode },
+  { "__builtin_isel64ltu", 0, RS6000_BUILTIN_ISELLTDU, LTU, DImode, DImode },
+  { "__builtin_isel64gtu", 0, RS6000_BUILTIN_ISELGTDU, GTU, DImode, DImode }
+};
+
+/* Return the mode which DESC uses for comparisons.  */
+
+static enum machine_mode
+isel_cmp_mode (const struct isel_builtin_desc *desc)
+{
+  enum machine_mode mode = (enum machine_mode) desc->cmp_mode;
+
+  return (mode == VOIDmode ? Pmode : mode);
+}
+
+/* Return the mode in which DESC selects arguments.  */
+
+static enum machine_mode
+isel_sel_mode (const struct isel_builtin_desc *desc)
+{
+  enum machine_mode mode = (enum machine_mode) desc->sel_mode;
+
+  return (mode == VOIDmode ? Pmode : mode);
+}
+
+/* Return a tree describing the arguments for DESC according to CMPP:
+   true for comparison arguments, false for select arguments.  */
+
+static tree
+isel_argtype (const struct isel_builtin_desc *desc, bool cmpp)
+{
+  switch (desc->arg_flags & (cmpp
+			     ? ISEL_FLAG_CMP_MASK
+			     : ISEL_FLAG_SEL_MASK))
+    {
+    case ISEL_FLAG_CMP_PTR:
+    case ISEL_FLAG_SEL_PTR:
+      return ptr_type_node;
+    case ISEL_FLAG_CMP_SIGNED:
+      return (isel_cmp_mode (desc) == SImode
+	      ? integer_type_node
+	      : long_integer_type_node);
+    case ISEL_FLAG_SEL_SIGNED:
+      return (isel_sel_mode (desc) == SImode
+	      ? integer_type_node
+	      : long_integer_type_node);
+    case ISEL_FLAG_CMP_UNSIGNED:
+      return (isel_cmp_mode (desc) == SImode
+	      ? unsigned_type_node
+	      : long_unsigned_type_node);
+    case ISEL_FLAG_SEL_UNSIGNED:
+    default:
+      return (isel_sel_mode (desc) == SImode
+	      ? unsigned_type_node
+	      : long_unsigned_type_node);
+    }
+}
+
+/* Return a mnemonic string describing the argument or result of FLAGS
+   depending on CMPP.  */
+
+static const char *
+isel_strdesc (int flags, bool cmpp)
+{
+  switch (flags & (cmpp ? ISEL_FLAG_CMP_MASK : ISEL_FLAG_SEL_MASK))
+    {
+    case ISEL_FLAG_CMP_PTR:
+    case ISEL_FLAG_SEL_PTR:
+      return "p";
+    case ISEL_FLAG_CMP_SIGNED:
+    case ISEL_FLAG_SEL_SIGNED:
+      return "s";
+    case ISEL_FLAG_CMP_UNSIGNED:
+    case ISEL_FLAG_SEL_UNSIGNED:
+      return "u";
+    default:
+      gcc_unreachable ();
+    }
+}
+
+/* Initialize N_DESC isel builtins from DESC.  SIGNED_TYPE holds the
+   basic type for signed variants of isel, UNSIGNED_TYPE the type for
+   unsigned variants.  */
+
+static void
+rs6000_init_isel_builtins (const struct isel_builtin_desc *desc, int n_descs)
+{
+  int i;
+  const char *is64 = (desc == &builtin_iselw[0] ? "32" : "64");
+
+  for (i = 0; i < n_descs; i++)
+    {
+      const struct isel_builtin_desc *d = &desc[i];
+      tree cmptype, seltype, ftype;
+
+      cmptype = isel_argtype (d, true);
+      seltype = isel_argtype (d, false);
+
+      ftype = build_function_type_list (seltype, cmptype, cmptype,
+					seltype, seltype, NULL_TREE);
+
+      if (d->name)
+	def_builtin (MASK_ISEL, d->name, ftype, d->code);
+      else
+	{
+	  char builtin_name[40];
+
+	  sprintf (builtin_name, "__builtin_isel%s%s%s%s%s%s",
+		   is64,
+		   GET_RTX_NAME (d->cmp_code),
+		   GET_MODE_NAME (isel_cmp_mode (d)),
+		   isel_strdesc (d->arg_flags, true),
+		   isel_strdesc (d->arg_flags, false),
+		   GET_MODE_NAME (isel_sel_mode (d)));
+
+	  def_builtin (MASK_ISEL, ggc_strdup (builtin_name), ftype, d->code);
+	}
+    }
+}
+
+static rtx
+rs6000_expand_isel_builtin (const struct isel_builtin_desc *desc,
+			    int n_descs, tree exp, rtx target, int fcode)
+{
+  int i;
+
+  for (i = 0; i < n_descs; i++)
+    {
+      const struct isel_builtin_desc *d = &desc[i];
+
+      if (fcode == (int) d->code)
+	{
+	  int opidx;
+	  unsigned int j;
+	  rtx cmp;
+	  rtx operands[4];
+	  enum insn_code icode;
+	  enum machine_mode opmode;
+	  enum machine_mode cmpmode = isel_cmp_mode (d);
+	  enum machine_mode selmode = isel_sel_mode (d);
+
+	  /* Determine underlying isel insn.  */
+	  switch (d->cmp_code)
+	    {
+	    case GTU:
+	    case LTU:
+	      icode = (Pmode == SImode
+		       ? CODE_FOR_isel_unsigned_si
+		       : CODE_FOR_isel_unsigned_di);
+	      break;
+	    default:
+	      icode = (Pmode == SImode
+		       ? CODE_FOR_isel_signed_si
+		       : CODE_FOR_isel_signed_di);
+	      break;
+	    }
+
+	  for (j = 0; j < ARRAY_SIZE (operands); j++)
+	    {
+	      tree arg = CALL_EXPR_ARG (exp, j);
+
+	      /* If we got invalid arguments, bail out before generating
+		 bad rtl.  */
+	      if (arg == error_mark_node)
+		return const0_rtx;
+
+	      operands[j] = expand_normal (arg);
+
+	      /* Validate.  */
+	      /* HACK: The isel pattern doesn't actually consume all the
+		 operands to the builtin; it only consumes 2 and 3.  The
+		 other two will be handed off to a compare
+		 insn. Unfortunately, said insn is not named, so we
+		 can't directly access its insn_data here.  Fake it by
+		 validating operands 0 and 1 with the isel pattern; that
+		 should be good enough.  */
+	      opidx = (j < 2 ? 2 : j);
+	      opmode = (j < 2 ? cmpmode : selmode);
+	      if (! (*insn_data[icode].operand[opidx].predicate) (operands[j],
+								  opmode))
+		operands[j] = copy_to_mode_reg (opmode, operands[j]);
+	    }
+
+	  /* Validate target.  */
+	  if (target == NULL_RTX
+	      || GET_MODE (target) != selmode
+	      || ! (*insn_data[icode].operand[0].predicate) (target, selmode))
+	    target = gen_reg_rtx (selmode);
+
+	  /* Generate comparison.  */
+	  cmp = gen_rtx_fmt_ee (d->cmp_code, cmpmode,
+				operands[0], operands[1]);
+
+	  rs6000_emit_int_cmove (target, cmp, operands[2], operands[3]);
+
+	  return target;
+	}
+    }
+
+  return NULL_RTX;
+}
+
 /* Expand an expression EXP that calls a built-in function,
    with result going to TARGET if that's convenient
    (and in mode MODE if that's convenient).
@@ -11097,6 +11377,24 @@ rs6000_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
       if (success)
 	return ret;
     }  
+  if (TARGET_ISEL)
+    {
+      ret = rs6000_expand_isel_builtin (builtin_iselw,
+					ARRAY_SIZE (builtin_iselw),
+					exp, target, fcode);
+
+      if (ret != NULL_RTX)
+	return ret;
+    }
+  if (TARGET_ISEL64)
+    {
+      ret = rs6000_expand_isel_builtin (builtin_iseld,
+					ARRAY_SIZE (builtin_iseld),
+					exp, target, fcode);
+
+      if (ret != NULL_RTX)
+	return ret;
+    }
 
   gcc_assert (TARGET_ALTIVEC || TARGET_VSX || TARGET_SPE || TARGET_PAIRED_FLOAT);
 
@@ -11312,6 +11610,10 @@ rs6000_init_builtins (void)
     spe_init_builtins ();
   if (TARGET_ALTIVEC)
     altivec_init_builtins ();
+  if (TARGET_ISEL)
+    rs6000_init_isel_builtins (builtin_iselw, ARRAY_SIZE (builtin_iselw));
+  if (TARGET_ISEL64)
+    rs6000_init_isel_builtins (builtin_iseld, ARRAY_SIZE (builtin_iseld));
   if (TARGET_ALTIVEC || TARGET_SPE || TARGET_PAIRED_FLOAT || TARGET_VSX)
     rs6000_common_init_builtins ();
   if (TARGET_PPC_GFXOPT)
@@ -17809,7 +18111,8 @@ rs6000_emit_load_toc_table (int fromprolog)
       char buf[30];
       rtx lab, tmp1, tmp2, got;
 
-      ASM_GENERATE_INTERNAL_LABEL (buf, "LCF", rs6000_pic_labelno);
+      lab = gen_label_rtx ();
+      ASM_GENERATE_INTERNAL_LABEL (buf, "L", CODE_LABEL_NUMBER (lab));
       lab = gen_rtx_SYMBOL_REF (Pmode, ggc_strdup (buf));
       if (flag_pic == 2)
 	got = gen_rtx_SYMBOL_REF (Pmode, toc_label_name);
@@ -17822,8 +18125,7 @@ rs6000_emit_load_toc_table (int fromprolog)
 	  tmp2 = gen_reg_rtx (Pmode);
 	}
       emit_insn (gen_load_toc_v4_PIC_1 (lab));
-      emit_move_insn (tmp1,
-			     gen_rtx_REG (Pmode, LR_REGNO));
+      emit_move_insn (tmp1, gen_rtx_REG (Pmode, LR_REGNO));
       emit_insn (gen_load_toc_v4_PIC_3b (tmp2, tmp1, got, lab));
       emit_insn (gen_load_toc_v4_PIC_3c (dest, tmp2, got, lab));
     }
@@ -17850,8 +18152,7 @@ rs6000_emit_load_toc_table (int fromprolog)
 	  symL = gen_rtx_SYMBOL_REF (Pmode, ggc_strdup (buf));
 
 	  emit_insn (gen_load_toc_v4_PIC_1 (symF));
-	  emit_move_insn (dest,
-			  gen_rtx_REG (Pmode, LR_REGNO));
+	  emit_move_insn (dest, gen_rtx_REG (Pmode, LR_REGNO));
 	  emit_insn (gen_load_toc_v4_PIC_2 (temp0, dest, symL, symF));
 	}
       else
@@ -18004,42 +18305,6 @@ rs6000_aix_asm_output_dwarf_table_ref (char * frame_table_label)
 {
   fprintf (asm_out_file, "\t.ref %s\n",
 	   TARGET_STRIP_NAME_ENCODING (frame_table_label));
-}
-
-/* If _Unwind_* has been called from within the same module,
-   toc register is not guaranteed to be saved to 40(1) on function
-   entry.  Save it there in that case.  */
-
-void
-rs6000_aix_emit_builtin_unwind_init (void)
-{
-  rtx mem;
-  rtx stack_top = gen_reg_rtx (Pmode);
-  rtx opcode_addr = gen_reg_rtx (Pmode);
-  rtx opcode = gen_reg_rtx (SImode);
-  rtx tocompare = gen_reg_rtx (SImode);
-  rtx no_toc_save_needed = gen_label_rtx ();
-
-  mem = gen_frame_mem (Pmode, hard_frame_pointer_rtx);
-  emit_move_insn (stack_top, mem);
-
-  mem = gen_frame_mem (Pmode,
-		       gen_rtx_PLUS (Pmode, stack_top,
-				     GEN_INT (2 * GET_MODE_SIZE (Pmode))));
-  emit_move_insn (opcode_addr, mem);
-  emit_move_insn (opcode, gen_rtx_MEM (SImode, opcode_addr));
-  emit_move_insn (tocompare, gen_int_mode (TARGET_32BIT ? 0x80410014
-					   : 0xE8410028, SImode));
-
-  do_compare_rtx_and_jump (opcode, tocompare, EQ, 1,
-			   SImode, NULL_RTX, NULL_RTX,
-			   no_toc_save_needed, -1);
-
-  mem = gen_frame_mem (Pmode,
-		       gen_rtx_PLUS (Pmode, stack_top,
-				     GEN_INT (5 * GET_MODE_SIZE (Pmode))));
-  emit_move_insn (mem, gen_rtx_REG (Pmode, 2));
-  emit_label (no_toc_save_needed);
 }
 
 /* This ties together stack memory (MEM with an alias set of frame_alias_set)
@@ -18577,7 +18842,7 @@ rs6000_make_savres_rtx (rs6000_stack_t *info,
   p = rtvec_alloc ((lr ? 4 : 3) + n_regs);
 
   if (!savep && lr)
-    RTVEC_ELT (p, offset++) = gen_rtx_RETURN (VOIDmode);
+    RTVEC_ELT (p, offset++) = ret_rtx;
 
   RTVEC_ELT (p, offset++)
     = gen_rtx_CLOBBER (VOIDmode, gen_rtx_REG (Pmode, 65));
@@ -19189,22 +19454,6 @@ rs6000_emit_prologue (void)
     {
       unsigned int i, regno;
 
-      /* In AIX ABI we need to pretend we save r2 here.  */
-      if (TARGET_AIX)
-	{
-	  rtx addr, reg, mem;
-
-	  reg = gen_rtx_REG (reg_mode, 2);
-	  addr = gen_rtx_PLUS (Pmode, frame_reg_rtx,
-			       GEN_INT (sp_offset + 5 * reg_size));
-	  mem = gen_frame_mem (reg_mode, addr);
-
-	  insn = emit_move_insn (mem, reg);
-	  rs6000_frame_related (insn, frame_ptr_rtx, info->total_size,
-				NULL_RTX, NULL_RTX);
-	  PATTERN (insn) = gen_blockage ();
-	}
-
       for (i = 0; ; ++i)
 	{
 	  regno = EH_RETURN_DATA_REGNO (i);
@@ -19216,6 +19465,51 @@ rs6000_emit_prologue (void)
 			   + reg_size * (int) i,
 			   info->total_size);
 	}
+    }
+
+  /* In AIX ABI we need to make sure r2 is really saved.  */
+  if (TARGET_AIX && crtl->calls_eh_return)
+    {
+      rtx tmp_reg, tmp_reg_si, hi, lo, compare_result, toc_save_done, jump;
+      long toc_restore_insn;
+
+      gcc_assert (frame_reg_rtx == frame_ptr_rtx
+		  || frame_reg_rtx == sp_reg_rtx);
+      tmp_reg = gen_rtx_REG (Pmode, 11);
+      tmp_reg_si = gen_rtx_REG (SImode, 11);
+      if (using_static_chain_p)
+	emit_move_insn (gen_rtx_REG (Pmode, 0), tmp_reg);
+      gcc_assert (saving_GPRs_inline && saving_FPRs_inline);
+      emit_move_insn (tmp_reg, gen_rtx_REG (Pmode, LR_REGNO));
+      /* Peek at instruction to which this function returns.  If it's
+	 restoring r2, then we know we've already saved r2.  We can't
+	 unconditionally save r2 because the value we have will already
+	 be updated if we arrived at this function via a plt call or
+	 toc adjusting stub.  */
+      emit_move_insn (tmp_reg_si, gen_rtx_MEM (SImode, tmp_reg));
+      toc_restore_insn = TARGET_32BIT ? 0x80410014 : 0xE8410028;
+      hi = gen_int_mode (toc_restore_insn & ~0xffff, SImode);
+      emit_insn (gen_xorsi3 (tmp_reg_si, tmp_reg_si, hi));
+      compare_result = gen_rtx_REG (CCUNSmode, CR0_REGNO);
+      validate_condition_mode (EQ, CCUNSmode);
+      lo = gen_int_mode (toc_restore_insn & 0xffff, SImode);
+      emit_insn (gen_rtx_SET (VOIDmode, compare_result,
+			      gen_rtx_COMPARE (CCUNSmode, tmp_reg_si, lo)));
+      toc_save_done = gen_label_rtx ();
+      jump = gen_rtx_IF_THEN_ELSE (VOIDmode,
+				   gen_rtx_EQ (VOIDmode, compare_result,
+					       const0_rtx),
+				   gen_rtx_LABEL_REF (VOIDmode, toc_save_done),
+				   pc_rtx);
+      jump = emit_jump_insn (gen_rtx_SET (VOIDmode, pc_rtx, jump));
+      JUMP_LABEL (jump) = toc_save_done;
+      LABEL_NUSES (toc_save_done) += 1;
+
+      emit_frame_save (frame_reg_rtx, frame_ptr_rtx, reg_mode, 2,
+		       sp_offset + 5 * reg_size, info->total_size);
+      emit_label (toc_save_done);
+      if (using_static_chain_p)
+	emit_move_insn (tmp_reg, gen_rtx_REG (Pmode, 0));
     }
 
   /* Save CR if we use any that must be preserved.  */
@@ -19623,7 +19917,7 @@ rs6000_emit_epilogue (int sibcall)
       alloc_rname = ggc_strdup (rname);
 
       j = 0;
-      RTVEC_ELT (p, j++) = gen_rtx_RETURN (VOIDmode);
+      RTVEC_ELT (p, j++) = ret_rtx;
       RTVEC_ELT (p, j++) = gen_rtx_USE (VOIDmode,
 					gen_rtx_REG (Pmode,
 						     LR_REGNO));
@@ -20239,7 +20533,7 @@ rs6000_emit_epilogue (int sibcall)
       else
 	p = rtvec_alloc (2);
 
-      RTVEC_ELT (p, 0) = gen_rtx_RETURN (VOIDmode);
+      RTVEC_ELT (p, 0) = ret_rtx;
       RTVEC_ELT (p, 1) = ((restoring_FPRs_inline || !lr)
 			  ? gen_rtx_USE (VOIDmode, gen_rtx_REG (Pmode, 65))
 			  : gen_rtx_CLOBBER (VOIDmode,
@@ -20680,7 +20974,7 @@ rs6000_output_mi_thunk (FILE *file, tree thunk_fndecl ATTRIBUTE_UNUSED,
 			gen_rtx_USE (VOIDmode,
 				     gen_rtx_REG (SImode,
 						  LR_REGNO)),
-			gen_rtx_RETURN (VOIDmode))));
+			ret_rtx)));
   SIBLING_CALL_P (insn) = 1;
   emit_barrier ();
 

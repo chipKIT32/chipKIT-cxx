@@ -326,6 +326,11 @@ lang_specific_driver (int *in_argc, const char *const **in_argv,
       j++;
     }
 
+#if defined(_BUILD_C32_) && defined(XC32CPPLIB_OPTION)
+	arglist[j] = XC32CPPLIB_OPTION;
+	j++;
+#endif
+
   /* Add `-lstdc++' if we haven't already done so.  */
   if (library > 0)
     {
@@ -348,6 +353,7 @@ lang_specific_driver (int *in_argc, const char *const **in_argv,
 	    added_libraries++;
 	  j++;
 	}
+
 #ifdef HAVE_LD_STATIC_DYNAMIC
       if (library > 1 && !static_link)
 	{

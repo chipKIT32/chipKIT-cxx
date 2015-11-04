@@ -110,7 +110,7 @@ choose_tmpdir (void)
       const char *base = 0;
       char *tmpdir;
       unsigned int len;
-      
+
 #ifdef VMS
       /* Try VMS standard temp logical.  */
       base = try_dir ("/sys$scratch", base);
@@ -119,16 +119,22 @@ choose_tmpdir (void)
       base = try_dir (getenv ("TMP"), base);
       base = try_dir (getenv ("TEMP"), base);
 #endif
-      
+
 #ifdef P_tmpdir
       base = try_dir (P_tmpdir, base);
+      /* We really want a directory name here as if concatenated with say \dir
+         we do not end-up with a double \\ which defines an UNC path.  */
+      if (strcmp (P_tmpdir, "\\") == 0)
+        base = try_dir ("\\.", base);
+      else
+        base = try_dir (P_tmpdir, base);
 #endif
 
       /* Try /var/tmp, /usr/tmp, then /tmp.  */
       base = try_dir (vartmp, base);
       base = try_dir (usrtmp, base);
       base = try_dir (tmp, base);
-      
+
       /* If all else fails, use the current directory!  */
       if (base == 0)
 	base = ".";
@@ -200,9 +206,9 @@ make_temp_file (const char *suffix)
   /* Mkstemps failed.  It may be EPERM, ENOSPC etc.  */
   if (fd == -1)
     {
-      fprintf (stderr, "Cannot create temporary file in %s: %s\n",
+      fprintf (stderr, "error: Cannot create temporary file in %s: %s\n",
 	       base, strerror (errno));
-      abort ();
+      exit(-1);
     }
   /* We abort on failed close out of sheer paranoia.  */
   if (close (fd))

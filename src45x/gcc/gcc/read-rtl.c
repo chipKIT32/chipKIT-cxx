@@ -768,8 +768,15 @@ void
 print_rtx_ptr_loc (const void *ptr)
 {
   const struct ptr_loc *loc = get_rtx_ptr_loc (ptr);
+#ifndef _BUILD_C30_
+  /* I personally find this practice distasteful, since the md file doesn't
+     really have any relevance to the execution when debugging...
+
+     Its okay for everyone else, though...
+  */
   if (loc != 0)
     printf ("#line %d \"%s\"\n", loc->lineno, loc->filename);
+#endif
 }
 
 /* Return a condition that satisfies both COND1 and COND2.  Either string

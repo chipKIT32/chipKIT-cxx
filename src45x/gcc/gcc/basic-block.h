@@ -884,6 +884,7 @@ extern void flow_edge_list_print (const char *, const edge *, int, FILE *);
 
 /* In cfgrtl.c  */
 extern basic_block force_nonfallthru (edge);
+extern basic_block force_nonfallthru_and_redirect (edge, basic_block, rtx);
 extern rtx block_label (basic_block);
 extern bool purge_all_dead_edges (void);
 extern bool purge_dead_edges (basic_block);
@@ -1002,6 +1003,20 @@ bb_has_abnormal_pred (basic_block bb)
 	return true;
     }
   return false;
+}
+
+/* Return the fallthru edge in EDGES if it exists, NULL otherwise.  */
+static inline edge
+find_fallthru_edge (VEC(edge,gc) *edges)
+{
+  edge e;
+  edge_iterator ei;
+
+  FOR_EACH_EDGE (e, ei, edges)
+    if (e->flags & EDGE_FALLTHRU)
+      break;
+
+  return e;
 }
 
 /* In cfgloopmanip.c.  */

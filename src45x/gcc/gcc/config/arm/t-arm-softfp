@@ -22,7 +22,7 @@ softfp_extensions := sfdf
 softfp_truncations := dfsf
 softfp_machine_header := arm/sfp-machine.h
 softfp_exclude_libgcc2 := y
-softfp_wrap_start := '\#ifdef __ARM_ARCH_6M__'
+softfp_wrap_start := '\#if defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6SM__)'
 softfp_wrap_end := '\#endif'
 
 # softfp seems to be missing a whole bunch of prototypes.

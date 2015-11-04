@@ -749,6 +749,11 @@ extern rtx force_not_mem (rtx);
 extern enum machine_mode promote_function_mode (const_tree, enum machine_mode, int *,
 					        const_tree, int);
 
+/* Return mode and signedness to use when an libcall argument or
+   result in the given mode is promoted.  */
+extern enum machine_mode promote_libcall_mode (enum machine_mode, int *,
+					       const_tree, int);
+
 /* Return mode and signedness to use when an object in the given mode
    is promoted.  */
 extern enum machine_mode promote_mode (const_tree, enum machine_mode, int *);
@@ -800,7 +805,8 @@ extern enum machine_mode
 mode_for_extraction (enum extraction_pattern, int);
 
 extern void store_bit_field (rtx, unsigned HOST_WIDE_INT,
-			     unsigned HOST_WIDE_INT, enum machine_mode, rtx);
+			     unsigned HOST_WIDE_INT, bool,
+			     enum machine_mode, rtx);
 extern rtx extract_bit_field (rtx, unsigned HOST_WIDE_INT,
 			      unsigned HOST_WIDE_INT, int, bool, rtx,
 			      enum machine_mode, enum machine_mode);

@@ -89,8 +89,10 @@ enum mips_symbol_context {
    SYMBOL_TLSGD
    SYMBOL_TLSLDM
    SYMBOL_DTPREL
+   SYMBOL_DTPREL_HI
    SYMBOL_GOTTPREL
    SYMBOL_TPREL
+   SYMBOL_TPREL_HI
        UNSPEC wrappers around SYMBOL_TLS, corresponding to the
        thread-local storage relocation operators.
 
@@ -127,8 +129,10 @@ enum mips_symbol_type {
   SYMBOL_TLSGD,
   SYMBOL_TLSLDM,
   SYMBOL_DTPREL,
+  SYMBOL_DTPREL_HI,
   SYMBOL_GOTTPREL,
   SYMBOL_TPREL,
+  SYMBOL_TPREL_HI,
   SYMBOL_32_HIGH,
   SYMBOL_64_HIGH,
   SYMBOL_64_MID,
@@ -182,7 +186,10 @@ struct mips16e_save_restore_info;
 enum mips_call_type {
   MIPS_CALL_NORMAL,
   MIPS_CALL_SIBCALL,
-  MIPS_CALL_EPILOGUE
+  MIPS_CALL_EPILOGUE,
+#if defined(TARGET_MCHP_PIC32MX)
+  MIPS_CALL_PROLOGUE
+#endif
 };
 
 extern bool mips_symbolic_constant_p (rtx, enum mips_symbol_context,
@@ -195,6 +202,9 @@ extern int mips_split_const_insns (rtx);
 extern int mips_load_store_insns (rtx, rtx);
 extern int mips_idiv_insns (void);
 extern rtx mips_emit_move (rtx, rtx);
+#ifdef RTX_CODE
+extern void mips_emit_binary (enum rtx_code, rtx, rtx, rtx);
+#endif
 extern rtx mips_pic_base_register (rtx);
 extern rtx mips_got_load (rtx, rtx, enum mips_symbol_type);
 extern bool mips_split_symbol (rtx, rtx, enum machine_mode, rtx *);
@@ -316,11 +326,14 @@ extern const char *mips_output_order_conditional_branch (rtx, rtx *, bool);
 extern const char *mips_output_sync (void);
 extern const char *mips_output_sync_loop (rtx, rtx *);
 extern unsigned int mips_sync_loop_insns (rtx, rtx *);
+extern const char *mips_output_atomic (rtx, rtx *);
 extern const char *mips_output_division (const char *, rtx *);
 extern unsigned int mips_hard_regno_nregs (int, enum machine_mode);
 extern bool mips_linked_madd_p (rtx, rtx);
 extern bool mips_store_data_bypass_p (rtx, rtx);
 extern rtx mips_prefetch_cookie (rtx, rtx);
+extern int mips_mult_madd_chain_bypass_p (rtx, rtx);
+extern int mips_dspalu_bypass_p (rtx, rtx);
 
 extern void irix_asm_output_align (FILE *, unsigned);
 extern const char *current_section_name (void);
@@ -373,6 +386,7 @@ extern bool mips_epilogue_uses (unsigned int);
 extern void mips_final_prescan_insn (rtx, rtx *, int);
 extern int mips_trampoline_code_size (void);
 extern void mips_function_profiler (FILE *);
+extern void mips_output_tls_reloc_directive (rtx, rtx);
 
 typedef rtx (*mulsidi3_gen_fn) (rtx, rtx, rtx);
 #ifdef RTX_CODE
@@ -383,7 +397,13 @@ extern const char* pic32_output_switch_ISAbase (void);
 extern const char* pic32_output_switch_ISA16 (void);
 extern const char* pic32_output_mfc0_32 (rtx dest, int srcreg, int srcsel);
 extern const char* pic32_output_mtc0_32 (rtx value, int srcreg, int srcsel);
-
+extern bool mips_noreturn_function_p (tree decl);
+extern rtx mips_emit_call_insn (rtx, rtx, rtx, bool);
+extern bool mips_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED);
+extern bool mips_load_call_address (enum mips_call_type type, rtx dest, rtx addr);
 extern int mchp_check_for_conversion(rtx);
+
+
+extern bool mips_in_small_data_p (const_tree decl);
 
 #endif /* ! GCC_MIPS_PROTOS_H */

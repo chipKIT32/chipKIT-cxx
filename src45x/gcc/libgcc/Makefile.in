@@ -1,6 +1,6 @@
 # Makefile.in
 
-# Copyright (C) 2005, 2006, 2009 Free Software Foundation
+# Copyright (C) 2005, 2006, 2009, 2010 Free Software Foundation
 #
 # This file is part of GCC.
 #
@@ -646,6 +646,16 @@ endif
 # Build fixed-point support.
 ifeq ($(fixed_point),yes)
 
+FIXED_BIT_MACHINE := fixed-bit-machine.h
+
+# Use default header if a machine-specific one is not defined.
+ifeq ($(fixed_bit_machine_header),)
+fixed_bit_machine_header := fixed-bit-mach-generic.h
+endif
+
+$(FIXED_BIT_MACHINE): $(gcc_srcdir)/config/$(fixed_bit_machine_header)
+	cp $(gcc_srcdir)/config/$(fixed_bit_machine_header) $(FIXED_BIT_MACHINE)
+
 # Generate permutations of function name and mode
 fixed-labels := $(shell $(SHELL) $(srcdir)/gen-fixed.sh arith labels)
 fixed-funcs := $(shell $(SHELL) $(srcdir)/gen-fixed.sh arith funcs)
@@ -968,7 +978,9 @@ install-leaf: $(install-shared) $(install-libunwind)
 install: install-leaf
 	@: $(MAKE) ; $(MULTIDO) $(FLAGS_TO_PASS) multi-do DO=install
 
-.PHONY: install install-shared install-libunwind
+install-strip: install
+
+.PHONY: install install-shared install-libunwind install-strip
 
 # Don't export variables to the environment, in order to not confuse
 # configure.

@@ -413,6 +413,13 @@ gen_insn (rtx insn)
   if (pindex == ARRAY_SIZE (optabs))
     return;
 
+#ifdef _BUILD_C30_
+  /* We found a match... but wait! Don't output 'widen' modes for modes
+     that are not widen-able.  We can check mode_wider[m1] == m2 */
+  if (strstr(optabs[pindex],"widen") && (mode_wider[m1] != m2)) return;
+#endif
+
+
   /* We found a match.  If this pattern is only conditionally present,
      write out the "if" and two extra blanks.  */
 

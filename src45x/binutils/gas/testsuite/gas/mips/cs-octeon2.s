@@ -1,0 +1,16 @@
+	uld	$4,($5)
+	uld	$4,0x12345678($5)
+	uld	$4,symbol
+	uld	$4,symbol($5)
+	ulw	$4,($5)
+	ulw	$4,0x12345678($5)
+	ulw	$4,symbol
+	ulw	$4,symbol($5)
+	usd	$4,($5)
+	usd	$4,0x12345678($5)
+	usd	$4,symbol
+	usd	$4,symbol($5)
+	usw	$4,($5)
+	usw	$4,0x12345678($5)
+	usw	$4,symbol
+	usw	$4,symbol($5)
