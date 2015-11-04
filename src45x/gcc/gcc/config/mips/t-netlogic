@@ -1,4 +1,0 @@
-MULTILIB_OPTIONS = mabi=32/mabi=64
-MULTILIB_DIRNAMES = 32 64
-MULTILIB_OSDIRNAMES = ../lib ../lib64
-CRTSTUFF_T_CFLAGS = -fno-unwind-tables

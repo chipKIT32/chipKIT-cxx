@@ -1,5 +1,0 @@
-# Add 64-bit multilibs to the mix.
-
-MULTILIB_OPTIONS += mabi=64
-MULTILIB_DIRNAMES += 64
-MULTILIB_EXCEPTIONS = *mmicromips/*mabi=64* *mips16*/*mabi=64*

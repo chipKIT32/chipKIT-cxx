@@ -1,3 +1,0 @@
-
-# Add shared object crtstuff
-EXTRA_MULTILIB_PARTS += crtbeginS.o crtendS.o

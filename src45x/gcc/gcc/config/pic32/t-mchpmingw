@@ -1,3 +1,0 @@
-# Do not use collect2 when building for Windows
-USE_COLLECT2=
-
