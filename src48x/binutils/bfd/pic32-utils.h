@@ -109,6 +109,12 @@
   (sec)->flags |= SEC_KEEP; 
 #define PIC32_SET_COHERENT_ATTR(sec) \
   (sec)->coherent = 1;
+#define PIC32_SET_SERIAL_MEM_ATTR(sec) { \
+  (sec)->flags |= (SEC_HAS_CONTENTS | SEC_LOAD | SEC_ALLOC ); \
+  (sec)->serial_mem = 1; \
+  (sec)->heap = 0; \
+  (sec)->stack = 0; }
+
 
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
@@ -171,6 +177,11 @@
   (((sec)->flags & SEC_KEEP) == SEC_KEEP)
 #define PIC32_IS_COHERENT_ATTR(sec) \
   ((sec)->coherent == 1)
+#define PIC32_IS_SERIAL_MEM_ATTR(sec) \
+  ((((sec)->flags & SEC_ALLOC) == SEC_ALLOC)&& \
+   ((sec)->serial_mem ==1)&& \
+   ((sec)->memory !=1))
+
 
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
@@ -218,5 +229,6 @@ extern struct mchp_undefsym_table *mchp_undefsym_init
 extern bfd_boolean pic32_has_fill_option;
 extern bfd_boolean pic32_has_processor_option;
 extern const bfd_arch_info_type *global_PROCESSOR;
+extern struct bfd_sym_chain entry_symbol_copy;
 #endif
 

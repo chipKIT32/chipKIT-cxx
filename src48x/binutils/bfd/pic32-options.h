@@ -59,6 +59,12 @@ extern const char * crypto_file;
 extern bfd_boolean pic32_has_processor_option;
 extern bfd_boolean pic32_has_hardfloat_option;
 extern bfd_boolean pic32_has_softfloat_option;
+extern bfd_boolean pic32_code_in_dinit;
+extern bfd_boolean pic32_has_code_in_dinit_option;
+extern bfd_boolean pic32_has_dinit_in_serial_mem_option;
+extern bfd_boolean pic32_dinit_in_serial_mem;
+extern bfd_boolean pic32_dinit_has_absolute_address;
+extern bfd_vma dinit_address;
 
 static void gldelf32pic32mx_list_options
    PARAMS ((FILE *));
@@ -82,7 +88,12 @@ enum elfpic32mx_options {
   MEMRESERVE_OPTION,
   HARDFLOAT_OPTION,
   MEMORY_SUMMARY,
-  SOFTFLOAT_OPTION
+  SOFTFLOAT_OPTION,
+  CODE_IN_DINIT_OPTION,
+  NO_CODE_IN_DINIT_OPTION,
+  DINIT_IN_SERIAL_MEM_OPTION,
+  NO_DINIT_IN_SERIAL_MEM_OPTION,
+  DINIT_ADDRESS_OPTION
 };
 
 static struct option longopts[] =
@@ -99,6 +110,11 @@ static struct option longopts[] =
   { "mreserve", required_argument, NULL, MEMRESERVE_OPTION },
   { "hard-float", no_argument, NULL, HARDFLOAT_OPTION },
   { "soft-float", no_argument, NULL, SOFTFLOAT_OPTION },  
+  { "code-in-dinit", no_argument, NULL, CODE_IN_DINIT_OPTION },
+  { "no-code-in-dinit", no_argument, NULL, NO_CODE_IN_DINIT_OPTION },  
+  { "dinit-in-serial-mem", no_argument, NULL, DINIT_IN_SERIAL_MEM_OPTION },
+  { "no-dinit-in-serial-mem", no_argument, NULL, NO_DINIT_IN_SERIAL_MEM_OPTION },
+  { "dinit-address", required_argument, NULL, DINIT_ADDRESS_OPTION },
   { NULL,        no_argument,       NULL, 0                }
 };
 #endif

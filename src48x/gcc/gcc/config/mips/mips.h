@@ -1803,6 +1803,9 @@ struct mips_cpu_info {
 #define HARD_REGNO_MODE_OK(REGNO, MODE)					\
   mips_hard_regno_mode_ok[ (int)(MODE) ][ (REGNO) ]
 
+#define HARD_REGNO_RENAME_OK(OLD_REG, NEW_REG)				\
+  mips_hard_regno_rename_ok (OLD_REG, NEW_REG)
+
 #define MODES_TIEABLE_P mips_modes_tieable_p
 
 /* Register to use for pushing function arguments.  */

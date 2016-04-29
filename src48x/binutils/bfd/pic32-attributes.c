@@ -22,6 +22,9 @@
 extern unsigned int pic32_attribute_map
   PARAMS ((asection *));
 
+extern unsigned int pic32_extended_attribute_map
+  PARAMS ((asection *));
+
 extern void pic32_set_attributes
   PARAMS ((asection *, unsigned int, unsigned char ));
 
@@ -59,7 +62,8 @@ char * pic32_section_size_string
                        | 1<<memory   \
                        | 1<<heap     \
                        | 1<<stack    \
-                       | 1<<ramfunc )
+                       | 1<<ramfunc  \
+                       | 1<<serial_mem )
 
 #define INFO_ATTR_MASK ( 1<<info )
 
@@ -67,7 +71,7 @@ char * pic32_section_size_string
   ((strlen(sec->name) == strlen(#s)) && \
            strcmp(sec->name, (#s)) == 0)
 
-
+#define FIRST_EXT_ATTRIBUTE serial_mem
 
 /*
  * This function builds a bit map that represents all
@@ -97,6 +101,18 @@ unsigned int pic32_attribute_map(asection *sec)
 
 } /* pic32_attribute_map() */
 
+/*****************************************************************************/
+
+/*
+ * This function creates a bit map that represents
+ * only the extended attributes. The bit map is derived
+ * from a bfd section, which is the cannoical representation.
+ *
+ */
+unsigned int pic32_extended_attribute_map(asection *sec)
+{
+  return (pic32_attribute_map(sec) >> FIRST_EXT_ATTRIBUTE);
+}
 
 /*****************************************************************************/
 
@@ -135,6 +151,28 @@ pic32_set_attributes(asection *sec, unsigned int mask, unsigned char flag_debug)
     printf ("<-- pic32_set_attributes::end\n");
 }
 
+/*****************************************************************************/
+
+/*
+ * This function sets the extended attributes
+ * in a bfd section. Extended attributes are
+ * derived from a bit mask that is encoded
+ * as a symbol in the object file.
+ *
+ */
+void
+pic32_set_extended_attributes(asection *sec,
+                              unsigned int mask,
+                              unsigned char flag_debug)
+{
+  if (flag_debug)
+    printf ("--> pic32_set_extended_attributes::begin\n");
+
+  pic32_set_attributes(sec, mask << FIRST_EXT_ATTRIBUTE, flag_debug);
+
+  if (flag_debug)
+    printf ("<-- pic32_set_extended_attributes::end\n");
+}
 
 /*****************************************************************************/
 
@@ -252,9 +290,9 @@ pic32_is_valid_attributes (unsigned int mask, unsigned char flag_debug)
 //   type_mask = (1<<a)|(1<<b)|(1<<c)|(1<<d)|(1<<e)|(1<<f)        \
 //               |(1<<g)|(1<<h);
 
-#define MASK1(a,b,c,d,e,f,g)                                \
+#define MASK1(a,b,c,d,e,f,g,h)                                \
    type_mask = (1<<a)|(1<<b)|(1<<c)|(1<<d)|(1<<e)|(1<<f)        \
-               |(1<<g);
+               |(1<<g) | (1<<h);
 
 #define MAX_TYPES 32
 #include "pic32-attributes.h"

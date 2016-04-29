@@ -23,7 +23,7 @@ Target Undocumented RejectNegative Joined
 -mabi=ABI	Generate code that conforms to the given ABI
 
 mabicalls
-Target Undocumented Report Mask(ABICALLS) 
+Target Undocumented Report Mask(ABICALLS)
 ;Generate code that can be used in SVR4-style dynamic objects
 
 ;mad
@@ -197,7 +197,7 @@ Target Report
 An alias for minterlink-compressed provided for backward-compatibility.
 
 mjals
-Target Report Var(TARGET_JALS) Init(0) 
+Target Report Var(TARGET_JALS) Init(0)
 Generate jals for microMIPS by recognizing that the branch delay slot instruction can be 16 bits.  This implies that the function call cannot switch the current mode during the linking stage, because we don't have jalxs that supports 16-bit branch delay slot instructions.
 
 mips
@@ -433,7 +433,7 @@ Target Var Var(TARGET_SMALL_ISA) Init(0)
 
 mpic32mxlibs
 Target RejectNegative Var Var(TARGET_PIC32MX_LIBS) Undocumented
--mpic32mxlibs		Use the PIC32MX multilib variant 
+-mpic32mxlibs		Use the PIC32MX multilib variant
 
 mpic32mzlibs
 Target RejectNegative Var Var(TARGET_PIC32MZ_LIBS) Undocumented
@@ -444,7 +444,7 @@ Target RejectNegative Var Var(TARGET_PIC32MM_LIBS) Undocumented
 -mpic32mmlibs		Use the PIC32MM multilib variant
 
 mresource=
-Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented 
+Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented
 Identify compiler resource file
 
 mno-fallback
@@ -466,3 +466,17 @@ Target Joined Var(TARGET_MEMORY_SUMMARY) Undocumented
 mfill=
 Target Joined Var(TARGET_MEMORY_FILL) Undocumented
 
+Waddress-attribute-use
+Warning C C++ Report Var(mchp_warn_address_attribute_use) Init(0)
+Warn about all uses of the address() attribute. For engineering-support purposes only, identify variables and functions that are address() attributed
+
+mprint-mchp-search-dirs
+Target RejectNegative Var(TARGET_PRINT_MCHP_SEARCH_DIRS) Init(0) Undocumented
+-mprint-mchp-search-dirs	Print to stdout a list of include-file search directories
+
+print-mchp-search-dirs
+Target RejectNegative Alias(mprint-mchp-search-dirs)
+-print-mchp-search-dirs	Print to stdout a list of include-file search directories
+
+mgen-pie-static
+Target RejectNegative Undocumented

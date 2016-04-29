@@ -184,6 +184,10 @@ allocate_memory() {
   if (result != 0)
     einfo(_("%F%sdata memory\n"), ERR_STR );
 
+  result = allocate_serial_memory();
+  if (result != 0)
+    einfo(_("%F%sserial memory\n"), ERR_STR );
+
   result = allocate_program_memory();
   if (result != 0)
     einfo(_("%F%sprogram memory\n"), ERR_STR );
@@ -368,6 +372,41 @@ allocate_program_memory() {
 
   return result;
 } /* allocate_program_memory() */
+
+static int
+allocate_serial_memory() {
+  struct memory_region_struct *region;
+  unsigned int mask = serial_mem;
+  int result = 0;
+
+  if (pic32_debug)
+    printf("\nBuilding allocation list for region \"serial memory\"\n"
+           "  attribute mask = %x\n", mask);
+
+  build_alloc_section_list(mask);
+
+  if (pic32_section_list_length(alloc_section_list) == 0)
+    return result;
+
+  region = region_lookup ("serial_mem");
+  build_free_block_list(region, mask);
+
+  if (pic32_debug) {
+    pic32_print_section_list(alloc_section_list, "allocation");
+  }
+
+#if 0
+  if (pic32_debug)
+    pic32_print_section_list(unassigned_sections, "unassigned");
+#endif
+
+  reset_locate_options();
+  result |= locate_sections(address, 0, region);   /* most restrictive  */
+  result |= locate_sections(all_attr, 0, region);  /* least restrictive */
+
+  return result;
+} /* allocate_serial_memory() */
+
 
 /*
  * allocate_data_memory()
@@ -1375,9 +1414,8 @@ build_alloc_section_list(unsigned int mask) {
         printf("  input section \"%s\", len = %lx, flags = %x, attr = %x\n",
                s->sec->name, s->sec->rawsize? s->sec->rawsize :
                s->sec->size, s->sec->flags, s->attributes);
-
-      insert_alloc_section(alloc_section_list, s);
-      prev->next = next; /* unlink it from unassigned_sections */
+        insert_alloc_section(alloc_section_list, s);
+        prev->next = next; /* unlink it from unassigned_sections */        
     } else
       prev = s;
   }

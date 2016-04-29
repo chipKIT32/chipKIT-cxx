@@ -5987,7 +5987,14 @@ thread_prologue_and_epilogue_insns (void)
       
   if (flag_shrink_wrap && HAVE_simple_return
       && (targetm.profile_before_prologue () || !crtl->profile)
-      && nonempty_prologue && !crtl->calls_eh_return)
+      && nonempty_prologue && !crtl->calls_eh_return
+#if defined(_BUILD_C32_)
+      /* shrink wrap optimization creates simple return instruction. 
+       * It doesn't give expected results in the case of interrupt routines. 
+      */
+      && !lookup_attribute ("interrupt", TYPE_ATTRIBUTES(TREE_TYPE(cfun->decl)))
+#endif      
+     )
     {
       HARD_REG_SET prologue_clobbered, prologue_used, live_on_edge;
       struct hard_reg_set_container set_up_by_prologue;

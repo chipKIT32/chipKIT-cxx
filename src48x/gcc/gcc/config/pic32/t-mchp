@@ -13,9 +13,9 @@ CRTSTUFF_T_CFLAGS = -G 0 -D_BUILD_C32_ -minterlink-compressed
 LIBGCC = stmp-multilib
 INSTALL_LIBGCC = install-multilib
 
-MULTILIB_OPTIONS = Os/O3 mips16/mmicromips mno-float/mfp64
-MULTILIB_DIRNAMES = size speed mips16 micromips no-float fpu64
-MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e
+MULTILIB_OPTIONS = Os/O3 mips16/mmicromips mno-float/mfp64 fPIC
+MULTILIB_DIRNAMES = size speed mips16 micromips no-float fpu64 fPIC
+MULTILIB_MATCHES = EL=mel EB=meb mips16=mips16e fPIC=fpic fPIC=fpie fPIC=fPIE
 MULTILIB_EXCLUSIONS = mcode-readable=no/!mips16
 MULTILIB_EXCLUSIONS += *mno-float/*mfp64*
 MULTILIB_EXCLUSIONS += *mips16/*mfp64*

@@ -590,6 +590,18 @@ parse_args (unsigned argc, char **argv)
 	    || ! ISDIGIT (argv[i + 1][0])))
       argv[i] = (char *) "--shared";
 
+#ifdef TARGET_IS_PIC32MX
+  /* The -pie option is ambiguous in PIC32. It will be considered as 
+     processor option with "ie" as processor name. 
+
+     To permit -pie option, it is converted to --pic-executable option.
+     This will work for most normal cases.  */
+
+  for (i = 1; i < argc; i++)
+    if (strcmp (argv[i], "-pie") == 0)
+      argv[i] = (char *) "--pic-executable";
+#endif
+
   /* Because we permit long options to start with a single dash, and
      we have a --library option, and the -l option is conventionally
      used with an immediately following argument, we can have bad

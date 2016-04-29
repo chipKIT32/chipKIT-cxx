@@ -2998,7 +2998,8 @@ is_compressed_mode_p (struct disassemble_info *info)
 	    || (micromips_ase
 		&& ELF_ST_IS_MICROMIPS ((*info->symbols)->udata.i))))
       return 1;
-    else if (bfd_asymbol_flavour (info->symtab[i]) == bfd_target_elf_flavour)
+    else if (bfd_asymbol_flavour (info->symtab[i]) == bfd_target_elf_flavour
+	      && info->symtab[i]->section == info->section)
       {
 	elf_symbol_type *symbol = (elf_symbol_type *) info->symtab[i];
 	if ((!micromips_ase

@@ -62,6 +62,12 @@ bfd_boolean pic32_has_stack_option = 0;
 bfd_boolean pic32_has_processor_option = 0;
 bfd_boolean pic32_has_hardfloat_option = 0;
 bfd_boolean pic32_has_softfloat_option = 0;
+bfd_boolean pic32_code_in_dinit = 0;
+bfd_boolean pic32_has_code_in_dinit_option = 0;
+bfd_boolean pic32_dinit_in_serial_mem = 0;
+bfd_boolean pic32_has_dinit_in_serial_mem_option = 0;
+bfd_boolean pic32_dinit_has_absolute_address = 0;
+bfd_vma dinit_address = 0;
 unsigned int pic32_stack_size = 16;
 bfd_boolean pic32_has_stackguard_option = 0;
 unsigned int pic32_stackguard_size = 16;
@@ -78,9 +84,13 @@ unsigned char *init_data;
 asection *init_template = 0;
 /* Data Structures for Input Data Sections */
 struct pic32_section *data_sections;
-
+/* Data Structures for Input Data Sections */
+struct pic32_section *code_sections;
+struct bfd_sym_chain entry_symbol_copy;
 
 static void bfd_pic32_process_data_section
+  PARAMS ((asection *, PTR));
+static void bfd_pic32_process_code_section
   PARAMS ((asection *, PTR));
 static void bfd_pic32_write_data_header
   PARAMS ((unsigned char **,  bfd_vma,  bfd_vma, int));
@@ -3093,7 +3103,7 @@ mips_elf_rel_dyn_section (struct bfd_link_info *info, bfd_boolean create_p)
 						    | SEC_LINKER_CREATED
 #ifdef TARGET_IS_PIC32MX
 /* TODO: PIC32 should support .rel.dyn section in the future */
-      					    | SEC_EXCLUDE
+//      					    | SEC_EXCLUDE
 #endif
 						    | SEC_READONLY));
       if (sreloc == NULL
@@ -5096,7 +5106,12 @@ mips_elf_create_got_section (bfd *abfd, struct bfd_link_info *info)
      in the function stub generation and in the linker script.  */
   s = bfd_make_section_anyway_with_flags (abfd, ".got", flags);
   if (s == NULL
+#if defined(TARGET_IS_PIC32MX) 
+      || ! bfd_set_section_alignment (abfd, s, 2))
+#else
       || ! bfd_set_section_alignment (abfd, s, 4))
+#endif
+
     return FALSE;
   htab->sgot = s;
 
@@ -14571,14 +14586,56 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
              (s_sec->sec->output_section != bfd_abs_section_ptr)))
            bfd_pic32_process_data_section(s_sec->sec, &dat);
 
+     if (pic32_code_in_dinit) {
+       if (pic32_debug)
+         printf("\nProcessing data sections:\n");
+       for (s_sec = code_sections; s_sec != NULL; s_sec = s_sec->next)
+         if ((s_sec->sec) && (((s_sec->sec->flags & SEC_EXCLUDE) == 0) &&
+             (s_sec->sec->output_section != bfd_abs_section_ptr)))
+           bfd_pic32_process_code_section(s_sec->sec, &dat);
+
+     }
+
      /* write zero terminator */
       *dat++ = 0; *dat++ = 0;
       *dat++ = 0; *dat++ = 0;
+
+      if (pic32_code_in_dinit) {
+
+        struct bfd_link_hash_entry *h;
+        h = bfd_link_hash_lookup (info->hash, entry_symbol_copy.name,
+                                  FALSE, FALSE, TRUE);
+        if (h != NULL
+            && (h->type == bfd_link_hash_defined
+                || h->type == bfd_link_hash_defweak)
+                && h->u.def.section->output_section != NULL)
+        {
+          bfd_vma entry_address;
+
+          entry_address = h->u.def.value
+                          + bfd_get_section_vma (info->output_bfd,
+                                     h->u.def.section->output_section)
+                          + h->u.def.section->output_offset;
+;
+
+          *dat++ = entry_address & 0xFF;
+          *dat++ = (entry_address >> 8) & 0xFF;
+          *dat++ = (entry_address >> 16) & 0xFF;
+          *dat++ = (entry_address >> 24) & 0xFF;
+        }
+      }
 
       if (pic32_debug)
           printf("  last template addr written = %lx\n",
                  (long unsigned int) dat - 1);
 
+      /* Reset the bfd file pointer, because
+        there seems to be a bug with fseek()
+        in Winblows that makes seeking to
+        a position earlier in the file unreliable. */
+        	  
+	  bfd_seek(dinit_sec->output_section->owner, 0, SEEK_SET);
+	  
       /* insert buffer into the data template section */
       if (!bfd_set_section_contents (abfd, dinit_sec,
                                      init_data, dinit_offset, dinit_size))
@@ -15868,6 +15925,84 @@ bfd_pic32_write_data_header(d, addr, len, format)
   *(*d)++ = (unsigned char) ((format >> 8) & 0xFF);
   *(*d)++ = (unsigned char) ((format >> 16) & 0xFF);
   *(*d)++ = (unsigned char) ((format >> 24) & 0xFF);
+}
+
+static void
+bfd_pic32_process_code_section(sect, fp)
+     asection *sect;
+     PTR fp;
+{
+  unsigned char *buf,*p;
+  unsigned char **d = (unsigned char **) fp;
+  bfd_vma runtime_size = sect->size;
+  bfd_vma runtime_addr = sect->output_offset + sect->output_section->vma;
+  Elf_Internal_Shdr *this_hdr;
+
+  enum {CLEAR, COPY}; /* note matching definition in crt0.c */
+
+  if (PIC32_IS_CODE_ATTR(sect) && (sect->size > 0))
+    {
+      if (pic32_debug)
+        printf("  %s (data), size = %x bytes, template addr = %lx\n",
+               sect->name, (unsigned int) runtime_size,
+               (long unsigned int) *d);
+
+      /*
+      ** load a copy of the section contents
+      **
+      ** Note: We are extracting input section data
+      ** from an output section.
+      */
+      buf = (unsigned char *) malloc (sect->size);
+      if (!buf)
+        {
+          fprintf( stderr, "Link Error: not enough memory for section contents\n");
+          abort();
+        }
+
+      /* Reset the bfd file pointer, because
+        there seems to be a bug with fseek()
+        in Winblows that makes seeking to
+        a position earlier in the file unreliable. */
+      bfd_seek(sect->output_section->owner, 0, SEEK_SET);
+
+      if (!bfd_get_section_contents(sect->output_section->owner,
+                                    sect->output_section,
+                                    buf, sect->output_offset, sect->size))
+
+      {
+          fprintf( stderr, "Link Error: can't load section %s contents\n",
+                   sect->name);
+          abort();
+      }
+
+      { int count = 0;
+          /* write header */
+          bfd_pic32_write_data_header(d, runtime_addr, runtime_size, COPY);
+          for (p = buf; p < (buf + sect->size); )
+            {
+              *(*d)++ = *p++;
+              count ++;
+              if (count == 4)
+                count = 0;
+            }
+          /* fill template with zeroes */
+          if (count) while (count < 4) { *(*d)++ = 0; count++; }
+          //if (count == 4) { *(*d)++ = 0; };
+        }
+
+        free(buf);
+
+      /* make section not LOADable */
+      sect->output_section->flags &= ~ SEC_LOAD;
+      sect->output_section->flags |= SEC_NEVER_LOAD;
+
+      sect->flags &= ~ SEC_LOAD;
+      sect->flags |= SEC_NEVER_LOAD;
+
+      this_hdr = &elf_section_data (sect->output_section)->this_hdr;
+      this_hdr->sh_flags |= SHF_NOLOAD;
+    }
 }
 
 /*

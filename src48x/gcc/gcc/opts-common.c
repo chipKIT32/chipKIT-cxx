@@ -92,7 +92,9 @@ find_opt (const char *input, unsigned int lang_mask)
 	 joined argument?  */
       if (!strncmp (input, opt->opt_text + 1, opt->opt_len)
 #ifdef _BUILD_MCHP_
-	  && (input[opt->opt_len] == '\0' || (opt->flags & CL_JOINED && strcmp(input,"legacy-libc") != 0 )))
+	  && (input[opt->opt_len] == '\0' || 
+      (opt->flags & CL_JOINED && strcmp(input,"legacy-libc") != 0 )
+      ))
 #else
 	 && (input[opt->opt_len] == '\0' || (opt->flags & CL_JOINED)))
 #endif
@@ -368,6 +370,7 @@ static const struct option_map option_map[] =
     { "--", NULL, "-f", true, false },
 #ifdef _BUILD_MCHP_
     { "-legacy-libc", NULL, "-mlegacy-libc",false,false },
+    { "-no-legacy-libc", NULL, "-mno-legacy-libc",false,false },
     { "--memorysummary", NULL, "-mmemorysummary", false, false},
     { "-relaxed-math", NULL, "-mrelaxed-math",false,false },
     { "--fill=", NULL, "-mfill=", false, false },

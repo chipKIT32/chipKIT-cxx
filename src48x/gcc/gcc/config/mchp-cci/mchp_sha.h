@@ -1,5 +1,5 @@
 /* Subroutines used for Microchip PIC32 MCU support
-   Copyright (C) 2014  
+   Copyright (C) 2014
    Microchip Technology, Inc.
    Contributed by S. Bekal, swaroopkumar.bekal@microchip.com
 
@@ -25,12 +25,12 @@ alng with GCC; see the file COPYING3.  If not see
 /* SHA-256 digest of xclm executables for Win, Linux and OS X */
 #if !defined(MCHP_XCLM_SHA256_DIGEST)
 # if defined(__MINGW32__)
-#  define MCHP_XCLM_SHA256_DIGEST   "2e162eef9b84179f6b5a6d3bcc3e8bfe603079c7daa70251297de54b07009fa3"
+#  define MCHP_XCLM_SHA256_DIGEST   2cd0f4709c7bf565b37d85b86138dae2e452e255d04ad19846bec26364addb9a
 # elif defined(__linux__)
-#  define MCHP_XCLM_SHA256_DIGEST   "e8e20a7ad3f03445172e6e61d9d6f6b48d64f220034309f47343e805f33c0157"
+#  define MCHP_XCLM_SHA256_DIGEST   2d2baf41d81cc531440269af3f892121a3e52a848253bd178ae80b26abeca977
 # elif defined(__MACH__)
-#  define MCHP_XCLM_SHA256_DIGEST   "085a5ce305bf4c993d5d35eeef59bd1529127f1146c1ff06290886f36e54156c"
-# else 
+#  define MCHP_XCLM_SHA256_DIGEST   a83bcc002bdd73bc56dc81a1d6c105f0ee71824ce70e3eb828bdfb1fe2e97417
+# else
 #  error "Unknown host"
 # endif
 #endif
@@ -38,7 +38,7 @@ alng with GCC; see the file COPYING3.  If not see
 /* Function to calculate the SHA256 digest of given file
  * Parameters :
  *     - Absolute path to file
- *     - Buffer to hold SHA256 digest 
+ *     - Buffer to hold SHA256 digest
  * Return value :
  *     - 0 on success, non-zero on any error
 */
@@ -50,8 +50,8 @@ int mchp_sha256( const char *path, unsigned char output[32] );
  *     - Absolute path to file
  *     - Pre-calculated SHA256 digest of the file (null terminated)
  * Return value :
- *     - 0 on match, non-zero on mis-match 
+ *     - 0 on match, non-zero on mis-match
 */
 int mchp_sha256_validate( const char *path, unsigned const char *sha2);
 
-#endif 
+#endif

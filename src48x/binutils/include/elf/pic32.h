@@ -51,6 +51,16 @@ struct pic32_section
 #define SHF_KEEP     (1 << 28)  /* KEEP */
 /************************************************************************/
 
+/*
+ * pic32-specific "extended" section flags
+ *
+ * To work around space limitations in the section flags field,
+ * these values are encoded in a symbol named __ext__attr_secname
+ */
+
+#define STYP_SERIAL_MEM    (0x1)        /* Serial memory */
+
+
 #define PIC32_SECTION_IN_DATA_MEMORY(sec) \
   (PIC32_IS_BSS_ATTR(sec) ||              \
    PIC32_IS_BSS_ATTR_WITH_MEMORY_ATTR(sec) ||              \

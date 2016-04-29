@@ -90,6 +90,7 @@ int pic32_proc_family(const bfd_arch_info_type *);
 void pic32_update_resource(const char *resource);
 int pic32_is_l1cache_machine(const bfd_arch_info_type *);
 int pic32_is_fltpt_machine(const bfd_arch_info_type *);
+int pic32_is_serialmem_machine(const bfd_arch_info_type *);
 void pic32_processor_option(char *);
 
 void process_resource_file(unsigned int, int);
@@ -411,6 +412,27 @@ pic32_is_fltpt_machine(const bfd_arch_info_type *proc)
     if (proc == f->arch_info) {
       rc = 0;
       if (f->flags & HAS_FLTPT) rc = 1;
+    }
+
+  return rc;
+}
+
+/*
+** Query machine for SERIAL MEMORY support
+*/
+int
+pic32_is_serialmem_machine(const bfd_arch_info_type *proc)
+{
+  int rc = 0;
+  struct pic32_resource_info *f;
+
+  if (proc == NULL)
+    return rc;
+
+  for (f = arch_flags_head[0].next; f != NULL; f = f->next)
+    if (proc == f->arch_info) {
+      rc = 0;
+      if (f->flags & HAS_DINIT_SERIALMEM) rc = 1;
     }
 
   return rc;
