@@ -731,25 +731,33 @@ mchp_subtarget_override_options(void)
 void
 mchp_subtarget_override_options1 (void)
 {
-  mips_code_readable = CODE_READABLE_PCREL;
+    mips_code_readable = CODE_READABLE_PCREL;
 
-  /* If smart-io is explicitly disabled, make the size value 0 */
-  if (!TARGET_MCHP_SMARTIO)
+    /* If smart-io is explicitly disabled, make the size value 0 */
+    if (!TARGET_MCHP_SMARTIO)
     {
-      mchp_io_size_val = 0;
+        mchp_io_size_val = 0;
     }
-  if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
+    if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
     {
-      warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
-      mchp_io_size_val = 1;
-    }
-
-  if (TARGET_LEGACY_LIBC || TARGET_LONG_CALLS)
-    {
-      TARGET_MCHP_SMARTIO = 0;
-      mchp_io_size_val = 0;
+        warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
+        mchp_io_size_val = 1;
     }
 
+    if (TARGET_LONG_CALLS)
+    {
+        TARGET_MCHP_SMARTIO = 0;
+        mchp_io_size_val = 0;
+    }
+    
+    /* Switch on ABICALLS mode if -fpic or -fpie were
+     used, and the user hasn't explicitly disabled
+     these modes.  */
+    
+    if ((flag_pic || flag_pie) && !TARGET_ABICALLS
+        && !(target_flags_explicit & MASK_ABICALLS)
+        && mips_abi != ABI_EABI)
+        target_flags |= MASK_ABICALLS;
 }
 
 void
