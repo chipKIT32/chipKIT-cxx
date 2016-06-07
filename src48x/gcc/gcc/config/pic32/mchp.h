@@ -336,7 +336,6 @@ extern void pic32_system_include_paths(const char *root, const char *system,
    %{mhard-float : %{!mfp32 : -mfp64} } \
    %{mfp64 : -mhard-float } \
    %{!mfp64 : %{!mno-float : -msoft-float}} \
-   %{mgen-pie-static : -fPIC -G0 -pie -static } \
      "
 
 /* CC1_SPEC is the set of arguments to pass to the compiler proper.  This
