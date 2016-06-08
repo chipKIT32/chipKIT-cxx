@@ -24,8 +24,8 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
-#ifndef TARGET_IS_PIC32MX 
-#define TARGET_IS_PIC32MX 
+#ifndef TARGET_IS_PIC32MX
+#define TARGET_IS_PIC32MX
 #endif
 
 #ifndef PIC32
@@ -92,6 +92,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "../../../../c30_resource/src/xc32/resource_info.h"
 #include "config/mchp-cci/cci.h"
 
+
 #ifdef __MINGW32__
 void *alloca(size_t);
 #else
@@ -114,6 +115,7 @@ extern bool user_defined_section_attribute;
 extern bool bss_initializer_p (const_tree decl);
 
 extern cpp_options *cpp_opts;
+
 
 int          mchp_profile_option = 0;
 
@@ -163,6 +165,7 @@ static pic32_external_memory *pic32_external_memory_head,
 #define SECTION_NAME_DTORS        ".dtors"
 #define SECTION_NAME_INIT_ARRAY   ".init_array"
 #define SECTION_NAME_FINI_ARRAY   ".fini_array"
+#define SECTION_NAME_SERIALMEM    ".serial_mem"
 
 #define JOIN2(X,Y) (X ## Y)
 #define JOIN(X,Y) JOIN2(X,Y)
@@ -181,6 +184,7 @@ static pic32_external_memory *pic32_external_memory_head,
 #define SECTION_KEEP            (MCHP_ULL(SECTION_MACH_DEP) << 8ull)
 #define SECTION_COHERENT        (MCHP_ULL(SECTION_MACH_DEP) << 9ull)
 #define SECTION_REGION          (MCHP_ULL(SECTION_MACH_DEP) << 10ull)
+#define SECTION_SERIALMEM       (MCHP_ULL(SECTION_MACH_DEP) << 11ull)
 
 /* the attribute names from the assemblers point of view */
 #define SECTION_ATTR_ADDRESS   "address"
@@ -189,6 +193,7 @@ static pic32_external_memory *pic32_external_memory_head,
 #define SECTION_ATTR_CODE      "code"
 #define SECTION_ATTR_CONST     "code"
 #define SECTION_ATTR_DATA      "data"
+#define SECTION_ATTR_SERIALMEM "serial_mem"
 #define SECTION_ATTR_INFO      "info"
 #define SECTION_ATTR_NEAR      "near"
 #define SECTION_ATTR_NOLOAD    "noload"
@@ -230,6 +235,12 @@ struct valid_section_flags_
   },
   {
     SECTION_ATTR_CONST, 'r',
+    SECTION_READ_ONLY,SECTION_CODE | SECTION_WRITE | SECTION_BSS |
+    SECTION_NEAR |
+    SECTION_INFO
+  },
+  {
+    SECTION_ATTR_SERIALMEM, 'r',
     SECTION_READ_ONLY,SECTION_CODE | SECTION_WRITE | SECTION_BSS |
     SECTION_NEAR |
     SECTION_INFO
@@ -468,6 +479,7 @@ int mchp_epilogue_uses (unsigned regno);
 
 static void mchp_output_configuration_words (void);
 static void mchp_output_vector_dispatch_table (void);
+static void mchp_output_vector_dispatch_table_for_pic (void);
 static void mchp_output_ext_region_memory_info (void);
 static int mchp_vector_attribute_compound_expr (tree *node, tree expr,
     bool *no_add_attrs);
@@ -501,7 +513,7 @@ extern void mips_restore_reg (rtx reg, rtx mem);
 extern bool mips_interrupt_type_p (tree type);
 
 SECTION_FLAGS_INT mchp_section_type_flags(tree decl, const char *name, int reloc ATTRIBUTE_UNUSED);
-void mchp_add_vector_dispatch_entry (const char *target_name, int vector_number, bool fartype, 
+void mchp_add_vector_dispatch_entry (const char *target_name, int vector_number, bool fartype,
                                      enum pic32_isa_mode isamode, int emit);
 
 struct vector_dispatch_spec *vector_dispatch_list_head;
@@ -540,7 +552,6 @@ static const char* mchp_get_resource_file_path(void)
       }
   }
 #endif
-  
   return path;
 }
 
@@ -560,11 +571,11 @@ static unsigned int mchp_load_resource_info(char *id, char **matched_id, const c
   char *device_buf;
   char *mchp_resource_file_generic;
   int buffer_size;
-  
+
   /* No device specified, use defaults */
   if (id == NULL)
     return 0;
-  
+
   if (mchp_resource_file_in == 0) {
     if (mchp_resource_file != 0)
       /* specified on the command line */
@@ -589,7 +600,6 @@ static unsigned int mchp_load_resource_info(char *id, char **matched_id, const c
     mchp_resource_file_generic = (char *)xcalloc (buffer_size,1);
     snprintf (mchp_resource_file_generic, buffer_size, "%s", mchp_resource_file_in);
   }
-  
   rib = read_device_rib (mchp_resource_file_generic, id);
   if (rib == 0) {
     error("Could not open resource file for: %qs at %qs", id, mchp_resource_file_generic);
@@ -600,8 +610,8 @@ static unsigned int mchp_load_resource_info(char *id, char **matched_id, const c
     error("Invalid resource file\n");
     close_rib();
     return -1;
-  }  
-  
+  }
+
   if (rib->field_count >= 4) {
     int record;
     int isr_names_max=0;
@@ -647,7 +657,7 @@ unsigned int validate_device_mask (char *id, char **matched_id, const char* mchp
       /* This device supports _only_ the microMIPS ISA. Force MicroMIPS mode. */
         target_flags |= MASK_MICROMIPS;
     }
-    
+
   if (TARGET_SMALL_ISA && (pic32_device_mask & HAS_MICROMIPS) && pic32_loaded_device_mask)
     {
       target_flags |= MASK_MICROMIPS;
@@ -656,7 +666,7 @@ unsigned int validate_device_mask (char *id, char **matched_id, const char* mchp
     {
       target_flags |= MASK_MIPS16;
     }
-    
+
   if (TARGET_DSPR2 && !(pic32_device_mask & HAS_DSPR2) && pic32_loaded_device_mask)
     {
       warning (0, "The selected %qs device does not support the DSPr2 ASE (-mdspr2)", mchp_processor_string);
@@ -692,25 +702,25 @@ unsigned int validate_device_mask (char *id, char **matched_id, const char* mchp
        /* Override device defaults and disable MCU ASE */
        target_flags &= ~MASK_MCU;
     }
-    
+
   return pic32_device_mask;
 }
 #endif /* (MCHP_SKIP_RESOURCE_FILE) */
 
-void 
+void
 mchp_subtarget_override_options(void)
 {
 #if !defined(MCHP_SKIP_RESOURCE_FILE)
   int mask;
-  
+
   /* DSP and microMIPS cannot coexist  */
   if (TARGET_DSP && TARGET_MIPS16)
     error ("unsupported combination: %s", "-mips16 -mdsp");
-  
+
   /* DSPr2 and microMIPS cannot coexist  */
   if (TARGET_DSPR2 && TARGET_MIPS16)
     error ("unsupported combination: %s", "-mips16 -mdspr2");
-  
+
   mask = validate_device_mask ((char*)mchp_processor_string, &mchp_target_cpu_id,
                               mchp_resource_file);
 #endif
@@ -721,25 +731,33 @@ mchp_subtarget_override_options(void)
 void
 mchp_subtarget_override_options1 (void)
 {
-  mips_code_readable = CODE_READABLE_PCREL;
+    mips_code_readable = CODE_READABLE_PCREL;
 
-  /* If smart-io is explicitly disabled, make the size value 0 */
-  if (!TARGET_MCHP_SMARTIO)
+    /* If smart-io is explicitly disabled, make the size value 0 */
+    if (!TARGET_MCHP_SMARTIO)
     {
-      mchp_io_size_val = 0;
+        mchp_io_size_val = 0;
     }
-  if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
+    if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
     {
-      warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
-      mchp_io_size_val = 1;
-    }
-
-  if (TARGET_LEGACY_LIBC || TARGET_LONG_CALLS)
-    {
-      TARGET_MCHP_SMARTIO = 0;
-      mchp_io_size_val = 0;
+        warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
+        mchp_io_size_val = 1;
     }
 
+    if (TARGET_LONG_CALLS)
+    {
+        TARGET_MCHP_SMARTIO = 0;
+        mchp_io_size_val = 0;
+    }
+    
+    /* Switch on ABICALLS mode if -fpic or -fpie were
+     used, and the user hasn't explicitly disabled
+     these modes.  */
+    
+    if ((flag_pic || flag_pie) && !TARGET_ABICALLS
+        && !(target_flags_explicit & MASK_ABICALLS)
+        && mips_abi != ABI_EABI)
+        target_flags |= MASK_ABICALLS;
 }
 
 void
@@ -795,21 +813,33 @@ mchp_output_ext_region_memory_info (void)
     pic32_external_memory *m;
     char printed = 0;
 
-    for (m = pic32_external_memory_head; m; m = m ->next) 
+    for (m = pic32_external_memory_head; m; m = m ->next)
     {
       fprintf(asm_out_file, "\n\t.memory _%s, origin(0x%x), size(0x%x)", m->name, m->origin, m->size);
       printed = 1 ;
     }
-  
-    if (printed) 
+
+    if (printed)
     {
       fprintf(asm_out_file, "\n\n");
     }
 }
 void mchp_file_end (void)
 {
-  mchp_output_ext_region_memory_info();
-  mchp_output_vector_dispatch_table();
+  if (!(flag_pic || flag_pie)) 
+  {
+    mchp_output_ext_region_memory_info();
+  }
+
+  if (flag_pic || flag_pie) 
+  {
+    mchp_output_vector_dispatch_table_for_pic();
+  }
+  else
+  {
+	  mchp_output_vector_dispatch_table();
+  }
+
   mchp_output_configuration_words ();
 }
 
@@ -832,7 +862,7 @@ mchp_vector_attribute (tree *node, tree name ATTRIBUTE_UNUSED, tree args,
 {
   tree decl = *node;
   enum pic32_isa_mode isamode = pic32_isa_mips32r2;
-  
+
   /* If this attribute isn't on the actual function declaration, we
      ignore it */
   if (TREE_CODE (decl) != FUNCTION_DECL)
@@ -860,10 +890,10 @@ mchp_vector_attribute (tree *node, tree name ATTRIBUTE_UNUSED, tree args,
               error ("Vector number must be an integer between 0 and 255");
               return NULL_TREE;
             }
-            
+
           if (mips_base_compression_flags & (MASK_MICROMIPS))
             isamode = pic32_isa_micromips;
-            
+
           /* add the vector to the list of dispatch functions to emit */
           mchp_add_vector_dispatch_entry (
             IDENTIFIER_POINTER (DECL_NAME (*node)),
@@ -900,7 +930,7 @@ mchp_vector_attribute_compound_expr (tree *node, tree expr,
 {
   int len = 0;
   enum pic32_isa_mode isamode = pic32_isa_mips32r2;
-  
+
   if (expr == NULL_TREE)
     return 0;
   for (; TREE_CODE (expr) == COMPOUND_EXPR; expr = TREE_OPERAND (expr, 1))
@@ -919,10 +949,10 @@ mchp_vector_attribute_compound_expr (tree *node, tree expr,
           error ("Vector number must be an integer between 0 and 255");
           return 0;
         }
-        
+
       if (mips_base_compression_flags & (MASK_MICROMIPS))
         isamode = pic32_isa_micromips;
-            
+
       /* add the vector to the list of dispatch functions to emit */
       mchp_add_vector_dispatch_entry (
         IDENTIFIER_POINTER (DECL_NAME (*node)),
@@ -980,10 +1010,10 @@ mchp_at_vector_attribute (tree *node, tree name ATTRIBUTE_UNUSED, tree args,
   /* now mark the decl as going into the section for the indicated vector */
   sprintf (scn_name, ".vector_%d", (int)TREE_INT_CST_LOW (TREE_VALUE (args)));
   DECL_SECTION_NAME (decl) = build_string (strlen (scn_name), scn_name);
-  
+
   if (mips_base_compression_flags & (MASK_MICROMIPS))
     isamode = pic32_isa_micromips;
-  
+
   /* add the vector to the list of dispatch functions to emit */
   mchp_add_vector_dispatch_entry (
     IDENTIFIER_POINTER (DECL_NAME (*node)),
@@ -1024,10 +1054,10 @@ mchp_output_vector_dispatch_table (void)
         fprintf (asm_out_file, "\t.align\t2\n");
         fprintf (asm_out_file, "\t.ent\t__vector_dispatch_%d\n",
                  dispatch_entry->vector_number);
-                 
+
         fprintf (asm_out_file, "__vector_dispatch_%d:\n",
                  dispatch_entry->vector_number);
-        if ((dispatch_entry->longcall) || 
+        if ((dispatch_entry->longcall) ||
             ((mips_base_compression_flags & (MASK_MICROMIPS)) && (dispatch_entry->isr_isa_mode != pic32_isa_micromips)) ||
             (!(mips_base_compression_flags & (MASK_MICROMIPS)) && (dispatch_entry->isr_isa_mode == pic32_isa_micromips)) ||
             TARGET_LONG_CALLS)
@@ -1042,6 +1072,74 @@ mchp_output_vector_dispatch_table (void)
 
         /* Branch delay slot */
         fprintf (asm_out_file, "\tnop\n");
+        fprintf (asm_out_file, "\t.set reorder\n");
+        fprintf (asm_out_file, "\t.end\t__vector_dispatch_%d\n",
+                 dispatch_entry->vector_number);
+        fprintf (asm_out_file, "\t.size\t__vector_dispatch_%d, .-"
+                 "__vector_dispatch_%d\n",
+                 dispatch_entry->vector_number,
+                 dispatch_entry->vector_number);
+      }
+#if 1
+      else
+        fprintf (asm_out_file, "\t__vector_dispatch_%d = 0\n",
+                 dispatch_entry->vector_number);
+#endif
+    }
+  fputs ("# End MCHP vector dispatch table\n", asm_out_file);
+}
+
+
+static void
+mchp_output_vector_dispatch_table_for_pic (void)
+{
+  struct vector_dispatch_spec *dispatch_entry;
+
+  fputs ("# Begin MCHP vector dispatch table\n", asm_out_file);
+
+  /* output the vector dispatch functions specified in this translation
+     unit, if any */
+  for (dispatch_entry = vector_dispatch_list_head ;
+       dispatch_entry ;
+       dispatch_entry = dispatch_entry->next)
+    {
+      fprintf (asm_out_file, "\t.globl\t__vector_dispatch_%d\n",
+               dispatch_entry->vector_number);
+      if (dispatch_entry->emit_dispatch != 0)
+      {
+        fprintf (asm_out_file, "\t.section\t.vector_%d,code,keep\n",
+                 dispatch_entry->vector_number);
+        fprintf (asm_out_file, "\t.set\tnomips16\n");
+        if ((mips_base_compression_flags & (MASK_MICROMIPS)) && (pic32_device_mask & HAS_MICROMIPS))
+          {
+            fprintf (asm_out_file, "\t.set\tmicromips\n");
+          }
+        fprintf (asm_out_file, "\t.set noreorder\n");
+        fprintf (asm_out_file, "\t.cpload $25\n");
+        fprintf (asm_out_file, "\t.set nomacro\n");
+        fprintf (asm_out_file, "\t.align\t2\n");
+        fprintf (asm_out_file, "\t.ent\t__vector_dispatch_%d\n",
+                 dispatch_entry->vector_number);
+
+        fprintf (asm_out_file, "__vector_dispatch_%d:\n",
+                 dispatch_entry->vector_number);
+        if ((dispatch_entry->longcall) ||
+            ((mips_base_compression_flags & (MASK_MICROMIPS)) && (dispatch_entry->isr_isa_mode != pic32_isa_micromips)) ||
+            (!(mips_base_compression_flags & (MASK_MICROMIPS)) && (dispatch_entry->isr_isa_mode == pic32_isa_micromips)) ||
+            TARGET_LONG_CALLS)
+          {
+            fprintf (asm_out_file, "\tlw\t$25,%%call16(%s)\n", dispatch_entry->target);
+            fprintf (asm_out_file, "\tjr\t$25\n");
+          }
+        else
+          {
+            fprintf (asm_out_file, "\tlw\t$25,%%call16(%s)\n", dispatch_entry->target);
+            fprintf (asm_out_file, "\tjr\t$25\n");
+          }
+
+        /* Branch delay slot */
+        fprintf (asm_out_file, "\tnop\n");
+        fprintf (asm_out_file, "\t.set macro\n");
         fprintf (asm_out_file, "\t.set reorder\n");
         fprintf (asm_out_file, "\t.end\t__vector_dispatch_%d\n",
                  dispatch_entry->vector_number);
@@ -1089,7 +1187,7 @@ mchp_target_insert_attributes (tree decl, tree *attr_ptr)
       /* Determine if an interrupt pragma is around for this function */
       fname = IDENTIFIER_POINTER (DECL_NAME (decl));
       gcc_assert (fname);
-      
+
       if (vector_p && (micromips_p || longcall_p))
       {
         if (micromips_p)
@@ -1265,10 +1363,10 @@ mchp_interrupt_attribute (tree *node ATTRIBUTE_UNUSED,
        return NULL_TREE;
     }
 
-   if ((strncasecmp ("IPL", IDENTIFIER_POINTER (TREE_VALUE (args)), 3) == 0) && 
+   if ((strncasecmp ("IPL", IDENTIFIER_POINTER (TREE_VALUE (args)), 3) == 0) &&
        (strlen(IDENTIFIER_POINTER (TREE_VALUE (args)))==4))
       {
-        warning (0, "Interrupt priority IPL%c is deprecated. Specify as 'IPL%c{AUTO|SOFT|SRS}' instead.", 
+        warning (0, "Interrupt priority IPL%c is deprecated. Specify as 'IPL%c{AUTO|SOFT|SRS}' instead.",
                  IDENTIFIER_POINTER (TREE_VALUE (args))[3],
                  IDENTIFIER_POINTER (TREE_VALUE (args))[3]);
       }
@@ -1287,6 +1385,13 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
   tree address = NULL_TREE;
   if (args == NULL)
     {
+      return NULL_TREE;
+    }
+
+  if (flag_pic || flag_pie)
+    {
+      warning (0, "'address' attribute cannot be specified with -fpic, -fPIC or -fpie option");
+      *no_add_attrs = 1;
       return NULL_TREE;
     }
 
@@ -1325,13 +1430,13 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
         unsigned long long address_val;
         address_val = (unsigned long long)TREE_INT_CST_LOW(address);
         if ((address_val &0xFFFFFFFFul) < 0x20000000ul)
-          { 
+          {
             error ("Physical-memory address used with address attribute. Use a virtual-memory address for '%s'",
                    attached_to);
             *no_add_attrs = 1;
           }
         if (address_val > 0xFFFFFFFFul)
-          { 
+          {
             error ("Address of '%s' is outside of the 32-bit address range", attached_to);
             *no_add_attrs = 1;
           }
@@ -1344,7 +1449,7 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
       tree attrib_noinline, attrib_noclone;
       long unsigned int address_val;
       address_val = (long unsigned int)TREE_INT_CST_LOW(address) & 0xFFFFFFFFul;
-      
+
       if (lookup_attribute ("noinline", DECL_ATTRIBUTES (*decl)) == NULL)
         {
           attrib_noinline = build_tree_list(get_identifier("noinline"), NULL_TREE);
@@ -1357,9 +1462,9 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
           attrib_noclone = chainon(DECL_ATTRIBUTES(*decl), attrib_noclone);
           decl_attributes(decl, attrib_noclone, 0);
         }
-      if ((pic32_device_mask & HAS_L1CACHE) && 
+      if ((pic32_device_mask & HAS_L1CACHE) &&
           ((address_val < 0xC0000000ul) && (address_val > 0xA0000000ul)))
-        { 
+        {
           warning(0, "Specified address of function '%s' is in the kseg1 region of an L1-cache target device", attached_to);
           inform (input_location, "Use a kseg0-region address for this function");
           /* Convert the kseg1 address to a kseg0 address. */
@@ -1374,7 +1479,7 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
       address_val = (long unsigned int)TREE_INT_CST_LOW(address) & 0xFFFFFFFFul;
       if ((pic32_device_mask & HAS_L1CACHE) &&
           ((address_val >= 0xA0000000ul) && (address_val < 0xB0000000)))
-        { 
+        {
           warning(0, "Specified address of variable '%s' is in the kseg1 region of an L1-cache target device", attached_to);
           inform (input_location, "Use the 'coherent' attribute with a kseg0-region address to designate an uncached variable");
           /* Convert the kseg1 address to a kseg0 address and apply the coherent attribute. */
@@ -1387,9 +1492,18 @@ tree mchp_address_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
         }
       else if (!(pic32_device_mask & HAS_L1CACHE) &&
           ((address_val >= 0x80000000ul) && (address_val < 0x90000000ul)))
-        { 
+        {
           warning(0, "Data-variable address in kseg0 region of an uncached target device");
         }
+    }
+
+  /* For support purposes, emit a warning for all uses of the address()
+     attribute */
+  if (mchp_warn_address_attribute_use)
+    {
+      warning (OPT_Waddress_attribute_use,
+               "use of address() attribute on %qs",
+               attached_to);
     }
 
   return NULL_TREE;
@@ -1402,6 +1516,14 @@ tree mchp_ramfunc_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
                             tree args ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
                             bool *no_add_attrs ATTRIBUTE_UNUSED)
 {
+
+  if (flag_pic || flag_pie)
+    {
+      warning (0, "'ramfunc' attribute cannot be specified with -fpic, -fPIC or -fpie option");
+      *no_add_attrs = 1;
+      return NULL_TREE;
+    }
+    
   /* Ramfunc attribute implies noinline and noclone */
   if (TREE_CODE(*decl) == FUNCTION_DECL)
     {
@@ -1452,7 +1574,7 @@ tree mchp_naked_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
 }
 
 /* Handle a "unique_section" attribute; arguments as in
-   struct attribute_spec.handler.  
+   struct attribute_spec.handler.
 */
 tree
 mchp_unique_section_attribute (tree *node, tree name ATTRIBUTE_UNUSED,
@@ -1496,9 +1618,9 @@ tree mchp_nomicromips_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
   /* Naked attribute implies noinline and noclone */
     if (!mchp_subtarget_mips32_enabled())
     {
-      error ("The %qs target device does not support the %qs attribute on %qs", 
-             mchp_processor_string, 
-             "nomicromips", 
+      error ("The %qs target device does not support the %qs attribute on %qs",
+             mchp_processor_string,
+             "nomicromips",
              IDENTIFIER_POINTER (DECL_NAME (*decl)));
     }
 
@@ -1599,6 +1721,12 @@ tree mchp_space_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
      the parser from the attribute table */
 
   gcc_assert (TREE_CHAIN (args) == NULL);
+  
+  if (NULL == DECL_NAME(*decl))
+  {
+      warning (OPT_Wattributes, "Ignoring space attribute due to missing declaration. Check placement of attribute.");
+      return NULL_TREE;
+  }
 
   ident = IDENTIFIER_POINTER(DECL_NAME(*decl));
 
@@ -1616,7 +1744,7 @@ tree mchp_space_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
 
       if (space)
         {
-          warning(0, "ignoring previous space attribute");
+          warning(OPT_Wattributes, "ignoring previous space attribute");
         }
 
         /*
@@ -1626,12 +1754,7 @@ tree mchp_space_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
            used to qualify the function to be copied to external
            data memory.
 	  */
-#if 0		
-      if (TREE_CODE(*decl) == FUNCTION_DECL)
-        {
-          warning (0, "space attribute does not apply to functions");
-        }
-#endif		
+
       if (TREE_VALUE(args) == get_identifier("prog"))
         {
           return space;
@@ -1640,11 +1763,26 @@ tree mchp_space_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
         {
           return space;
         }
+      else if (TREE_VALUE(args) == get_identifier("serial_mem"))
+        {
+          if (FUNCTION_DECL == TREE_CODE(*decl))
+            {
+              warning (OPT_Wattributes, "Ignoring space(serial_mem) attribute for function %qs. Suggest space(prog) for functions.", ident);
+            }
+          else if (VAR_DECL == TREE_CODE(*decl))
+            {
+                DECL_COMMON (*decl) = 0;
+                /* Serial mem is flash so the variable should be const qualified */
+                if (!TREE_READONLY(*decl))
+                  error ("%Jspace(\"serial_mem\") variable '%D' should be const qualified", *decl, *decl);
+            }
+          return space;
+        }
       else if ((TREE_VALUE(args) == get_identifier("psv")) ||
                (TREE_VALUE(args) == get_identifier("auto_psv")))
         {
           /* Accept for C30 compatibility */
-          warning (0, "Ignoring unavailable space(psv) attribute for '%s'. ", ident);
+          warning (OPT_Wattributes, "Ignoring unavailable space(psv) attribute for '%s'. ", ident);
           inform (input_location, "Suggest space(prog) for this device instead.");
           TREE_VALUE(args) = get_identifier("prog");
           return NULL_TREE;
@@ -1660,17 +1798,25 @@ tree mchp_space_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
         {
           return NULL_TREE;
         }
+      else if (TREE_VALUE(args) == get_identifier("serial_mem"))
+        {
+          if (FUNCTION_DECL == TREE_CODE(*decl))
+            {
+              warning (OPT_Wattributes, "Ignoring space(serial_mem) attribute for function %qs. Suggest space(prog) for functions.", ident);
+            }
+          return NULL_TREE;
+        }
       else if ((TREE_VALUE(args) == get_identifier("psv")) ||
                (TREE_VALUE(args) == get_identifier("auto_psv")))
         {
           /* Accept for C30 compatibility */
-          warning (0, "Ignoring unavailable space(psv) attribute for '%s'. ", ident);
+          warning (OPT_Wattributes, "Ignoring unavailable space(psv) attribute for '%s'. ", ident);
           inform (input_location, "Suggest space(prog) for this device instead.");
           TREE_VALUE(args) = get_identifier("prog");
           return NULL_TREE;
         }
     }
-  warning (0, "invalid space argument for '%s', ignoring attribute", attached_to);
+  warning (OPT_Wattributes, "invalid space argument for '%s', ignoring attribute", attached_to);
   *no_add_attrs = 1;
   return NULL_TREE;
 }
@@ -1699,7 +1845,7 @@ tree mchp_region_attribute( tree *decl, tree identifier ATTRIBUTE_UNUSED,
     return NULL_TREE;
   }
 
-/* 
+/*
   If LTO is enabled, then we ignore -flto and issue a warning.
 */
   if (flag_generate_lto)
@@ -1713,11 +1859,18 @@ tree mchp_region_attribute( tree *decl, tree identifier ATTRIBUTE_UNUSED,
     return NULL_TREE;
   }
 
+  if (flag_pic || flag_pie)
+  {
+    warning (0, "'region' attribute cannot be specified with -fpic, -fPIC or -fpie option");
+    *no_add_attrs = 1;
+    return NULL_TREE;
+  }
+
   region = lookup_attribute("region", DECL_ATTRIBUTES(*decl));
 
   if (region)
   {
-    warning(0, "ignoring previous region attribute");
+    warning(OPT_Wattributes, "ignoring previous region attribute");
   }
 
   if (DECL_P(*decl))
@@ -1839,9 +1992,16 @@ tree mchp_persistent_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
                                 bool *no_add_attrs)
 {
   const char *attached_to = 0;
-  
+
   DECL_UNIQUE_SECTION (*node) = 1;
-  
+
+  if (flag_pic || flag_pie)
+    {
+      warning (0, "'persistent' attribute cannot be specified with -fpic, -fPIC or -fpie option");
+      *no_add_attrs = 1;
+      return NULL_TREE;
+    }
+
   if (DECL_P(*node))
     {
       attached_to = IDENTIFIER_POINTER(DECL_NAME(*node));
@@ -1855,7 +2015,7 @@ tree mchp_persistent_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
       attrib_coherent = chainon (DECL_ATTRIBUTES(*node), attrib_coherent);
       decl_attributes (node, attrib_coherent, 0);
       DECL_COMMON (*node) = 0;
-    }   
+    }
 
   return NULL_TREE;
 }
@@ -1863,7 +2023,14 @@ tree mchp_persistent_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
 tree mchp_coherent_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
                                 tree args, int flags ATTRIBUTE_UNUSED,
                                 bool *no_add_attrs)
-{ 
+{
+  if (flag_pic || flag_pie)
+    {
+      warning (0, "'coherent' attribute cannot be specified with -fpic, -fPIC or -fpie option");
+      *no_add_attrs = 1;
+      return NULL_TREE;
+    }
+
   DECL_UNIQUE_SECTION (*node) = 1;
   DECL_COMMON (*node) = 0;
 
@@ -1994,12 +2161,12 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
   unsigned int regno;
 
   HOST_WIDE_INT mchp_save_srsctl;
-  
+
   mchp_save_srsctl = (((cfun->machine->interrupt_priority < 7)
                        && (0 == mchp_isr_backcompat))
                       || (current_function_type == AUTO_CONTEXT_SAVE)
                       || (current_function_type == DEFAULT_CONTEXT_SAVE));
-  
+
   if (pic32_num_register_sets > 2)
     {
       mchp_save_srsctl    = 1;
@@ -2560,7 +2727,7 @@ mchp_compute_frame_info (void)
         error ("the %<no_fpu%> attribute requires the %<interrupt%> attribute");
       printed_error = true;
     }
-  
+
   /* Reset warning counter when we move to a new function */
   static struct function *prevfun = NULL;
   if (prevfun != cfun)
@@ -2659,7 +2826,7 @@ mchp_compute_frame_info (void)
                   cfun->machine->current_function_type = current_function_type = SOFTWARE_CONTEXT_SAVE;
                   if ((0 == mchp_invalid_ipl_warning) && (pic32_num_register_sets == 8))
                     {
-                      warning (0, "IPLnSOFT context saving used on a selected %qs device with 8 Shadow Register Sets, consider IPLnSRS\n", 
+                      warning (0, "IPLnSOFT context saving used on a selected %qs device with 8 Shadow Register Sets, consider IPLnSRS\n",
                                mchp_processor_string);
                       mchp_invalid_ipl_warning++;
                     }
@@ -2724,7 +2891,7 @@ mchp_compute_frame_info (void)
       if (mchp_function_naked_p (current_function_decl))
         error ("interrupt handler functions cannot also be naked functions");
     }
-    
+
     if (current_function_type == SRS_CONTEXT_SAVE)
       cfun->machine->use_shadow_register_set_p = true;
 
@@ -2739,12 +2906,12 @@ mchp_compute_frame_info (void)
   /* add in space for the interrupt context information */
   if (has_interrupt_context)
     {
-    
+
       if (pic32_num_register_sets > 2)
         {
           mchp_isr_backcompat = 0;
         }
-    
+
       gcc_assert (cfun->machine->current_function_type != UNKNOWN_CONTEXT_SAVE);
       df_set_regs_ever_live (K0_REGNUM, true);
       fixed_regs[K0_REGNUM] = call_really_used_regs[K0_REGNUM] =
@@ -2778,7 +2945,7 @@ mchp_compute_frame_info (void)
                                         call_used_regs[V1_REGNUM] = 1;
             }
         }
-      /* If HI/LO is defined in this function, we need to save them too. Also check the 
+      /* If HI/LO is defined in this function, we need to save them too. Also check the
          DSPr2 accumulator pairs.
          If the function is not a leaf function, we assume that the
          called function uses them. */
@@ -2844,7 +3011,7 @@ mchp_subtarget_save_reg_p (unsigned int regno)
   /* When we are profiling, we need to preserve the RA register. */
   if (mchp_profile_option && (regno == RETURN_ADDR_REGNUM))
     return true;
-  
+
   return false;
 }
 
@@ -2859,7 +3026,7 @@ mchp_output_function_prologue (FILE *file, HOST_WIDE_INT tsize ATTRIBUTE_UNUSED,
     fprintf (file, "# Begin mchp_output_function_prologue: AUTO_CONTEXT_SAVE\n");
   else if (cfun->machine->current_function_type == DEFAULT_CONTEXT_SAVE)
     fprintf (file, "# Begin mchp_output_function_prologue: DEFAULT_CONTEXT_SAVE\n");
-    
+
   if (cfun->machine->interrupt_handler_p && (0 == mips_noat.nesting_level))
     {
       mips_push_asm_switch (&mips_noat);
@@ -2981,7 +3148,7 @@ mchp_function_nofpu_p (tree type)
 
 /* Utility function to add an entry to the vector dispatch list */
 void
-mchp_add_vector_dispatch_entry (const char *target_name, int vector_number, bool fartype, 
+mchp_add_vector_dispatch_entry (const char *target_name, int vector_number, bool fartype,
                                 enum pic32_isa_mode isamode, int emit)
 {
   struct vector_dispatch_spec *dispatch_entry;
@@ -3143,7 +3310,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                 {
                   gcc_assert (interrupt_priority >= 0);
                   gcc_assert (interrupt_priority <= 7);
-                  
                   if (cfun->machine->keep_interrupts_masked_p)
                     {
                       /* Disable interrupts by clearing the KSU, ERL, EXL,
@@ -3178,7 +3344,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
               mips_for_each_saved_gpr_and_fpr (size, mips_save_reg, NULL_RTX);
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-              
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3195,7 +3360,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                   mchp_offset_fcsr = frame->fcsr_sp_offset;
                   if (mchp_uses_fpu()) {
                       insn = gen_mips_get_fcsr (gen_rtx_REG (SImode, V0_REGNUM));
-                      emit_insn (insn);                 
+                      emit_insn (insn);
                       mips_save_restore_reg (SImode, V0_REGNUM, mchp_offset_fcsr, mips_save_reg);
                     }
                   offset -= UNITS_PER_WORD;
@@ -3290,7 +3455,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
               mips_for_each_saved_gpr_and_fpr (size, mips_save_reg, NULL_RTX);
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-              
+
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3308,7 +3473,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                   mchp_offset_fcsr = frame->fcsr_sp_offset;
                   if (mchp_uses_fpu()) {
                       insn = gen_mips_get_fcsr (gen_rtx_REG (SImode, V0_REGNUM));
-                      emit_insn (insn);                 
+                      emit_insn (insn);
                       mips_save_restore_reg (SImode, V0_REGNUM, mchp_offset_fcsr, mips_save_reg);
                     }
                   offset -= UNITS_PER_WORD;
@@ -3405,7 +3570,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
               if (interrupt_priority >= 0)
                 {
                   gcc_assert (interrupt_priority <= 7);
-                  
+
                   if (cfun->machine->keep_interrupts_masked_p)
                     {
                       /* Disable interrupts by clearing the KSU, ERL, EXL,
@@ -3496,7 +3661,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
 
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-              
+
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3514,12 +3679,11 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                   mchp_offset_fcsr = frame->fcsr_sp_offset;
                   if (mchp_uses_fpu()) {
                       insn = gen_mips_get_fcsr (gen_rtx_REG (SImode, V0_REGNUM));
-                      emit_insn (insn);                 
+                      emit_insn (insn);
                       mips_save_restore_reg (SImode, V0_REGNUM, mchp_offset_fcsr, mips_save_reg);
                     }
                   offset -= UNITS_PER_WORD;
                 }
-              
             } /* AUTO_CONTEXT_SAVE */
           else if (DEFAULT_CONTEXT_SAVE == cfun->machine->current_function_type)
             {
@@ -3675,7 +3839,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
 
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-              
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3693,7 +3856,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                   mchp_offset_fcsr = frame->fcsr_sp_offset;
                   if (mchp_uses_fpu()) {
                       insn = gen_mips_get_fcsr (gen_rtx_REG (SImode, V0_REGNUM));
-                      emit_insn (insn);                 
+                      emit_insn (insn);
                       mips_save_restore_reg (SImode, V0_REGNUM, mchp_offset_fcsr, mips_save_reg);
                     }
                   offset -= UNITS_PER_WORD;
@@ -4435,7 +4598,7 @@ static void mchp_handle_conversion(rtx val,
 {
   tree sym,var_decl;
   int style;
- 
+
   if (val == 0)
     {
       conversion_info(conv_indeterminate, matching_fn);
@@ -4704,7 +4867,7 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
   if ((flags & SECTION_COHERENT) || mchp_coherent_p(decl)) {
       DECL_COMMON (decl) = 0;
       f += sprintf(f, MCHP_COHERENT_FLAG);
-      
+
     }
 #if defined(PIC32_SUPPORT_CRYPTO_ATTRIBUTE)
   if (mchp_crypto_p(decl))
@@ -4735,6 +4898,18 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
           DECL_COMMON (decl) = 0;
           section_type_set = 1;
         }
+        if ((flags & SECTION_SERIALMEM) ||
+            (space_attr && (get_identifier("serial_mem") == (TREE_VALUE(TREE_VALUE(space_attr))))))
+          {
+            if (TREE_CODE(decl) == VAR_DECL) {
+              f += sprintf(f, MCHP_SERIALMEM_FLAG);
+            }
+            else
+              f += sprintf(f, MCHP_PROG_FLAG);
+            fnear = 0;
+            DECL_COMMON (decl) = 0;
+            section_type_set = 1;
+          }
       if ((flags & SECTION_WRITE) ||
           is_ramfunc ||
           (space_attr && (get_identifier("data") ==
@@ -4746,12 +4921,12 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
             {
             f += sprintf(f, MCHP_RAMFUNC_FLAG);
             }
-            else 
+            else
             {
-              f += sprintf(f, MCHP_REGION_FLAG);	
+              f += sprintf(f, MCHP_REGION_FLAG);
               f += sprintf(f, MCHP_DATA_FLAG);
             }
-          }  
+          }
           else
           {
             f += sprintf(f, MCHP_DATA_FLAG);
@@ -5037,9 +5212,14 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
         }
       else if (TREE_CODE(decl) == VAR_DECL)
         {
+          tree space_attr = get_mchp_space_attribute(decl);
           if ((!mchp_coherent_p(decl)) && mchp_persistent_p(decl)) /* persist*/
             {
               pszSectionName = SECTION_NAME_PBSS;
+            }
+          else if (space_attr && (get_identifier("serial_mem") == (TREE_VALUE(TREE_VALUE(space_attr)))))
+            {
+              pszSectionName = SECTION_NAME_SERIALMEM;
             }
           else if (mips_in_small_data_p(decl))
             {
@@ -5062,7 +5242,7 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
             }
           if (pszSectionName)
             {
-              if (flag_data_sections)
+              if (flag_data_sections || DECL_UNIQUE_SECTION (decl))
                 {
                   f += sprintf (result, "%s.%s", pszSectionName,
                                 IDENTIFIER_POINTER(DECL_NAME(decl)));
@@ -5112,13 +5292,13 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
 
          if (region)
          {
-            if (TREE_CODE(TREE_VALUE(TREE_VALUE(region))) == STRING_CST) 
+            if (TREE_CODE(TREE_VALUE(TREE_VALUE(region))) == STRING_CST)
             {
                  memory = TREE_VALUE(TREE_VALUE(region));
             }
          }
 
-         if (memory) 
+         if (memory)
          {
            pic32_external_memory *m;
            is_default = 0;
@@ -5126,12 +5306,12 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
            for (m = pic32_external_memory_head; m; m = m->next) {
               if (strcmp (m->name, TREE_STRING_POINTER (memory)) == 0) break;
            }
-      
+
            if (m == 0) error("invalid external memory attribute");
-      
+
            f+= sprintf(f,",memory(_%s)", m->name);
-#if 0      
-           if (!(flags & SECTION_NOLOAD)) 
+#if 0
+           if (!(flags & SECTION_NOLOAD))
            {
               f+= sprintf(f, "," SECTION_ATTR_NOLOAD);
            }
@@ -5234,7 +5414,7 @@ void mchp_asm_named_section(const char *pszSectionName,
   mchp_merged_asm_named_section(pszSectionName, flags);
 }
 
-static 
+static
 char * mchp_get_named_section_flags (const char *pszSectionName,
     SECTION_FLAGS_INT flags)
 {
@@ -5264,6 +5444,10 @@ char * mchp_get_named_section_flags (const char *pszSectionName,
     {
       f += sprintf(f, "," SECTION_ATTR_CONST);
     }
+    if (flags & SECTION_SERIALMEM)
+      {
+        f += sprintf(f, "," SECTION_ATTR_SERIALMEM);
+      }
   if (flags & SECTION_RAMFUNC)
     {
       f += sprintf(f, "," SECTION_ATTR_RAMFUNC);
@@ -5325,7 +5509,7 @@ static int mchp_bsearch_vsf_compare(const void *va, const void *vb)
 }
 
 /* validates a section declaration based on its name and any flags */
-static 
+static
 SECTION_FLAGS_INT validate_section_flags(const char *name,
     SECTION_FLAGS_INT attr_flags)
 {
@@ -5844,7 +6028,7 @@ static SECTION_FLAGS_INT validate_identifier_flags(const char *id)
   SECTION_FLAGS_INT flags = 0;
   int add_section_code_flag = 0;
   struct valid_section_flags_ *v_flags = 0;
-  
+
   gcc_assert (sizeof(SECTION_FLAGS_INT) >= sizeof(unsigned long long));
 
   while (f && *f == MCHP_EXTENDED_FLAG[0])
@@ -5877,7 +6061,12 @@ static SECTION_FLAGS_INT validate_identifier_flags(const char *id)
       else if (strncmp(f, MCHP_CONST_FLAG, sizeof(MCHP_CONST_FLAG)-1) == 0)
         {
           flags |= SECTION_READ_ONLY;
-          f += sizeof(MCHP_DATA_FLAG)-1;
+          f += sizeof(MCHP_CONST_FLAG)-1;
+        }
+      else if (strncmp(f, MCHP_SERIALMEM_FLAG, sizeof(MCHP_SERIALMEM_FLAG)-1) == 0)
+        {
+          flags |= SECTION_SERIALMEM;
+          f += sizeof(MCHP_SERIALMEM_FLAG)-1;
         }
       else if (strncmp(f, MCHP_PRST_FLAG, sizeof(MCHP_PRST_FLAG)-1) == 0)
         {

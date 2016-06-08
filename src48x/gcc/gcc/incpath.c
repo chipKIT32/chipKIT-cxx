@@ -389,6 +389,8 @@ merge_include_chains (const char *sysroot, cpp_reader *pfile, int verbose)
 	}
       fprintf (stderr, _("End of search list.\n"));
     }
+    
+  target_c_incpath.final_includes(heads[QUOTE],heads[BRACKET]);
 
 #ifdef ENABLE_POISON_SYSTEM_DIRECTORIES
   if (flag_poison_system_directories)
@@ -538,5 +540,13 @@ static void hook_void_charptr_charptr_int (const char *sysroot ATTRIBUTE_UNUSED,
 #define TARGET_EXTRA_PRE_INCLUDES hook_void_charptr_charptr_int
 #endif
 
-struct target_c_incpath_s target_c_incpath = { TARGET_EXTRA_PRE_INCLUDES, TARGET_EXTRA_INCLUDES };
+#if !(defined TARGET_FINAL_INCLUDES)
+static void hook_void_cppdir_cppdir(struct cpp_dir*, struct cpp_dir*)
+{}
+#endif
+#ifndef TARGET_FINAL_INCLUDES
+#define TARGET_FINAL_INCLUDES hook_void_cppdir_cppdir
+#endif
+
+struct target_c_incpath_s target_c_incpath = { TARGET_EXTRA_PRE_INCLUDES, TARGET_EXTRA_INCLUDES, TARGET_FINAL_INCLUDES };
 

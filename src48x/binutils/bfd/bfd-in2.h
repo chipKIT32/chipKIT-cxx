@@ -1435,8 +1435,10 @@ typedef struct bfd_section
   unsigned int stack:1;
   unsigned int ramfunc:1;
   unsigned int coherent:1;
+  unsigned int serial_mem:1;
 
   unsigned int sec_flg0:1;
+
 
   /* End of internal packed boolean fields.  */
 
@@ -1710,11 +1712,12 @@ extern asection std_section[4];
   /* near, persistent, absolute, reverse, unordered, dma,          */  \
      0,        0,        0,        0,        0,        0,              \
                                                                        \
-  /* memory, heap, stack, ramfunc, coherent,                       */  \
-     0,        0,     0,       0,         0,                             \
+  /* memory, heap, stack, ramfunc, coherent, serial_mem,           */  \
+     0,        0,     0,       0,         0,          0,               \
                                                                        \
   /* sec_flg0,                                                     */  \
      0,                                                                \
+                                                                       \
                                                                        \
   /* vma, lma, size, rawsize, compressed_size, relax, relax_count, */  \
      0,   0,   0,    0,       0,               0,     0,               \

@@ -141,6 +141,9 @@ static void bfd_pic32_add_bfd_to_link
 static void bfd_pic32_scan_data_section
   PARAMS ((asection *, PTR));
 
+static void bfd_pic32_scan_code_section
+  PARAMS ((asection *, PTR));
+
 static void bfd_pic32_skip_data_section
   PARAMS ((asection *, PTR));
 
@@ -186,6 +189,9 @@ static void allocate_memory
 static int allocate_program_memory
   PARAMS ((void));
 
+static int allocate_serial_memory
+  PARAMS ((void));
+
 static int allocate_data_memory
   PARAMS ((void));
 
@@ -221,6 +227,9 @@ static void pic32_free_memory_list
 
 static void pic32_init_memory_list
   PARAMS ((struct pic32_memory **));
+
+static void insert_alloc_section 
+  PARAMS ((struct pic32_section *, struct pic32_section *));
 
 static bfd_boolean pic32_unique_section
   PARAMS ((const char *s));
@@ -319,6 +328,7 @@ static bfd *stack_bfd;
 extern unsigned char *init_data;
 extern asection *init_template;
 extern struct pic32_section *data_sections;
+extern struct pic32_section *code_sections;
 
 /* Symbol Tables */
 static asymbol **symtab;
@@ -452,6 +462,10 @@ static bfd_size_type actual_prog_memory_used = 0;
 static bfd_size_type data_memory_used = 0;
 static bfd_size_type region_data_memory_used = 0;
 static bfd_size_type external_memory_used = 0;
+static bfd_size_type actual_serial_memory_used = 0;
+static bfd_size_type region_serial_memory_used  = 0;
+static bfd_size_type total_serial_memory = 0;
+
 
 /* User-defined memory regions */
 static bfd_boolean has_user_defined_memory = FALSE;
@@ -539,6 +553,9 @@ struct function_pair_type
      extra flags at the end */
 struct function_pair_type function_pairs[] =
   {
+    { "do_print",   "_do_print",  0  },
+    { "_ddo_print", "_do_print",  0  },
+      
     /* iprintf() */
     { "printf",    "_printf",   0  },
     { "_printf",   "__printf",  0  },
@@ -877,6 +894,9 @@ bfd_pic32_report_memory_usage (fp)
   region_prog_memory_used = 0;
   region_data_memory_used = 0;
   total_data_memory = total_prog_memory = 0;
+  actual_serial_memory_used = 0;
+  region_serial_memory_used  = 0;
+  total_serial_memory = 0;
   
   fflush (fp);
 
@@ -901,7 +921,7 @@ bfd_pic32_report_memory_usage (fp)
      fprintf( fp, "-------                 ----------  -------------------------  -----------\n");
      /* report code sections */
      for (s = pic32_section_list; s != NULL; s = s->next)
-       if (s->sec)
+       if (s->sec && !strstr(s->sec->name, "fill$"))
        {
          region_prog_memory_used += bfd_pic32_report_sections (s, region, &magic_pm,fp);
        }
@@ -923,6 +943,29 @@ bfd_pic32_report_memory_usage (fp)
          (unsigned long)actual_prog_memory_used, (unsigned long)actual_prog_memory_used);
   report_percent_used (actual_prog_memory_used, total_prog_memory, fp);
   fprintf (fp, "\n        --------------------------------------------------------------------------\n");
+
+  /* SERIAL MEMORY */
+  if (lang_memory_region_exist("serial_mem") &&
+      pic32_is_serialmem_machine(global_PROCESSOR)) {
+
+    region = region_lookup("serial_mem");
+
+    /* print serial header */
+    fprintf( fp, "\n\nSerial Memory Usage\n");
+    fprintf( fp, "section                    address  length [bytes]      (dec)  Description\n");
+    fprintf( fp, "-------                 ----------  -------------------------  -----------\n");
+    /* report serial-mem sections */
+    for (s = pic32_section_list; s != NULL; s = s->next)
+      if (s->sec)
+      {
+        region_serial_memory_used += bfd_pic32_report_sections (s, region, &magic_pm,fp);
+      }
+  fprintf (fp, "\n        --------------------------------------------------------------------------\n");
+    fprintf( fp, "         Total Serial Memory Used  :  %#10lx  %10ld  ",
+            (unsigned long)region_serial_memory_used, (unsigned long)region_serial_memory_used);
+    report_percent_used(region_serial_memory_used,region->length, fp);
+  fprintf (fp, "\n        --------------------------------------------------------------------------\n");
+  }
 
   /* DATA MEMORY */
 
@@ -1124,7 +1167,7 @@ void bfd_pic32_memory_summary(char *arg)
 
         /* collect code sections */
         for (s = pic32_section_list; s != NULL; s = s->next)
-          if (s->sec)
+          if (s->sec && !strstr(s->sec->name, "fill$"))
           {
             region_prog_memory_used += bfd_pic32_collect_section_size (s, region);
           }
@@ -1678,7 +1721,7 @@ bfd_pic32_report_sections (s, region, magic_sections, fp)
       if ((start >= region->origin) &&
           ((start + actual) <= (region->origin + region->length)))
       {
-         bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
+           bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
          fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", name,
                  start, actual, actual, description);
          region_used = actual;
@@ -1687,7 +1730,7 @@ bfd_pic32_report_sections (s, region, magic_sections, fp)
           ((load + actual) <= (region->origin + region->length)) &&
            (s->sec->flags & (SEC_HAS_CONTENTS)))
       {
-         bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
+           bfd_pic32_lookup_magic_section_description (name, magic_sections, &description);
          fprintf( fp, "%-" NAME_FIELD_LEN "s%#10lx     %#10lx  %10ld  %s \n", name,
                   load, actual, actual, description);
          region_used = actual;
@@ -2043,7 +2086,7 @@ bfd_pic32_process_bfd_after_open (abfd, info)
       int c;
       for (c=0; c < pic32_symbol_count; c++) {
         if (strcmp(sec->name, pic32_symbol_list[c].name) == 0)
-          pic32_set_attributes(sec, pic32_symbol_list[c].value, 0);
+          pic32_set_extended_attributes(sec, pic32_symbol_list[c].value, 0);
       }
     }
 
@@ -2222,10 +2265,20 @@ void pic32_create_data_init_template(void)
 
        /* Compute size of data init template */
       for (s = data_sections; s != NULL; s = s->next)
-        if ((s->sec) && ((s->sec->flags & SEC_EXCLUDE) == 0))
+        if ((s->sec) && ((s->sec->flags & SEC_EXCLUDE) == 0)) 
           bfd_pic32_scan_data_section(s->sec, &total_data);
 
+     if (pic32_code_in_dinit) {
+       for (s = code_sections; s != NULL; s = s->next) {
+          if ((s->sec) && ((s->sec->flags & SEC_EXCLUDE) == 0))
+            bfd_pic32_scan_code_section(s->sec, &total_data);
+        }
+     }
+
       total_data += 4; /* zero terminated */
+      
+      if (pic32_code_in_dinit)
+        total_data += 4;
 
       if (total_data % 16)
         total_data += 16 - (total_data % 16);
@@ -2252,6 +2305,26 @@ void pic32_create_data_init_template(void)
           sec->contents = init_data;
           bfd_set_section_size (init_bfd, sec, total_data);
           init_template = sec;  /* save a copy for later */
+
+          if (pic32_dinit_has_absolute_address) {
+            bfd_set_section_vma(init_bfd, sec, dinit_address);
+            PIC32_SET_ABSOLUTE_ATTR(sec);
+          }
+          if (pic32_dinit_in_serial_mem) {
+            PIC32_SET_SERIAL_MEM_ATTR(sec);
+            sec->flags &= ~SEC_CODE;
+
+          char *name;
+          char *ext_attr_prefix = "__ext_attr_";
+
+          name = xmalloc (strlen(sec->name) + strlen(ext_attr_prefix) + 1);
+          (void) sprintf(name, "%s%s", ext_attr_prefix, sec->name);
+           _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd,
+                                             name, BSF_GLOBAL,
+                                             bfd_abs_section_ptr,
+                                             pic32_extended_attribute_map(sec),
+                                             name, 1, 0, 0);
+         }
         }
      else
         if (pic32_debug)
@@ -2338,6 +2411,12 @@ pic32_after_open(void)
 
     } /* pic32_smart_io */
 
+  /*
+  ** For PIC, don't invoke the best-fit allocator.
+  */
+  if (link_info.shared || link_info.pie)
+    pic32_allocate = FALSE;
+
     gld${EMULATION_NAME}_after_open();
 
     /* Prepare a list for sections in user-defined regions */
@@ -2358,6 +2437,9 @@ pic32_after_open(void)
 
    /* init list of input data sections */
   pic32_init_section_list(&data_sections);
+
+   /* init list of input code sections */
+  pic32_init_section_list(&code_sections);
 
   /*
    * Loop through all input sections and
@@ -2392,6 +2474,8 @@ pic32_after_open(void)
             else
               pic32_append_section_to_list(data_sections, f, sec);
           }
+         else if ((sec->size > 0) && PIC32_IS_CODE_ATTR(sec))
+              pic32_append_section_to_list(code_sections, f, sec);
       }
   }
 
@@ -2402,7 +2486,8 @@ pic32_after_open(void)
   ** FIXME: may want to test pic32_stack_required
   ** and create a default size stack
   */
-  if (!stack_section_defined && (pic32_stack_size > 0)) {
+  if (!((link_info.shared || link_info.pie)) && 
+       !stack_section_defined && (pic32_stack_size > 0)) {
     if (pic32_debug)
       printf("\nCreating stack of size %x\n", pic32_stack_size);
     stack_bfd = bfd_pic32_create_stack_bfd (link_info.output_bfd);
@@ -2431,8 +2516,9 @@ pic32_finish(void)
   if (config.map_file != NULL) {
     bfd_pic32_report_memory_usage (config.map_file);
   }
-  if (pic32_report_mem)
-    bfd_pic32_report_memory_usage (stdout);
+  if (pic32_report_mem) {
+      bfd_pic32_report_memory_usage (stdout);
+  }
 
   if (pic32_has_crypto_option)
     pic32_report_crypto_sections();
@@ -2850,7 +2936,7 @@ bfd_pic32_add_bfd_to_link (abfd, name)
 } /* static void bfd_pic32_add_bfd_to_link (...)*/
 
 /*
-** This routine is called by before_allocation().
+** This routine is called by bfd_pic32_create_data_init_template().
 **
 ** Scan a DATA or BSS section and accumulate
 ** the data template size.
@@ -2923,6 +3009,51 @@ bfd_pic32_scan_data_section (sect, p)
                sect->name, (unsigned int) sect->size, delta);
   }
 } /*static void bfd_pic32_scan_data_section (...)*/
+
+/*
+** This routine is called by bfd_pic32_create_data_init_template().
+**
+** Scan a CODE  sections and accumulate
+** the data template size.
+*/
+static void
+bfd_pic32_scan_code_section (sect, p)
+     asection *sect;
+     PTR p;
+{
+#define DATA_RECORD_HEADER_SIZE 12
+
+   int *data_size = (int *) p;
+
+  if (p == (int *) NULL)
+    return;
+
+  /*
+  ** process CODE-type sections
+  */
+  if (PIC32_IS_CODE_ATTR(sect) && (sect->size > 0))
+  {
+    /* Analyze initialization data now and find out what the after compression
+       size of the data initialization template */
+          /* account for 0-padding so that new dinit records always start at a
+          ** new memory location
+          */
+          int count = (sect->size % 4) ? (sect->size + (4 - sect->size % 4)) \
+                                       : sect->size;
+          int delta = DATA_RECORD_HEADER_SIZE + count;
+          *data_size += delta;
+      /*
+      ** make section not LOADable
+      */
+      sect->flags &= ~ SEC_LOAD;
+
+      if (pic32_debug)
+        printf("  %s (data), size = %x bytes, template += %x bytes\n",
+               sect->name, (unsigned int) sect->size, delta);
+  }
+} /*static void bfd_pic32_scan_code_section (...)*/
+
+
 
 /*
 ** This routine is called by before_allocation()
@@ -3057,6 +3188,10 @@ bfd_pic32_finish(void)
   if (config.make_executable == FALSE)
     einfo("%P%F: Link terminated due to previous error(s).\n");
 
+// PIE SUPPORT
+
+if (!(link_info.shared || link_info.pie)) 
+{
   /* check for _min_stack_size symbol -- this is an old way to specify
      a stack, and is really not preferred */
   if ((h = bfd_pic32_is_defined_global_symbol("_min_stack_size"))) {
@@ -3272,6 +3407,88 @@ bfd_pic32_finish(void)
                                             "_dinit_size", 1, 0, 0);
         }
     }
+ } // PIE SUPPORT
+
+#if 1
+if (link_info.shared || link_info.pie) 
+ {
+   /* if heap is required, make sure one is specified */
+ 
+   if (pic32_heap_required && !heap_section_defined && !pic32_has_heap_option &&
+	  !bfd_pic32_is_defined_global_symbol("_min_heap_size"))
+	  einfo("%P%X Error: A heap is required, but has not been specified\n");
+
+   /* check for _min_stack_size symbol -- this is an old way to specify
+	 a stack, and is really not preferred */
+   if ((h = bfd_pic32_is_defined_global_symbol("_min_heap_size"))) {
+	if (pic32_has_heap_option && (h->u.def.value != pic32_heap_size))
+	  fprintf (stderr, "Warning: --heap option overrides _min_heap_size symbol\n");
+	else
+	  pic32_heap_size = h->u.def.value;
+   }
+  
+   if (pic32_debug)
+	printf("Creating __MIN_HEAP_SIZE = %x\n", pic32_heap_size);
+  
+  if (!bfd_pic32_is_defined_global_symbol("__MIN_HEAP_SIZE"))
+   _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "__MIN_HEAP_SIZE",
+									BSF_GLOBAL, bfd_abs_section_ptr,
+									pic32_heap_size, "__MIN_HEAP_SIZE", 1, 0, 0);
+//   if (pic32_debug)
+//	printf("Creating _min_heap_size = %x\n", pic32_heap_size);
+//  
+//  if (!bfd_pic32_is_defined_global_symbol("_min_heap_size"))
+//   _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_min_heap_size",
+//									BSF_GLOBAL, bfd_abs_section_ptr,
+//									pic32_heap_size, "_min_heap_size", 1, 0, 0);  
+   if (pic32_debug)
+     printf("Creating _heap = %x\n", heap_base);
+     
+   if (!bfd_pic32_is_defined_global_symbol("_heap"))
+     _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_heap",
+                                        BSF_GLOBAL, bfd_abs_section_ptr,
+                                        heap_base, "_heap", 1, 0, 0);
+	
+   if (pic32_debug)
+     printf("Creating _eheap = %x\n", heap_limit);
+
+   if (!bfd_pic32_is_defined_global_symbol("_eheap"))
+     _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd, "_eheap",
+                                        BSF_GLOBAL, bfd_abs_section_ptr,
+                                        heap_limit, "_eheap", 1, 0, 0);
+
+
+  /*
+  ** Set _dinit_addr symbol for data init template
+  **   so the C startup module can find it.
+  */
+  if (pic32_data_init)
+    {
+      asection *sec;
+      sec = init_template->output_section;  /* find the template's output sec */
+
+      if (sec)
+        {
+          bfd_vma dinit_addr = sec->lma + init_template->output_offset;
+          unsigned int dinit_address = dinit_addr & 0xFFFFFFFFul;
+
+          if (pic32_debug)
+            printf("Creating _dinit_addr= %x\n", dinit_address);
+          _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd,
+                                            "_dinit_addr", BSF_GLOBAL,
+                                            bfd_abs_section_ptr, dinit_address,
+                                            "_dinit_addr", 1, 0, 0);
+          if (pic32_debug)
+            printf("Creating _dinit_size= %x\n", dinit_size);
+          _bfd_generic_link_add_one_symbol (&link_info, link_info.output_bfd,
+                                            "_dinit_size", BSF_GLOBAL,
+                                            bfd_abs_section_ptr, dinit_size,
+                                            "_dinit_size", 1, 0, 0);
+        }
+    }
+									
+  } // PIE SUPPORT
+#endif
 }
 
 /* include the improved memory allocation functions */
@@ -3307,16 +3524,22 @@ elf_link_check_archive_element (name, abfd, sec_info)
       if (pic32_has_hardfloat_option || 
          (global_PROCESSOR && pic32_is_fltpt_machine(global_PROCESSOR) && !pic32_has_softfloat_option ))
       {
-        out_attr[Tag_GNU_MIPS_ABI_FP].i = 4;
-        if (4 != archive_attr[Tag_GNU_MIPS_ABI_FP].i)
+        out_attr[Tag_GNU_MIPS_ABI_FP].i = 4; /*  4 for -mips32r2 -mfp64
+                                              *  0 for not tagged or not using any 
+                                              *  ABIs affected by the differences
+                                              */
+        if ((4 != archive_attr[Tag_GNU_MIPS_ABI_FP].i) && (0 != archive_attr[Tag_GNU_MIPS_ABI_FP].i))
           return FALSE;
       }
 
       if (pic32_has_softfloat_option || 
          (global_PROCESSOR && !pic32_is_fltpt_machine(global_PROCESSOR) && !pic32_has_hardfloat_option ))
       {
-        out_attr[Tag_GNU_MIPS_ABI_FP].i = 3;
-        if (3 != archive_attr[Tag_GNU_MIPS_ABI_FP].i)
+        out_attr[Tag_GNU_MIPS_ABI_FP].i = 3; /*  3 for soft-float
+                                              *  0 for not tagged or not using any 
+                                              *  ABIs affected by the differences
+                                              */
+        if ((3 != archive_attr[Tag_GNU_MIPS_ABI_FP].i) && (0 != archive_attr[Tag_GNU_MIPS_ABI_FP].i))
           return FALSE;
       }
     }

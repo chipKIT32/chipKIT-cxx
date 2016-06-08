@@ -6470,60 +6470,75 @@ default_unique_section (tree decl, int reloc)
   const char *prefix, *name, *linkonce;
   char *string;
 
-  switch (categorize_decl_for_section (decl, reloc))
-    {
-    case SECCAT_TEXT:
 #if defined(TARGET_MCHP_PIC32MX)
-                  if (mchp_ramfunc_type_p(decl))
-                    prefix = one_only ? ".rf" : ".ramfunc";
-                  else
-                    prefix = one_only ? ".t" : ".text";
-#else
-                  prefix = one_only ? ".t" : ".text";
-#endif
-      break;
-    case SECCAT_RODATA:
-    case SECCAT_RODATA_MERGE_STR:
-    case SECCAT_RODATA_MERGE_STR_INIT:
-    case SECCAT_RODATA_MERGE_CONST:
-      prefix = one_only ? ".r" : ".rodata";
-      break;
-    case SECCAT_SRODATA:
-      prefix = one_only ? ".s2" : ".sdata2";
-      break;
-    case SECCAT_DATA:
-      prefix = one_only ? ".d" : ".data";
-      break;
-    case SECCAT_DATA_REL:
-      prefix = one_only ? ".d.rel" : ".data.rel";
-      break;
-    case SECCAT_DATA_REL_LOCAL:
-      prefix = one_only ? ".d.rel.local" : ".data.rel.local";
-      break;
-    case SECCAT_DATA_REL_RO:
-      prefix = one_only ? ".d.rel.ro" : ".data.rel.ro";
-      break;
-    case SECCAT_DATA_REL_RO_LOCAL:
-      prefix = one_only ? ".d.rel.ro.local" : ".data.rel.ro.local";
-      break;
-    case SECCAT_SDATA:
-      prefix = one_only ? ".s" : ".sdata";
-      break;
-    case SECCAT_BSS:
-      prefix = one_only ? ".b" : ".bss";
-      break;
-    case SECCAT_SBSS:
-      prefix = one_only ? ".sb" : ".sbss";
-      break;
-    case SECCAT_TDATA:
-      prefix = one_only ? ".td" : ".tdata";
-      break;
-    case SECCAT_TBSS:
-      prefix = one_only ? ".tb" : ".tbss";
-      break;
-    default:
-      gcc_unreachable ();
+
+/* if there is a section name on the decl, we use that as the prefix;
+     otherwise, we figure out the prefix based on the decl itself */
+  if (DECL_SECTION_NAME (decl) != NULL)
+    {
+      const char *sname = TREE_STRING_POINTER (DECL_SECTION_NAME (decl));
+	  prefix = ACONCAT ((sname, NULL));
     }
+  else
+    {
+#endif
+        switch (categorize_decl_for_section (decl, reloc))
+        {
+            case SECCAT_TEXT:
+#if defined(TARGET_MCHP_PIC32MX)
+                if (mchp_ramfunc_type_p(decl))
+                   prefix = one_only ? ".rf" : ".ramfunc";
+                else
+                   prefix = one_only ? ".t" : ".text";
+#else
+                   prefix = one_only ? ".t" : ".text";
+#endif
+			  break;
+			case SECCAT_RODATA:
+			case SECCAT_RODATA_MERGE_STR:
+			case SECCAT_RODATA_MERGE_STR_INIT:
+			case SECCAT_RODATA_MERGE_CONST:
+			  prefix = one_only ? ".r" : ".rodata";
+			  break;
+			case SECCAT_SRODATA:
+			  prefix = one_only ? ".s2" : ".sdata2";
+			  break;
+			case SECCAT_DATA:
+			  prefix = one_only ? ".d" : ".data";
+			  break;
+			case SECCAT_DATA_REL:
+			  prefix = one_only ? ".d.rel" : ".data.rel";
+			  break;
+			case SECCAT_DATA_REL_LOCAL:
+			  prefix = one_only ? ".d.rel.local" : ".data.rel.local";
+			  break;
+			case SECCAT_DATA_REL_RO:
+			  prefix = one_only ? ".d.rel.ro" : ".data.rel.ro";
+			  break;
+			case SECCAT_DATA_REL_RO_LOCAL:
+			  prefix = one_only ? ".d.rel.ro.local" : ".data.rel.ro.local";
+			  break;
+			case SECCAT_SDATA:
+			  prefix = one_only ? ".s" : ".sdata";
+			  break;
+			case SECCAT_BSS:
+			  prefix = one_only ? ".b" : ".bss";
+			  break;
+			case SECCAT_SBSS:
+			  prefix = one_only ? ".sb" : ".sbss";
+			  break;
+			case SECCAT_TDATA:
+			  prefix = one_only ? ".td" : ".tdata";
+			  break;
+			case SECCAT_TBSS:
+			  prefix = one_only ? ".tb" : ".tbss";
+			  break;
+			default:
+			  gcc_unreachable ();
+		}
+#if defined(TARGET_MCHP_PIC32MX)
+	}
+#endif
 
   name = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl));
   name = targetm.strip_name_encoding (name);

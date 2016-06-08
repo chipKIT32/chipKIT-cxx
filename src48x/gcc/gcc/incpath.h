@@ -27,6 +27,7 @@ struct target_c_incpath_s {
   /* Do extra includes processing.  STDINC is false iff -nostdinc was given.  */
   void (*extra_pre_includes) (const char *, const char *, int);
   void (*extra_includes) (const char *, const char *, int);
+  void (*final_includes) (struct cpp_dir*,struct cpp_dir*);
 };
 
 extern struct target_c_incpath_s target_c_incpath;

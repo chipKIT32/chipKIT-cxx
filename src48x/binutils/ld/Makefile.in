@@ -1915,7 +1915,8 @@ info: info-recursive
 
 info-am: $(INFO_DEPS)
 
-install-data-am: install-data-local install-info-am install-man
+#install-data-am: install-data-local install-info-am install-man
+install-data-am: install-data-local
 
 install-dvi: install-dvi-recursive
 

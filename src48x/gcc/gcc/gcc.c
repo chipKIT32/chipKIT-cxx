@@ -3203,7 +3203,9 @@ display_help (void)
   fputs (_("\
   -relaxed-math            Use alternative floating-point support routines\n"), stdout);
   fputs (_("\
-  -legacy-libc             Use legacy (pre v1.12) lib C routines\n"), stdout);
+  -legacy-libc             Use legacy lib C routines\n"), stdout);
+  fputs (_("\
+  -no-legacy-libc          Use HTC lib C routines\n"), stdout);
 #endif
   fputs (_("\
   -print-multi-lib         Display the mapping between command line options and\n\
