@@ -36,7 +36,7 @@ const char bug_report_url[] = "<URL:http://www.microchip.com/support>";
 #define _BUILD_C32_
 #define _BUILD_MCHP_
 #ifdef _BUILD_C32_
-const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.33"; /* chipKIT */
+const char version_string[] = BASEVER " " "chipKIT Compiler for PIC32 MCUs v1.40"; /* chipKIT */
 
 #elif defined(_BUILD_C30_)
 #define version2(X) #X
