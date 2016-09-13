@@ -6,7 +6,7 @@
 #endif
 #if !defined(MASK1)
 //#define MASK1(a,b,c,d,e,f,g,h)
-#define MASK1(a,b,c,d,e,f,g)
+#define MASK1(a,b,c,d,e,f,g,h)
 #endif
 #if !defined(MASK2)
 #define MASK2(a,b,c,d,e,f,g,h,i,j,k,l)
@@ -71,6 +71,7 @@ ATTR( stack,   0, PIC32_SET_STACK_ATTR(sec) )
 ATTR( ramfunc, 0, PIC32_SET_RAMFUNC_ATTR(sec) )
 ATTR( keep, 0, PIC32_SET_KEEP_ATTR(sec) ) 
 ATTR( coherent, 0, PIC32_SET_COHERENT_ATTR(sec) )
+ATTR( serial_mem, 0 , PIC32_SET_SERIAL_MEM_ATTR(sec))
 
 /*
  * ATTR_IS: Testing Section Attributes
@@ -102,13 +103,14 @@ ATTR_IS( stack,   PIC32_IS_STACK_ATTR(sec) )
 ATTR_IS( ramfunc, PIC32_IS_RAMFUNC_ATTR(sec) )
 ATTR_IS( keep, PIC32_IS_KEEP_ATTR(sec) )
 ATTR_IS( coherent, PIC32_IS_COHERENT_ATTR(sec) )
+ATTR_IS( serial_mem, PIC32_IS_SERIAL_MEM_ATTR(sec))
 
 
 /*
  * MASK1: Attributes that represent section types
  */
 //MASK1( code, data, bss, persist, memory, heap, stack, ramfunc)
-MASK1( code, data, bss, persist, heap, stack, ramfunc)
+MASK1( code, data, bss, persist, heap, stack, ramfunc, serial_mem)
 
 
 /*
@@ -124,6 +126,7 @@ MASK2( persist, address, near, reverse, align, noload, 0, 0, dma, keep, coherent
 MASK2( heap, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0)
 MASK2( stack, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0)
 MASK2( ramfunc, 0, 0, 0, align, noload, merge, info, 0, keep, 0, 0)
+MASK2( serial_mem, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory)
 
 
 /*

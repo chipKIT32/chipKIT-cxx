@@ -512,6 +512,7 @@ dump_section_header (bfd *abfd, asection *section,
   PF2 (stack, "STACK");
   PF2 (ramfunc, "RAMFUNC");
   //PF2 (coherent, "COHERENT");
+  PF2 (serial_mem, "SERIAL_MEM");
 #undef PF2
 #endif
  
@@ -3231,7 +3232,6 @@ dump_bfd (bfd *abfd)
     printf (_("\n%s:     file format %s\n"), bfd_get_filename (abfd),
 	    abfd->xvec->name);
 
-#if 0
 #if defined(TARGET_IS_PIC32MX)
   /* load symbols now */
   syms = slurp_symtab (abfd);
@@ -3255,15 +3255,13 @@ dump_bfd (bfd *abfd)
 
           for (s = abfd->sections; s != NULL; s = s->next)
             if (strcmp(sec_name, s->name) == 0)
-              pic32_set_attributes(s, attr, 0);
+              pic32_set_extended_attributes(s, attr, 0);
         }
         current++;
       }
     }
   }
 #endif
-#endif
-
 
   if (dump_ar_hdrs)
     print_arelt_descr (stdout, abfd, TRUE);

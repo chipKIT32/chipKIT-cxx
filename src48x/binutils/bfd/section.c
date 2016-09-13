@@ -407,6 +407,9 @@ CODE_FRAGMENT
 .  unsigned int stack:1;
 .  unsigned int ramfunc:1;
 .  unsigned int coherent:1;
+.  unsigned int serial_mem:1;
+.
+.  unsigned int sec_flg0:1;
 .
 .
 .  {* End of internal packed boolean fields.  *}
@@ -681,8 +684,11 @@ CODE_FRAGMENT
 .  {* near, persistent, absolute, reverse, unordered, dma,          *}  \
 .     0,        0,        0,        0,        0,        0,		\
 .									\
-.  {* memory, heap, stack, ramfunc, coherent,                       *}  \
-.     0,        0,     0,       0,         0,                             \
+.  {* memory, heap, stack, ramfunc, coherent, serial_mem,           *}  \
+.     0,        0,     0,       0,         0,          0,               \
+.                                                                       \
+.  {* sec_flg0,                                                     *}  \
+.     0,                                                                \
 .                                                                       \
 .                                                                       \
 .  {* vma, lma, size, rawsize, compressed_size, relax, relax_count, *}	\

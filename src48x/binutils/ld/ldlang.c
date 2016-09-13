@@ -140,6 +140,10 @@ extern void pic32_create_specific_fill_sections(void);
 extern void pic32_create_stack_section(void);
 bfd_boolean lang_memory_region_exist(const char *);
 static bfd_boolean issue_warning = TRUE;
+extern bfd_boolean pic32_has_code_in_dinit_option;
+extern bfd_boolean pic32_code_in_dinit;
+extern bfd_boolean pic32_has_dinit_in_serial_mem_option;
+extern bfd_boolean pic32_dinit_in_serial_mem;
 #endif
 
  /* Functions that traverse the linker script and might evaluate
@@ -2499,6 +2503,7 @@ lang_add_section (lang_statement_list_type *ptr,
       section->output_section->stack = section->stack;
       section->output_section->ramfunc = section->ramfunc;
       section->output_section->coherent = section->coherent;
+      section->output_section->serial_mem = section->serial_mem;
 
       /* promote absolute address, unless the output section
          already has a conflicting one */
@@ -6910,6 +6915,18 @@ lang_process (void)
   link_info.gc_sym_list = &entry_symbol;
   if (entry_symbol.name == NULL)
     link_info.gc_sym_list = ldlang_undef_chain_list_head;
+
+#ifdef TARGET_IS_PIC32MX
+  if (pic32_is_serialmem_machine(global_PROCESSOR) &&
+      !pic32_has_code_in_dinit_option)
+    pic32_code_in_dinit = TRUE;
+
+  if (pic32_is_serialmem_machine(global_PROCESSOR) &&
+      !pic32_has_dinit_in_serial_mem_option)
+    pic32_dinit_in_serial_mem = TRUE;
+
+  entry_symbol_copy = entry_symbol;
+#endif
 
   ldemul_after_open ();
 

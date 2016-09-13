@@ -16467,6 +16467,24 @@ s_change_section (int ignore ATTRIBUTE_UNUSED)
      if (has_auto_name)
        PIC32_SET_UNORDERED_ATTR(sec);
 
+     /* encode any extended attributes in a symbol */
+     if (pic32_extended_attribute_map(sec)) {
+      char *name;
+      char *ext_attr_prefix = "__ext_attr_";
+      symbolS * symbolp;
+
+      name = xmalloc (strlen(sec->name) + strlen(ext_attr_prefix) + 1);
+      (void) sprintf(name, "%s%s", ext_attr_prefix, sec->name);
+      if (!symbol_find(name)) {
+        symbolp = symbol_new (name, absolute_section,
+                              (valueT) pic32_extended_attribute_map(sec),
+                              &zero_address_frag);
+
+        symbol_table_insert (symbolp);
+        symbol_mark_resolved (symbolp);
+       }
+     }
+
      /* .comment section flags should alwasy be READONLY & HAS_CONTENTS */
       if (strcmp(sec->name,".comment") == 0) 
         sec->flags = SEC_NO_FLAGS | SEC_READONLY | SEC_HAS_CONTENTS;

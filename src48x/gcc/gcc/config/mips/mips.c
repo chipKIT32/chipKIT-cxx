@@ -1343,10 +1343,18 @@ mips_insert_attributes (tree decl, tree *attributes)
       nocompression_flags |=
 	mips_get_compress_off_flags (DECL_ATTRIBUTES (decl));
 
+#if defined(TARGET_MCHP_PIC32MX)
+      if (((compression_flags & MASK_MIPS16) && (nocompression_flags & MASK_MIPS16)) ||
+          ((compression_flags & MASK_MICROMIPS) && (nocompression_flags & MASK_MICROMIPS)))
+    error ("%qE cannot have both %qs and %qs attributes",
+     DECL_NAME (decl), mips_get_compress_on_name (compression_flags),
+     mips_get_compress_off_name (nocompression_flags));
+#else
       if (compression_flags && nocompression_flags)
 	error ("%qE cannot have both %qs and %qs attributes",
 	       DECL_NAME (decl), mips_get_compress_on_name (compression_flags),
 	       mips_get_compress_off_name (nocompression_flags));
+#endif
 
       if (compression_flags & MASK_MIPS16
           && compression_flags & MASK_MICROMIPS)
@@ -8611,6 +8619,8 @@ mips_in_small_data_p (const_tree decl)
       space_attr = lookup_attribute ("space", DECL_ATTRIBUTES (decl));
       if (space_attr && (get_identifier("prog") == (TREE_VALUE(TREE_VALUE(space_attr)))))
         return false;
+      if (space_attr && (get_identifier("serial_mem") == (TREE_VALUE(TREE_VALUE(space_attr)))))
+        return false;
       if (lookup_attribute ("address", DECL_ATTRIBUTES (decl)))
         return false;
       if (lookup_attribute ("persistent", DECL_ATTRIBUTES (decl)))
@@ -12333,6 +12343,33 @@ mips_hard_regno_mode_ok_p (unsigned int regno, enum machine_mode mode)
     return mode == SImode;
 
   return false;
+}
+
+/* Return nonzero if register OLD_REG can be renamed to register NEW_REG.  */
+
+bool
+mips_hard_regno_rename_ok (unsigned int old_reg ATTRIBUTE_UNUSED,
+			   unsigned int new_reg)
+{
+  /* Interrupt functions can only use registers that have already been
+     saved by the prologue, even if they would normally be call-clobbered.  */
+  if (cfun->machine->interrupt_handler_p && !df_regs_ever_live_p (new_reg))
+    return false;
+
+  return true;
+}
+
+/* Return nonzero if register REGNO can be used as a scratch register
+   in peephole2.  */
+
+bool
+mips_hard_regno_scratch_ok (unsigned int regno)
+{
+  /* See mips_hard_regno_rename_ok.  */
+  if (cfun->machine->interrupt_handler_p && !df_regs_ever_live_p (regno))
+    return false;
+
+  return true;
 }
 
 /* Implement HARD_REGNO_NREGS.  */
@@ -16099,7 +16136,6 @@ pic32_expand_section_builtins (enum insn_code icode, rtx target, enum mips_built
   tree arg0;
   char *section_name = 0;
   tree sub_arg0 = 0;
-  struct expand_operand ops[1];
 
   gcc_assert (1 + call_expr_nargs (exp) <= insn_data[icode].n_operands);
 
@@ -16166,7 +16202,7 @@ pic32_expand_section_builtins (enum insn_code icode, rtx target, enum mips_built
     return 0;
   emit_insn (pat);
 
-  return ops[0].value;
+  return target;
 }
 
 static rtx
@@ -18945,6 +18981,7 @@ mips_option_override (void)
 
   if (TARGET_FLIP_MIPS16)
     TARGET_INTERLINK_COMPRESSED = 1;
+
  #ifdef MIPS_SUBTARGET_OVERRIDE_OPTIONS1
    MIPS_SUBTARGET_OVERRIDE_OPTIONS1();
  #endif
@@ -21230,6 +21267,9 @@ mips_fn_other_hard_reg_usage (struct hard_reg_set_container *fn_used_regs)
 
 #undef TARGET_FN_OTHER_HARD_REG_USAGE
 #define TARGET_FN_OTHER_HARD_REG_USAGE mips_fn_other_hard_reg_usage
+
+#undef TARGET_HARD_REGNO_SCRATCH_OK
+#define TARGET_HARD_REGNO_SCRATCH_OK mips_hard_regno_scratch_ok
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

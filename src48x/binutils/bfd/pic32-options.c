@@ -258,6 +258,9 @@ gldelf32pic32mx_parse_args (int argc, char ** argv)
   const char *option_err = " options can not be used together\n";
   const char *hardsoftfloat_option_err  = "--hard-float and --soft-float";
   const char *data_init_option_err = "--data-init and --no-data-init";
+  const char *data_init_in_serial_mem_option_err = "--data-init_in_serial_mem and --no-data-init_in_serial_mem";
+  const char *code_in_dinit_option_err = "--code-in-dinit and --no-code-in-dinit";
+
   if (lastoptind != optind)
     opterr = 0;
 
@@ -332,6 +335,41 @@ gldelf32pic32mx_parse_args (int argc, char ** argv)
         einfo(_("%P%F: Error: %s%s"), hardsoftfloat_option_err, option_err);
       pic32_has_softfloat_option = TRUE;
       break;    
+    case CODE_IN_DINIT_OPTION:
+      if (pic32_has_code_in_dinit_option && !pic32_code_in_dinit)
+        einfo(_("%P%F: Error: %s%s"), code_in_dinit_option_err,
+                                      option_err);      
+      pic32_code_in_dinit = TRUE;
+      pic32_has_code_in_dinit_option = TRUE;
+      break;
+    case NO_CODE_IN_DINIT_OPTION:
+      if (pic32_has_code_in_dinit_option && pic32_code_in_dinit)
+        einfo(_("%P%F: Error: %s%s"), code_in_dinit_option_err,
+                                      option_err);
+      pic32_code_in_dinit = FALSE;
+      pic32_has_code_in_dinit_option = TRUE;
+      break;
+    case DINIT_IN_SERIAL_MEM_OPTION:
+      if (pic32_has_dinit_in_serial_mem_option && !pic32_dinit_in_serial_mem)
+        einfo(_("%P%F: Error: %s%s"), data_init_in_serial_mem_option_err,
+                                      option_err);
+      pic32_dinit_in_serial_mem = TRUE;
+      pic32_has_dinit_in_serial_mem_option = TRUE;
+      break;
+    case NO_DINIT_IN_SERIAL_MEM_OPTION:
+      if (pic32_has_dinit_in_serial_mem_option && pic32_dinit_in_serial_mem)
+        einfo(_("%P%F: Error: %s%s"), data_init_in_serial_mem_option_err,
+                                      option_err);
+      pic32_dinit_in_serial_mem = FALSE;
+      pic32_has_dinit_in_serial_mem_option = TRUE;
+      break;
+    case DINIT_ADDRESS_OPTION:
+      pic32_dinit_has_absolute_address = TRUE;
+      if ((strstr(optarg, "0x") == 0) && (strstr(optarg, "0X") == 0))
+        dinit_address = atol(optarg);
+      else
+        (void) sscanf(optarg, "%x", &dinit_address);
+      break;
 #endif /* TARGET_IS_PIC32MX */
     }
 
