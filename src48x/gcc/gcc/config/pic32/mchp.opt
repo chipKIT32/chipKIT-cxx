@@ -407,10 +407,6 @@ mprocessor=
 Target Report RejectNegative Joined Var(mchp_processor_string) Init(0)
 -mprocessor=PROCESSOR	Specify the target PIC32 PROCESSOR
 
-mlicense-warning
-Target Var Var(TARGET_LICENSE_WARNING) Undocumented Init(1)
--mlicense-warning	Emit the license warning when appropriate
-
 mcci
 Target RejectNegative Var(TARGET_CCI)
 -mcci	Use CCI keywords
@@ -446,10 +442,6 @@ Target RejectNegative Var Var(TARGET_PIC32MM_LIBS) Undocumented
 mresource=
 Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented
 Identify compiler resource file
-
-mno-fallback
-Target Report RejectNegative Var Var(TARGET_NO_FALLBACKLICENSE)
---nofallback		Require a MPLAB XC32 Standard or Pro license and do not fall back to a lesser license
 
 ; -mcode-xonly is a traditional alias for -mcode-readable=pcrel and
 ; -mno-data-in-code is a traditional alias for -mcode-readable=no.
