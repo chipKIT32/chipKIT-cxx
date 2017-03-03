@@ -90,8 +90,14 @@ extern tree mchp_persistent_attribute(tree *decl, tree identifier,
 extern tree mchp_crypto_attribute(tree *decl, tree identifier,
                             tree args, int flags ATTRIBUTE_UNUSED,
                             bool *no_add_attrs);
+extern tree mchp_shared_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
+                           tree args, int flags ATTRIBUTE_UNUSED,
+                           bool *no_add_attrs);
 extern tree mchp_nofpu_attribute (tree *decl, tree identifier, tree args,
                                         int flags, bool *no_add_attrs);
+extern tree mchp_frp_attribute(tree *decl, tree identifier ATTRIBUTE_UNUSED,
+                            tree args ATTRIBUTE_UNUSED, int flags ATTRIBUTE_UNUSED,
+                            bool *no_add_attrs ATTRIBUTE_UNUSED);
 extern int mchp_function_nofpu_p (tree type);
 extern void mchp_set_current_function (tree fndecl);
 extern bool mchp_suppress_prologue (void);
@@ -172,6 +178,6 @@ extern const char * mchp_sdata_section_asm_op(void);
 extern const char * mchp_text_section_asm_op(void);
 extern const char * mchp_rdata_section_asm_op(void);
 extern void mchp_cache_conversion_state(rtx, tree);
-//void mchp_add_vector_dispatch_entry (const char *, int , bool,enum, int);
+extern rtx  pic32_expand_software_reset_libcall(void);
 
 #endif

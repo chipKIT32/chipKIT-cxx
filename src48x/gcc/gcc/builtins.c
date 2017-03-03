@@ -5825,7 +5825,21 @@ expand_builtin (tree exp, rtx target, rtx subtarget, enum machine_mode mode,
       && fcode != BUILT_IN_ALLOCA
       && fcode != BUILT_IN_ALLOCA_WITH_ALIGN
       && fcode != BUILT_IN_FREE)
-    return expand_call (exp, target, ignore);
+    {
+      /* check for negative integer length arguments passed to 
+      memcpy function */
+      const char *name = IDENTIFIER_POINTER (DECL_NAME (fndecl));
+      if (!strcmp (name, "memcpy"))
+      {
+        tree len = CALL_EXPR_ARG (exp, 2);
+        rtx len_rtx = expand_normal (len);
+
+        if (CONST_INT_P (len_rtx) && (HOST_WIDE_INT) INTVAL (len_rtx) < 0)
+          error ("negative integer length argument %ld passed to memory function", INTVAL (len_rtx));
+      }
+
+      return expand_call (exp, target, ignore);
+    }
 
   /* The built-in function expanders test for target == const0_rtx
      to determine whether the function's result will be ignored.  */

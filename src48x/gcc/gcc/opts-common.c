@@ -371,6 +371,8 @@ static const struct option_map option_map[] =
 #ifdef _BUILD_MCHP_
     { "-legacy-libc", NULL, "-mlegacy-libc",false,false },
     { "-no-legacy-libc", NULL, "-mno-legacy-libc",false,false },
+    { "-newlib-libc", NULL, "-mnewlib-libc",false,false },
+    { "-no-newlib-libc", NULL, "-mno-newlib-libc",false,false },
     { "--memorysummary", NULL, "-mmemorysummary", false, false},
     { "-relaxed-math", NULL, "-mrelaxed-math",false,false },
     { "--fill=", NULL, "-mfill=", false, false },

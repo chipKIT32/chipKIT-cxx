@@ -320,6 +320,7 @@ extern int  set_arm_regname_option (int);
 extern int  get_arm_regnames (int, const char **, const char **, const char *const **);
 extern bfd_boolean aarch64_symbol_is_valid (asymbol *, struct disassemble_info *);
 extern bfd_boolean arm_symbol_is_valid (asymbol *, struct disassemble_info *);
+extern bfd_boolean pic32_symbol_is_valid (asymbol *, struct disassemble_info *);
 extern void disassemble_init_powerpc (struct disassemble_info *);
 
 /* Fetch the disassembler for a given BFD, if that support is available.  */

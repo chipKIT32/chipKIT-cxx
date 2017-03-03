@@ -51,7 +51,7 @@ along with GCC; see the file COPYING3.  If not see
 
 /* Is the current function an interrupt? If so, how is context handled? */
 enum mips_function_type_tag { NON_INTERRUPT, SOFTWARE_CONTEXT_SAVE, SRS_CONTEXT_SAVE,
-                              AUTO_CONTEXT_SAVE, DEFAULT_CONTEXT_SAVE, UNKNOWN_CONTEXT_SAVE
+                              AUTO_CONTEXT_SAVE, DEFAULT_CONTEXT_SAVE, SAVEALL_CONTEXT_SAVE, UNKNOWN_CONTEXT_SAVE
                             };
 
 /* Information about a function's frame layout.  */

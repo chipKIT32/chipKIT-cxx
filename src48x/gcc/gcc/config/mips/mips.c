@@ -185,6 +185,7 @@ enum mips_address_type {
 };
 
 /* Macros to create an enumeration identifier for a function prototype.  */
+#define MIPS_FTYPE_NAME0(A) MIPS_##A##_FTYPE
 #define MIPS_FTYPE_NAME1(A, B) MIPS_##A##_FTYPE_##B
 #define MIPS_FTYPE_NAME2(A, B, C) MIPS_##A##_FTYPE_##B##_##C
 #define MIPS_FTYPE_NAME3(A, B, C, D) MIPS_##A##_FTYPE_##B##_##C##_##D
@@ -7401,6 +7402,10 @@ mips_block_move_straight (rtx dest, rtx src, HOST_WIDE_INT length)
   mode = mode_for_size (bits, MODE_INT, 0);
   delta = bits / BITS_PER_UNIT;
 
+  /* check if length is negative */
+  if (length < 0)
+    error ("negative integer length argument %ld passed to memory function", length);
+
   /* Allocate a buffer for the temporary registers.  */
   regs = XALLOCAVEC (rtx, length / delta);
 
@@ -8628,6 +8633,10 @@ mips_in_small_data_p (const_tree decl)
       if (lookup_attribute ("coherent", DECL_ATTRIBUTES (decl)))
         return false;
       if (lookup_attribute ("region", DECL_ATTRIBUTES (decl)))
+        return false;
+      if (lookup_attribute ("shared", DECL_ATTRIBUTES (decl)))
+        return false;
+      if (lookup_attribute ("function_replacement_prologue", DECL_ATTRIBUTES (decl)))
         return false;
       if (TREE_READONLY (decl) && TARGET_EMBEDDED_DATA)
         return false;
@@ -11202,6 +11211,21 @@ mips_output_function_prologue (FILE *file, HOST_WIDE_INT size ATTRIBUTE_UNUSED)
      exactly matches the name used in ASM_DECLARE_FUNCTION_NAME.  */
   fnname = XSTR (XEXP (DECL_RTL (current_function_decl), 0), 0);
   mips_start_function_definition (fnname, TARGET_MIPS16);
+
+/*
+ * Add the Function Replacement Instructions in the prologue.
+*/
+
+#if defined(TARGET_MCHP_PIC32MX)
+  const char *stripped_fn_name;
+  stripped_fn_name = targetm.strip_name_encoding (fnname) ;
+  if (pic32_is_func_requires_frp(stripped_fn_name))
+  {
+      fprintf (file, "\tlw\t$25,fixtable.%s\n",stripped_fn_name);
+      fprintf (file, "\tj\t$25\n");
+      fprintf (file, "cont.%s:\n", stripped_fn_name);
+  }
+#endif
 
   /* Output MIPS-specific frame information.  */
   if (!flag_inhibit_size_directive)
@@ -14830,11 +14854,11 @@ static const struct mips_builtin_description mips_builtins[] = {
   PIC32_BUILTIN (section_end, PIC32_BUILTIN_SECTION_END, MIPS_USI_FTYPE_CONSTSTRING),
   PIC32_BUILTIN (section_size, PIC32_BUILTIN_SECTION_SIZE, MIPS_USI_FTYPE_CONSTSTRING),
 
-  PIC32_BUILTIN (get_isr_state, PIC32_BUILTIN_GET_ISR_STATE, MIPS_USI_FTYPE_VOID),
+  PIC32_BUILTIN (get_isr_state, PIC32_BUILTIN_GET_ISR_STATE, MIPS_USI_FTYPE),
   PIC32_BUILTIN (set_isr_state, PIC32_BUILTIN_SET_ISR_STATE, MIPS_VOID_FTYPE_USI),
-  PIC32_BUILTIN (disable_interrupts, PIC32_BUILTIN_DISABLE_INTERRUPTS, MIPS_USI_FTYPE_VOID),
-  PIC32_BUILTIN (enable_interrupts, PIC32_BUILTIN_ENABLE_INTERRUPTS, MIPS_USI_FTYPE_VOID),
-  PIC32_BUILTIN (software_breakpoint, PIC32_BUILTIN_SOFTWARE_BREAKPOINT, MIPS_VOID_FTYPE_VOID)
+  PIC32_BUILTIN (disable_interrupts, PIC32_BUILTIN_DISABLE_INTERRUPTS, MIPS_USI_FTYPE),
+  PIC32_BUILTIN (enable_interrupts, PIC32_BUILTIN_ENABLE_INTERRUPTS, MIPS_USI_FTYPE),
+  PIC32_BUILTIN (software_breakpoint, PIC32_BUILTIN_SOFTWARE_BREAKPOINT, MIPS_VOID_FTYPE)
 
 };
 
@@ -14907,6 +14931,9 @@ mips_build_cvpointer_type (void)
 
 /* MIPS_FTYPE_ATYPESN takes N MIPS_FTYPES-like type codes and lists
    their associated MIPS_ATYPEs.  */
+#define MIPS_FTYPE_ATYPES0(A)   \
+    MIPS_ATYPE_##A
+
 #define MIPS_FTYPE_ATYPES1(A, B) \
   MIPS_ATYPE_##A, MIPS_ATYPE_##B
 
@@ -14984,8 +15011,15 @@ mips_init_builtins (void)
   decl = add_builtin_function("__builtin_ittype",
                        build_function_type(unsigned_type_node, NULL_TREE),
                        PIC32_BUILTIN_ITTYPE, BUILT_IN_MD, NULL, NULL_TREE);
-  if (TARGET_PRINT_BUILTINS)
+  if (TARGET_PRINT_BUILTINS) {
     mchp_print_builtin_function (decl);
+  }
+    
+  /* When we are being called by MPLAB X's editor, stop compilation after 
+     printing the builtin functions. */
+  if (TARGET_SKIP_LICENSE_CHECK) {
+    exit (1);
+  }
 #endif
 }
 
@@ -16468,16 +16502,8 @@ pic32_expand_software_breakpoint_builtin ()
 
   if (!TARGET_DEBUG_EXEC)
   {
-    rtx software_reset_sym;
-    software_reset_sym = init_one_libfunc ("__pic32_software_reset");
-
-    pat = mips_expand_call (MIPS_CALL_NORMAL, NULL_RTX, software_reset_sym,
-                             const0_rtx, NULL_RTX, false);
-
-    emit_insn (gen_blockage ());
-    return pat;
+    return pic32_expand_software_reset_libcall();
   }
-
 
   /* Enable interrupts */
   pat = gen_pic32_sdbbp0 ();
@@ -18981,7 +19007,6 @@ mips_option_override (void)
 
   if (TARGET_FLIP_MIPS16)
     TARGET_INTERLINK_COMPRESSED = 1;
-
  #ifdef MIPS_SUBTARGET_OVERRIDE_OPTIONS1
    MIPS_SUBTARGET_OVERRIDE_OPTIONS1();
  #endif
@@ -21031,7 +21056,95 @@ mips_fn_other_hard_reg_usage (struct hard_reg_set_container *fn_used_regs)
   if (TARGET_SPLIT_CALLS)
     SET_HARD_REG_BIT (fn_used_regs->set, 6);
 }
-
+
+
+/* Implement TARGET_PROMOTE_FUNCTION_MODE */
+
+/* This function is equivalent to default_promote_function_mode_always_promote
+   except that it returns a promoted mode even if type is NULL_TREE.  This is
+   needed by libcalls which have no type (only a mode) such as fixed conversion
+   routines that take a signed or unsigned char/short argument and convert it
+   to a fixed type.  */
+
+static machine_mode
+mips_promote_function_mode (const_tree type ATTRIBUTE_UNUSED,
+                            machine_mode mode,
+                            int *punsignedp ATTRIBUTE_UNUSED,
+                            const_tree fntype ATTRIBUTE_UNUSED,
+                            int for_return ATTRIBUTE_UNUSED)
+{
+  int unsignedp;
+
+  if (type != NULL_TREE)
+    return promote_mode (type, mode, punsignedp);
+
+  unsignedp = *punsignedp;
+  PROMOTE_MODE (mode, unsignedp, type);
+  *punsignedp = unsignedp;
+  return mode;
+}
+
+void
+mips_bit_clear_info (enum machine_mode mode, unsigned HOST_WIDE_INT m,
+		     int *start_pos, int *size)
+{
+  unsigned int shift = 0;
+  unsigned int change_count = 0;
+  unsigned int prev_val = 1;
+  unsigned int curr_val = 0;
+  unsigned int end_pos = 32;
+
+  for (shift = 0 ; shift < 32 ; shift++)
+     {
+       curr_val = (unsigned int)((m & (unsigned int)(1 << shift)) >> shift);
+       if (curr_val != prev_val)
+     {
+       change_count++;
+       switch (change_count)
+         {
+         case 1:
+        *start_pos = shift;
+        break;
+         case 2:
+        end_pos = shift;
+        break;
+         default:
+        gcc_unreachable ();
+         }
+     }
+       prev_val = curr_val;
+     }
+  *size = (end_pos - *start_pos);
+}
+
+bool
+mips_bit_clear_p (enum machine_mode mode, unsigned HOST_WIDE_INT m)
+{
+  unsigned int shift = 0;
+  unsigned int change_count = 0;
+  unsigned int prev_val = 1;
+  unsigned int curr_val = 0;
+
+  if (mode != SImode && mode != VOIDmode)
+    return false;
+
+  if (!ISA_HAS_EXT_INS)
+    return false;
+
+  for (shift = 0 ; shift < 32 ; shift++)
+     {
+       curr_val = (unsigned int)((m & (unsigned int)(1 << shift)) >> shift);
+       if (curr_val != prev_val)
+           change_count++;
+       prev_val = curr_val;
+     }
+
+  if (change_count == 2)
+    return true;
+
+  return false;
+}
+
 /* Initialize the GCC target structure.  */
 #undef TARGET_ASM_ALIGNED_HI_OP
 #define TARGET_ASM_ALIGNED_HI_OP "\t.half\t"
@@ -21130,9 +21243,7 @@ mips_fn_other_hard_reg_usage (struct hard_reg_set_container *fn_used_regs)
 #define TARGET_GIMPLIFY_VA_ARG_EXPR mips_gimplify_va_arg_expr
 
 #undef  TARGET_PROMOTE_FUNCTION_MODE
-#define TARGET_PROMOTE_FUNCTION_MODE default_promote_function_mode_always_promote
-#undef TARGET_PROMOTE_PROTOTYPES
-#define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true
+#define TARGET_PROMOTE_FUNCTION_MODE mips_promote_function_mode
 
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE mips_function_value

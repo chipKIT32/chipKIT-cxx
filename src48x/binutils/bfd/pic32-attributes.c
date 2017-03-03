@@ -327,10 +327,13 @@ pic32_is_valid_attributes (unsigned int mask, unsigned char flag_debug)
 #undef MASK2
 #undef MASK3
 #undef MASK4
-#define MASK2(a,b,c,d,e,f,g,h,i,j,k,l)                                 \
+    /* lghica co-resident MASK2 -> m,n  MASK3 ->l,m*/
+    
+#define MASK2(a,b,c,d,e,f,g,h,i,j,k,l,m,n)                             \
    if (type == (1<<a)) {                                               \
      attr_mask = (1<<b)|(1<<c)|(1<<d)|(1<<e)|(1<<f)                    \
-                 |(1<<g)|(1<<h)|(1<<i)|(1<<j)|(1<<k)|(1<<l);           \
+                 |(1<<g)|(1<<h)|(1<<i)|(1<<j)|(1<<k)|(1<<l)            \
+                 |(1<<m)|(1<<n);                                       \
      if (flag_debug || pic32_debug)                                    \
        printf ("    pic32_is_valid_attributes::modifier_mask = %x\n",  \
                attr_mask);                                             \
@@ -350,10 +353,11 @@ pic32_is_valid_attributes (unsigned int mask, unsigned char flag_debug)
 #undef MASK2
 #undef MASK3
 #undef MASK4
-#define MASK3(a,b,c,d,e,f,g,h,i,j,k)                              \
+#define MASK3(a,b,c,d,e,f,g,h,i,j,k,l,m)                              \
    key = (1<<a);                                                  \
    attr_mask = (1<<b)|(1<<c)|(1<<d)|(1<<e)|(1<<f)                 \
-               |(1<<g)|(1<<h)|(1<<i)|(1<<j)|(1<<k);               \
+               |(1<<g)|(1<<h)|(1<<i)|(1<<j)|(1<<k)                \
+               |(1<<l)|(1<<m);                                    \
    if ((key & mask) &&                                            \
        ((mask & ~ (key | type_mask | attr_mask)) != 0))           \
      invalid_combo |= 1;;

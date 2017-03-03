@@ -54,6 +54,10 @@ SECTION
 #include "pic32-utils.h"
 #endif
 
+///\ coresident pic32
+extern bfd_boolean      pic32_coresident_app;
+
+
 static int elf_sort_sections (const void *, const void *);
 static bfd_boolean assign_file_positions_except_relocs (bfd *, struct bfd_link_info *);
 static bfd_boolean prep_headers (bfd *);
@@ -65,10 +69,13 @@ static bfd_boolean elf_parse_notes (bfd *abfd, char *buf, size_t size,
 #if defined(TARGET_IS_PIC32MX)
 static asymbol ** slurp_symtab
   PARAMS ((bfd *));
+void 
+process_data_sections_for_serial_mem_option
+  PARAMS ((bfd *));
 /* Number of symbols in `syms'.  */
-static long symcount = 0;
+static long pic32_symcount = 0;
 /* The symbol table.  */
-static asymbol **syms;
+static asymbol **pic32_syms;
 #endif
 
 /* Swap version information in and out.  The version information is
@@ -834,6 +841,7 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
   asection *newsect;
   flagword flags;
   const struct elf_backend_data *bed;
+  static asymbol **syms; /* lghica co-resident */
 
   if (hdr->bfd_section != NULL)
     return TRUE;
@@ -1006,35 +1014,6 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
 //    PIC32_SET_NOLOAD_ATTR(newsect);
   }
 
-  /* load symbols now */
-  syms = slurp_symtab (abfd);
-
-  {
-    char *ext_attr_prefix = "__ext_attr_";
-
-    asymbol **current = syms;
-    const char *sym_name;
-    long count;
-
-    for (count = 0; count < symcount; count++) {
-
-      if (*current) {
-        sym_name = bfd_asymbol_name(*current);
-
-        if (strstr(sym_name, ext_attr_prefix)) {
-          asection *s;
-          char *sec_name = (char *) &sym_name[strlen(ext_attr_prefix)];
-          bfd_vma attr = bfd_asymbol_value(*current);
-
-          for (s = abfd->sections; s != NULL; s = s->next)
-            if (strcmp(sec_name, s->name) == 0)
-              if ((attr & STYP_SERIAL_MEM) && (s->flags & SEC_DATA))
-                s->flags &= ~SEC_DATA;
-        }
-        current++;
-      }
-   }
-  }
  if (hdr->sh_flags & SHF_NOLOAD)  /* do this last */
     PIC32_SET_NOLOAD_ATTR(newsect);
 #endif
@@ -1752,10 +1731,10 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 
     case SHT_SYMTAB:		/* A symbol table */
       if (elf_onesymtab (abfd) == shindex)
-	return TRUE;
+          return TRUE;
 
       if (hdr->sh_entsize != bed->s->sizeof_sym)
-	return FALSE;
+          return FALSE;
       if (hdr->sh_info * hdr->sh_entsize > hdr->sh_size)
 	{
 	  if (hdr->sh_size != 0)
@@ -1772,37 +1751,7 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
       elf_elfsections (abfd)[shindex] = hdr = &elf_tdata (abfd)->symtab_hdr;
       abfd->flags |= HAS_SYMS;
 
-#if defined(TARGET_IS_PIC32MX)
-  /* load symbols now */
-  syms = slurp_symtab (abfd);
-
-  {
-    char *ext_attr_prefix = "__ext_attr_";
-    asymbol **current = syms;
-    const char *sym_name;
-    long count;
-
-    for (count = 0; count < symcount; count++) {
-
-      if (*current) {
-        sym_name = bfd_asymbol_name(*current);
-
-        if (strstr(sym_name, ext_attr_prefix)) {
-          asection *s;
-          char *sec_name = (char *) &sym_name[strlen(ext_attr_prefix)];
-          bfd_vma attr = bfd_asymbol_value(*current);
-
-          for (s = abfd->sections; s != NULL; s = s->next)
-            if (strcmp(sec_name, s->name) == 0)
-              if ((attr & STYP_SERIAL_MEM) && (s->flags & SEC_DATA))
-                s->flags &= ~SEC_DATA;
-        }
-        current++;
-      }
-   }
-  }
-#endif
-
+            
       /* Sometimes a shared object will map in the symbol table.  If
 	 SHF_ALLOC is set, and this is a shared object, then we also
 	 treat this section as a BFD section.  We can not base the
@@ -5078,7 +5027,12 @@ assign_file_positions_for_non_load_sections (bfd *abfd,
 	BFD_ASSERT (hdr->sh_offset == hdr->bfd_section->filepos);
       else if ((hdr->sh_flags & SHF_ALLOC) != 0)
 	{
-	  if (hdr->sh_size != 0)
+        if ((hdr->sh_size != 0)
+#if 1   ///\coresident breaks the allocation rules from linker script when building
+        ///\            slave apps -> no warning
+            && !pic32_coresident_app
+#endif
+            )
 	    (*_bfd_error_handler)
 	      (_("%B: warning: allocated section `%s' not in segment"),
 	       abfd,
@@ -7084,6 +7038,15 @@ Unable to find equivalent output section for symbol '%s' from section '%s'"),
 	{
 	  int bind = STB_LOCAL;
 
+#if 1 /* lghica co-resident */
+        if ((flags & BSF_LOCAL) && (flags & BSF_SHARED))
+            bind = STB_LOPROC;
+        else if ((flags & BSF_WEAK) && (flags & BSF_SHARED))
+            bind = STB_HIPROC;
+        else if ((flags & BSF_GLOBAL) && (flags & BSF_SHARED))
+            bind = STB_MIDPROC;
+        else
+#endif
 	  if (flags & BSF_LOCAL)
 	    bind = STB_LOCAL;
 	  else if (flags & BSF_GNU_UNIQUE)
@@ -10089,7 +10052,7 @@ slurp_symtab (abfd)
 
   if (!(bfd_get_file_flags (abfd) & HAS_SYMS))
     {
-      symcount = 0;
+      pic32_symcount = 0;
       return NULL;
     }
   storage = bfd_get_symtab_upper_bound (abfd);
@@ -10098,10 +10061,41 @@ slurp_symtab (abfd)
   if (storage)
     sy = (asymbol **) xmalloc (storage);
 
-  symcount = bfd_canonicalize_symtab (abfd, sy);
+  pic32_symcount = bfd_canonicalize_symtab (abfd, sy);
   //if (symcount < 0)
     //bfd_fatal (bfd_get_filename (abfd));
   return sy;
 }
+
+void 
+process_data_sections_for_serial_mem_option (bfd *abfd)
+{
+  /* load symbols now */
+  pic32_syms = slurp_symtab (abfd);
+
+  char *ext_attr_prefix = "__ext_attr_";
+  asymbol **current = pic32_syms;
+  const char *sym_name;
+  long count;
+
+  for (count = 0; count < pic32_symcount; count++) {
+    if (*current) {
+      sym_name = bfd_asymbol_name(*current);
+      if (strstr(sym_name, ext_attr_prefix)) {
+        asection *s;
+        char *sec_name = (char *) &sym_name[strlen(ext_attr_prefix)];
+        bfd_vma attr = bfd_asymbol_value(*current);
+
+        for (s = abfd->sections; s != NULL; s = s->next)
+          if (strcmp(sec_name, s->name) == 0)
+            if ((attr & STYP_SERIAL_MEM) && (s->flags & SEC_DATA))
+              s->flags &= ~SEC_DATA;
+      }
+      current++;
+    }
+  }
+}
+
+
 #endif
 

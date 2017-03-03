@@ -388,7 +388,7 @@ Target Var Var(TARGET_LEGACY_LIBC)
 -legacy-libc	Use legacy lib/include directory
 
 mrelaxed-math
-Target Var Var(TARGET_RELAXED_MATH) 
+Target Var Var(TARGET_RELAXED_MATH)
 -relaxed-math	Use alternative floating-point support routines
 
 mxc32cpp-lib
@@ -460,6 +460,9 @@ Target RejectNegative Alias(mcode-readable=, no)
 mcode-xonly
 Target RejectNegative Alias(mcode-readable=, pcrel)
 
+mvolatile-in-delay-slot
+Target Report Var(TARGET_ALLOW_VOLATILE_LOADS_IN_DELAY_SLOTS) Undocumented Init(0)
+
 mmemorysummary=
 Target Joined Var(TARGET_MEMORY_SUMMARY) Undocumented
 
@@ -480,3 +483,7 @@ Target RejectNegative Alias(mprint-mchp-search-dirs)
 
 mgen-pie-static
 Target RejectNegative Undocumented
+
+mhi-addr-opt
+Target Var Var(TARGET_MCHP_HI_ADDR_OPT)
+-mhi-addr-opt	Use HI address part optimization

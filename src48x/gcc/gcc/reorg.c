@@ -277,7 +277,11 @@ resource_conflicts_p (struct resources *res1, struct resources *res2)
 {
   if ((res1->cc && res2->cc) || (res1->memory && res2->memory)
       || (res1->unch_memory && res2->unch_memory)
+#if defined(_BUILD_C32_)
+      || ((res1->volatil || res2->volatil) && !TARGET_ALLOW_VOLATILE_LOADS_IN_DELAY_SLOTS))
+#else
       || res1->volatil || res2->volatil)
+#endif
     return 1;
 
   return hard_reg_set_intersect_p (res1->regs, res2->regs);

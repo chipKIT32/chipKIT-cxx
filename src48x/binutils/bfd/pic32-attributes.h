@@ -9,10 +9,10 @@
 #define MASK1(a,b,c,d,e,f,g,h)
 #endif
 #if !defined(MASK2)
-#define MASK2(a,b,c,d,e,f,g,h,i,j,k,l)
+#define MASK2(a,b,c,d,e,f,g,h,i,j,k,l,m,n)
 #endif
 #if !defined(MASK3)
-#define MASK3(a,b,c,d,e,f,g,h,i,j,k)
+#define MASK3(a,b,c,d,e,f,g,h,i,j,k,l,m)
 #endif
 #if !defined(MASK4)
 #define MASK4(a,b,c,d)
@@ -72,6 +72,9 @@ ATTR( ramfunc, 0, PIC32_SET_RAMFUNC_ATTR(sec) )
 ATTR( keep, 0, PIC32_SET_KEEP_ATTR(sec) ) 
 ATTR( coherent, 0, PIC32_SET_COHERENT_ATTR(sec) )
 ATTR( serial_mem, 0 , PIC32_SET_SERIAL_MEM_ATTR(sec))
+/* lghica co-resident */
+ATTR(shared,    0, PIC32_SET_SHARED_ATTR(sec))
+ATTR(preserved, 0, PIC32_SET_PRESERVED_ATTR(sec))
 
 /*
  * ATTR_IS: Testing Section Attributes
@@ -104,6 +107,9 @@ ATTR_IS( ramfunc, PIC32_IS_RAMFUNC_ATTR(sec) )
 ATTR_IS( keep, PIC32_IS_KEEP_ATTR(sec) )
 ATTR_IS( coherent, PIC32_IS_COHERENT_ATTR(sec) )
 ATTR_IS( serial_mem, PIC32_IS_SERIAL_MEM_ATTR(sec))
+/* lghica co-resident */
+ATTR_IS( shared,    PIC32_IS_SHARED_ATTR(sec))
+ATTR_IS( preserved, PIC32_IS_PRESERVED_ATTR(sec))
 
 
 /*
@@ -118,15 +124,15 @@ MASK1( code, data, bss, persist, heap, stack, ramfunc, serial_mem)
  *
  * MASK2( type, modifier1, ... modifier14 )
  */
-MASK2( code, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory)
-MASK2( data, address, near, reverse, align, noload, merge, info, dma, keep, coherent, memory)
-MASK2( bss, address, near, reverse, align, noload, 0, info, dma, keep, coherent, memory)
-MASK2( persist, address, near, reverse, align, noload, 0, 0, dma, keep, coherent, 0)
+MASK2( code, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory, shared, preserved)
+MASK2( data, address, near, reverse, align, noload, merge, info, dma, keep, coherent, memory, shared, preserved)
+MASK2( bss, address, near, reverse, align, noload, 0, info, dma, keep, coherent, memory, shared, preserved)
+MASK2( persist, address, near, reverse, align, noload, 0, 0, dma, keep, coherent, 0, shared, preserved)
 //MASK2( memory, address, 0, reverse, align, noload, 0, 0, 0, keep, 0, 0)
-MASK2( heap, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0)
-MASK2( stack, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0)
-MASK2( ramfunc, 0, 0, 0, align, noload, merge, info, 0, keep, 0, 0)
-MASK2( serial_mem, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory)
+MASK2( heap, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0, shared, preserved)
+MASK2( stack, address, 0, 0, align, 0, 0, 0, 0, keep, coherent, 0, shared, preserved)
+MASK2( ramfunc, 0, 0, 0, align, noload, merge, info, 0, keep, 0, 0, shared, preserved)
+MASK2( serial_mem, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory, shared, preserved)
 
 
 /*
@@ -134,17 +140,21 @@ MASK2( serial_mem, address, 0, 0, align, noload, merge, info, 0, keep, 0, memory
  *
  * MASK3( key, attr1, ... attr13)
  */
-MASK3( address, near, 0, 0, noload, 0, 0, dma, keep, coherent, memory)
-MASK3( near, address, reverse, align, noload, merge, 0, 0, keep, coherent, memory)
-MASK3( reverse, 0, near, 0, noload, merge, 0, dma, keep, coherent, 0)
-MASK3( align, address, near, 0, noload, merge, 0, dma, keep, coherent, memory)
-MASK3( noload, address, near, reverse, align, 0, 0, dma, keep, coherent, memory)
-MASK3( merge, 0, near, reverse, align, 0, 0, info, keep, 0, 0)
-MASK3( info, 0, 0, 0, 0, merge, 0, 0, keep, 0, 0)
-MASK3( dma, address, 0, reverse, align, noload, 0, 0, keep, 0, memory)
-MASK3( keep, address, near, reverse, align, noload, merge, info, dma, coherent, memory)
-MASK3( coherent, address, near, reverse, align, noload, 0, 0, 0, keep, memory)
-MASK3( memory, address, near, 0, align, noload, 0, 0, dma, keep, coherent)
+MASK3( address, near, 0, 0, noload, 0, 0, dma, keep, coherent, memory, shared, preserved)
+MASK3( near, address, reverse, align, noload, merge, 0, 0, keep, coherent, memory, shared, preserved)
+MASK3( reverse, 0, near, 0, noload, merge, 0, dma, keep, coherent, 0, shared, preserved)
+MASK3( align, address, near, 0, noload, merge, 0, dma, keep, coherent, memory, shared, preserved)
+MASK3( noload, address, near, reverse, align, 0, 0, dma, keep, coherent, memory, shared, preserved)
+MASK3( merge, 0, near, reverse, align, 0, 0, info, keep, 0, 0, shared, preserved)
+MASK3( info, 0, 0, 0, 0, merge, 0, 0, keep, 0, 0, shared, preserved)
+MASK3( dma, address, 0, reverse, align, noload, 0, 0, keep, 0, memory, shared, preserved)
+MASK3( keep, address, near, reverse, align, noload, merge, info, dma, coherent, memory, shared, preserved)
+MASK3( coherent, address, near, reverse, align, noload, 0, 0, 0, keep, memory, shared, preserved)
+MASK3( memory, address, near, 0, align, noload, 0, 0, dma, keep, coherent, shared, preserved)
+/* lghica co-resident*/
+MASK3( shared, address, near, reverse, align, noload, merge, info, dma, keep, coherent, memory, preserved)
+MASK3( preserved, address, near, reverse, align, noload, merge, info, dma, keep, coherent, memory, shared)
+
 
 /*
  * MASK4: Reserved section names with implied attributes

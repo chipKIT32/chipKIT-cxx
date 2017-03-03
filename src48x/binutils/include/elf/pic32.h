@@ -49,6 +49,7 @@ struct pic32_section
 #define SHF_RAMFUNC  (1 << 26)  /* RAMFUNC */
 #define SHF_COHERENT (1 << 27)  /* COHERENT */
 #define SHF_KEEP     (1 << 28)  /* KEEP */
+#define SHF_SHARED   (1 << 29)  /* SHARED lghica - co-resident*/
 /************************************************************************/
 
 /*
@@ -79,6 +80,8 @@ struct pic32_memory
   bfd_vma addr;
   bfd_vma size;
   bfd_vma offset;
+  asection *section; ///\ link to section(s) allocated in this memory range
+                        ///\ needed for coresident - shared mem
 };
 
 struct expression {

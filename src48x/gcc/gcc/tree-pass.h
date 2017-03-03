@@ -393,6 +393,11 @@ extern struct gimple_opt_pass pass_cleanup_cfg_post_optimizing;
 extern struct gimple_opt_pass pass_init_datastructures;
 extern struct gimple_opt_pass pass_fixup_cfg;
 
+/* \mgeanta : mchp pic32 hi addr pass decl */
+#if defined(TARGET_MCHP_PIC32MX)
+extern struct rtl_opt_pass pass_rtl_mchp_hi_addr_analysis;
+#endif
+
 extern struct rtl_opt_pass pass_expand;
 extern struct rtl_opt_pass pass_instantiate_virtual_regs;
 extern struct rtl_opt_pass pass_rtl_fwprop;

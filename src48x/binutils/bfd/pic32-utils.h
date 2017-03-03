@@ -51,7 +51,9 @@
   (sec)->ramfunc = 0;             \
   (sec)->vma = 0;                 \
   (sec)->lma = 0;                 \
-  (sec)->entsize = 0;}
+  (sec)->entsize = 0;             \
+  (sec)->shared = 0;} /* lghica co-resident */
+
 /*
 ** Macros used to set section attributes
 */
@@ -114,7 +116,11 @@
   (sec)->serial_mem = 1; \
   (sec)->heap = 0; \
   (sec)->stack = 0; }
-
+/* lghica co-resident */
+#define PIC32_SET_SHARED_ATTR(sec) \
+    (sec)->shared = 1;
+#define PIC32_SET_PRESERVED_ATTR(sec) \
+    (sec)->preserved = 1;
 
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
@@ -158,7 +164,6 @@
 #define PIC32_IS_RAMFUNC_ATTR(sec) \
   ((((sec)->flags & (SEC_ALLOC)) == (SEC_ALLOC)) && \
   ((sec)->ramfunc == 1))
-
 #define PIC32_IS_ABSOLUTE_ATTR(sec) \
   ((sec)->absolute == 1)
 #define PIC32_IS_NEAR_ATTR(sec) \
@@ -181,8 +186,11 @@
   ((((sec)->flags & SEC_ALLOC) == SEC_ALLOC)&& \
    ((sec)->serial_mem ==1)&& \
    ((sec)->memory !=1))
-
-
+/* lghica co-resident */
+#define PIC32_IS_SHARED_ATTR(sec) \
+    ((sec)->shared == 1)
+#define PIC32_IS_PRESERVED_ATTR(sec) \
+    ((sec)->preserved == 1)
 /* UNORDERED is used internally by the assembler
    and is not encoded in the object file */
 #define PIC32_IS_UNORDERED_ATTR(sec) \
@@ -230,5 +238,16 @@ extern bfd_boolean pic32_has_fill_option;
 extern bfd_boolean pic32_has_processor_option;
 extern const bfd_arch_info_type *global_PROCESSOR;
 extern struct bfd_sym_chain entry_symbol_copy;
+
+/* lghica - co-resident */
+extern bfd_boolean          pic32_memory_usage;
+extern bfd_boolean          pic32_pad_flash_option;
+extern bfd_vma              pad_flash_arg;
+extern bfd_vma              program_origin;
+extern bfd_vma              program_length;
+extern struct pic32_section *inherited_sections;
+extern bfd_boolean          pic32_inherit_application_info;
+extern char                 *inherited_application;
+
 #endif
 

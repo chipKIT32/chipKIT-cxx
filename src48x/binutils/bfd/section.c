@@ -408,10 +408,11 @@ CODE_FRAGMENT
 .  unsigned int ramfunc:1;
 .  unsigned int coherent:1;
 .  unsigned int serial_mem:1;
+.  unsigned int linked:1;
+.  unsigned int shared:1;
+.  unsigned int preserved:1;
 .
-.  unsigned int sec_flg0:1;
-.
-.
+.   unsigned int sec_flg0:1;
 .  {* End of internal packed boolean fields.  *}
 .
 .  {*  The virtual memory address of the section - where it will be
@@ -687,8 +688,8 @@ CODE_FRAGMENT
 .  {* memory, heap, stack, ramfunc, coherent, serial_mem,           *}  \
 .     0,        0,     0,       0,         0,          0,               \
 .                                                                       \
-.  {* sec_flg0,                                                     *}  \
-.     0,                                                                \
+.  {* linked, shared, preserved, sec_flg0,                          *}  \
+.     0,        0,       0,         0,                                  \
 .                                                                       \
 .                                                                       \
 .  {* vma, lma, size, rawsize, compressed_size, relax, relax_count, *}	\
@@ -1342,9 +1343,10 @@ bfd_map_over_sections (bfd *abfd,
   asection *sect;
   unsigned int i = 0;
 
+    
   for (sect = abfd->sections; sect != NULL; i++, sect = sect->next)
     (*operation) (abfd, sect, user_storage);
-
+    
   if (i != abfd->section_count)	/* Debugging */
     abort ();
 }

@@ -78,12 +78,57 @@ bfd_boolean pic32_has_crypto_option = 0;
 const char *crypto_file;
 extern bfd_boolean pic32_debug;
 bfd *stack_bfd;
+
+/* lghica co-resident */
+unsigned int    pic32_fill_upper = 0;
+
+bfd_vma         program_origin;
+bfd_size_type   program_length;
+bfd_boolean     pic32_memory_usage = 0;
+bfd_boolean     pic32_reserve_const = 0;
+unsigned long   reserve_const_arg = 0;
+bfd_boolean     pic32_pad_flash_option = 0;
+bfd_vma         pad_flash_arg = 0;
+bfd_boolean     pic32_application_id = 0;
+char            *application_id = NULL;
+bfd_boolean     pic32_coresident_app = FALSE;
+bfd_boolean     pic32_inherit_application_info = FALSE;
+char            *inherited_application;
+
+
 /* Data Structures for the Data Init Template */
 bfd *init_bfd;
 unsigned char *init_data;
 asection *init_template = 0;
+
+/* lghica co-resident */
+/* Data Structures for the Shared Data Init Template */
+bfd             *init_shared_bfd = NULL;
+unsigned char   *init_shared_data = NULL;
+asection        *init_shared_template = NULL;
+
+bfd             *rom_usage_bfd = NULL;
+unsigned char   *rom_usage_data = NULL;
+asection        *rom_usage_template = NULL;
+
+bfd             *ram_usage_bfd = NULL;
+unsigned char   *ram_usage_data = NULL;
+asection        *ram_usage_template = NULL;
+
+
 /* Data Structures for Input Data Sections */
 struct pic32_section *data_sections;
+
+/* lghica co-resident */
+/* Data Structures for Shared_Input Data Sections */
+struct pic32_section *shared_data_sections;
+struct pic32_section *shared_dinit_sections;
+struct pic32_section *inherited_sections;
+bfd_vma               inherited_shared_dinit_address = 0;
+bfd_vma               prev_shared_dinit = 0;
+bfd_vma               crt_shared_dinit = 0;
+
+
 /* Data Structures for Input Data Sections */
 struct pic32_section *code_sections;
 struct bfd_sym_chain entry_symbol_copy;
@@ -94,12 +139,17 @@ static void bfd_pic32_process_code_section
   PARAMS ((asection *, PTR));
 static void bfd_pic32_write_data_header
   PARAMS ((unsigned char **,  bfd_vma,  bfd_vma, int));
-static void bfd_pic32_clean_section_names
+/*static*/ /* lghica co-resident */ void bfd_pic32_clean_section_names
   PARAMS ((bfd *, asection *, PTR));
+
 #if 0
 static void pic32_strip_sections
   PARAMS ((bfd *));
 #endif
+
+/* lghica co-resident */
+static int pic32_in_bounds
+    PARAMS ((asection *, bfd_vma , bfd_size_type));
 
 /* Data structures for fill option */
 struct pic32_fill_option *pic32_fill_option_list;
@@ -825,12 +875,22 @@ static bfd *reldyn_sorting_bfd;
 /* True if ABFD is for CPUs that are faster if JALR is converted to BAL.
    This should be safe for all architectures.  We enable this predicate for
    all CPUs.  */
-#define JALR_TO_BAL_P(abfd) 1
+ #ifdef TARGET_IS_PIC32MX
+ /* The PIC32 bare-metal PIC ELF loader supports only calls through $t9 */
+ #define JALR_TO_BAL_P(abfd) (!PIC_OBJECT_P(abfd))
+ #else
+ #define JALR_TO_BAL_P(abfd) 1
+ #endif
 
 /* True if ABFD is for CPUs that are faster if JR is converted to B.
    This should be safe for all architectures.  We enable this predicate for
    all CPUs.  */
+#ifdef TARGET_IS_PIC32MX
+/* The PIC32 bare-metal PIC ELF loader supports only calls through $t9 */
+#define JR_TO_B_P(abfd) (!PIC_OBJECT_P(abfd))
+#else
 #define JR_TO_B_P(abfd) 1
+#endif
 
 /* True if ABFD is a PIC object.  */
 #define PIC_OBJECT_P(abfd) \
@@ -7538,7 +7598,7 @@ _bfd_mips_elf_link_output_symbol_hook
 
   if (ELF_ST_IS_COMPRESSED (sym->st_other))
     sym->st_value &= ~1;
-
+    
   return 1;
 }
 
@@ -13959,7 +14019,191 @@ _bfd_mips_elf_linker_flags (struct bfd_link_info *info, bfd_boolean insn32,
   mips_elf_hash_table (info)->insn32 = insn32;
   mips_elf_hash_table (info)->eh_reloc_type = eh_reloc;
 }
-
+
+static void update_previous_shared_dinit(struct bfd_link_info* const info, bfd_vma section_address,
+                                         bfd_vma new_section_address)
+{
+    bfd         *abfd;
+    asection    *s;
+    
+    
+    if (pic32_debug)
+        printf("LG --- UPDATE SHARED DINIT SECTION\n");
+    
+    for(abfd= info->input_bfds; abfd != NULL; abfd = abfd->link_next)
+    {
+        s = bfd_get_section_by_name(abfd, ".shared.dinit");
+        
+        if ((s != NULL) && (s->output_section != NULL) && (s->size > 0))
+        {
+            if ((s->output_section->lma + s->output_section->output_offset) == section_address)
+            {
+                unsigned char *contents = (unsigned char *) bfd_alloc (s->output_section->owner,
+                                                                       s->size);
+                
+                //unsigned char* contents = (unsigned char *) malloc (s->size);
+                if (!contents)
+                {
+                    fprintf( stderr, "Link Error: not enough memory for section contents\n");
+                    abort();
+                }
+                
+                if (pic32_debug)
+                    printf("LG --- UPDATE dinit size %d\n", s->size);
+#if 1
+                s->output_section->size = s->size;
+                if (!bfd_get_section_contents (s->output_section->owner, s->output_section,
+                                               contents, 0, s->size))
+                {
+                    fprintf( stderr, "Link Error: can't get section %s contents\n",
+                            s->name);
+                    abort();
+                }
+                if (pic32_debug)
+                    printf("LG ... HOHOHO - dinit 0x%x size\n", s->size);
+                
+                bfd_vma link_to_addr = s->size - 8;
+                
+                if ((s->size > 8)
+                    && (contents[link_to_addr] == 0)
+                    && (contents[link_to_addr + 1] == 0)
+                    && (contents[link_to_addr + 2] == 0)
+                    && (contents[link_to_addr + 3] == 0))
+                {
+                    
+                    contents[link_to_addr] = (new_section_address & 0xFF);
+                    contents[link_to_addr + 1] = (new_section_address >> 8) & 0xFF;
+                    contents[link_to_addr + 2] = (new_section_address >> 16) & 0xFF;
+                    contents[link_to_addr + 3] = (new_section_address >> 24) & 0xFF;
+                    
+                    if (!bfd_set_section_contents (s->output_section->owner, s->output_section,
+                                                   contents, s->output_offset, s->size))
+                    {
+                        fprintf( stderr, "Link Error: can't write section %s contents\n",
+                                s->name);
+                        abort();
+                    }
+                }
+                s->output_section->size = 0;
+                break;
+#endif
+            }
+        }
+    }
+}
+
+
+
+/**
+ * \lghica
+ * Building co-resident applications
+ */
+void fill_shared_dinit_section(bfd* const abfd,
+                               unsigned char ** const ptr_dat,
+                               struct bfd_link_info * const info)
+{
+    /* lghica co-resident */
+    asection                *shared_dinit_sec;
+    bfd_size_type           shared_dinit_size;
+    file_ptr                shared_dinit_offset;
+    unsigned char           *shared_dat;
+    unsigned char           *dinit_dat = *ptr_dat;
+    int                     i;
+    struct pic32_section    *s_sec;
+    
+    asymbol                 **syms = bfd_get_outsymbols(abfd);
+    bfd_vma                 link_to = 0;
+    ///\ lookup __shared_dinit_addr symbol
+    struct bfd_link_hash_entry *h_sym;
+    
+    if ((init_shared_template == NULL) || (init_shared_data == NULL))
+        bfd_assert(__FILE__,__LINE__);
+    
+    
+    if (pic32_debug)
+        printf("LG --- started to fill shared\n");
+    
+    h_sym = bfd_link_hash_lookup(info->hash, "__shared_dinit_addr", FALSE, FALSE, TRUE);
+
+    if ((h_sym != NULL) /*&&
+        (h_sym->u.def.section == bfd_abs_section_ptr)*/)
+    {
+        if (pic32_debug)
+            printf("LG --- shared_dinit_addr - 0x%x\n", h_sym->u.def.value);
+            
+        link_to = h_sym->u.def.value;
+    }
+ 
+    /* .shared.dinit */
+    shared_dinit_sec = init_shared_template->output_section;
+    shared_dinit_size = init_shared_template->rawsize;
+    shared_dinit_offset = init_shared_template->output_offset;
+    
+    if (!shared_dinit_sec)
+    {
+        fprintf( stderr, "Link Error: could not access shared data template\n");
+        abort();
+    }
+    
+    /* clear SEC_IN_MEMORY flag if inaccurate */
+    if ((shared_dinit_sec->contents == 0)
+        && ((shared_dinit_sec->flags & SEC_IN_MEMORY) != 0))
+        shared_dinit_sec->flags &= ~ SEC_IN_MEMORY;
+    
+    /* get a copy of the (blank) template contents */
+    if (!bfd_get_section_contents (abfd, shared_dinit_sec,
+                                   init_shared_data,
+                                   shared_dinit_offset*bfd_octets_per_byte (abfd),
+                                   shared_dinit_size))
+    {
+        fprintf( stderr, "Link Error: can't get section %s contents\n",
+                shared_dinit_sec->name);
+        abort();
+    }
+    
+    /* update the default fill value */
+    shared_dat = init_shared_data;
+    for (i=0; i < shared_dinit_size; i++)
+        *shared_dat++ *= 2;
+    
+    /* scan sections and write data records */
+    if (pic32_debug)
+        printf("\nProcessing data sections:\n");
+    shared_dat = init_shared_data;
+    for (s_sec = shared_data_sections; s_sec != NULL; s_sec = s_sec->next)
+        if ((s_sec->sec) && ((s_sec->sec->flags & SEC_EXCLUDE) == 0))
+            bfd_pic32_process_data_section(s_sec->sec, &shared_dat);
+    
+    /* write 2 zero terminator
+     1 - link to next shared
+     2 - end of section :)
+     */
+    *shared_dat++ = 0; *shared_dat++ = 0;
+    *shared_dat++ = 0; *shared_dat++ = 0;
+    *shared_dat++ = 0; *shared_dat++ = 0;
+    *shared_dat++ = 0; *shared_dat++ = 0;
+    
+    if (pic32_debug)
+        printf("  last template addr written = %lx\n",
+               (long unsigned int) (shared_dat-1));
+    
+    /* Reset the bfd file pointer, because
+     there seems to be a bug with fseek()
+     in Winblows that makes seeking to
+     a position earlier in the file unreliable. */
+    bfd_seek(shared_dinit_sec->output_section->owner, 0, SEEK_SET);
+
+    /* insert buffer into the shared data template section */
+    if (!bfd_set_section_contents (abfd, shared_dinit_sec, init_shared_data,
+                                   shared_dinit_offset*bfd_octets_per_byte(abfd),
+                                   shared_dinit_size))
+    {
+        fprintf( stderr, "Link Error: can't write section %s contents\n",
+                shared_dinit_sec->name);
+        abort();
+    }
+}
+
 /* We need to use a special link routine to handle the .reginfo and
    the .mdebug sections.  We need to merge all instances of these
    sections together, not write them all out sequentially.  */
@@ -13983,6 +14227,7 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
   unsigned int i;
   bfd_size_type amt;
   struct mips_elf_link_hash_table *htab;
+    
 
   static const char * const secname[] =
   {
@@ -14550,6 +14795,19 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
   file_ptr dinit_offset;
   unsigned char *dat;
   struct pic32_section *s_sec;
+    
+/* lghica co-resident*/
+    asection        *rom_usage_sec;
+    bfd_size_type   rom_usage_size;
+    file_ptr        rom_usage_offset;
+    unsigned char   *rom_dat;
+    
+    asection        *ram_usage_sec;
+    bfd_size_type   ram_usage_size;
+    file_ptr        ram_usage_offset;
+    unsigned char   *ram_dat;
+    
+    
    if (pic32_data_init)
   {
       dinit_sec = init_template->output_section;
@@ -14588,7 +14846,7 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
 
      if (pic32_code_in_dinit) {
        if (pic32_debug)
-         printf("\nProcessing data sections:\n");
+         printf("\nProcessing code sections:\n");
        for (s_sec = code_sections; s_sec != NULL; s_sec = s_sec->next)
          if ((s_sec->sec) && (((s_sec->sec->flags & SEC_EXCLUDE) == 0) &&
              (s_sec->sec->output_section != bfd_abs_section_ptr)))
@@ -14616,7 +14874,7 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
                           + bfd_get_section_vma (info->output_bfd,
                                      h->u.def.section->output_section)
                           + h->u.def.section->output_offset;
-;
+
 
           *dat++ = entry_address & 0xFF;
           *dat++ = (entry_address >> 8) & 0xFF;
@@ -14627,7 +14885,11 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
 
       if (pic32_debug)
           printf("  last template addr written = %lx\n",
-                 (long unsigned int) dat - 1);
+                 (long unsigned int)(dat-1));
+      
+      if (shared_data_sections && (shared_data_sections->next != NULL))
+          ///\lghica co-resident shared
+          fill_shared_dinit_section(abfd, &dat, info);
 
       /* Reset the bfd file pointer, because
         there seems to be a bug with fseek()
@@ -14635,7 +14897,7 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
         a position earlier in the file unreliable. */
         	  
 	  bfd_seek(dinit_sec->output_section->owner, 0, SEEK_SET);
-	  
+	        
       /* insert buffer into the data template section */
       if (!bfd_set_section_contents (abfd, dinit_sec,
                                      init_data, dinit_offset, dinit_size))
@@ -14644,6 +14906,10 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
                    dinit_sec->name);
           abort();
         }
+      
+      ///\ coresident - .shared.dinit
+      if ((prev_shared_dinit != 0) && (crt_shared_dinit != 0))
+          update_previous_shared_dinit(info, prev_shared_dinit, crt_shared_dinit);
   }
 
    if (pic32_has_fill_option)
@@ -14662,7 +14928,159 @@ _bfd_mips_elf_final_link (bfd *abfd, struct bfd_link_info *info)
        }
     }
 
+    /* lghica - co-resident*/
+#define REPORT_AS_PROGRAM(s)    (PIC32_IS_CODE_ATTR(s))
+#define REPORT_AS_DATA(s)       (PIC32_SECTION_IN_DATA_MEMORY(s) || PIC32_IS_MEMORY_ATTR(s))
+    
+    /* ROM usage contents */
+    if (pic32_memory_usage)
+    {
+        asection            * sec;
+        
+        bfd_vma     b_addr  = 0;
+        bfd_vma     e_addr  = 0;
+        unsigned int opb    = bfd_octets_per_byte (abfd);
 
+        rom_usage_sec       = rom_usage_template->output_section;
+        rom_usage_size      = rom_usage_template->rawsize;
+        rom_usage_offset    = rom_usage_template->output_offset;
+        
+        if (!rom_usage_sec)
+        {
+            fprintf( stderr, "Link Error: could not access ROM usage template\n");
+            abort();
+        }
+        
+        /* clear SEC_IN_MEMORY flag if inaccurate */
+        if ((rom_usage_sec->contents == 0) &&
+            ((rom_usage_sec->flags & SEC_IN_MEMORY) != 0))
+            rom_usage_sec->flags &= ~ SEC_IN_MEMORY;
+        
+        /* get a copy of the (blank) template contents */
+        if (!bfd_get_section_contents (abfd, rom_usage_sec,
+                                       rom_usage_data,
+                                       rom_usage_offset*opb, rom_usage_size))
+        {
+            fprintf( stderr, "Link Error: can't get section %s contents\n",
+                    rom_usage_sec->name);
+            abort();
+        }
+        /* scan sections and write ROM usage ranges */
+        if (pic32_debug)
+            printf("\nWriting ROM sections uasage ranges:\n");
+        
+        rom_dat = rom_usage_data;
+        for (sec = abfd->sections ; sec != NULL; sec = sec->next)
+            if (((REPORT_AS_PROGRAM(sec) && (sec->rawsize > 0)
+                 && pic32_in_bounds(sec, program_origin, program_length)))
+                 && ((sec->flags & SEC_EXCLUDE) == 0))
+            {
+                b_addr = sec->lma;
+                e_addr = b_addr + (sec->rawsize / 2) - 2;
+                *rom_dat++ = b_addr & 0xFF;
+                *rom_dat++ = (b_addr >> 8) & 0xFF;
+                *rom_dat++ = (b_addr >> 16) & 0xFF;
+                *rom_dat++ = (b_addr >> 24) & 0xFF;;
+                
+                *rom_dat++ = e_addr & 0xFF;
+                *rom_dat++ = (e_addr >> 8) & 0xFF;
+                *rom_dat++ = (e_addr >> 16) & 0xFF;
+                *rom_dat++ = (e_addr >> 24) & 0xFF;
+            }
+        /* write zero terminator */
+        *rom_dat++ = 0; *rom_dat++ = 0;
+        *rom_dat++ = 0; *rom_dat++ = 0;
+        
+        if (pic32_debug)
+            printf("  last template addr written = %lx size %d\n",
+                   (long unsigned int) (rom_dat-1), rom_usage_size);
+        
+        /* insert buffer into the data template section */
+        if (!bfd_set_section_contents (abfd, rom_usage_sec,
+                                       rom_usage_data, rom_usage_offset*opb,
+                                       rom_usage_size))
+        {
+            fprintf( stderr, "Link Error: can't write section %s contents\n",
+                    rom_usage_sec->name);
+            abort();
+        }
+    }
+    
+    /* RAM usage contents */
+    if (pic32_memory_usage)
+    {
+        asection * sec;
+        
+        bfd_vma         b_addr = 0;
+        bfd_vma         e_addr = 0;
+        unsigned int    opb    = bfd_octets_per_byte (abfd);
+        
+        ram_usage_sec = ram_usage_template->output_section;
+        ram_usage_size = ram_usage_template->rawsize;
+        ram_usage_offset = ram_usage_template->output_offset;
+        
+        if (!ram_usage_sec)
+        {
+            fprintf( stderr, "Link Error: could not access RAM usage template\n");
+            abort();
+        }
+        
+        /* clear SEC_IN_MEMORY flag if inaccurate */
+        if ((ram_usage_sec->contents == 0) &&
+            ((ram_usage_sec->flags & SEC_IN_MEMORY) != 0))
+            ram_usage_sec->flags &= ~ SEC_IN_MEMORY;
+        
+        /* get a copy of the (blank) template contents */
+        if (!bfd_get_section_contents (abfd, ram_usage_sec,
+                                       ram_usage_data,
+                                       ram_usage_offset*opb, ram_usage_size))
+        {
+            fprintf( stderr, "Link Error: can't get section %s contents\n",
+                    ram_usage_sec->name);
+            abort();
+        }
+        /* scan sections and write RAM usage ranges */
+        if (pic32_debug)
+            printf("\nWriting RAM sections usage ranges %lx :\n", (long unsigned int)ram_dat);
+
+        
+        ram_dat = ram_usage_data;
+        for (sec = abfd->sections ; sec != NULL; sec = sec->next)
+            if ( (sec->rawsize > 0) && ((sec->flags & SEC_EXCLUDE) == 0)
+                && REPORT_AS_DATA(sec))
+            {
+                b_addr = sec->lma;
+                e_addr = b_addr + (sec->rawsize / 2) - 2;
+                *ram_dat++ = b_addr & 0xFF;
+                *ram_dat++ = (b_addr >> 8) & 0xFF;
+                *ram_dat++ = (b_addr >> 16) & 0xFF;
+                *ram_dat++ = (b_addr >> 24) & 0xFF;
+                
+                *ram_dat++ = e_addr & 0xFF;
+                *ram_dat++ = (e_addr >> 8) & 0xFF;
+                *ram_dat++ = (e_addr >> 16) & 0xFF;
+                *ram_dat++ = (e_addr >> 24) & 0xFF;
+            }
+        /* write zero terminator */
+        *ram_dat++ = 0; *ram_dat++ = 0;
+        *ram_dat++ = 0; *ram_dat++ = 0;
+        
+        if (pic32_debug)
+            printf("  last template addr written = %lx size - %d\n",
+                   (long unsigned int) (ram_dat-1), ram_usage_size);
+        
+        /* insert buffer into the data template section */
+        if (!bfd_set_section_contents (abfd, ram_usage_sec,
+                                       ram_usage_data, ram_usage_offset*opb,
+                                       ram_usage_size))
+        {
+            fprintf( stderr, "Link Error: can't write section %s contents\n",
+                    ram_usage_sec->name);
+            abort();
+        }
+ 
+    }
+    
     /* clean the section names */
   if (pic32_debug)
     printf("\nCleaning section names:\n");
@@ -16020,11 +16438,17 @@ bfd_pic32_process_data_section(sect, fp)
   unsigned char *buf,*p;
   unsigned char **d = (unsigned char **) fp;
   bfd_vma runtime_size = sect->size;
-  bfd_vma runtime_addr = sect->output_offset + sect->output_section->vma;
+    bfd_vma runtime_addr; /* lghica */
   Elf_Internal_Shdr *this_hdr;
 
   enum {CLEAR, COPY}; /* note matching definition in crt0.c */
 
+    if (sect->output_section == NULL)
+        return;
+    
+    if (sect->size > 0)
+        runtime_addr = sect->output_offset + sect->output_section->vma; /* lghica */
+        
   /* skip persistent or noload data sections */
   if (PIC32_IS_PERSIST_ATTR(sect) || PIC32_IS_NOLOAD_ATTR(sect))
     {
@@ -16124,7 +16548,8 @@ bfd_pic32_process_data_section(sect, fp)
  * **
  * ** This routine is called via bfd_map_over_sections().
  * */
-static void
+
+/* lghica - co-resident*/ /*static*/ void
 bfd_pic32_clean_section_names(abfd, sect, fp)
      bfd *abfd ATTRIBUTE_UNUSED ;
      asection *sect;
@@ -16134,14 +16559,46 @@ bfd_pic32_clean_section_names(abfd, sect, fp)
   Elf_Internal_Shdr *this_hdr ATTRIBUTE_UNUSED ;
   int shidx ATTRIBUTE_UNUSED ;
 
+    if ( (sect == NULL) || (sect->name == NULL))
+    {
+        return;
+    }
+    
   c = strchr(sect->name, '%');
   if (c) {
     if (pic32_debug)  printf("  %s",sect->name);
     *c = '\0';
     if (pic32_debug)  printf(" --> %s\n",sect->name);
   }
-  return;
+    return;
 }
+
+static int
+pic32_in_bounds (asection *sec, bfd_vma region_origin,
+                 bfd_size_type region_length)
+{
+    bfd_vma start;
+    bfd_size_type len;
+    int result = 0;
+    
+    if (REPORT_AS_DATA(sec)) {
+        start = sec->vma;
+        len  = sec->rawsize / 2;
+    }
+    else {
+        start = sec->lma;
+        len  = sec->rawsize / 2;
+    }
+    
+    if (start >= region_origin)
+        result = 1;
+    
+    if ((start + len) > (region_origin + region_length))
+        result = 0;
+    
+    return result;
+}
+
 
 #endif /* TARGET_IS_PIC32 */
 

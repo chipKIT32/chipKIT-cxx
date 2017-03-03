@@ -38,6 +38,43 @@
 bfd_boolean (*mchp_elf_link_check_archive_element)
   PARAMS ((char *, bfd *, struct bfd_link_info *)) __attribute__((weak));
 extern int pic32_debug;
+
+static bfd_boolean pic32_symbol_checks(struct bfd_link_hash_entry * hash_entry, bfd * abfd);
+
+static bfd_boolean pic32_symbol_checks(struct bfd_link_hash_entry * hash_entry, bfd * abfd)
+{
+    char *linked_prefix     = "__linked_";
+    char *exclude_prefix    = "__exclude_";
+    char * sym_name         = hash_entry->root.string;
+
+    if (strstr(sym_name, linked_prefix))
+    {
+        char *sec_name = (char *) &sym_name[strlen(linked_prefix)];
+        asection *s;
+        for (s = abfd->sections; s != NULL; s = s->next)
+        {
+            if (strcmp(sec_name, s->name) == 0)
+            {
+                //\ co-resident - temporary remove debug sections linked in previous steps
+                if (strstr(s->name, "debug") != NULL)
+                {
+                    s->flags |= SEC_EXCLUDE;
+                }
+                s->linked = 1;
+            }
+            
+        }
+    }
+    else if (strstr(sym_name, exclude_prefix))
+    {
+        char *sec_name = (char *) &sym_name[strlen(exclude_prefix)];
+        asection *s;
+        for (s = abfd->sections; s != NULL; s = s->next)
+            if (strcmp(sec_name, s->name) == 0)
+                s->flags |= SEC_EXCLUDE;
+    }
+    return TRUE;
+}
 #endif
 
 /* This struct is used to pass information to routines called via
@@ -1267,6 +1304,9 @@ _bfd_elf_mark_dynamic_def_weak (struct elf_link_hash_entry *h,
     }
 }
 
+///\ lghica co-resident
+extern bfd_boolean pic32_coresident_app;
+
 /* This function is called when we want to define a new symbol.  It
    handles the various cases which arise when we find a definition in
    a dynamic object, or when there is already a definition in a
@@ -1385,7 +1425,12 @@ _bfd_elf_merge_symbol (bfd *abfd,
     }
 
   /* Differentiate strong and weak symbols.  */
-  newweak = bind == STB_WEAK;
+//    if (pic32_coresident_app)
+    ///\ tmp - let all syms weak - needed for coresident context
+        newweak = 1;//bind == STB_WEAK;
+//    else
+//        newweak = bind == STB_WEAK;
+
   oldweak = (h->root.type == bfd_link_hash_defweak
 	     || h->root.type == bfd_link_hash_undefweak);
 
@@ -1802,7 +1847,19 @@ _bfd_elf_merge_symbol (bfd *abfd,
       if (!(oldbfd != NULL
 	    && (oldbfd->flags & BFD_PLUGIN) != 0
 	    && (abfd->flags & BFD_PLUGIN) == 0))
-	*skip = TRUE;
+          *skip = TRUE;
+        
+        ///\ lghica - coresident - always keep latest def
+        ///\  one reason - solve relocations for the current linked app
+        if (oldsec->linked == 1)
+        {
+            *skip = FALSE;
+            *override = TRUE;
+            *size_change_ok = TRUE;
+            olddef = FALSE;
+            h->root.type = bfd_link_hash_undefined;
+            h->root.u.undef.abfd = h->root.u.def.section->owner;
+        }
 
       /* Merge st_other.  If the symbol already has a dynamic index,
 	 but visibility says it should not be visible, turn it into a
@@ -3699,6 +3756,46 @@ _bfd_elf_relocs_compatible (const bfd_target *input,
   return ibed->relocs_compatible == obed->relocs_compatible;
 }
 
+/* lghica - co-resident */
+extern bfd_boolean  pic32_application_id;
+extern char         *application_id;
+
+#if 1 ///\coresident
+static void update_appid_sym(bfd * const abfd, bfd_boolean definition,
+                        Elf_Internal_Sym * const isym,
+                        struct elf_link_hash_entry * const co_h)
+{
+    /* Remember the symbol size if it isn't undefined.  */
+    if ((isym->st_size != 0 && isym->st_shndx != SHN_UNDEF)
+                && (definition || co_h->size == 0))
+    {
+        co_h->size = isym->st_size;
+    }
+
+    if (co_h->root.type == bfd_link_hash_common)
+        co_h->size = co_h->root.u.c.size;
+    
+    if (ELF_ST_TYPE (isym->st_info) != STT_NOTYPE
+        && (definition || co_h->type == STT_NOTYPE))
+    {
+        unsigned int type = ELF_ST_TYPE (isym->st_info);
+        
+        /* Turn an IFUNC symbol from a DSO into a normal FUNC
+         symbol.  */
+        if (type == STT_GNU_IFUNC
+            && (abfd->flags & DYNAMIC) != 0)
+            type = STT_FUNC;
+        
+        if (co_h->type != type)
+            co_h->type = type;
+    }
+    
+    ///\ Merge st_other field. - coresident is not compatible with dynamic
+    elf_merge_st_other (abfd, co_h, isym, definition, FALSE /* (dynamic = FALSE)*/);
+}
+#endif
+
+
 /* Add symbols from an ELF object file to the linker hash table.  */
 
 static bfd_boolean
@@ -3735,6 +3832,8 @@ elf_link_add_object_symbols (bfd *abfd, struct bfd_link_info *info)
   long old_dynsymcount = 0;
   size_t tabsize = 0;
   size_t hashsize = 0;
+    /* lghica co-resident */
+    char        *alias_name;
 
 #if 1
   if (pic32_debug)
@@ -4104,7 +4203,16 @@ error_free_dyn:
 
       /* We store a pointer to the hash table entry for each external
 	 symbol.  */
-      amt = extsymcount * sizeof (struct elf_link_hash_entry *);
+        
+      /* lghica - co-resident */
+#if 1
+        if (pic32_application_id)
+            amt = extsymcount  * 2 * sizeof (struct elf_link_hash_entry *);
+        else
+#endif
+            amt = extsymcount * sizeof (struct elf_link_hash_entry *);
+        
+        
       sym_hash = (struct elf_link_hash_entry **) bfd_alloc (abfd, amt);
       if (sym_hash == NULL)
 	goto error_free_sym;
@@ -4208,6 +4316,7 @@ error_free_dyn:
     }
 
   weaks = NULL;
+    
   ever = extversym != NULL ? extversym + extsymoff : NULL;
   for (isym = isymbuf, isymend = isymbuf + extsymcount;
        isym < isymend;
@@ -4219,6 +4328,9 @@ error_free_dyn:
       flagword flags;
       const char *name;
       struct elf_link_hash_entry *h;
+#if 1 /*__CORESIDENT*/
+        struct elf_link_hash_entry *co_h;
+#endif
       struct elf_link_hash_entry *hi;
       bfd_boolean definition;
       bfd_boolean size_change_ok;
@@ -4249,7 +4361,18 @@ error_free_dyn:
 	     point to the first global symbol.  Unfortunately, Irix 5
 	     screws this up.  */
 	  continue;
-
+    /* lghica co-resident */
+#if 1 /*__CORESIDENT*/
+        case STB_MIDPROC:
+            if (isym->st_shndx != SHN_UNDEF
+                    && isym->st_shndx != SHN_COMMON)
+                flags = BSF_GLOBAL /*| BSF_SHARED*/;
+            break;
+            
+        case STB_HIPROC:
+            flags = BSF_WEAK /*| BSF_SHARED*/;
+            break;
+#endif
 	case STB_GLOBAL:
 	  if (isym->st_shndx != SHN_UNDEF && !common)
 	    flags = BSF_GLOBAL;
@@ -4297,9 +4420,10 @@ error_free_dyn:
 
       name = bfd_elf_string_from_elf_section (abfd, hdr->sh_link,
 					      isym->st_name);
+        
       if (name == NULL)
 	goto error_free_vers;
-
+        
       if (isym->st_shndx == SHN_COMMON
 	  && (abfd->flags & BFD_PLUGIN) != 0)
 	{
@@ -4389,6 +4513,8 @@ error_free_dyn:
 	  unsigned int vernum = 0;
 	  bfd_boolean skip;
 
+        
+        
 	  /* If this is a definition of a symbol which was previously
 	     referenced in a non-weak manner then make a note of the bfd
 	     that contained the reference.  This is used if we need to
@@ -4522,13 +4648,13 @@ error_free_dyn:
 		  && h->root.u.undef.abfd)
 		undef_bfd = h->root.u.undef.abfd;
 	    }
-
+        
 	  if (!_bfd_elf_merge_symbol (abfd, info, name, isym, &sec,
 				      &value, &old_alignment,
 				      sym_hash, &skip, &override,
 				      &type_change_ok, &size_change_ok))
 	    goto error_free_vers;
-
+        
 	  if (skip)
 	    continue;
 
@@ -4568,12 +4694,33 @@ error_free_dyn:
 	      && definition)
 	    h->verinfo.verdef = &elf_tdata (abfd)->verdef[vernum - 1];
 	}
-
-      if (! (_bfd_generic_link_add_one_symbol
-	     (info, abfd, name, flags, sec, value, NULL, FALSE, bed->collect,
-	      (struct bfd_link_hash_entry **) sym_hash)))
-	goto error_free_vers;
-
+        /* lghica co-resident */
+#if 1 /* __CORESIDENT */
+        if (pic32_application_id && (sec->linked == 0) && (!bfd_is_und_section (sec)))
+        {
+            char* tmp_name = xmalloc( strlen(name) + strlen(application_id) + 2);
+            sprintf(tmp_name, "%s_%s", application_id, name);
+            
+            if (! (_bfd_generic_link_add_one_symbol
+                   (info, abfd, tmp_name, flags | BSF_GLOBAL, sec, value, name/*(const char *) NULL */,
+                    FALSE, FALSE, NULL)))
+                goto error_free_vers;
+            
+            co_h = bfd_link_hash_lookup(info->hash, tmp_name, FALSE, FALSE, FALSE);
+            update_appid_sym(abfd, definition, isym, co_h);
+        }
+#endif
+        
+#if 1
+        if (! (_bfd_generic_link_add_one_symbol
+               (info, abfd, name, (pic32_coresident_app == 0)? flags :BSF_WEAK,
+                sec, value, NULL, FALSE, bed->collect,
+                (struct bfd_link_hash_entry **) sym_hash)))
+            goto error_free_vers;
+        else
+            pic32_symbol_checks(*sym_hash, abfd);
+#endif
+        
       h = *sym_hash;
       /* We need to make sure that indirect symbol dynamic flags are
 	 updated.  */
@@ -4926,6 +5073,7 @@ error_free_dyn:
 #endif
 
     }
+//    } /* lghica co-resident */
 
   if (extversym != NULL)
     {
@@ -9199,7 +9347,12 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
 			       h->root.root.string, FALSE, FALSE) == NULL)
     strip = TRUE;
   else if ((h->root.type == bfd_link_hash_defined
-	    || h->root.type == bfd_link_hash_defweak)
+	    || h->root.type == bfd_link_hash_defweak
+#if 1
+        || h->root.type == bfd_link_hash_shared_defweak
+        || h->root.type == bfd_link_hash_shared_defined
+#endif
+            )
 	   && ((flinfo->info->strip_discarded
 		&& discarded_section (h->root.u.def.section))
 	       || (h->root.u.def.section->owner != NULL
@@ -9256,6 +9409,10 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
 
     case bfd_link_hash_defined:
     case bfd_link_hash_defweak:
+#if 1
+    case bfd_link_hash_shared_defined:
+    case bfd_link_hash_shared_defweak:
+#endif
       {
 	input_sec = h->root.u.def.section;
 	if (input_sec->output_section != NULL)
@@ -9318,8 +9475,8 @@ elf_link_output_extsym (struct bfd_hash_entry *bh, void *data)
 	  }
 	else
 	  {
-	    BFD_ASSERT (input_sec->owner == NULL
-			|| (input_sec->owner->flags & DYNAMIC) != 0);
+//          BFD_ASSERT (input_sec->owner == NULL);
+			// || (input_sec->owner->flags & DYNAMIC) != 0);
 	    sym.st_shndx = SHN_UNDEF;
 	    input_sec = bfd_und_section_ptr;
 	  }
@@ -9767,8 +9924,8 @@ elf_link_input_bfd (struct elf_final_link_info *flinfo, bfd *input_bfd)
 	 discarding, we don't need to keep it.  */
       if (isym->st_shndx != SHN_UNDEF
 	  && isym->st_shndx < SHN_LORESERVE
-	  && bfd_section_removed_from_list (output_bfd,
-					    isec->output_section))
+      && ((isec->output_section != NULL)? bfd_section_removed_from_list (output_bfd,
+                                                               isec->output_section):1))
 	continue;
 
       /* Get the name of the symbol.  */
@@ -11062,7 +11219,7 @@ bfd_elf_final_link (bfd *abfd, struct bfd_link_info *info)
      and the relocs.  We set symcount to force assign_section_numbers
      to create a symbol table.  */
   bfd_get_symcount (abfd) = info->strip == strip_all ? 0 : 1;
-  BFD_ASSERT (! abfd->output_has_begun);
+
   if (! _bfd_elf_compute_section_file_positions (abfd, info))
     goto error_return;
 
@@ -12585,6 +12742,7 @@ bfd_elf_gc_sections (bfd *abfd, struct bfd_link_info *info)
   elf_gc_mark_hook_fn gc_mark_hook;
   const struct elf_backend_data *bed = get_elf_backend_data (abfd);
 
+    
   if (!bed->can_gc_sections
       || !is_elf_hash_table (info->hash))
     {
@@ -12632,6 +12790,13 @@ bfd_elf_gc_sections (bfd *abfd, struct bfd_link_info *info)
 						 FALSE);
 		  fini_reloc_cookie_rels (&cookie, sec);
 		}
+            ///\lghica - co-resident
+            
+            if (CONST_STRNEQ (bfd_section_name (sub, sec), ".tlb_init_values"))
+            {
+                sec->flags |= SEC_EXCLUDE;
+            }
+
 	    }
 	}
 
