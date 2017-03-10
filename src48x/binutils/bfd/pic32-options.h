@@ -37,11 +37,6 @@
 */
 
 extern bfd_boolean pic32_report_mem;
-<<<<<<< HEAD
-=======
-extern bfd_boolean pic32_mafrlcsj;
-extern bfd_boolean pic32_mafrlcsj2;
->>>>>>> XC32_release_1_43
 extern bfd_boolean pic32_memory_summary;
 extern char *memory_summary_arg;
 extern bfd_boolean pic32_debug;
@@ -71,8 +66,6 @@ extern bfd_boolean pic32_dinit_in_serial_mem;
 extern bfd_boolean pic32_dinit_has_absolute_address;
 extern bfd_vma dinit_address;
 
-<<<<<<< HEAD
-=======
 /* lghica - co-resident */
 extern bfd_boolean      pic32_memory_usage;
 extern bfd_boolean      pic32_reserve_const;
@@ -85,7 +78,6 @@ extern bfd_boolean      pic32_coresident_app;
 extern bfd_boolean      pic32_inherit_application_info;
 extern char             *inherited_application;
 
->>>>>>> XC32_release_1_43
 static void gldelf32pic32mx_list_options
    PARAMS ((FILE *));
 static int gldelf32pic32mx_parse_args
@@ -99,11 +91,6 @@ const char * shortopts = "-Dp:"; /* note: leading "-" is important */
    different from the range used in lexsup.c  */
 enum elfpic32mx_options {
   REPORT_MEM_OPTION = 1000,
-<<<<<<< HEAD
-=======
-  REPORT_MAFRLCSJ_OPTION,
-  REPORT_MAFRLCSJ2_OPTION,
->>>>>>> XC32_release_1_43
   SMART_IO_OPTION,
   NO_SMART_IO_OPTION,
   DATA_INIT_OPTION,
@@ -118,9 +105,6 @@ enum elfpic32mx_options {
   NO_CODE_IN_DINIT_OPTION,
   DINIT_IN_SERIAL_MEM_OPTION,
   NO_DINIT_IN_SERIAL_MEM_OPTION,
-<<<<<<< HEAD
-  DINIT_ADDRESS_OPTION
-=======
   DINIT_ADDRESS_OPTION,
   /* lghica co-resident */
     MEMORY_USAGE,
@@ -129,7 +113,6 @@ enum elfpic32mx_options {
     APPLICATION_ID,
     CORESIDENT,
     INHERIT_APPLICATION_INFO
->>>>>>> XC32_release_1_43
 };
 
 static struct option longopts[] =
@@ -138,11 +121,6 @@ static struct option longopts[] =
   { "smart-io", no_argument, NULL, SMART_IO_OPTION },
   { "no-smart-io", no_argument, NULL, NO_SMART_IO_OPTION },
   { "report-mem", no_argument, NULL, REPORT_MEM_OPTION },
-<<<<<<< HEAD
-=======
-  { "mafrlcsj", no_argument, NULL, REPORT_MAFRLCSJ_OPTION },
-  { "mafrlcsj2", no_argument, NULL, REPORT_MAFRLCSJ2_OPTION },
->>>>>>> XC32_release_1_43
   { "memorysummary", required_argument, NULL, MEMORY_SUMMARY },
   { "data-init", no_argument, NULL, DATA_INIT_OPTION },
   { "no-data-init", no_argument, NULL, NO_DATA_INIT_OPTION },
@@ -156,8 +134,6 @@ static struct option longopts[] =
   { "dinit-in-serial-mem", no_argument, NULL, DINIT_IN_SERIAL_MEM_OPTION },
   { "no-dinit-in-serial-mem", no_argument, NULL, NO_DINIT_IN_SERIAL_MEM_OPTION },
   { "dinit-address", required_argument, NULL, DINIT_ADDRESS_OPTION },
-<<<<<<< HEAD
-=======
     /* lghica co-resident */
     { "memory-usage",           no_argument,        NULL, MEMORY_USAGE },
     { "reserve-const",          optional_argument,  NULL, RESERVE_CONST },
@@ -167,7 +143,6 @@ static struct option longopts[] =
     { "coresident",             no_argument,        NULL, CORESIDENT },
 #endif
     { "inherit-application-info", required_argument, NULL, INHERIT_APPLICATION_INFO },
->>>>>>> XC32_release_1_43
   { NULL,        no_argument,       NULL, 0                }
 };
 #endif

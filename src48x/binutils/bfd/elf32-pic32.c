@@ -34,8 +34,7 @@ extern struct mchp_undefsym_table *mchp_undefsym_init
 bfd_boolean pic32_debug = 0;
 bfd_boolean pic32_memory_summary= 0;
 bfd_boolean pic32_report_mem = 0;
-bfd_boolean pic32_mafrlcsj = 0;
-bfd_boolean pic32_mafrlcsj2 = 0;
+
 bfd_boolean pic32_smart_io = TRUE; /* Enabled by default */
 bfd_boolean pic32_has_smart_io_option = 0;
 bfd *mchp_output_bfd;

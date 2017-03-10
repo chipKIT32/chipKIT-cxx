@@ -15015,11 +15015,7 @@ mips_init_builtins (void)
     mchp_print_builtin_function (decl);
   }
     
-  /* When we are being called by MPLAB X's editor, stop compilation after 
-     printing the builtin functions. */
-  if (TARGET_SKIP_LICENSE_CHECK) {
-    exit (1);
-  }
+
 #endif
 }
 

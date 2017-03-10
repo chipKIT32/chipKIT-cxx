@@ -29,6 +29,10 @@
 
 #include "gimple-pretty-print.h"
 
+#if !defined(TARGET_LICENSE_WARNING)
+#define TARGET_LICENSE_WARNING 0
+#endif
+
 #define HI_MASK 0xFFFF0000
 #ifndef BITSET_P
 /* True if bit BIT is set in VALUE.  */

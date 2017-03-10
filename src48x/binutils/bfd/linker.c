@@ -28,10 +28,7 @@
 #include "genlink.h"
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
-<<<<<<< HEAD
-=======
 #include "pic32-utils.h"
->>>>>>> XC32_release_1_43
 /*
  * make common version of this symbol which will be initialized to NIL
  * unless we are creating the linker where an initialized definition will
@@ -1727,12 +1724,6 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
 
 	    /* Define a symbol.  */
 	    oldtype = h->type;
-<<<<<<< HEAD
-	    if (action == DEFW)
-	      h->type = bfd_link_hash_defweak;
-	    else
-	      h->type = bfd_link_hash_defined;
-=======
           if (action == DEFW)
           {
           /* lghica co-resident */
@@ -1754,7 +1745,6 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
 	      h->type = bfd_link_hash_defined;
         }
           
->>>>>>> XC32_release_1_43
 	    h->u.def.section = section;
 	    h->u.def.value = value;
 
@@ -1922,8 +1912,6 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
 	  /* Fall through.  */
 	case MDEF:
 	  /* Handle a multiple definition.  */
-<<<<<<< HEAD
-=======
         /* lghica - co-resident */
 #if 1
         if (PIC32_IS_SHARED_ATTR(section)
@@ -1942,7 +1930,6 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
         }
         else
 #endif
->>>>>>> XC32_release_1_43
 	  if (! ((*info->callbacks->multiple_definition)
 		 (info, h, abfd, section, value)))
 	    return FALSE;
@@ -2361,9 +2348,6 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
 		  h = (struct generic_link_hash_entry *) h->root.u.i.link;
 		  /* fall through */
 		case bfd_link_hash_defined:
-<<<<<<< HEAD
-		  sym->flags |= BSF_GLOBAL;
-=======
         /* lghica co-resident -> TODO check if it is mandatory */
 #if 1 /* TODO replace it with a macro for PIC32 */
             if (PIC32_IS_SHARED_ATTR(sym->section))
@@ -2380,7 +2364,6 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
 #else
 		  sym->flags |= BSF_GLOBAL;
 #endif
->>>>>>> XC32_release_1_43
 		  sym->flags &=~ BSF_CONSTRUCTOR;
 		  sym->value = h->root.u.def.value;
 		  sym->section = h->root.u.def.section;
@@ -2391,8 +2374,6 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
 		  sym->value = h->root.u.def.value;
 		  sym->section = h->root.u.def.section;
 		  break;
-<<<<<<< HEAD
-=======
      /* lghica co-resident */
 #if 1
         case bfd_link_hash_shared_defweak:
@@ -2410,7 +2391,6 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
             sym->section = h->root.u.def.section;
             break;
 #endif
->>>>>>> XC32_release_1_43
 		case bfd_link_hash_common:
 		  sym->value = h->root.u.c.size;
 		  sym->flags |= BSF_GLOBAL;
@@ -2564,8 +2544,6 @@ set_symbol_from_hash (asymbol *sym, struct bfd_link_hash_entry *h)
       sym->section = h->u.def.section;
       sym->value = h->u.def.value;
       break;
-<<<<<<< HEAD
-=======
     /* lghica co-resident */
 #if 1
     case bfd_link_hash_shared_defined:
@@ -2579,7 +2557,6 @@ set_symbol_from_hash (asymbol *sym, struct bfd_link_hash_entry *h)
         sym->value = h->u.def.value;
         break;
 #endif
->>>>>>> XC32_release_1_43
     case bfd_link_hash_common:
       sym->value = h->u.c.size;
       if (sym->section == NULL)

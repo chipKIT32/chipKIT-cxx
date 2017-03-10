@@ -2845,7 +2845,7 @@ pic32_finish(void)
     bfd_pic32_report_memory_usage (config.map_file);
   }
   if (pic32_report_mem) {
-    if ((!pic32_mafrlcsj)&&(!pic32_mafrlcsj2)) {
+    if (1) {
       bfd_pic32_report_memory_usage (stdout);
     }
   }

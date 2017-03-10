@@ -297,12 +297,7 @@ gldelf32pic32mx_parse_args (int argc, char ** argv)
     case REPORT_MEM_OPTION:
       pic32_report_mem = TRUE;
       break;
-    case REPORT_MAFRLCSJ_OPTION:
-      pic32_mafrlcsj = TRUE;
-      break;
-    case REPORT_MAFRLCSJ2_OPTION:
-      pic32_mafrlcsj2 = TRUE;
-      break;
+
     case MEMORY_SUMMARY:
       pic32_memory_summary= TRUE;
       memory_summary_arg = optarg;
