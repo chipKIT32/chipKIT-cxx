@@ -28,10 +28,6 @@ along with GCC; see the file COPYING3.  If not see
 #define TARGET_IS_PIC32MX
 #endif
 
-#if !defined(TARGET_NEWLIB_LIBC)
-#define TARGET_NEWLIB_LIBC 0
-#endif
-
 #ifndef PIC32
 #define PIC32
 #endif
@@ -96,6 +92,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "../../../../c30_resource/src/xc32/resource_info.h"
 #include "config/mchp-cci/cci.h"
 
+
 #ifdef __MINGW32__
 void *alloca(size_t);
 #else
@@ -119,10 +116,6 @@ extern bool bss_initializer_p (const_tree decl);
 
 extern cpp_options *cpp_opts;
 
-#ifndef MCHP_XCLM_FREE_LICENSE
- #define MCHP_XCLM_FREE_LICENSE 0x0
- #warning MCHP_XCLM_FREE_LICENSE not defined by API
-#endif
 
 int          mchp_profile_option = 0;
 
@@ -586,7 +579,6 @@ static const char* mchp_get_resource_file_path(void)
       }
   }
 #endif
-
   return path;
 }
 
@@ -635,7 +627,6 @@ static unsigned int mchp_load_resource_info(char *id, char **matched_id, const c
     mchp_resource_file_generic = (char *)xcalloc (buffer_size,1);
     snprintf (mchp_resource_file_generic, buffer_size, "%s", mchp_resource_file_in);
   }
-
   rib = read_device_rib (mchp_resource_file_generic, id);
   if (rib == 0) {
     error("Could not open resource file for: %qs at %qs", id, mchp_resource_file_generic);
@@ -758,7 +749,7 @@ mchp_subtarget_override_options(void)
   if (TARGET_DSPR2 && TARGET_MIPS16) {
     error ("unsupported combination: %s", "-mips16 -mdspr2");
   }
-  
+
   mask = validate_device_mask ((char*)mchp_processor_string, &mchp_target_cpu_id,
                               mchp_resource_file);
 #endif
@@ -769,59 +760,48 @@ mchp_subtarget_override_options(void)
 void
 mchp_subtarget_override_options1 (void)
 {
-  mips_code_readable = CODE_READABLE_PCREL;
+    mips_code_readable = CODE_READABLE_PCREL;
 
-  /* If smart-io is explicitly disabled, make the size value 0 */
-  if (!TARGET_MCHP_SMARTIO)
+    /* If smart-io is explicitly disabled, make the size value 0 */
+    if (!TARGET_MCHP_SMARTIO)
     {
-      mchp_io_size_val = 0;
+        mchp_io_size_val = 0;
     }
-  if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
+    if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
     {
-      warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
-      mchp_io_size_val = 1;
-    }
-
-  if (TARGET_LONG_CALLS)
-    {
-      TARGET_MCHP_SMARTIO = 0;
-      mchp_io_size_val = 0;
+        warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
+        mchp_io_size_val = 1;
     }
 
-   /* Switch on ABICALLS mode if -fpic or -fpie were
-      used, and the user hasn't explicitly disabled
-      these modes.  */
-
-   if ((flag_pic || flag_pie) && !TARGET_ABICALLS
-      && !(target_flags_explicit & MASK_ABICALLS)
-      && mips_abi != ABI_EABI)
-    target_flags |= MASK_ABICALLS;
+    if (TARGET_LONG_CALLS)
+    {
+        TARGET_MCHP_SMARTIO = 0;
+        mchp_io_size_val = 0;
+    }
+    
+    /* Switch on ABICALLS mode if -fpic or -fpie were
+     used, and the user hasn't explicitly disabled
+     these modes.  */
+    
+    if ((flag_pic || flag_pie) && !TARGET_ABICALLS
+        && !(target_flags_explicit & MASK_ABICALLS)
+        && mips_abi != ABI_EABI)
+        target_flags |= MASK_ABICALLS;
 }
-
-#ifdef MCHP_USE_LICENSE_CONF
-/* get a line, and remove any line-ending \n or \r\n */
-static char *
-get_line (char *buf, size_t n, FILE *fptr)
-{
-  if (fgets (buf, n, fptr) == NULL)
-    return NULL;
-  while (buf [strlen (buf) - 1] == '\n'
-         || buf [strlen (buf) - 1] == '\r')
-    buf [strlen (buf) - 1] = '\0';
-  return buf;
-}
-#endif
 
 void
 mchp_subtarget_override_options2 (void)
 {
-  extern struct cl_decoded_option *save_decoded_options;
+  extern char **save_argv;
+  bool mips_base_mips16 = (mips_base_compression_flags & MASK_MIPS16) != 0;
+  bool mips_base_micromips = (mips_base_compression_flags & MASK_MICROMIPS) != 0;
 
-    if (mchp_it_transport && *mchp_it_transport) {
-      if (strcasecmp(mchp_it_transport,"profile") == 0) {
-            mchp_profile_option = 1;
-      }
-    }
+  if (mips_base_mips16 || mips_base_micromips)
+  {
+    flag_inline_small_functions = 0;
+    flag_inline_functions = 0;
+    flag_no_inline = 1;
+  }
 
   if (mchp_profile_option) {
     flag_inline_small_functions = 0;
@@ -3541,7 +3521,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                 {
                   gcc_assert (interrupt_priority >= 0);
                   gcc_assert (interrupt_priority <= 7);
-
                   if (cfun->machine->keep_interrupts_masked_p)
                     {
                       /* Disable interrupts by clearing the KSU, ERL, EXL,
@@ -3576,7 +3555,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
               mips_for_each_saved_gpr_and_fpr (size, mips_save_reg, NULL_RTX);
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3929,7 +3907,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                     }
                   offset -= UNITS_PER_WORD;
                 }
-
             } /* AUTO_CONTEXT_SAVE */
           else if (DEFAULT_CONTEXT_SAVE == cfun->machine->current_function_type)
             {
@@ -4085,7 +4062,6 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
 
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
-
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -4250,12 +4226,87 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
 
 bool mchp_subtarget_mips16_enabled (const_tree decl)
 {
+  static const_tree first_disabled_decl = NULL;
+  static const_tree last_disabled_decl = NULL;
+  static bool suppress_further_warnings = false;
+  bool disable_mips16;
+
+  disable_mips16 = !(pic32_device_mask & HAS_MIPS16);
+
+  if (disable_mips16)
+    {
+      if ((decl == first_disabled_decl) ||
+          (decl == last_disabled_decl))
+        {
+          suppress_further_warnings = true;
+        }
+
+      if (false == suppress_further_warnings)
+        {
+          if (!(pic32_device_mask & HAS_MIPS16))
+            error ("The %qs target device does not support the %<mips16%>"
+                         " attribute on %qs",
+                         mchp_processor_string,
+                         IDENTIFIER_POINTER (DECL_NAME (decl)));
+
+          if (NULL == first_disabled_decl)
+            {
+              first_disabled_decl = decl;
+            }
+          last_disabled_decl = decl;
+        }
+
+      return false;
+    }
+  else
+    {
       return true;
+    }
 }
 
 bool mchp_subtarget_micromips_enabled (const_tree decl)
 {
+  static const_tree first_disabled_decl = NULL;
+  static const_tree last_disabled_decl = NULL;
+  static bool suppress_further_warnings = false;
+  bool disable_micromips;
+
+  disable_micromips = !(pic32_device_mask & HAS_MICROMIPS);
+  /* If the device does not support MIPS32R2, don't disable microMIPS */
+  if (!(pic32_device_mask & HAS_MIPS32R2))
+    {
+      disable_micromips = false;
+    }
+
+  if (disable_micromips)
+    {
+      if ((decl == first_disabled_decl) ||
+          (decl == last_disabled_decl))
+        {
+          suppress_further_warnings = true;
+        }
+
+      if (false == suppress_further_warnings)
+        {
+          if (!(pic32_device_mask & HAS_MICROMIPS))
+            error ("The %qs target device does not support the %<micromips%>"
+                         " attribute on %qs",
+                         mchp_processor_string,
+                         IDENTIFIER_POINTER (DECL_NAME (decl)));
+
+          if (NULL == first_disabled_decl)
+            {
+              first_disabled_decl = decl;
+            }
+          last_disabled_decl = decl;
+        }
+
+      return false;
+    }
+  else
+    {
       return true;
+    }
 }
 
 bool mchp_subtarget_mips32_enabled ()
@@ -6586,7 +6637,7 @@ const char *mchp_rdata_section_asm_op(void)
 #endif
   return(szSection);
 }
-
+#if 0 /* chipKIT */
 void pic32_final_include_paths(struct cpp_dir* quote, struct cpp_dir* bracket)
 {
   struct cpp_dir *p;
@@ -6607,10 +6658,8 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
   const struct default_include *p;
   size_t len;
 
-  if (!TARGET_LEGACY_LIBC && !TARGET_XC32_LIBCPP && !TARGET_NEWLIB_LIBC)
-  {
+  if (!TARGET_LEGACY_LIBC && !TARGET_XC32_LIBCPP)
     return;
-  }
 
   if (iprefix && (len = cpp_GCC_INCLUDE_DIR_len) != 0)
     {
@@ -6630,15 +6679,8 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
                 {
                   char *str;
                   char *newfname;
-                  /* -mnewlib-libc takes precedence */
-                  if (TARGET_NEWLIB_LIBC)
-                    {
-                      newfname = concat (p->fname, "/newlib", NULL);
-                      str = concat (iprefix, newfname + len, NULL);
-                      free(newfname);
-                      add_path (str, SYSTEM, p->cxx_aware, false);
-                    }
-                  else if (TARGET_XC32_LIBCPP)
+
+                  if (TARGET_XC32_LIBCPP)
                     {
                       newfname = concat (p->fname, "/Cpp/c", NULL);
                       str = concat (iprefix, newfname + len, NULL);
@@ -6677,13 +6719,6 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
           /* Should this directory start with the sysroot?  */
           if (sysroot && p->add_sysroot)
             {
-              if (TARGET_NEWLIB_LIBC)
-                {
-                  newfname = concat (p->fname, "/newlib", NULL);
-                  str = concat (sysroot, newfname, NULL);
-                  add_path (str, SYSTEM, p->cxx_aware, false);
-                  free(newfname);
-                }
               if (TARGET_XC32_LIBCPP)
                 {
                   newfname2 = concat (p->fname, "/Cpp/c", NULL);
@@ -6709,14 +6744,7 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
             }
           else
             {
-              if (TARGET_NEWLIB_LIBC)
-                {
-                  newfname = concat (p->fname, "/newlib", NULL);
-                  str = update_path (newfname, p->component);
-                  add_path (str, SYSTEM, p->cxx_aware, false);
-                  free(newfname);
-                }
-              else if (TARGET_XC32_LIBCPP)
+              if (TARGET_XC32_LIBCPP)
                 {
                   newfname2 = concat (p->fname, "/Cpp/c", NULL);
                   str2 = update_path (newfname2, p->component);
@@ -6743,6 +6771,7 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
         }
     }
 }
+#endif
 
 
 rtx pic32_expand_software_reset_libcall(void)

@@ -2845,9 +2845,7 @@ pic32_finish(void)
     bfd_pic32_report_memory_usage (config.map_file);
   }
   if (pic32_report_mem) {
-    if (1) {
       bfd_pic32_report_memory_usage (stdout);
-    }
   }
 
   if (pic32_has_crypto_option)

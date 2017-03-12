@@ -15015,7 +15015,6 @@ mips_init_builtins (void)
     mchp_print_builtin_function (decl);
   }
     
-
 #endif
 }
 

@@ -41,8 +41,6 @@ along with GCC; see the file COPYING3.  If not see
 #define MCHP_DEBUG
 #endif
 
-#define XCLM_FULL_CHECKOUT 1
-
 extern const char *pic32_text_scn;
 extern int         mchp_profile_option;
 
@@ -126,7 +124,7 @@ do {                     \
 
 #undef LINK_COMMAND_SPEC
 /* Add the PIC32 default linker script with the -T option */
-/* When compiling with -mprocessor=32MX* or without the -mprocessor option,
+/* When compiling with -mprocessor=32MX* or without the -mprocessor option, 
    use the ./ldscripts/elf32pic32mx.x file. When compiling for a newer device,
    Use ./proc/<procname>/p<procname>.ld. */
 #define LINK_COMMAND_SPEC "\
@@ -224,17 +222,11 @@ do {                     \
 
 #if 0 /* chipKIT */
 #ifndef TARGET_EXTRA_PRE_INCLUDES
-extern void pic32_system_pre_include_paths(const char *root, const char *system,
+extern void pic32_system_include_paths(const char *root, const char *system,
                                        int nostdinc);
-#define TARGET_EXTRA_PRE_INCLUDES pic32_system_pre_include_paths
+#define TARGET_EXTRA_PRE_INCLUDES pic32_system_include_paths
 #endif
-
-#ifndef TARGET_FINAL_INCLUDES
-extern void pic32_final_include_paths(struct cpp_dir*,struct cpp_dir*);
-#define TARGET_FINAL_INCLUDES pic32_final_include_paths
 #endif
-
-#endif /* chipKIT */
 
 #ifdef DIR_SEPARATOR
 #if DIR_SEPARATOR == '\\'
@@ -386,10 +378,11 @@ extern void pic32_final_include_paths(struct cpp_dir*,struct cpp_dir*);
  %{fnofallback : -mno-fallback } \
  %{-nofallback : -mno-fallback } \
  %{!fasynchronous-unwind-tables : -fno-asynchronous-unwind-tables } \
- %{fdwarf2-cfi-asm : -fno-dwarf2-cfi-asm } \
+ %{!fdwarf2-cfi-asm : -fno-dwarf2-cfi-asm } \
  %{!mconfig-data-dir=* : -mconfig-data-dir= %J%s%{ mprocessor=* :./proc/%*; :./proc/32MXGENERIC}} \
  %{!ftoplevel-reorder : -fno-toplevel-reorder } \
  %{flto: %{!fno-fat-lto-objects: -ffat-lto-objects}} \
+ %{O2|Os|O3:%{!mno-hi-addr-opt:-mhi-addr-opt}} \
  %(mchp_cci_cc1_spec) \
  %(subtarget_cc1_spec) \
 "

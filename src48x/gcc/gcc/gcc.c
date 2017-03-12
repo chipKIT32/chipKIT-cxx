@@ -3199,6 +3199,9 @@ display_help (void)
   -print-multiarch         Display the target's normalized GNU triplet, used as\n\
                            a component in the library path\n"), stdout);
   fputs (_("  -print-multi-directory   Display the root directory for versions of libgcc\n"), stdout);
+#if defined(TARGET_MCHP_PIC32MX)
+/* No alternate libc or libm for chipKIT */
+#endif
   fputs (_("\
   -print-multi-lib         Display the mapping between command line options and\n\
                            multiple library search directories\n"), stdout);
@@ -7172,6 +7175,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"
         rib = read_rib(res_filepath);
         if (rib)
           {
+
             close_rib();
             rib = NULL;
           }

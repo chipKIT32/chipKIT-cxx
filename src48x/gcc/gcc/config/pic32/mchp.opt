@@ -383,12 +383,9 @@ msmart-io=
 Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(0)
 -msmart-io=LEVEL	Enable smart-IO library call forwarding level LEVEL [0,2]
 
-mlegacy-libc
-Target Var Var(TARGET_LEGACY_LIBC)
--legacy-libc	Use legacy lib/include directory
 
 mrelaxed-math
-Target Var Var(TARGET_RELAXED_MATH)
+Target Var Var(TARGET_RELAXED_MATH) 
 -relaxed-math	Use alternative floating-point support routines
 
 mxc32cpp-lib
@@ -406,6 +403,10 @@ Target Report RejectNegative Joined Var(mchp_it_transport)
 mprocessor=
 Target Report RejectNegative Joined Var(mchp_processor_string) Init(0)
 -mprocessor=PROCESSOR	Specify the target PIC32 PROCESSOR
+
+mlicense-warning
+Target Var Var(TARGET_LICENSE_WARNING) Undocumented Init(1)
+-mlicense-warning	Emit the license warning when appropriate
 
 mcci
 Target RejectNegative Var(TARGET_CCI)
@@ -442,6 +443,10 @@ Target RejectNegative Var Var(TARGET_PIC32MM_LIBS) Undocumented
 mresource=
 Target RejectNegtive Joined Var(mchp_resource_file) VarExists Undocumented
 Identify compiler resource file
+
+mno-fallback
+Target Report RejectNegative Var Var(TARGET_NO_FALLBACKLICENSE)
+--nofallback		Require a MPLAB XC32 Standard or Pro license and do not fall back to a lesser license
 
 ; -mcode-xonly is a traditional alias for -mcode-readable=pcrel and
 ; -mno-data-in-code is a traditional alias for -mcode-readable=no.
