@@ -17918,6 +17918,16 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	{
 	  dw_loc_descr_ref op = new_loc_descr (DW_OP_call_frame_cfa, 0, 0);
 	  add_AT_loc (subr_die, DW_AT_frame_base, op);
+
+      /* Compute a displacement from the "steady-state frame pointer" to
+	 the CFA.  The former is what all stack slots and argument slots
+	 will reference in the rtl; the latter is what we've told the
+	 debugger about.  We'll need to adjust all frame_base references
+	 by this displacement.  */
+#if defined(_BUILD_MCHP_)
+     /* We still want this for XC32 with dwarf_version >=3 */
+      compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
+#endif
 	}
       else
 	{
@@ -17960,6 +17970,7 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	 debugger about.  We'll need to adjust all frame_base references
 	 by this displacement.  */
 #if !defined(_BUILD_MCHP_)
+    /* For MCHP XC32, we already took care of this above. */
       compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
 #endif
 

@@ -2085,7 +2085,7 @@ pic32*-mchp-elf*)
         tmake_file="mips/t-mips pic32/t-mchp pic32/t-libgcc-mips16 ${tmake_file}"
         extra_options="pic32/mchp.opt mips/mips.opt mips/mips-tables.opt g.opt "
         tm_p_file="${tm_p_file} pic32/mchp-protos.h"
-        extra_objs="${extra_objs} sha256.o mchp_sha.o mchp.o cci-backend.o"
+        extra_objs="${extra_objs} sha256.o mchp_sha.o mchp.o cci-backend.o mchp-hi-addr-analysis.o"
         #extra_gcc_objs="driver-pic32-elf.o"
         use_gcc_stdint=none
         default_use_cxa_atexit=no

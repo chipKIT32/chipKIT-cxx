@@ -247,7 +247,10 @@ build_link_order (lang_statement_union_type *statement)
 	    asection *output_section = i->output_section;
 	    struct bfd_link_order *link_order;
 
+///\ lghica - not for coresident
+#ifndef __CORESIDENT
 	    ASSERT (output_section->owner == link_info.output_bfd);
+#endif
 
 	    if (!((output_section->flags & SEC_HAS_CONTENTS) != 0
 		  || ((output_section->flags & SEC_LOAD) != 0

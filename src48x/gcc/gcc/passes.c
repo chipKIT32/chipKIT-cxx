@@ -1574,6 +1574,10 @@ init_optimization_passes (void)
       struct opt_pass **p = &pass_rest_of_compilation.pass.sub;
       NEXT_PASS (pass_instantiate_virtual_regs);
       NEXT_PASS (pass_into_cfg_layout_mode);
+/* \mgeanta: add HI addr optimization pass for PIC32MX target */
+#if defined(TARGET_MCHP_PIC32MX)
+	    NEXT_PASS (pass_rtl_mchp_hi_addr_analysis);
+#endif
       NEXT_PASS (pass_jump);
       NEXT_PASS (pass_lower_subreg);
       NEXT_PASS (pass_df_initialize_opt);

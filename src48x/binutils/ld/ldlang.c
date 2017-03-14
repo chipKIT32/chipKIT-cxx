@@ -55,6 +55,22 @@
 
 #ifdef TARGET_IS_PIC32MX
 #include "pic32-utils.h"
+
+/* lghica co-resident */
+#if 1
+extern bfd_boolean          pic32_inherit_application_info;
+extern char                 *inherited_application;
+extern bfd_boolean          pic32_coresident_app;
+extern struct pic32_section *shared_dinit_sections;
+extern struct pic32_section *shared_data_sections;
+
+bfd_boolean pic32_is_empty_list(struct pic32_section* const lst);
+#endif
+/* lghica */
+extern bfd_boolean pic32_debug;
+
+
+
 #endif
 
 #ifndef offsetof
@@ -88,6 +104,17 @@ static
 #endif
 struct unique_sections *unique_section_list;
 
+/* lghica co-resident */
+#if 1
+extern struct pic32_undefsym_table *pic30_undefsym_init
+PARAMS ((void));
+extern void pic32_init_section_list
+PARAMS ((struct pic32_section **));
+extern void pic32_append_section_to_list
+PARAMS ((struct pic32_section *, lang_input_statement_type *, asection *));
+#endif
+
+
 /* Forward declarations.  */
 static void exp_init_os (etree_type *);
 static void init_map_userdata (bfd *, asection *, void *);
@@ -107,6 +134,7 @@ static void lang_record_phdrs (void);
 static void lang_do_version_exports_section (void);
 static void lang_finalize_version_expr_head
   (struct bfd_elf_version_expr_head *);
+
 
 /* Exported variables.  */
 const char *output_target;
@@ -2309,6 +2337,23 @@ static void
 section_already_linked (bfd *abfd, asection *sec, void *data)
 {
   lang_input_statement_type *entry = (lang_input_statement_type *) data;
+#if 1
+    ///\lghica coresident - rename reset sections
+    ///\ todo make it generic
+    if(pic32_coresident_app)
+    {
+        if (((strstr(sec->name, ".reset") != NULL) && (sec->linked == 0))
+            )
+        {
+            char *new_name = bfd_alloc(abfd, sizeof(".text") + 1);
+            if (new_name != NULL)
+            {
+                memcpy(new_name, ".text", sizeof(".text"));
+                bfd_rename_section(abfd, sec, new_name);
+            }
+        }
+    }
+#endif
 
   /* If we are only reading symbols from this object, then we want to
      discard all sections.  */
@@ -2504,6 +2549,12 @@ lang_add_section (lang_statement_list_type *ptr,
       section->output_section->ramfunc = section->ramfunc;
       section->output_section->coherent = section->coherent;
       section->output_section->serial_mem = section->serial_mem;
+    
+    /* lghica co-resident */
+    /* copy if the section has been linked before */
+    section->output_section->linked = section->linked;
+    section->output_section->shared = section->shared;
+    section->output_section->preserved = section->preserved;
 
       /* promote absolute address, unless the output section
          already has a conflicting one */
@@ -2819,6 +2870,8 @@ load_symbols (lang_input_statement_type *entry,
 	      lang_statement_list_type *place)
 {
   char **matching;
+  /* lghica co-resident */
+  asection *sec;
 
   if (entry->flags.loaded)
     return TRUE;
@@ -2893,7 +2946,34 @@ load_symbols (lang_input_statement_type *entry,
 
       return TRUE;
     }
-
+    
+    /* lghica co-resident */
+    if (pic32_inherit_application_info)
+    {
+        if (strcmp(entry->the_bfd->filename, inherited_application) == 0)
+        {
+            if (!inherited_sections)
+                pic32_init_section_list(&inherited_sections);
+            for (sec = entry->the_bfd->sections; sec != NULL; sec = sec->next)
+            {
+                sec->flags |= SEC_EXCLUDE;
+                pic32_append_section_to_list(inherited_sections, 0, sec);
+            }
+            return TRUE;
+        }
+    }
+    
+    ///\coresident
+    ///\ todo -> make it generic
+    if (pic32_coresident_app)
+    {
+        for (sec = entry->the_bfd->sections; sec != NULL; sec = sec->next)
+        {
+            if ((sec->flags & SEC_LINKER_CREATED) && (sec->linked == 0))
+                sec->flags |= SEC_EXCLUDE;
+        }
+    }
+    
   if (ldemul_recognized_file (entry))
     return TRUE;
 
@@ -3732,7 +3812,14 @@ map_input_to_output_sections
 	  break;
 	case lang_output_section_statement_enum:
 	  tos = &s->output_section_statement;
-	  if (tos->constraint != 0)
+
+            /* lghica */
+            if (pic32_debug)
+            {
+                printf("LG - output section statement %s \n", (tos->name != NULL)? tos->name:"no-name");
+            }
+
+    if (tos->constraint != 0)
 	    {
 	      if (tos->constraint != ONLY_IF_RW
 		  && tos->constraint != ONLY_IF_RO)
@@ -3806,6 +3893,12 @@ map_input_to_output_sections
 	  exp_init_os (s->assignment_statement.exp);
 	  break;
 	case lang_address_statement_enum:
+            if (pic32_debug)
+            {
+                printf("LG - lang address statement\n");
+            }
+            
+            
 	  /* Mark the specified section with the supplied address.
 	     If this section was actually a segment marker, then the
 	     directive is ignored if the linker script explicitly
@@ -4840,10 +4933,22 @@ sort_sections_by_lma (const void *arg1, const void *arg2)
   return 0;
 }
 
+#if 1 /* lghica co-resident - to be changed */
+
+#define IGNORE_SECTION(s) \
+    ((((s->flags & (SEC_ALLOC | SEC_LOAD)) == 0 )   \
+        || s->size == 0) || ((PIC32_IS_DATA_ATTR(s)     \
+        || PIC32_IS_BSS_ATTR(s))                                          \
+        && !PIC32_IS_ABSOLUTE_ATTR(s)                                     \
+        && (s->linked == 1)))
+#else
+
 #define IGNORE_SECTION(s) \
   ((s->flags & SEC_ALLOC) == 0				\
    || ((s->flags & SEC_THREAD_LOCAL) != 0		\
 	&& (s->flags & SEC_LOAD) == 0))
+
+#endif /* PIC32 co-resident */
 
 /* Check to see if any allocated sections overlap with other allocated
    sections.  This can happen if a linker script specifies the output
@@ -4912,8 +5017,19 @@ lang_check_section_addresses (void)
 	 wraps around the address space.  */
       if (s_start <= p_end
 	  || p_end < p_start)
+      {
+          /* lghica co-resident - ignore the following cases */
+#if 1
+          if (PIC32_IS_SHARED_ATTR(s)
+                && PIC32_IS_SHARED_ATTR(p)
+                && PIC32_IS_ABSOLUTE_ATTR(s)
+                && PIC32_IS_ABSOLUTE_ATTR(p))
+              continue;
+          
+#endif
 	einfo (_("%X%P: section %s loaded at [%V,%V] overlaps section %s loaded at [%V,%V]\n"),
 	       s->name, s_start, s_end, p->name, p_start, p_end);
+      }
     }
 
   free (sections);
@@ -6299,10 +6415,15 @@ lang_place_orphans (void)
 
       for (s = file->the_bfd->sections; s != NULL; s = s->next)
 	{
+        
 	  if (s->output_section == NULL)
 	    {
 	      /* This section of the file is not attached, root
 		 around for a sensible place for it to go.  */
+            if (pic32_debug)
+            {
+                printf("LG - Place orphan without output section %s ----\n", s->name);
+            }
 
 	      if (file->flags.just_syms)
 		bfd_link_just_syms (file->the_bfd, s, &link_info);
@@ -6339,6 +6460,8 @@ lang_place_orphans (void)
 #endif
 		    {
 		      lang_output_section_statement_type *os;
+                if (pic32_debug)
+                    printf ("Not ldemul place orphan, lookup %s", name);
 		      os = lang_output_section_statement_lookup (name,
 								 constraint,
 								 TRUE);
@@ -6829,6 +6952,7 @@ lang_list_remove_tail (lang_statement_list_type *destlist,
 }
 #endif /* ENABLE_PLUGINS */
 
+
 void
 lang_process (void)
 {
@@ -6961,8 +7085,21 @@ lang_process (void)
  /* Create Data initialization Template*/
 #ifdef TARGET_IS_PIC32MX
    pic32_create_data_init_template();
-   if (pic32_has_fill_option)
-   pic32_create_specific_fill_sections();
+   
+    /* lghica co-resident */
+    if (!pic32_is_empty_list(shared_dinit_sections)
+        || !pic32_is_empty_list(shared_data_sections))
+        pic32_create_shared_data_init_template();
+   
+    if (pic32_memory_usage)
+    {
+        pic32_create_rom_usage_template();
+        pic32_create_ram_usage_template();
+    }
+    
+    if (pic32_has_fill_option)
+       pic32_create_specific_fill_sections();
+    
 #endif
 
   /* Update wild statements.  */
@@ -7034,6 +7171,7 @@ lang_process (void)
 
   ldemul_finish ();
 
+    
   /* Make sure that the section addresses make sense.  */
   if (command_line.check_section_addresses)
     lang_check_section_addresses ();

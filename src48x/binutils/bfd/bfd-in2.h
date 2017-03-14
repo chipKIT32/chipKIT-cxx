@@ -1436,9 +1436,13 @@ typedef struct bfd_section
   unsigned int ramfunc:1;
   unsigned int coherent:1;
   unsigned int serial_mem:1;
-
-  unsigned int sec_flg0:1;
-
+    
+  /*lghica co-resident*/
+    unsigned int linked:1;
+    unsigned int shared:1;
+    unsigned int preserved:1;
+    
+    unsigned int sec_flg0:1;
 
   /* End of internal packed boolean fields.  */
 
@@ -1699,6 +1703,7 @@ extern asection std_section[4];
 #define bfd_section_removed_from_list(ABFD, S) \
   ((S)->next == NULL ? (ABFD)->section_last != (S) : (S)->next->prev != (S))
 
+    
 #define BFD_FAKE_SECTION(SEC, FLAGS, SYM, NAME, IDX)                   \
   /* name, id,  index, next, prev, flags, user_set_vma,            */  \
   { NAME,  IDX, 0,     NULL, NULL, FLAGS, 0,                           \
@@ -1715,8 +1720,8 @@ extern asection std_section[4];
   /* memory, heap, stack, ramfunc, coherent, serial_mem,           */  \
      0,        0,     0,       0,         0,          0,               \
                                                                        \
-  /* sec_flg0,                                                     */  \
-     0,                                                                \
+  /* linked, shared, preserved, sec_flg0,                          */  \
+     0,        0,       0,         0,                                  \
                                                                        \
                                                                        \
   /* vma, lma, size, rawsize, compressed_size, relax, relax_count, */  \
@@ -5649,6 +5654,10 @@ typedef struct bfd_symbol
      will make sure that in the entire process there is just one symbol
      with this name and type in use.  BSF_OBJECT must also be set.  */
 #define BSF_GNU_UNIQUE         (1 << 23)
+    
+    /* lghica co-resident */
+    /* This symbol is shared among Co-resident applications */
+#define BSF_SHARED             (1 << 24)
 
   flagword flags;
 

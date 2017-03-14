@@ -28,6 +28,7 @@
 #include "genlink.h"
 
 #if 1 || defined(TARGET_IS_elf32pic32mx)
+#include "pic32-utils.h"
 /*
  * make common version of this symbol which will be initialized to NIL
  * unless we are creating the linker where an initialized definition will
@@ -1723,10 +1724,27 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
 
 	    /* Define a symbol.  */
 	    oldtype = h->type;
-	    if (action == DEFW)
-	      h->type = bfd_link_hash_defweak;
+          if (action == DEFW)
+          {
+          /* lghica co-resident */
+#if 1
+              if (flags & BSF_SHARED)
+                  h->type = bfd_link_hash_shared_defweak;
+              else
+#endif
+              h->type = bfd_link_hash_defweak;
+          }
 	    else
+        {
+            /* lghica co-resident */
+#if 1
+            if (flags & BSF_SHARED)
+                h->type = bfd_link_hash_shared_defweak;
+            else
+#endif
 	      h->type = bfd_link_hash_defined;
+        }
+          
 	    h->u.def.section = section;
 	    h->u.def.value = value;
 
@@ -1894,6 +1912,24 @@ _bfd_generic_link_add_one_symbol (struct bfd_link_info *info,
 	  /* Fall through.  */
 	case MDEF:
 	  /* Handle a multiple definition.  */
+        /* lghica - co-resident */
+#if 1
+        if (PIC32_IS_SHARED_ATTR(section)
+            && PIC32_IS_SHARED_ATTR(h->u.def.section)
+            && ((section->linked == 1) || (h->u.def.section->linked == 1))
+            && section->rawsize == h->u.def.section->rawsize
+            && strcmp(section->name, h->u.def.section->name) == 0)
+        {
+                /* these are the same symbol, in the same section, and the same
+                 size... allow the user to redefine them in this special
+                 circumstance.   But ensure that they are allocated at the same
+                 place */
+                h->u.def.section->vma = section->vma;
+                h->u.def.section->lma = section->lma;
+                PIC32_SET_ABSOLUTE_ATTR(h->u.def.section);
+        }
+        else
+#endif
 	  if (! ((*info->callbacks->multiple_definition)
 		 (info, h, abfd, section, value)))
 	    return FALSE;
@@ -2312,7 +2348,22 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
 		  h = (struct generic_link_hash_entry *) h->root.u.i.link;
 		  /* fall through */
 		case bfd_link_hash_defined:
+        /* lghica co-resident -> TODO check if it is mandatory */
+#if 1 /* TODO replace it with a macro for PIC32 */
+            if (PIC32_IS_SHARED_ATTR(sym->section))
+            {
+                sym->flags |= BSF_GLOBAL;
+            }
+            else
+            {
+                h->root.type = bfd_link_hash_defweak;
+                sym->flags |= BSF_WEAK;
+                sym->flags &= ~BSF_GLOBAL;
+            }
+            //fprintf(stderr,"weaken: %s %p\n", sym->name, h);
+#else
 		  sym->flags |= BSF_GLOBAL;
+#endif
 		  sym->flags &=~ BSF_CONSTRUCTOR;
 		  sym->value = h->root.u.def.value;
 		  sym->section = h->root.u.def.section;
@@ -2323,6 +2374,23 @@ _bfd_generic_link_output_symbols (bfd *output_bfd,
 		  sym->value = h->root.u.def.value;
 		  sym->section = h->root.u.def.section;
 		  break;
+     /* lghica co-resident */
+#if 1
+        case bfd_link_hash_shared_defweak:
+            sym->flags |= BSF_WEAK | BSF_SHARED;
+            sym->flags &=~ BSF_CONSTRUCTOR;
+            sym->value = h->root.u.def.value;
+            sym->section = h->root.u.def.section;
+            break;
+        case bfd_link_hash_shared_defined:
+            h->root.type = bfd_link_hash_shared_defweak;
+            sym->flags &= ~BSF_GLOBAL;
+            sym->flags |= BSF_WEAK | BSF_SHARED;
+            sym->flags &=~ BSF_CONSTRUCTOR;
+            sym->value = h->root.u.def.value;
+            sym->section = h->root.u.def.section;
+            break;
+#endif
 		case bfd_link_hash_common:
 		  sym->value = h->root.u.c.size;
 		  sym->flags |= BSF_GLOBAL;
@@ -2476,6 +2544,19 @@ set_symbol_from_hash (asymbol *sym, struct bfd_link_hash_entry *h)
       sym->section = h->u.def.section;
       sym->value = h->u.def.value;
       break;
+    /* lghica co-resident */
+#if 1
+    case bfd_link_hash_shared_defined:
+        sym->flags |= BSF_SHARED;
+        sym->section = h->u.def.section;
+        sym->value = h->u.def.value;
+        break;
+    case bfd_link_hash_shared_defweak:
+        sym->flags |= BSF_WEAK | BSF_SHARED;
+        sym->section = h->u.def.section;
+        sym->value = h->u.def.value;
+        break;
+#endif
     case bfd_link_hash_common:
       sym->value = h->u.c.size;
       if (sym->section == NULL)

@@ -218,12 +218,12 @@ static void get_resource_path(const char *resource) {
     if (PATH) tool_name = command;
   }
   pic32_resource_file = xmalloc(strlen(tool_name) +
-                                sizeof("/../xc32_device.info") + 1);
+                                sizeof("/../../bin/xc32_device.info") + 1);
   sprintf(pic32_resource_file,"%s", tool_name);
   for (c = pic32_resource_file + strlen(pic32_resource_file);
        !IS_DIR_SEPARATOR(*c); c--);
   *c = 0;
-  strcat(pic32_resource_file,"/../xc32_device.info");/* Keep this to be able 
+  strcat(pic32_resource_file,"/../../bin/xc32_device.info");/* Keep this to be able 
                                                      to use same
                                                      read_device_rib as XC16 */ 
 }
@@ -446,12 +446,12 @@ bfd_boolean pic32_is_known_proc(char *opt_arg)
   char *device_file;
 
   device_file = xmalloc(strlen(optarg) + strlen(program_name)
-                        + strlen("/../device_files/")+ strlen(".info") + 1);
+                        + strlen("/../../bin/device_files/")+ strlen(".info") + 1);
   sprintf(device_file, "%s", program_name);
   for (c = device_file + strlen(device_file);
      !IS_DIR_SEPARATOR(*c); c--);
   *c = 0;
-  strcat(device_file,"/../device_files/");
+  strcat(device_file,"/../../bin/device_files/");
 
   for (place = opt_arg; *place; place++)
      *place = TOUPPER(*place);

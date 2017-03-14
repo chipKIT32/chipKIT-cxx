@@ -595,6 +595,13 @@ disassemble_init_for_target (struct disassemble_info * info)
 	}
       break;
 #endif
+
+#ifdef TARGET_IS_PIC32MX
+    case bfd_arch_mips:
+      info->symbol_is_valid = pic32_symbol_is_valid;
+      break;
+#endif
+
 #ifdef ARCH_powerpc
     case bfd_arch_powerpc:
 #endif

@@ -364,6 +364,10 @@ typedef rtx (*mulsidi3_gen_fn) (rtx, rtx, rtx);
 extern mulsidi3_gen_fn mips_mulsidi3_gen_fn (enum rtx_code);
 #endif
 
+extern bool mips_bit_clear_p (enum machine_mode, unsigned HOST_WIDE_INT);
+extern void mips_bit_clear_info (enum machine_mode, unsigned HOST_WIDE_INT,
+				 int *, int *);
+
 #ifdef TARGET_MCHP_PIC32MX
 extern bool mips_in_small_data_p (const_tree decl);
 
@@ -397,4 +401,8 @@ extern const char* pic32_output_di(rtx);
 extern const char* pic32_output_get_isr_state_mips16 (rtx target, rtx srcreg);
 extern const char* pic32_output_set_isr_state_mips16 (rtx target, rtx srcreg, rtx value);
 extern int mchp_check_for_conversion(rtx);
+extern int pic32_is_func_requires_frp (const char*);
+
+
+
 #endif /* ! GCC_MIPS_PROTOS_H */

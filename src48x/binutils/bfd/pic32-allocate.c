@@ -46,6 +46,13 @@
 /* Create a bit mask to match any attribute */
 #define all_attr 0xFFFFFFFF
 
+/* \lghica coresident*/
+extern bfd_boolean pic32_coresident_app;
+///\ prev_shared_dinit holds the address of the previous linked .shared.dinit section
+extern bfd_vma prev_shared_dinit;
+extern bfd_vma crt_shared_dinit;
+
+
 /* Memory allocator options  */
 enum {
   NO_LOCATE_OPTION,
@@ -130,6 +137,59 @@ report_allocation_error(struct pic32_section *s) {
 
     if (pic32_debug)
       printf("\n    Error: Could not allocate section %s\n", s->sec->name);
+}
+
+extern asection* init_shared_template;
+
+
+/*
+ * update_shared_dinit_addr()
+ *
+ * This function updates __shared_dinit_addr. It is used in coresident context, 
+ * when shared variables are used. If shared variables are used in 2 linking steps,
+ * the value hold by __shared_dinit_addr at this linking phase is the one 
+ * set in the previous step. This function updates the value, but also save the 
+ * old value in a variable, as it is needed for .shared.dinit section update
+ *
+ * Called by: allocate_memory()
+ *
+ * Calls:     bfd_link_hash_lookup()
+ *
+ */
+static void update_shared_dinit_addr()
+{
+    asection*                   shared_dinit_sec;
+    struct bfd_link_hash_entry  *h_sym;
+    bfd_vma                     new_shared_addr = 0;
+    
+    h_sym = bfd_link_hash_lookup(link_info.hash, "__shared_dinit_addr", FALSE, FALSE, TRUE);
+    
+
+    shared_dinit_sec = init_shared_template->output_section;
+    
+    if (shared_dinit_sec != NULL)
+    {
+        //if (pic32_debug)
+        //{
+        //    printf ("LG --- .shared.dinit LMA 0x%x\n", shared_dinit_sec->lma);
+        //}
+        new_shared_addr = shared_dinit_sec->lma;
+    }
+    
+    if ((h_sym != NULL)
+        && (h_sym->u.def.section == bfd_abs_section_ptr))
+    {
+        //if (pic32_debug)
+        //    printf("LG --- shared_dinit_addr - 0x%x\n", h_sym->u.def.value);
+        
+        if ((new_shared_addr != 0) && (new_shared_addr != h_sym->u.def.value))
+        {
+            ///\ update the content of the previous .shared.dinit section
+            prev_shared_dinit = h_sym->u.def.value;
+            crt_shared_dinit = new_shared_addr;
+            h_sym->u.def.value = new_shared_addr;
+        }
+    }
 }
 
 /*
@@ -317,6 +377,11 @@ allocate_memory() {
       }
     }
   }
+    
+  ///\ after allocating memory, update __shared_dinit_addr
+  ///\ needed only in coresident context
+    if (init_shared_template != NULL)
+    update_shared_dinit_addr();
 
 } /* allocate_memory() */
 
@@ -369,7 +434,7 @@ allocate_program_memory() {
   /* save the free blocks list */
   program_memory_free_blocks = free_blocks;
   free_blocks = 0;
-
+    
   return result;
 } /* allocate_program_memory() */
 
@@ -499,6 +564,14 @@ allocate_data_memory() {
   if (pic32_debug) {
     pic32_print_section_list(alloc_section_list, "allocation");
   }
+    
+  /* lghica co-resident */
+#if 1
+    /*
+     ** an initially empty list of blocks that can be shared in data memory
+     */
+    pic32_init_memory_list (&shared_data_memory_blocks);
+#endif
 
   reset_locate_options();
   result |= locate_sections(ramfunc, 0, region);    /* most restrictive  */
@@ -515,6 +588,17 @@ allocate_data_memory() {
     set_locate_options(EXCLUDE_HIGH_ADDR, ramfunc_begin);
   }
   result |= locate_sections(address, 0, region);
+    
+  coherent_section_count = 0;
+  result |= locate_coherent_sections(data, region);  // allocate coherent data sections
+    
+  coherent_section_count = 0;
+  result |= locate_coherent_sections(bss, region);	 // allocate coherent bss sections
+    
+  coherent_section_count = 0;
+  result |= locate_coherent_sections(persist, region);	 // allocate coherent persist sections
+    
+    
   result |= locate_sections(near, 0, region);       /* less restrictive  */
   result |= locate_sections(all_attr, stack|heap, region);
 
@@ -533,6 +617,11 @@ allocate_data_memory() {
 #else
   /* Don't support user-defined stack sections yet */
   for (s = alloc_section_list; s != NULL; s = s->next) {
+      /* lghica co-resident */
+#if 1
+      if(s && (s->sec != NULL) && (s->sec->linked))
+          continue;
+#endif
     if (s->sec && (PIC32_IS_STACK_ATTR(s->sec) || PIC32_IS_HEAP_ATTR(s->sec))) {
       lang_output_section_statement_type *os;
       s->sec->lma = 0;
@@ -550,7 +639,8 @@ allocate_data_memory() {
 
   /* if any sections are left in the allocation list, report an error */
   for (s = alloc_section_list; s != NULL; s = s->next) {
-  if (s->attributes != 0) {
+  if ((s->attributes != 0) && (s->sec->linked == 0) /* lghica co-resident*/)
+  {
     report_allocation_error(s);
     result = 1;
     break;
@@ -655,6 +745,34 @@ group_section_size(struct pic32_section *g)
   return result;
 } /* locate_group_section() */
 
+/*
+ * get_section_duplicate(asection *)
+ *
+ * Helper function to locate a section with a given name
+ *      - it is called only for specific pic32 sections
+ *      - In an application linked in one step this function should never get called
+ *      - added for coresident feature, for multiple steps linking
+ *
+ * Called by: locate_single_section()
+ *
+ * Returns:  the section with the specified name, or NULL
+ */
+static asection* get_section_duplicate(asection * const sec_orig)
+{
+    asection *sec = NULL;
+    
+    /* find an output section with the same name */
+    sec = bfd_get_section_by_name(link_info.output_bfd, sec_orig->name);
+    
+    if ((sec!= NULL) && (sec_orig != sec))
+    {
+        if (PIC32_IS_ABSOLUTE_ATTR(sec))
+            return sec_orig;
+        else
+            return sec;
+    }
+    return NULL;
+}
 
 /*
  * locate_single_section()
@@ -676,8 +794,41 @@ group_section_size(struct pic32_section *g)
   bfd_vma len = s->sec->rawsize? s->sec->rawsize : s->sec->size;
   bfd_vma addr = s->sec->lma;
   int result = 0;
+     
+     
+     if (pic32_debug && s->sec)
+     {
+         printf ("  %s with len %d & addr %x\n", s->sec->name, len, addr);
+     }
+     
+     /* lghica co-resident*/
+     asection* dup_sec;
 
+     ///\ lookup in the input sections if there is another one with the same name
+     if (s->sec && ( ( (strcmp(s->sec->name, ".text.version") == 0)
+                        || (strcmp(s->sec->name, ".tlb_init_values") == 0)
+                        || (strcmp(s->sec->name, ".simple_tlb_refill_excpt") == 0)
+                        || (strcmp(s->sec->name,".cache_err_excpt")== 0)
+                        || (strcmp(s->sec->name,".app_excpt")== 0)
+                        || (strcmp(s->sec->name,".bev_excpt")== 0)
+                        || (strstr(s->sec->name, "vector_offset") != NULL)
+                      )
+                    && (dup_sec = get_section_duplicate(s->sec))))
+     {
+         ///\ if the other section is allocated, just link to it
+         s->sec->flags |= SEC_EXCLUDE;
 
+         update_section_info(0, s, region);
+         pic32_remove_from_section_list(alloc_section_list,s);
+         return 0;
+     }
+     else if (s->sec && (strcmp(s->sec->name, ".text.version") == 0))
+     {
+         s->sec->flags |= SEC_EXCLUDE;
+         pic32_remove_from_section_list(alloc_section_list,s);
+         return 0;
+     }
+     
   /* look for tricky user error */
   if (PIC32_IS_ABSOLUTE_ATTR(s->sec) && ACROSS_REGION(addr, len, region))
         einfo(_(" Link Warning: absolute section \'%s\' crosses"
@@ -690,12 +841,27 @@ group_section_size(struct pic32_section *g)
            OUTSIDE_REGION(addr, len, region)) {
     update_section_info(addr, s, region);  /* falls outside region */
   }
-  else {                          /* locate using free_blocks list */
+  else{                          /* locate using free_blocks list */
     b = select_free_block(s, len);
     if (b) {
       addr = b->addr + b->offset;
       if (PIC32_IS_COHERENT_ATTR(s->sec))
         addr |= 0x20000000;
+#if 1
+        /* lghica co-resident */
+      if (PIC32_IS_SHARED_ATTR(s->sec) && PIC32_IS_ABSOLUTE_ATTR(s->sec)
+               && (s->sec->linked == 1))
+      {
+          struct pic32_memory * mem_reg;
+          
+          mem_reg = pic32_add_shared_to_memory_list(shared_data_memory_blocks,
+                                            b->addr+b->offset, len, s->sec);
+          
+          if (pic32_debug)
+              printf("LG --- SECTION in shared_data_memory %s (0x%x - 0x%x)\n",
+                     s->sec->name, mem_reg->addr, mem_reg->size);
+      }
+#endif
       update_section_info(addr,s,region);
       create_remainder_blocks(free_blocks,b,len);
       remove_free_block(b);
@@ -754,7 +920,16 @@ locate_sections(unsigned int mask, unsigned int block,
 
   for (s = alloc_section_list; s != NULL; s = next) {
 
-    next = s->next;
+      next = s->next;
+      /* lghica co-resident */
+#if 1
+      if (s->sec && (PIC32_IS_DATA_ATTR(s->sec) || PIC32_IS_BSS_ATTR(s->sec))
+            && !PIC32_IS_ABSOLUTE_ATTR(s->sec) && (s->sec->linked == 1))
+      {
+          update_section_info(s->sec->lma, s, region);
+      }
+#endif
+      
     if (s->sec && (s->attributes & mask) &&
         ((s->attributes & block) == 0)) {
       bfd_vma len = s->sec->rawsize? s->sec->rawsize: s->sec->size;
@@ -801,8 +976,7 @@ locate_sections(unsigned int mask, unsigned int block,
       else {
           result |= locate_single_section(s, region);
         }
-    }
-
+      }
   }
   return result;
 } /* locate_sections() */
@@ -904,28 +1078,49 @@ select_free_block(struct pic32_section *s, unsigned int len) {
 
   const char *err_str1 = "Link Error: Could not allocate section";
 
-  struct pic32_memory *b;
+  struct pic32_memory *b = 0;
   bfd_vma option1, limit1;
   bfd_vma option2, limit2;
   bfd_boolean option1_valid, option2_valid;
-
+/* lghica co-resident */
+    unsigned int    opb = bfd_octets_per_byte (link_info.output_bfd);
+    bfd_vma         old_option1, new_option1;
+    bfd_vma         old_option2, new_option2;
+    
+    
   /*
    * If the section is absolute, call the static function
    */
-  if (PIC32_IS_ABSOLUTE_ATTR(s->sec)) {
-
-    b = pic32_static_assign_memory(free_blocks, len, s->sec->lma);
+  if (PIC32_IS_ABSOLUTE_ATTR(s->sec))
+  {
+          b = pic32_static_assign_memory(free_blocks, len, s->sec->lma);
     if (!b) {
         if ((s->sec->flags & SEC_NEVER_LOAD) ||
             (command_line.check_section_addresses == FALSE))
           /* OK, don't report as error */;
         else
-          einfo(_("%X %s \'%s\' at 0x%v\n"),
-                err_str1, s->sec->name, s->sec->lma);
+        {
+            einfo(_("%X %s \'%s\' at 0x%v SIZE %d\n"),
+                err_str1, s->sec->name, s->sec->lma, s->sec->size);
+        }
         return (struct pic32_memory *) NULL;
     } else
       return b;
   }
+#if 1
+    /* lghica co-resident shared but not linked yet!!! -  to check*/
+   else if (PIC32_IS_SHARED_ATTR(s->sec) && !PIC32_IS_ABSOLUTE_ATTR(s->sec))
+    {
+        if (pic32_debug && (s->sec->linked == 0))
+            printf("LG - is shared & abs %s\n", s->sec->name);
+        b = pic32_assign_shared_memory(shared_data_memory_blocks, len, s);
+        if (b)
+        {
+            s->sec->lma = b->addr;
+            return b;
+        }
+    }
+#endif
 
 #if 0
   /*
@@ -1010,7 +1205,36 @@ select_free_block(struct pic32_section *s, unsigned int len) {
         option1_valid = FALSE;  /* scanning forward won't help */
         break;
       }
-
+        
+      /* lghica co-resident */
+#if 1
+        /* this check is necessary for Co-resident applications */
+        /* to make sure persistent data is not over written at any time */
+        
+        if (PIC32_IS_PERSIST_ATTR(s->sec) || PIC32_IS_SHARED_ATTR(s->sec))
+        {
+            old_option1 = option1;
+            new_option1 = option1;
+            struct pic32_section *ls;
+            for (ls = alloc_section_list; ls != NULL; ls = ls->next)
+            {
+                if (ls->sec && (ls->sec->linked == 1))
+                {
+                    if (((ls->sec->lma <= old_option1)
+                         && (old_option1 < (ls->sec->lma + (ls->sec->rawsize / opb)))))
+                    {
+                        new_option1 = ls->sec->lma + (ls->sec->rawsize / opb);
+                        break;
+                    }
+                }
+            }
+            if (new_option1 != old_option1)
+                continue;
+            else
+                option1= new_option1;
+        }
+#endif
+        
       if (IS_LOCATE_OPTION(EXCLUDE_LOW_ADDR) &&
           !VALID_HIGH_ADDR(option1, len)) {
         option1 = exclude_addr - 1;  /* skip ahead */
@@ -1053,7 +1277,32 @@ select_free_block(struct pic32_section *s, unsigned int len) {
         if (pic32_debug)
           printf("    option2 aligned at %lx\n", option2);
 
-
+          /* lghica co-resident */
+#if 1
+          /* this check is necessary for Co-resident applications */
+          /* to make sure persistent data is not over written at any time */
+          if (PIC32_IS_PERSIST_ATTR(s->sec) || PIC32_IS_SHARED_ATTR(s->sec)) {
+              old_option2 = option2;
+              new_option2 = option2;
+              struct pic32_section *ls;
+              for (ls = alloc_section_list; ls != NULL; ls = ls->next)
+              {
+                  if (ls->sec && (ls->sec->linked == 1))
+                  {
+                      if (((ls->sec->lma <= old_option2)
+                           && (old_option2 < (ls->sec->lma + (ls->sec->rawsize / opb)))))
+                      {
+                          new_option2 = ls->sec->lma - len;
+                          break;
+                      }
+                  }
+              }
+              if (new_option2 != old_option2) 
+                  continue;
+              else
+                  option2= new_option2;
+          }
+#endif
         if  (PIC32_IS_NEAR_ATTR(s->sec)    && !VALID_NEAR(option2, len)) {
           option2 = NEAR_BOUNDARY - len + 1;  /* skip back */
           if (pic32_debug)
@@ -1237,12 +1486,23 @@ update_section_info(bfd_vma alloc_addr,
 
 
   if (pic32_debug)
-    printf("    creating output section statement \"%s\"\n\n", os->name);
+    printf("    creating output section statement 2\"%s\"\n\n", os->name);
 
   /* lang_add_section() will call init_os() if needed */
   lang_add_section (&os->children, s->sec, NULL, os);
 
   finish_section_info(s, os);
+    
+    ///\lghica coresident - make sections absolute sections - always
+    ///\ needed when bootloader is linked first
+    {
+            if(pic32_debug)
+                printf("LG Section %s set abs & linked", s->sec->name);
+
+            PIC32_SET_ABSOLUTE_ATTR(s->sec->output_section);
+            s->sec->output_section->linked = 1;
+    }
+    
   region = region;
 } /* update_section_info() */
 
@@ -1453,7 +1713,8 @@ build_free_block_list(struct memory_region_struct *region,
            region->name_list.name, region->origin, region->length, region->current );
 
   /* find any gaps left by sequential allocator */
-  dot = region->origin;
+        dot = region->origin;
+    
   limit = dot + region->length;
   for (s = pic32_section_list; s != NULL; s = s->next) {
 
@@ -1813,3 +2074,169 @@ allocate_user_memory() {
 
   return result;
 } /* allocate_user_memory() */
+
+
+// Coherent sections processing functions
+
+static void
+update_coherent_group_section_info(bfd_vma alloc_addr,
+                                   struct pic32_section *g,
+                                   unsigned int mask,
+                                   struct memory_region_struct *region ATTRIBUTE_UNUSED) {
+    
+    struct pic32_section *s, *next;
+    asection *sec;
+    char *name;
+    bfd_vma addr = alloc_addr;
+    lang_output_section_statement_type *os;
+    
+    /* create a unique name for the output section, if necessary */
+    sec = bfd_get_section_by_name(link_info.output_bfd, g->sec->name);
+    if (sec) {
+        name = ( g->sec->size > 0) ?
+        unique_section_name(g->sec->name) :
+        unique_zero_length_section_name(g->sec->name);
+    }
+    else {
+        name = (char *) g->sec->name;
+        if ( PIC32_IS_COHERENT_ATTR(g->sec) &&
+            ((g->attributes & mask) == (coherent|data))
+            )
+        {
+            strcpy(name, ".COHERENTDATA$");
+        }
+        else if ( PIC32_IS_COHERENT_ATTR(g->sec) &&
+                 ((g->attributes & mask) == (coherent|bss))
+                 )
+        {
+            strcpy(name, ".COHERENTBSS$");
+        }
+        else if ( PIC32_IS_COHERENT_ATTR(g->sec) &&
+                 ((g->attributes & mask) == (coherent|persist))
+                 )
+        {
+            strcpy(name, ".COHERENTPERSIST$");
+        }
+        else
+        {}
+    }
+    /* create an output section (statement) */
+    os = lang_output_section_statement_lookup (name, 0, TRUE);
+    
+    /* loop through the input sections in this group */
+    for (s = g; s != NULL; s = next) {
+        next = s->next;
+        if (s->sec && (PIC32_IS_COHERENT_ATTR(s->sec)) && ((s->attributes & mask) == mask) ) {
+            update_section_addr(s->sec, addr);
+            addr += (s->sec->size);
+            
+            /* lang_add_section() will call init_os() if needed */
+            lang_add_section (&os->children, s->sec, NULL, os);
+            
+        }
+    }
+    finish_section_info(g, os);
+} /* update_coherent_group_section_info() */
+
+
+
+static bfd_vma
+group_coherent_section_size(struct pic32_section *g, unsigned int mask)
+{
+    struct pic32_section *s,*next;
+    bfd_vma result = 0;
+    
+    for (s = g; s != NULL; s = next) {
+        next = s->next;
+        if (s->sec == 0)
+            continue;
+        if (s->sec && (PIC32_IS_COHERENT_ATTR(s->sec)) && ((s->attributes & mask) == mask))
+            result += s->sec->size;
+    }
+    return result;
+}
+
+static int
+locate_coherent_group_section(struct pic32_section *s,
+                              struct memory_region_struct *region, unsigned int mask) {
+    
+    struct pic32_memory *b;
+    bfd_vma len = 0;
+    bfd_vma addr = s->sec->lma;
+    int result = 0;
+    unsigned int pad_req;
+    
+    len = group_coherent_section_size(s, mask);
+    
+    // Set len to 16 byte padding.
+    pad_req = len%16 ;
+    if (pad_req)
+        len = len + (16-pad_req);
+    
+    
+    /* look for tricky user error */
+    if (PIC32_IS_ABSOLUTE_ATTR(s->sec) && ACROSS_REGION(addr, len, region))
+        einfo(_(" Link Warning: absolute section \'%s\' crosses"
+                " the boundary of region %s.\n"),
+              s->sec->name, region->name_list.name);
+    
+    if (len == 0)
+        update_coherent_group_section_info(0,s,mask,region); /* trivial case */
+    else if (PIC32_IS_ABSOLUTE_ATTR(s->sec) &&
+             OUTSIDE_REGION(addr, len, region)) {
+        update_coherent_group_section_info(addr,s,mask,region);  /* falls outside region */
+    }
+    else {                          /* locate using free_blocks list */
+        b = select_free_block(s, len);
+        if (b) {
+            addr = b->addr + b->offset;
+            /* Translate the address from kseg0 to kseg1 */
+            if (PIC32_IS_COHERENT_ATTR(s->sec))
+                addr |= 0x20000000u;
+            update_coherent_group_section_info(addr,s,mask,region);
+            create_remainder_blocks(free_blocks,b,len);
+            remove_free_block(b);
+        } else {
+            if (locate_options != NO_LOCATE_OPTION) {
+                return 0;
+            }
+            result |= 1;
+        }
+    }
+    
+    pic32_remove_coherent_group_from_section_list(alloc_section_list, mask);
+    
+    return result;
+} /* locate_group_section() */
+
+
+
+static int
+locate_coherent_sections (unsigned int mask,
+                          struct memory_region_struct *region) {
+    struct pic32_section *s,*next;
+    int result = 0;
+    
+    mask = coherent | mask ;
+    
+    for (s = alloc_section_list; s != NULL; s = next) {
+        next = s->next;
+        if (s->sec && (s->attributes & mask) == mask) {
+            bfd_vma len = s->sec->rawsize? s->sec->rawsize: s->sec->size;
+            
+            if (PIC32_IS_COHERENT_ATTR(s->sec)) {
+                if (coherent_section_count == 0) {
+                    // Set the alignment to cache line boundary (16 byte)
+                    s->sec->alignment_power = 4;
+                    coherent_section_count++;
+                    result |= locate_coherent_group_section(s, region, mask);
+                    if (s->sec->vma == 0)
+                    {
+                        report_allocation_error(s);
+                    }
+                }
+            }
+        }
+    }
+    return result;
+} /* locate_coherent_sections */

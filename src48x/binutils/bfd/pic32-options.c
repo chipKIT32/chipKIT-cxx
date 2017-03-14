@@ -51,6 +51,10 @@ gldelf32pic32mx_list_options (FILE * file)
   fprintf (file, _("  --report-mem         Report memory usage to console\n"));
   fprintf (file, _("  --smart-io           Merge I/O library functions (default)\n"));
   fprintf (file, _("  --no-smart-io        Don't merge I/O library functions\n"));
+  /* lghica co-resident */
+#if 0 /* Disable the co-resident feature for now */
+  fprintf (file, _("  --coresident         link for coresident application\n"));
+#endif
 } /* static void elf32pic32mx_list_options () */
 
 static void pic32_init_fill_option_list (struct pic32_fill_option **lst)
@@ -309,6 +313,45 @@ gldelf32pic32mx_parse_args (int argc, char ** argv)
       pic32_data_init = FALSE;
       pic32_has_data_init_option = TRUE;
       break;
+            /* lghica co-resident */
+    case MEMORY_USAGE:
+        pic32_memory_usage = TRUE;
+        break;
+            
+    case RESERVE_CONST: ///\ TODO
+        pic32_reserve_const = TRUE;
+        if (optarg)
+        {
+            if ((strstr(optarg, "0x") == 0) && (strstr(optarg, "0X") == 0))
+                reserve_const_arg = atol(optarg);
+            else
+                (void) sscanf(optarg, "%x", &reserve_const_arg);
+        }
+        break;
+    case PAD_FLASH:
+        pic32_pad_flash_option = TRUE;
+        if (optarg)
+        {
+            if ((strstr(optarg, "0x") == 0) && (strstr(optarg, "0X") == 0))
+                pad_flash_arg = atol(optarg);
+            else
+                (void) sscanf(optarg, "%x", &pad_flash_arg);
+        }
+        break;
+    case APPLICATION_ID:
+        pic32_application_id = TRUE;
+        application_id = optarg;
+        break;
+    case CORESIDENT:
+        pic32_coresident_app = TRUE;
+        break;
+    case INHERIT_APPLICATION_INFO:
+        pic32_inherit_application_info = TRUE;
+        inherited_application = optarg;
+        lang_add_input_file (optarg, lang_input_file_is_file_enum,
+                                 (char *) NULL);
+        break;
+            
 #ifdef TARGET_IS_PIC32MX
     case FILL_OPTION:
       pic32_process_fill_argument (optarg);
@@ -370,6 +413,8 @@ gldelf32pic32mx_parse_args (int argc, char ** argv)
       else
         (void) sscanf(optarg, "%x", &dinit_address);
       break;
+
+
 #endif /* TARGET_IS_PIC32MX */
     }
 

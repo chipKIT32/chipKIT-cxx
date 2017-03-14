@@ -378,10 +378,11 @@ extern void pic32_system_include_paths(const char *root, const char *system,
  %{fnofallback : -mno-fallback } \
  %{-nofallback : -mno-fallback } \
  %{!fasynchronous-unwind-tables : -fno-asynchronous-unwind-tables } \
- %{fdwarf2-cfi-asm : -fno-dwarf2-cfi-asm } \
+ %{!fdwarf2-cfi-asm : -fno-dwarf2-cfi-asm } \
  %{!mconfig-data-dir=* : -mconfig-data-dir= %J%s%{ mprocessor=* :./proc/%*; :./proc/32MXGENERIC}} \
  %{!ftoplevel-reorder : -fno-toplevel-reorder } \
  %{flto: %{!fno-fat-lto-objects: -ffat-lto-objects}} \
+ %{O2|Os|O3:%{!mno-hi-addr-opt:-mhi-addr-opt}} \
  %(mchp_cci_cc1_spec) \
  %(subtarget_cc1_spec) \
 "
@@ -390,6 +391,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
  %{!fenforce-eh-specs:-fno-enforce-eh-specs} \
  %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=gnu++11} -msmart-io=0 }} \
  %(subtarget_cc1plus_spec) \
+ %{O2|Os|O3:%{!mno-hi-addr-opt:-mhi-addr-opt}} \
 "
 
 /* Preprocessor specs.  */
@@ -754,13 +756,13 @@ extern void pic32_system_include_paths(const char *root, const char *system,
              ("__PIC32_PIN_COUNT",                          \
               pincount);                                    \
         }                                                   \
-        else if (strncmp (mchp_processor_string, "BT", 2) == 0)  { \
+        else if (strncmp (mchp_processor_string, "BT55", 2) == 0)  { \
         char *proc, *p;                                     \
         gcc_assert(strlen(mchp_processor_string) < 10);     \
         for (p = (char *)mchp_processor_string ; *p ; p++)  \
           *p = TOUPPER (*p);                                \
-        builtin_define ("__BT");                           \
-        builtin_define ("__BT__");                         \
+        builtin_define ("__BT55");                          \
+        builtin_define ("__BT55__");                        \
         proc = (char*)alloca (strlen (mchp_processor_string) + 6); \
         gcc_assert (proc!=NULL);                            \
         sprintf (proc, "__%s__", mchp_processor_string);    \
@@ -780,14 +782,16 @@ extern void pic32_system_include_paths(const char *root, const char *system,
         gcc_assert (strlen(proc)>0);                        \
         builtin_define (proc);                              \
         }                                                   \
-        else if (strncmp (mchp_processor_string, "MEC", 3) == 0)  { \
+        else if (strncmp (mchp_processor_string, "MEC14", 5) == 0)  { \
         char *proc, *p;                                     \
         gcc_assert(strlen(mchp_processor_string) < 10);     \
         for (p = (char *)mchp_processor_string ; *p ; p++)  \
           *p = TOUPPER (*p);                                \
         builtin_define ("__MEC");                           \
+        builtin_define ("__MEC14");                         \
         builtin_define ("__IPSWICH");                       \
         builtin_define ("__MEC__");                         \
+        builtin_define ("__MEC14__");                       \
         builtin_define ("__IPSWICH__");                     \
         proc = (char*)alloca (strlen (mchp_processor_string) + 6); \
         gcc_assert (proc!=NULL);                            \
@@ -825,6 +829,17 @@ extern void pic32_system_include_paths(const char *root, const char *system,
         for (p = (char *)mchp_processor_string ; *p ; p++)  \
           *p = TOUPPER (*p);                                \
         builtin_define_std ("PIC32WK");                     \
+        proc = (char*)alloca (strlen (mchp_processor_string) + 6); \
+        gcc_assert (proc!=NULL);                            \
+        sprintf (proc, "__%s__", mchp_processor_string);    \
+        gcc_assert (strlen(proc)>0);                        \
+        builtin_define (proc);                              \
+        }                                                   \
+        else {                                              \
+        char *proc, *p;                                     \
+        gcc_assert(strlen(mchp_processor_string) < 10);     \
+        for (p = (char *)mchp_processor_string ; *p ; p++)  \
+          *p = TOUPPER (*p);                                \
         proc = (char*)alloca (strlen (mchp_processor_string) + 6); \
         gcc_assert (proc!=NULL);                            \
         sprintf (proc, "__%s__", mchp_processor_string);    \
@@ -1036,6 +1051,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #define MCHP_KEEP_FLAG       MCHP_EXTENDED_FLAG "keep"      MCHP_EXTENDED_FLAG
 #define MCHP_COHERENT_FLAG   MCHP_EXTENDED_FLAG "coherent"  MCHP_EXTENDED_FLAG
 #define MCHP_REGION_FLAG     MCHP_EXTENDED_FLAG "region"    MCHP_EXTENDED_FLAG
+#define MCHP_CO_SHARED_FLAG  MCHP_EXTENDED_FLAG "shared"    MCHP_EXTENDED_FLAG
 
 #define MCHP_IS_NAME_P(NAME,IS) (strncmp(NAME, IS, sizeof(IS)-1) == 0)
 #define MCHP_HAS_NAME_P(NAME,HAS) (strstr(NAME, HAS))
@@ -1161,6 +1177,8 @@ extern void pic32_system_include_paths(const char *root, const char *system,
     { "crypto",           0, 0,  false, false, false, mchp_crypto_attribute, false },	      \
     { "unique_section",   0, 0,  true,  false, false, mchp_unique_section_attribute, false }, \
     { "region",           1, 1,  false, false, false, mchp_region_attribute, false },         \
+    { "function_replacement_prologue",  0, 0,  true, false,  false,  mchp_frp_attribute, false },        \
+    { "shared",           0, 0,  false, false, false, mchp_shared_attribute, false },         \
     /* prevent FPU usage in ISRs */                                                           \
     { "no_fpu",           0, 0,  false, true,  true,  NULL, false },
 

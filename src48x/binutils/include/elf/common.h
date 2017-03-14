@@ -653,6 +653,9 @@
 #define STB_GNU_UNIQUE	10		/* Symbol is unique in namespace */
 #define STB_HIOS	12		/* OS-specific semantics */
 #define STB_LOPROC	13		/* Processor-specific semantics */
+#if 1 /* lghica co-resident pic32 */
+#define STB_MIDPROC 14      /* Processor-specific semantics */
+#endif
 #define STB_HIPROC	15		/* Processor-specific semantics */
 
 #define STT_NOTYPE	0		/* Symbol type is unspecified */

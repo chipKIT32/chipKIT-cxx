@@ -3138,3 +3138,21 @@ with the -M switch (multiple options should be separated by commas):\n"));
 
   fprintf (stream, _("\n"));
 }
+
+
+#ifdef TARGET_IS_PIC32MX
+bfd_boolean
+pic32_symbol_is_valid (asymbol * sym,
+		     struct disassemble_info * info ATTRIBUTE_UNUSED)
+{
+  const char * name;
+  
+  if (sym == NULL)
+    return FALSE;
+
+  name = bfd_asymbol_name (sym);
+
+  return (name && strncmp(name, "L0\001", sizeof("L0\001")));
+}
+#endif
+
