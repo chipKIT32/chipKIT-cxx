@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- Copyright (C) 2010-2013 Free Software Foundation, Inc.
+
+     Copying and distribution of this file, with or without modification,
+     are permitted in any medium without royalty provided the copyright
+     notice and this notice are preserved.  -->
+
+<!DOCTYPE feature SYSTEM "gdb-target.dtd">
+<feature name="org.gnu.gdb.mips.fpu">
+  <vector id="msa128" type="ieee_double" count="2"/>
+
+  <reg name="f0" bitsize="128" type="msa128"/>
+  <reg name="f1" bitsize="128" type="msa128"/>
+  <reg name="f2" bitsize="128" type="msa128"/>
+  <reg name="f3" bitsize="128" type="msa128"/>
+  <reg name="f4" bitsize="128" type="msa128"/>
+  <reg name="f5" bitsize="128" type="msa128"/>
+  <reg name="f6" bitsize="128" type="msa128"/>
+  <reg name="f7" bitsize="128" type="msa128"/>
+  <reg name="f8" bitsize="128" type="msa128"/>
+  <reg name="f9" bitsize="128" type="msa128"/>
+  <reg name="f10" bitsize="128" type="msa128"/>
+  <reg name="f11" bitsize="128" type="msa128"/>
+  <reg name="f12" bitsize="128" type="msa128"/>
+  <reg name="f13" bitsize="128" type="msa128"/>
+  <reg name="f14" bitsize="128" type="msa128"/>
+  <reg name="f15" bitsize="128" type="msa128"/>
+  <reg name="f16" bitsize="128" type="msa128"/>
+  <reg name="f17" bitsize="128" type="msa128"/>
+  <reg name="f18" bitsize="128" type="msa128"/>
+  <reg name="f19" bitsize="128" type="msa128"/>
+  <reg name="f20" bitsize="128" type="msa128"/>
+  <reg name="f21" bitsize="128" type="msa128"/>
+  <reg name="f22" bitsize="128" type="msa128"/>
+  <reg name="f23" bitsize="128" type="msa128"/>
+  <reg name="f24" bitsize="128" type="msa128"/>
+  <reg name="f25" bitsize="128" type="msa128"/>
+  <reg name="f26" bitsize="128" type="msa128"/>
+  <reg name="f27" bitsize="128" type="msa128"/>
+  <reg name="f28" bitsize="128" type="msa128"/>
+  <reg name="f29" bitsize="128" type="msa128"/>
+  <reg name="f30" bitsize="128" type="msa128"/>
+  <reg name="f31" bitsize="128" type="msa128"/>
+
+  <reg name="fcsr" bitsize="32" group="float"/>
+  <reg name="fir"  bitsize="32" group="float"/>
+</feature>

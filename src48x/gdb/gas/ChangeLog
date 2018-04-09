@@ -1,0 +1,61 @@
+2015-01-12  Jan Beulich  <jbeulich@suse.com>
+
+	* gas/dw2gencfi.c (cfi_add_label, dot_cfi_label): New.
+	(cfi_pseudo_table): Add "cfi_label".
+	(output_cfi_insn): Handle CFI_label.
+	(select_cie_for_fde): Als terminate CIE when encountering
+	CFI_label.
+	* dw2gencfi.h (cfi_add_label): Declare.
+	(struct cfi_insn_data): New member "sym_name".
+	(CFI_label): New.
+	* read.c (read_symbol_name): Drop "static".
+	* read.h (read_symbol_name): Declare.
+
+2015-01-12  Jan Beulich  <jbeulich@suse.com>
+
+	* gas/config/tc-arm.c (do_neon_shl_imm): Check immediate range.
+	(do_neon_qshl_imm): Likewise.
+
+2015-01-12  Alan Modra  <amodra@gmail.com>
+
+	* read.c (s_altmacro, s_reloc): Make definition static.
+
+2015-01-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* config/tc-avr.c (md_apply_fix): Update the contents of VALP for
+	diff fixups.
+
+2015-01-09  Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/tc-arm.c (arm_cpus): Add support for APM X-Gene 1 and
+	X-Gene 2.
+	* doc/c-arm.texi (ARM Options): Mention xgene1 and xgene2.
+
+2015-01-07  Jan Beulich <jbeulich@suse.com>
+
+	* config/tc-arm.c (struct arm_option_extension_value_table):
+	Split field "value" into fields "merge_value" and "clear_value".
+	(arm_extensions): Adjust initializer accordingly.
+
+2015-01-01  Alan Modra  <amodra@gmail.com>
+
+	* as.c (parse_args): Just print current year.
+
+2015-01-01  Alan Modra  <amodra@gmail.com>
+
+	Update year range in copyright notice of all files.
+
+For older changes see ChangeLog-2014
+
+Copyright (C) 2015 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Local Variables:
+mode: change-log
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

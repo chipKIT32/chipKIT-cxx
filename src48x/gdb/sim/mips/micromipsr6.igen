@@ -1,0 +1,871 @@
+// Simulator definition for the micromips ASE.
+// Copyright (C) 2005-2014 Free Software Foundation, Inc.
+// Contributed by Imagination Technologies, Ltd.
+// Written by Ali Lown <ali.lown@imgtec.com>
+//
+// This file is part of GDB, the GNU debugger.
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+010101,5.FS,5.FD,00000,2.FMT,000100000:R6POOL32F:32,f::RINT.fmt
+"rint.%s<FMT> f<FD>, f<FS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_rint (SD_, FD, FS, FMT, instruction_0);
+}
+
+010101,5.FS,5.FD,00000,2.FMT,001100000:R6POOL32F:32,f::CLASS.fmt
+"class.%s<FMT> f<FD>, f<FS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_class (SD_, FD, FS, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,000000011:R6POOL32F:32,f::MIN.fmt
+"min.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_min (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,000001011:R6POOL32F:32,f::MAX.fmt
+"max.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_max (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,000100011:R6POOL32F:32,f::MINA.fmt
+"mina.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_mina (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,000101011:R6POOL32F:32,f::MAXA.fmt
+"maxa.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_maxa (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,110111000:R6POOL32F:32,f::MADDF.fmt
+"maddf.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_maddf (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,111111000:R6POOL32F:32,f::MSUBF.fmt
+"msubf.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_msubf (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,5.R6COND,0,1.FMT,0101:R6POOL32F:32,f::CMP.cond.fmt
+"cmp.%s<R6COND>.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_cmp (SD_, FD, FS, FT, FMT, R6COND);
+}
+
+010000,01000,5.FT,16.OFFSET:R6POOL32I:32,f::BC1EQZC
+"bc1eqzc f<FT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  check_fpu (SD_);
+  if ((FGR[FT] & 0x01) == 0)
+    NIA = NIA + (EXTEND16 (OFFSET) << 1);
+}
+
+010000,01001,5.FT,16.OFFSET:R6POOL32I:32,f::BC1NEZC
+"bc1nezc f<FT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  check_fpu (SD_);
+  if ((FGR[FT] & 0x01) != 0)
+    NIA = NIA + (EXTEND16 (OFFSET) << 1);
+}
+
+010000,0101,1.EQ,5.RT,16.OFFSET:R6POOL32I:32,f::BC2xxZC
+"bc2eqzc f<RT>":EQ==1
+"bc2nezc f<RT>"
+*micromips32r6:
+*micromips64r6:
+
+010101,5.FT,5.FS,5.FD,2.FMT,010111000:R6POOL32F:32,f::SEL.fmt
+"sel.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_self (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,000111000:R6POOL32F:32,f::SELEQZ.fmt
+"seleqz.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_seleqzf (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+010101,5.FT,5.FS,5.FD,2.FMT,001111000:R6POOL32F:32,f::SELNEZ.fmt
+"selnez.%s<FMT> f<FD>, f<FS>, f<FT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_selnezf (SD_, FD, FS, FT, FMT, instruction_0);
+}
+
+000000,5.RT,5.RS,5.RD,0,0101000000:R6POOL32A:32::SELEQZ
+"seleqz r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_seleqz (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0110000000:R6POOL32A:32::SELNEZ
+"selnez r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_selnez (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0000011000:R6POOL32A:32::MUL
+"mul r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_mul (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0001011000:R6POOL32A:32::MUH
+"muh r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_muh (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0010011000:R6POOL32A:32::MULU
+"mulu r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_mulu (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0011011000:R6POOL32A:32::MUHU
+"muhu r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_muhu (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0100011000:R6POOL32A:32::DIV
+"div r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_div (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0101011000:R6POOL32A:32::MOD
+"mod r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_mod (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0110011000:R6POOL32A:32::DIVU
+"divu r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_divu (SD_, RD, RS, RT);
+}
+
+000000,5.RT,5.RS,5.RD,0,0111011000:R6POOL32A:32::MODU
+"modu r<RD>, r<RS>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_modu (SD_, RD, RS, RT);
+}
+
+010110,5.RT,5.RS,5.RD,0,0000011000:R6POOL32A:64::DMUL
+"dmul r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmul (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0001011000:R6POOL32A:64::DMUH
+"dmuh r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmuh (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0010011000:R6POOL32A:64::DMULU
+"dmulu r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmulu (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0011011000:R6POOL32A:64::DMUHU
+"dmuhu r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmuhu (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0100011000:R6POOL32A:64::DDIV
+"ddiv r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_ddiv (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0101011000:R6POOL32A:64::DMOD
+"dmod r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmod (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0110011000:R6POOL32A:64::DDIVU
+"ddivu r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_ddivu (SD_, RD, RS, RT, instruction_0);
+}
+
+010110,5.RT,5.RS,5.RD,0,0111011000:R6POOL32A:64::DMODU
+"dmodu r<RD>, r<RS>, r<RT>"
+*micromips64r6:
+{
+  do_dmodu (SD_, RD, RS, RT, instruction_0);
+}
+
+011101,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::BxxxC
+"bovc r<RS>, r<RT>, <OFFSET>":RS>=RT
+"beqzalc r<RT>, <OFFSET>":RS==0&&RT>RS
+"beqc r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_bxxxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+011111,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::BNxxxC
+"bnvc r<RS>, r<RT>, <OFFSET>":RS>=RT
+"bnezalc r<RT>, <OFFSET>":RS==0&&RT>RS
+"bnec r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_bnxxxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+111101,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::B1xxC
+"blezc r<RT>, <OFFSET>": RS==0&&RT!=0
+"bgezc r<RT>, <OFFSET>":RS!=0&&RS==RT
+"bgec r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_b1xxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+110101,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::B2xxC
+"bgtzc r<RT>, <OFFSET>":RS==0&&RT!=0
+"bltzc r<RT>, <OFFSET>":RS!=0&&RS==RT
+"bltc r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_b2xxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+110000,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::B3xxC
+"blezalc r<RT>, <OFFSET>":RS==0
+"bgezalc r<RT>, <OFFSET>":RS!=0&&RS==RT
+"bgeuc r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_b3xxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+111000,5.RT,5.RS,16.OFFSET:MICROMIPSR6:32::B4xxC
+"bgtzalc r<RT>, <OFFSET>":RS==0
+"bltzalc r<RT>, <OFFSET>":RS!=0&&RS==RT
+"bltuc r<RS>, r<RT>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_b4xxc (SD_, RT, RS, EXTEND16 (OFFSET) << 1, NIA);
+}
+
+100101,26.OFFSET:MICROMIPSR6:32::BC
+"bc <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_bc (SD_, EXTEND26 (OFFSET) << 1);
+}
+
+101101,26.OFFSET:MICROMIPSR6:32::BALC
+"balc <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_balc (SD_, EXTEND26 (OFFSET) << 1);
+}
+
+100000,5.RS!0,21.OFFSET:MICROMIPSR6:32::BEQZC
+"beqzc r<RS>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_beqzc (SD_, RS, EXTEND21 (OFFSET) << 1, NIA);
+}
+
+100000,00000,5.RT,16.OFFSET:MICROMIPSR6:32::JIC
+"jic <OFFSET>(r<RT>)"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_jic (SD_, RT, OFFSET);
+}
+
+101000,5.RS!0,21.OFFSET:MICROMIPSR6:32::BNEZC
+"bnezc r<RS>, <OFFSET>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_bnezc (SD_, RS, EXTEND21 (OFFSET) << 1, NIA);
+}
+
+101000,00000,5.RT,16.OFFSET:MICROMIPSR6:32::JIALC
+"jialc <OFFSET>(r<RT>)"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_jialc (SD_, RT, OFFSET);
+}
+
+000000,5.RT,5.RS,5.RD,2.IMMEDIATE,000,011111:R6POOL32A:32::ALIGN
+"align r<RD>, r<RS>, r<RT>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_align (SD_, RD, RS, RT, IMMEDIATE);
+}
+
+010110,5.RT,5.RS,5.RD,3.IMMEDIATE,00,011100:R6POOL32S:64::DALIGN
+"dalign r<RD>, r<RS>, r<RT>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_dalign (SD_, RD, RS, RT, IMMEDIATE);
+}
+
+000000,5.RT,5.RD,0000101100,111100:R6POOL32AXf:32::BITSWAP
+"bitswap r<RD>, r<RT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_bitswap (SD_, RD, RT);
+}
+
+010110,5.RT,5.RD,0000101100,111100:R6POOL32SXf:64::DBITSWAP
+"dbitswap r<RD>, r<RT>"
+*micromips64r6:
+{
+  do_dbitswap (SD_, RD, RT);
+}
+
+000000,5.RT,5.RS,5.RD,2.IMM,000,001111:R6POOL32A:32::LSA
+"lsa r<RD>, r<RS>, r<RT>, <IMM + 1>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_lsa (SD_, RD, RS, RT, IMM);
+}
+
+010110,5.RT,5.RS,5.RD,2.IMM,100001000:R6POOL32S:64::DLSA
+"dlsa r<RD>, r<RS>, r<RT>, <IMM + 1>"
+*micromips64r6:
+{
+  do_dlsa (SD_, RD, RS, RT, IMM);
+}
+
+000100,5.RT,5.RS,16.IMMEDIATE:MICROMIPSR6:32::AUI
+"lui r<RT>, <IMMEDIATE>":RS==0
+"aui r<RT>, r<RS>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_aui (SD_, RT, RS, IMMEDIATE);
+}
+
+111100,5.RT,5.RS,16.IMMEDIATE:MICROMIPSR6:64::DAUI
+"daui r<RS>, r<RT>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_daui (SD_, RT, RS, IMMEDIATE);
+}
+
+010000,10001,5.RS,16.IMMEDIATE:R6POOL32I:64::DAHI
+"dahi r<RS>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_dahi (SD_, RS, IMMEDIATE);
+}
+
+010000,10000,5.RS,16.IMMEDIATE:R6POOL32I:64::DATI
+"dati r<RS>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_dati (SD_, RS, IMMEDIATE);
+}
+
+011110,5.RT,00,19.IMMEDIATE:MICROMIPSR6:32::ADDIUPC
+"addiupc r<RT>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_addiupc (SD_, RT, IMMEDIATE);
+}
+
+011110,5.RT,11110,16.IMMEDIATE:MICROMIPSR6:32::AUIPC
+"auipc r<RT>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_auipc (SD_, RT, IMMEDIATE);
+}
+
+011110,5.RT,11111,16.IMMEDIATE:MICROMIPSR6:32::ALUIPC
+"aluipc r<RT>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_aluipc (SD_, RT, IMMEDIATE);
+}
+
+011110,5.RT,01,19.IMMEDIATE:MICROMIPSR6:32::LWPC
+"lwpc r<RT>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_lwpc (SD_, RT, IMMEDIATE);
+}
+
+011110,5.RT,10,19.IMMEDIATE:MICROMIPSR6:64::LWUPC
+"lwupc r<RT>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_lwupc (SD_, RT, IMMEDIATE);
+}
+
+011110,5.RT,110,18.IMMEDIATE:MICROMIPSR6:64::LDPC
+"ldpc r<RT>, <IMMEDIATE>"
+*micromips64r6:
+{
+  do_ldpc (SD_, RT, IMMEDIATE);
+}
+
+010000,01100,5.BASE,16.IMMEDIATE:R6POOL32I:32::SYNCI
+"synci <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+
+010001,3.RT,3.RS,0000:R6POOL16C:16::NOT16
+"not16 r<TRT>, r<TRS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_nor (SD_, 0, TRS, TRT);
+}
+
+010001,3.RT,3.RS,1000:R6POOL16C:16::XOR16
+"xor16 r<TRT>, r<TRS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_xor (SD_, TRS, TRT, TRT);
+}
+
+010001,3.RT,3.RS,0001:R6POOL16C:16::AND16
+"and16 r<TRT>, r<TRS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_and (SD_, TRS, TRT, TRT);
+}
+
+010001,3.RT,3.RS,1001:R6POOL16C:16::OR16
+"or16 r<TRT>, r<TRS>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_or (SD_, TRS, TRT, TRT);
+}
+
+010001,2.LWMREGS,4.IMMEDIATE,0010:R6POOL16C:16::LWM16
+"lwm16 %s<LWMREGS>, <IMM_SHIFT_2BIT>(sp)"
+*micromips32r6:
+*micromips64r6:
+{
+  do_lwm16 (SD_, LWMREGS, IMM_SHIFT_2BIT);
+}
+
+010001,2.LWMREGS,4.IMMEDIATE,1010:R6POOL16C:16::SWM16
+"swm16 %s<LWMREGS>, <IMM_SHIFT_2BIT>(sp)"
+*micromips32r6:
+*micromips64r6:
+{
+  do_swm16 (SD_, LWMREGS, IMM_SHIFT_2BIT);
+}
+
+010001,5.RS,00011:R6POOL16C:16::JRC16
+"jrc16 r<RS>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = process_isa_mode (SD_, GPR[RS]);
+}
+
+010001,5.RS,01011:R6POOL16C:16::JALRC16
+"jalrc16 r<RS>"
+*micromips32r6:
+*micromips64r6:
+{
+  RA = NIA | ISA_MODE_MICROMIPS;
+  NIA = process_isa_mode (SD_, GPR[RS]);
+}
+
+
+110011,10.IMMEDIATE:R6MICROMIPS:16::BC16
+"bc16 <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = NIA + (EXTEND10 (IMMEDIATE) << 1);
+}
+
+100011,3.RS,7.IMMEDIATE:R6MICROMIPS:16::BEQZC16
+"beqzc16 r<TRS>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_beqzc (SD_, TRS, EXTEND7 (IMMEDIATE) << 1, NIA);
+}
+
+101011,3.RS,7.IMMEDIATE:R6MICROMIPS:16::BNEZC16
+"bnezc16 r<TRS>, <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_bnezc (SD_, TRS, EXTEND7 (IMMEDIATE) << 1, NIA);
+}
+
+:function:::address_word:do_micromips_jalrc:int rt, int rs, address_word nia
+*micromips32r6:
+*micromips64r6:
+{
+  if (rs == rt)
+    Unpredictable ();
+
+  GPR[rt] = nia | ISA_MODE_MICROMIPS;
+  return process_isa_mode (SD_, GPR[rs]);
+}
+
+000000,5.RT!0,5.RS,0000111100,111100:R6POOL32A:32::JALRC
+"jalrc <RS>":RT==31
+"jalrc r<RT>, r<RS>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_micromips_jalrc (SD_, RT, RS, NIA);
+}
+
+000000,00000,5.RS,0000111100,111100:R6POOL32A:32::JRC
+"jrc <RS>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = process_isa_mode (SD_, GPR[RS]);
+}
+
+000000,5.RT,5.RS,0001111100,111100:R6POOL32A:32::JALRC.HB
+"jalrc.hb r<RS>":RT==31
+"jalrc.hb r<RT>, r<RS>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_micromips_jalrc (SD_, RT, RS, NIA);
+}
+
+001000,5.RT,5.BASE,10100,11.IMMEDIATE:R6POOL32B:32::SDC2
+"sdc2 r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+
+
+001000,5.RT,5.BASE,00100,11.IMMEDIATE:R6POOL32B:32::LDC2
+"ldc2 r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+
+
+001000,5.RT,5.BASE,10000,11.IMMEDIATE:R6POOL32B:32::SWC2
+"swc2 r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+
+
+001000,5.RT,5.BASE,00000,11.IMMEDIATE:R6POOL32B:32::LWC2
+"lwc2 r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+
+
+011000,5.RT,5.BASE,0111000,9.OFFSET:R6POOL32C:64::LLD
+"lld r<RT>, <OFFSET>(r<BASE>)"
+*micromips64r6:
+{
+  check_u64 (SD_, instruction_0);
+  do_lld (SD_, RT, OFFSET, BASE);
+}
+
+
+011000,5.RT,5.BASE,1111000,9.OFFSET:R6POOL32C:64::SCD
+"scd r<RT>, <OFFSET>(r<BASE>)"
+*micromips64r6:
+{
+  check_u64 (SD_, instruction_0);
+  do_scd (SD_, RT, OFFSET, BASE, 1);
+}
+
+
+011000,5.RT,5.BASE,1011000,9.IMMEDIATE:R6POOL32C:32::SC
+"sc r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  do_sc (SD_, RT, EXTEND9 (IMMEDIATE), BASE, instruction_0, 1);
+}
+
+
+011000,5.RT,5.BASE,0011000,9.IMMEDIATE:R6POOL32C:32::LL
+"ll r<RT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  do_ll (SD_, RT, EXTEND9 (IMMEDIATE), BASE);
+}
+
+011000,5.RT,5.BASE,0101000,5.RD,0000:R6POOL32C:64::LLDP
+"lldp r<RT>, r<RD>, (r<BASE>)"
+*micromips64r6:
+{
+  int first, second;
+  int offset;
+
+  check_u64 (SD_, instruction_0);
+
+  if (RT == BASE)
+  {
+    first = RD;
+    second = RT;
+    offset = BigEndianCPU ? 0 : 8;
+  }
+  else
+  {
+    first = RT;
+    second = RD;
+    offset = BigEndianCPU ? 8 : 0;
+  }
+
+  do_lld (SD_, first, offset, BASE);
+  do_lld (SD_, second, offset^8, BASE);
+}
+
+
+011000,5.RT,5.BASE,1101000,5.RD,0000:R6POOL32C:64::SCDP
+"scdp r<RT>, r<RD>, (r<BASE>)"
+*micromips64r6:
+{
+  int offset = BigEndianCPU ? 0 : 8;
+  check_u64 (SD_, instruction_0);
+
+  do_scd (SD_, RD, offset, BASE, 0);
+  do_scd (SD_, RT, offset^8, BASE, 1);
+}
+
+
+011000,5.RT,5.BASE,1001000,5.RD,0000:R6POOL32C:32::SCWP
+"scwp r<RT>, r<RD>, (r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  int offset = BigEndianCPU ? 0 : 4;
+
+  do_sc (SD_, RD, offset, BASE, instruction_0, 0);
+  do_sc (SD_, RT, offset^4, BASE, instruction_0, 1);
+}
+
+
+011000,5.RT,5.BASE,0001000,5.RD,0000:R6POOL32C:32::LLWP
+"llwp r<RT>, r<RD>, (r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  int first, second;
+  int offset;
+
+  if (RT == BASE)
+  {
+    first = RD;
+    second = RT;
+    offset = BigEndianCPU ? 0 : 4;
+  }
+  else
+  {
+    first = RT;
+    second = RD;
+    offset = BigEndianCPU ? 4 : 0;
+  }
+
+  do_ll (SD_, first, offset, BASE);
+  do_ll (SD_, second, offset^4, BASE);
+}
+
+
+001000,5.OP,5.BASE,0110000,9.IMMEDIATE:R6POOL32B:32::CACHE
+"cache <OP>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  address_word base = GPR[BASE];
+  address_word offset = EXTEND9 (IMMEDIATE);
+  address_word vaddr = loadstore_ea (SD_, base, offset);
+  address_word paddr;
+  int uncached;
+  if (AddressTranslation (vaddr, isDATA, isLOAD, &paddr, &uncached,
+			  isTARGET, isREAL))
+    CacheOp (OP, vaddr, paddr, instruction_0);
+}
+
+
+011000,5.HINT,5.BASE,0010000,9.IMMEDIATE:R6POOL32C:32::PREF
+"pref <HINT>, <IMMEDIATE>(r<BASE>)"
+*micromips32r6:
+*micromips64r6:
+{
+  do_pref (SD_, HINT, EXTEND9 (IMMEDIATE), BASE);
+}
+
+
+000001,3.RS,3.RT,3.RD,1:R6POOL16A:16::SUBU16
+"subu16 r<TRD>, r<TRS>, r<TRT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_subu (SD_, TRS, TRT, TRD);
+}
+
+000001,3.RS,3.RT,3.RD,0:R6POOL16A:16::ADDU16
+"addu16 r<TRD>, r<TRS>, r<TRT>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_addu (SD_, TRS, TRT, TRD);
+}
+
+010001,3.DESTREGS,3.RT,1.RST,1,2.RSB:R6POOL16C:16::MOVEP
+"movep %s<DESTREGS> r<ERS_SPLIT>, r<ERT>"
+*micromips32r6:
+*micromips64r6:
+{
+  int rd;
+  int re;
+  int dest = DESTREGS;
+
+  if (dest == 0 || dest == 1)
+    rd = 5;
+  else if (dest == 2)
+    rd = 6;
+  else
+    rd = 4;
+
+  if (dest == 0 || dest == 6)
+    re = 6;
+  else if (dest == 1 || dest == 2 || dest == 7)
+    re = 7;
+  else if (dest == 3)
+    re = 21;
+  else if (dest == 4)
+    re = 22;
+  /* assume dest is 5 */
+  else
+    re = 5;
+
+  GPR[rd] = GPR[ERS_SPLIT];
+  GPR[re] = GPR[ERT];
+}
+
+010001,5.IMMEDIATE,10011:R6POOL16C:16::JRCADDIUSP16
+"jrcaddiusp16 <IMMEDIATE>"
+*micromips32r6:
+*micromips64r6:
+{
+  NIA = do_jraddiusp (SD_, IMMEDIATE);
+}
+
+010001,4.CODE,011011:R6POOL16C:16::BREAK16
+"break16 %#lx<CODE>"
+*micromips32r6:
+*micromips64r6:
+{
+  do_break (SD_, instruction_0);
+}
+
+010001,4.CODE,111011:R6POOL16C:16::SDBBP16
+"sdbbp16 %#lx<CODE>"
+*micromips32r6:
+*micromips64r6:
+{
+  SignalException (DebugBreakPoint, instruction_0);
+}

@@ -1,0 +1,129 @@
+2015-01-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* dwarf.c (process_debug_info): Properly check abbrev size.
+
+2015-01-12  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17531
+	* dwarf.c (process_debug_info): Check for abbrev_base being larger
+	than the section size.
+	(process_cu_tu_index): Use xcalloc2 to allocate the CU and TU
+	arrays.
+	(xcalloc2): New function.  Like xcalloc, but checks for overflow.
+	(display_debug_addr): Use xcalloc to allocate the debug_addr_info
+	array.  Check for an address_base that is too large.
+
+	* dwarf.h (xcalloc2): Prototype.
+
+2015-01-12  Alan Modra  <amodra@gmail.com>
+
+	* prdbg.c (print_debugging_info): Don't use void* for function
+	pointer param.
+	* budbg.h (print_debugging_info): Update prototype.
+
+2015-01-08  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17512
+	* ojcopy.c (copy_object): Free the symbol table if no symbols
+	could be loaded.
+	(copy_file): Use bfd_close_all_done to close files that could not
+	be copied.
+
+	* sysdump.c (getINT): Fail if reading off the end of the buffer.
+	Replace call to abort with a call to fatal.
+	(getCHARS): Prevetn reading off the end of the buffer.
+
+	* nlmconv.c (i386_mangle_relocs): Skip relocs without an
+	associated symbol.
+	(powerpc_mangle_relocs): Skip unrecognised relocs.  Check address
+	range before applying a reloc.
+
+2015-01-07  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17512
+	* dlltool.c (scan_obj_file): Break loop if the last archive
+	displayed matches the current archive.
+
+	* objdump.c (display_any_bfd): Add a depth limit to nested archive
+	display in order to avoid infinite loops.
+	* srconv.c: Replace calls to abort with calls to fatal with an
+	error message.
+
+2015-01-06  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17512
+	* coffdump.c (dump_coff_section): Check for a symbol being
+	available before printing its name.
+	(main): Check the return value from coff_grok.
+	* coffgrok.c: Reformat and tidy.
+	Add range checks to most functions.
+	(coff_grok): Return NULL if the input bfd is not in a COFF
+	format.
+	* coffgrok.h: Reformat and tidy.
+	(struct coff_section): Change the nrelocs field to unsigned.
+	* srconv.c (main): Check the return value from coff_grok.
+
+2015-01-05  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17512
+	* nm.c (print_symbol): Add 'is_synthetic' parameter.  Use it to
+	help initialize the info.elfinfo field.
+	(print_size_symbols): Add 'synth_count' parameter.  Use it to set
+	the is_synthetic parameter when calling print_symbol.
+	(print_symbols): Likewise.
+	(display_rel_file): Pass synth_count to printing function.
+	(display_archive): Break loop if the last archive displayed
+	matches the current archive.
+	* size.c (display_archive): Likewise.
+
+2015-01-05  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/17531
+	* dwarf.c (alloc_num_debug_info_entries): New variable.
+	(process_debug_info): Set it.  Use it to avoid displaying
+	attributes for which there is no info.
+	(display_debug_abbrev): Check that the debug_info_entry index is
+	valid before using it.
+	(display_loc_list_dwo): Likewise.
+	(process_cu_tu_index): Add range check for an overlarge dw_sect
+	value.
+	(free_debug_memory): Reset alloc_num_debug_info_entries.
+	* readelf.c (slurp_ia64_unwind_table): Warn if the reloc could not
+	be indentified.
+	(dynamic_section_mips_val): Warn if the timestamp is invalid.
+	(print_mips_got_entry): Add a data_end parameter.  Warn if a read
+	would go beyond the end of the data, and return an error value.
+	(process_mips_specific): Do not read options from beyond the end
+	of the section.
+	Correct code to display optional data at the end of an option.
+	Warn if there are too many GOT symbols.
+	Update calls to print_mips_got_entry, and handle error returns.
+
+2015-01-05  Daniel Klauer  <daniel.c.klauer@web.de>
+
+	PR binutils/17489
+	* doc/binutils.texi (dlltool): Correct description of --kill-at
+	option.
+
+2015-01-01  Alan Modra  <amodra@gmail.com>
+
+	* version.c (print_version): Just print current year.
+
+2015-01-01  Alan Modra  <amodra@gmail.com>
+
+	Update year range in copyright notice of all files.
+
+For older changes see ChangeLog-2014
+
+Copyright (C) 2015 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Local Variables:
+mode: change-log
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

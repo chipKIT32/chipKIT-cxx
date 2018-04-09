@@ -1,0 +1,38 @@
+2015-01-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/17827
+	* ld-x86-64/pr17689.out: Updated.
+	* ld-x86-64/pr17689b.S: Likewise.
+
+	* ld-x86-64/pr17827.rd: New file.
+
+	* ld-x86-64/x86-64.exp: Run PR ld/17827 test.
+
+2015-01-08  Jan Beulich  <jbeulich@suse.com>
+
+	* ld-x86-64/pr14207.d: Adjust expecations to cover the
+	enable_initfini_array=no case.
+
+2015-01-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* lib/ld-lib.exp (run_dump_test): Extend comment to mention
+	readelf.
+
+2015-01-01  Alan Modra  <amodra@gmail.com>
+
+	Update year range in copyright notice of all files.
+
+For older changes see ChangeLog-2014
+
+Copyright (C) 2015 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
+
+Local Variables:
+mode: change-log
+left-margin: 8
+fill-column: 74
+version-control: never
+End:
