@@ -1,0 +1,65 @@
+# Copyright (C) 2016 Free Software Foundation, Inc.
+
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <http://www.gnu.org/licenses/>.
+
+# Test single-step over LL/SC sequence.
+
+set board [target_info name]
+if { $board == "mips-sim-llsc" } {
+    # For simulator runs, skip linking libm and provide skeletal
+    # start & exit routines
+    set_board_info mathlib ""
+    set srcsim "${srcdir}/${subdir}/mips-sim.s"
+}
+
+proc dotest {testfile arch {isa ""}} {
+    global objdir
+    global subdir
+    global srcdir
+    global inferior_exited_re
+    global srcsim
+    set srcfile "${srcdir}/${subdir}/${testfile}.s"
+    set binfile "${objdir}/${subdir}/${testfile}"
+    set archopt additional_flags=-${arch}
+    if { $isa != "" } {
+	lappend archopt -m$isa
+	append arch @$isa
+    }
+
+    if  { [gdb_compile "${srcsim} ${srcfile}" "${binfile}" executable \
+	       [list debug nowarning ${archopt}] ] != "" } {
+	fail "$testfile@$arch compile"
+	return
+    }
+
+    pass "$testfile@$arch compile"
+    gdb_exit
+    gdb_start
+    gdb_reinitialize_dir $srcdir/$subdir
+    gdb_file_cmd ${binfile}
+    runto_main
+    gdb_test  "stepi 100" ".*$inferior_exited_re normally.*" "$testfile@$arch exec"
+}
+
+proc dotest_archs {testfile archs} {
+    foreach arch $archs {
+	dotest $testfile $arch
+	dotest $testfile $arch micromips
+    }
+}
+
+dotest_archs "mips-llsc" {mips32r2 mips64r2 mips32r6 mips64r6}
+dotest_archs "mips-llsc-d" {mips64r2 mips64r6}
+dotest_archs "mips-llsc-wp" {mips32r6 mips64r6}
+dotest_archs "mips-llsc-dp" {mips64r6}
