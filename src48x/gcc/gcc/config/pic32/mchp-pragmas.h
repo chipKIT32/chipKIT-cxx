@@ -67,4 +67,7 @@ extern struct interrupt_pragma_spec *interrupt_pragma_list_head;
 
 void mchp_add_vector_dispatch_entry (const char *,int,bool,enum pic32_isa_mode,int);
 
+extern int mchp_pragma_nocodecov;
+extern void mchp_handle_nocodecov_pragma (struct cpp_reader *pfile);
+
 #endif

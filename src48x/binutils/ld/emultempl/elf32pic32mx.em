@@ -711,7 +711,8 @@ mips_after_parse (void)
       link_info.emit_hash = TRUE;
       link_info.emit_gnu_hash = FALSE;
     }
-  link_info.allow_multiple_definition = TRUE;
+  if (pic32_coresident_app)
+    link_info.allow_multiple_definition = TRUE;
   after_parse_default ();
 }
 
@@ -1361,8 +1362,8 @@ bfd_pic32_collect_section_size (s, region )
   unsigned long actual = s->sec->size;
 
   if (PIC32_IS_COHERENT_ATTR(s->sec)) {
-    start &= 0xdfffffff;
-    load &= 0xdfffffff;
+    start &= 0xbfffffff;
+    load &= 0xbfffffff;
   }
     
   /*
@@ -1762,8 +1763,8 @@ bfd_pic32_report_sections (s, region, magic_sections, fp)
   size_t name_len = 0;
 
   if (PIC32_IS_COHERENT_ATTR(s->sec)) {
-    start &= 0xdfffffff;
-    load &= 0xdfffffff;
+    start &= 0xbfffffff;
+    load &= 0xbfffffff;
   }
     
   /*
@@ -2916,9 +2917,7 @@ gldelf32pic32mx_place_orphan (lang_input_statement_type *file,
     if (!unassigned_sections)
       pic32_init_section_list(&unassigned_sections);
 
-    /* co-resident lghica */
-    if ( (sec->flags & SEC_NEVER_LOAD) == 0)
-        pic32_append_section_to_list(unassigned_sections, file, sec);
+    pic32_append_section_to_list(unassigned_sections, file, sec);
 
     return 1;  /* and exit */
   }
@@ -3653,17 +3652,17 @@ pic32_strip_sections (abfd)
   if ((sec == NULL) || (sec->next == NULL))
     return;
 
-  if (sec->flags & (SEC_KEEP | SEC_LINKER_CREATED))
-    return; 
-    
-  prev = sec;
   sec = sec->next; /* never strip the first section */
   /* loop through the sections in this bfd */
   for (; sec != NULL; sec = sec->next)
     {
+      /* don't touch the keep/linker created sections */
+      if (sec->flags & (SEC_KEEP | SEC_LINKER_CREATED))
+        continue;
       /* remove sections with size = 0 */
       if (sec->size == 0)
       {
+        prev = sec->prev;
         prev->next = sec->next;
         if (sec->next)
           sec->next->prev = prev; 
@@ -3674,12 +3673,11 @@ pic32_strip_sections (abfd)
         abfd->section_count -= 1;
         if (pic32_debug)
           printf("  Stripping section %s\n", sec->name);
-        }
-      else
-          prev = sec;
+      }
     }
   return;
 } /* static void pic32_strip_sections (...)*/
+
 
 void
 bfd_pic32_finish(void)

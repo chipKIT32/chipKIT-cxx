@@ -792,6 +792,7 @@ optimize_skip (rtx insn)
       || recog_memoized (trial) < 0
       || (! eligible_for_annul_false (insn, 0, trial, flags)
 	  && ! eligible_for_annul_true (insn, 0, trial, flags))
+      || RTX_FRAME_RELATED_P (trial)
       || can_throw_internal (trial))
     return 0;
 
@@ -1193,7 +1194,13 @@ steal_delay_list_from_target (rtx insn, rtx condition, rtx seq,
 					      trial, flags)))
 	{
 	  if (must_annul)
-	    used_annul = 1;
+	    {
+	      /* Frame related instructions cannot go into annulled delay
+		 slots, it messes up the dwarf info.  */
+	      if (RTX_FRAME_RELATED_P (trial))
+		return delay_list;
+	      used_annul = 1;
+	    }
 	  temp = copy_delay_slot_insn (trial);
 	  INSN_FROM_TARGET_P (temp) = 1;
 	  new_delay_list = add_to_delay_list (temp, new_delay_list);
@@ -2504,9 +2511,11 @@ fill_slots_from_thread (rtx insn, rtx condition, rtx thread,
 
 	  /* There are two ways we can win:  If TRIAL doesn't set anything
 	     needed at the opposite thread and can't trap, or if it can
-	     go into an annulled delay slot.  */
+	     go into an annulled delay slot.  But we want neither to copy
+	     nor to speculate frame-related insns.  */
 	  if (!must_annul
-	      && (condition == const_true_rtx
+	      && ((condition == const_true_rtx
+		   && (own_thread || !RTX_FRAME_RELATED_P (trial)))
 	          || (! insn_sets_resource_p (trial, &opposite_needed, true)
 		      && ! may_trap_or_fault_p (pat)
 		      && ! RTX_FRAME_RELATED_P (trial))))
@@ -2521,14 +2530,15 @@ fill_slots_from_thread (rtx insn, rtx condition, rtx thread,
 	      if (eligible_for_delay (insn, *pslots_filled, trial, flags))
 		goto winner;
 	    }
-	  else if (0
+	  else if (!RTX_FRAME_RELATED_P (trial)
+                   && (0
 #ifdef ANNUL_IFTRUE_SLOTS
 		   || ! thread_if_true
 #endif
 #ifdef ANNUL_IFFALSE_SLOTS
 		   || thread_if_true
 #endif
-		   )
+		   ))
 	    {
 	      old_trial = trial;
 	      trial = try_split (pat, trial, 0);

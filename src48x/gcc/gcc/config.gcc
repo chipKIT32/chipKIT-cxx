@@ -415,7 +415,7 @@ mips*-*-*)
 	extra_headers="loongson.h"
 	extra_options="${extra_options} g.opt mips/mips-tables.opt"
 	;;
-pic32*-*-*)
+pic32m*-*-*)
         cpu_type=mips
         need_64bit_hwint=yes
 	c_target_objs="${c_target_objs} mchp-pragmas.o"
@@ -2078,14 +2078,14 @@ pdp11-*-*)
 	tm_file="${tm_file} newlib-stdint.h"
 	use_gcc_stdint=wrap
 	;;
-pic32*-mchp-elf*)
+pic32m*-mchp-elf*)
         tm_file="elfos.h newlib-stdint.h ${tm_file} mips/elf.h mips/sde.h"
         tm_file="${tm_file} mips/sdemtk.h"
        	tm_file="${tm_file} pic32/mchp.h"
         tmake_file="mips/t-mips pic32/t-mchp pic32/t-libgcc-mips16 ${tmake_file}"
         extra_options="pic32/mchp.opt mips/mips.opt mips/mips-tables.opt g.opt "
         tm_p_file="${tm_p_file} pic32/mchp-protos.h"
-        extra_objs="${extra_objs} sha256.o mchp_sha.o mchp.o cci-backend.o mchp-hi-addr-analysis.o"
+        extra_objs="${extra_objs} mchp-license-manager.o sha256.o mchp_sha.o mchp.o cci-backend.o mchp-hi-addr-analysis.o mchp-pragmas.o pic32-coverage.o"
         #extra_gcc_objs="driver-pic32-elf.o"
         use_gcc_stdint=none
         default_use_cxa_atexit=no
@@ -3601,7 +3601,7 @@ case "${target}" in
 		done
 		;;
 
-	mips*-*-* | pic32*-*-*)
+	mips*-*-* | pic32m*-*-*)
 		supported_defaults="abi arch arch_32 arch_64 float nan tune tune_32 tune_64 divide llsc mips-plt synci"
 
 		case ${with_float} in
@@ -3924,17 +3924,14 @@ case ${target} in
 		esac
 		tmake_file="mips/t-mips $tmake_file"
 		;;
-	 pic32*-*-*)
+	 pic32m*-*-*)
                 if test x$gnu_ld = xyes
                 then
                         target_cpu_default2="MASK_SPLIT_ADDRESSES"
                 fi
-				tm_defines="TARGET_ENDIAN_DEFAULT=0 _BUILD_C32_=1 _BUILD_MCHP_=1 ${tm_defines}"
-				if test "x$enable_gofast" = xyes
-				then
-					tm_defines="US_SOFTWARE_GOFAST ${tm_defines}"
-					tmake_file="pic32/t-fastmath ${tmake_file}"
-				fi
+                tm_defines="TARGET_ENDIAN_DEFAULT=0 _BUILD_C32_=1 _BUILD_MCHP_=1 ${tm_defines}"
+                tm_defines="US_SOFTWARE_GOFAST ${tm_defines}"
+                tmake_file="pic32/t-fastmath ${tmake_file}"
                 ;;
 	powerpc*-*-* | rs6000-*-*)
 		# FIXME: The PowerPC port uses the value set at compile time,

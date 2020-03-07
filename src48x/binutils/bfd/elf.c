@@ -981,6 +981,12 @@ _bfd_elf_make_section_from_shdr (bfd *abfd,
       && elf_next_in_group (newsect) == NULL)
     flags |= SEC_LINK_ONCE | SEC_LINK_DUPLICATES_DISCARD;
 
+#if defined(TARGET_IS_PIC32MX)
+  if (CONST_STRNEQ (name, CODECOV_INFO_HDR)
+      && elf_next_in_group (newsect) == NULL)
+    flags |= SEC_LINK_ONCE | SEC_LINK_DUPLICATES_SAME_CONTENTS;
+#endif
+
   bed = get_elf_backend_data (abfd);
   if (bed->elf_backend_section_flags)
     if (! bed->elf_backend_section_flags (&flags, hdr))

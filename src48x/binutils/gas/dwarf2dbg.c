@@ -174,6 +174,7 @@ struct line_subseg {
   subsegT subseg;
   struct line_entry *head;
   struct line_entry **ptail;
+  struct line_entry **pmove_tail;
 };
 
 struct line_seg {
@@ -221,10 +222,6 @@ static struct dwarf2_line_info current = {
   0
 };
 
-/* Lines that are at the same location as CURRENT, and which are waiting
-   for a label.  */
-static struct line_entry *pending_lines, **pending_lines_tail = &pending_lines;
-
 /* The size of an address on the target.  */
 static unsigned int sizeof_address;
 
@@ -247,10 +244,10 @@ generic_dwarf2_emit_offset (symbolS *symbol, unsigned int size)
 }
 #endif
 
-/* Find or create an entry for SEG+SUBSEG in ALL_SEGS.  */
+/* Find or create (if CREATE_P) an entry for SEG+SUBSEG in ALL_SEGS.  */
 
 static struct line_subseg *
-get_line_subseg (segT seg, subsegT subseg)
+get_line_subseg (segT seg, subsegT subseg, bfd_boolean create_p)
 {
   static segT last_seg;
   static subsegT last_subseg;
@@ -265,6 +262,9 @@ get_line_subseg (segT seg, subsegT subseg)
   s = (struct line_seg *) hash_find (all_segs_hash, seg->name);
   if (s == NULL)
     {
+      if (!create_p)
+	    return NULL;
+
       s = (struct line_seg *) xmalloc (sizeof (*s));
       s->next = NULL;
       s->seg = seg;
@@ -288,6 +288,7 @@ get_line_subseg (segT seg, subsegT subseg)
   lss->subseg = subseg;
   lss->head = NULL;
   lss->ptail = &lss->head;
+  lss->pmove_tail = &lss->head;
   *pss = lss;
 
  found_subseg:
@@ -298,47 +299,22 @@ get_line_subseg (segT seg, subsegT subseg)
   return lss;
 }
 
-/* Push LOC onto the pending lines list.  */
+/* Record an entry for LOC occurring at LABEL.  */
 
 static void
-dwarf2_push_line (struct dwarf2_line_info *loc)
+dwarf2_gen_line_info_1 (symbolS *label, struct dwarf2_line_info *loc)
 {
+  struct line_subseg *lss;
   struct line_entry *e;
 
   e = (struct line_entry *) xmalloc (sizeof (*e));
   e->next = NULL;
-  e->label = NULL;
+  e->label = label;
   e->loc = *loc;
 
-  *pending_lines_tail = e;
-  pending_lines_tail = &(*pending_lines_tail)->next;
-}
-
-/* Emit all pending line information.  LABEL is the label with which the
-   lines should be associated, or null if they should be associated with
-   the current position.  */
-
-static void
-dwarf2_flush_pending_lines (symbolS *label)
-{
-  if (pending_lines)
-    {
-      struct line_subseg *lss;
-      struct line_entry *e;
-
-      if (!label)
-	label = symbol_temp_new_now ();
-
-      for (e = pending_lines; e; e = e->next)
-	e->label = label;
-
-      lss = get_line_subseg (now_seg, now_subseg);
-      *lss->ptail = pending_lines;
-      lss->ptail = pending_lines_tail;
-
-      pending_lines = NULL;
-      pending_lines_tail = &pending_lines;
-    }
+  lss = get_line_subseg (now_seg, now_subseg, TRUE);
+  *lss->ptail = e;
+  lss->ptail = &e->next;
 }
 
 /* Record an entry for LOC occurring at OFS within the current fragment.  */
@@ -348,6 +324,8 @@ dwarf2_gen_line_info (addressT ofs, struct dwarf2_line_info *loc)
 {
   static unsigned int line = -1;
   static unsigned int filenum = -1;
+
+  symbolS *sym;
 
   /* Early out for as-yet incomplete location information.  */
   if (loc->filenum == 0 || loc->line == 0)
@@ -364,7 +342,6 @@ dwarf2_gen_line_info (addressT ofs, struct dwarf2_line_info *loc)
   line = loc->line;
   filenum = loc->filenum;
 
-  dwarf2_push_line (loc);
   if (linkrelax)
     {
       char name[120];
@@ -372,10 +349,11 @@ dwarf2_gen_line_info (addressT ofs, struct dwarf2_line_info *loc)
       /* Use a non-fake name for the line number location,
 	 so that it can be referred to by relocations.  */
       sprintf (name, ".Loc.%u.%u", line, filenum);
-      dwarf2_flush_pending_lines (symbol_new (name, now_seg, ofs, frag_now));
+      sym = symbol_new (name, now_seg, ofs, frag_now);
     }
   else
-    dwarf2_flush_pending_lines (symbol_temp_new (now_seg, ofs, frag_now));
+    sym = symbol_temp_new (now_seg, ofs, frag_now);
+  dwarf2_gen_line_info_1 (sym, loc);
 }
 
 /* Returns the current source information.  If .file directives have
@@ -428,6 +406,33 @@ dwarf2_emit_insn (int size)
   dwarf2_consume_line_info ();
 }
 
+/* Move all previously-emitted line entries for the current position by
+   DELTA bytes.  This function cannot be used to move the same entries
+   twice.  */
+
+void
+dwarf2_move_insn (int delta)
+{
+  struct line_subseg *lss;
+  struct line_entry *e;
+  valueT now;
+
+  if (delta == 0)
+    return;
+
+  lss = get_line_subseg (now_seg, now_subseg, FALSE);
+  if (!lss)
+    return;
+
+  now = frag_now_fix ();
+  while ((e = *lss->pmove_tail))
+    {
+      if (S_GET_VALUE (e->label) == now)
+	S_SET_VALUE (e->label, now + delta);
+      lss->pmove_tail = &e->next;
+    }
+}
+
 /* Called after the current line information has been either used with
    dwarf2_gen_line_info or saved with a machine instruction for later use.
    This resets the state of the line number information to reflect that
@@ -436,11 +441,6 @@ dwarf2_emit_insn (int size)
 void
 dwarf2_consume_line_info (void)
 {
-  /* If the consumer has stashed the current location away for later use,
-     assume that any earlier location information should be associated
-     with ".".  */
-  dwarf2_flush_pending_lines (NULL);
-
   /* Unless we generate DWARF2 debugging information for each
      assembler line, we only emit one line symbol for one LOC.  */
   dwarf2_loc_directive_seen = FALSE;
@@ -472,8 +472,7 @@ dwarf2_emit_label (symbolS *label)
 
   loc.flags |= DWARF2_FLAG_BASIC_BLOCK;
 
-  dwarf2_push_line (&loc);
-  dwarf2_flush_pending_lines (label);
+  dwarf2_gen_line_info_1 (label, &loc);
   dwarf2_consume_line_info ();
 }
 
@@ -633,7 +632,7 @@ dwarf2_directive_loc (int dummy ATTRIBUTE_UNUSED)
   /* If we see two .loc directives in a row, force the first one to be
      output now.  */
   if (dwarf2_loc_directive_seen)
-    dwarf2_push_line (&current);
+    dwarf2_emit_insn (0);
 
   filenum = get_absolute_expression ();
   SKIP_WHITESPACE ();
@@ -1462,7 +1461,7 @@ out_header (asection *sec, expressionS *exp)
   symbolS *end_sym;
 
   subseg_set (sec, 0);
-  start_sym = symbol_temp_new_now ();;
+  start_sym = symbol_temp_new_now ();
   end_sym = symbol_temp_make ();
 
   /* Total length of the information.  */

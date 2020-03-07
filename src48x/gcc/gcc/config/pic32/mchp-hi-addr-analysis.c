@@ -1,3 +1,24 @@
+/* 
+   Copyright (C) 2020
+   Free Software Foundation, Inc.
+   Contributed by Microchip Technology Inc.
+
+This file is part of GCC.
+
+GCC is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+GCC is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
@@ -28,10 +49,6 @@
 #include "cfgloop.h"
 
 #include "gimple-pretty-print.h"
-
-#if !defined(TARGET_LICENSE_WARNING)
-#define TARGET_LICENSE_WARNING 0
-#endif
 
 #define HI_MASK 0xFFFF0000
 #ifndef BITSET_P
@@ -293,27 +310,21 @@ hi_addr_analyze (void)
          }
       }
     }
-    
     free_sym_hash_table (&sym_hash);
+}
 
+static bool
+gate_hi_addr (void)
+{
+  return (!TARGET_MCHP_DISABLE_HI_ADDR_OPT && optimize > 1);
 }
 
 static unsigned int
 execute_hi_addr_analysis (void)
 {
-    if (TARGET_MCHP_HI_ADDR_OPT)
-    {
-        if (optimize <= 1 && !optimize_size && TARGET_LICENSE_WARNING)
-        {
-            warning (0,"PRO Compiler option -mhi-addr-opt ignored");
-        }
-        else
-        {
-            hi_addr_analyze();
-        }
-    }
+  hi_addr_analyze ();
 
-    return 0;
+  return 0;
 }
 
 struct rtl_opt_pass pass_rtl_mchp_hi_addr_analysis =
@@ -322,7 +333,7 @@ struct rtl_opt_pass pass_rtl_mchp_hi_addr_analysis =
   RTL_PASS,
   "mchp_hi_addr_analysis",                    /* name */
   OPTGROUP_NONE,                        /* optinfo_flags */
-  NULL,                                 /* gate */
+  gate_hi_addr,                         /* gate */
   execute_hi_addr_analysis,             /* execute */
   NULL,                                 /* sub */
   NULL,                                 /* next */

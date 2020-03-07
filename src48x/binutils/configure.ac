@@ -735,7 +735,7 @@ case "${target}" in
   m68*-*-* | fido-*-*)
     libgloss_dir=m68k
     ;;
-  mips*-*-* | pic32mx*-*-* | pic32*-*-*)
+  mips*-*-* | pic32m*-*-*)
     libgloss_dir=mips
     ;;
   powerpc*-*-*)
@@ -1037,7 +1037,7 @@ case "${target}" in
     noconfigdirs="$noconfigdirs gprof"
     libgloss_dir=mips
     ;;
-  pic32mx-mchp-elf | pic32*-*-*)
+  pic32mx-mchp-elf | pic32m*-*-*)
     # remove sid, java libraries, and rda
     noconfigdirs="$noconfigdirs sid ${libgcj} target-rda gprof"
     libgloss_dir=mips

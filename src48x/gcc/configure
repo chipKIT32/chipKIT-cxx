@@ -3744,7 +3744,7 @@ case "${target}" in
   microblaze*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
-  mips*-sde-elf* | mips*-mti-elf*| pic32*-mchp-elf*)
+  mips*-sde-elf* | mips*-mti-elf*| pic32m*-mchp-elf*)
     if test x$with_newlib = xyes; then
       noconfigdirs="$noconfigdirs gprof"
     fi
@@ -3760,7 +3760,7 @@ case "${target}" in
     ;;
   mips*-*-linux*)
     ;;
-  mips*-*-* | pic32*-*-*)
+  mips*-*-* | pic32m*-*-*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
   sh-*-* | sh64-*-*)
@@ -6948,7 +6948,7 @@ case "${target}" in
   mips*-sde-elf* | mips*-mti-elf*)
     target_makefile_frag="config/mt-sde"
     ;;
-  pic32*-mchp-elf*)
+  pic32m*-mchp-elf*)
     target_makefile_frag="config/mt-mchp"
     ;;
   mipsisa*-*-elfoabi*)

@@ -186,7 +186,9 @@
    (UNSPECV_SOFTWARE_BREAKPOINT    821)
    (UNSPECV_GET_ISR_STATE          822)
    (UNSPECV_SET_ISR_STATE          823)
-
+   (UNSPECV_SETCOVBIT              824)
+   (UNSPECV_SETCOVBIT_M16          825)
+   (UNSPECV_NIL_OP                 826)
 
    ;; PIC long branch sequences are never longer than 100 bytes.
    (MAX_PIC_BRANCH_LENGTH	100)
@@ -7222,7 +7224,9 @@
     snprintf(buffer, buffer_size, \"lui\t%%0, %%%%hi(.startof.%s)\;addiu\t%%0, %%0, %%%%lo(.startof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "2")])
 
 (define_insn "pic32_section_begin_16el"
   [(set (match_operand 0 "register_operand" "=d")
@@ -7248,7 +7252,9 @@
     snprintf(buffer, buffer_size, \"li\t%%0, %%%%hi(.startof.%s)\;sll\t%%0, %%0, 16\;addiu\t%%0, %%%%lo(.startof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "3")])
 
 (define_insn "pic32_section_end"
   [(set (match_operand:SI 0 "register_operand" "=d")
@@ -7276,7 +7282,9 @@
     snprintf(buffer, buffer_size, \"lui\t%%0, %%%%hi(.endof.%s)\;addiu\t%%0, %%0, %%%%lo(.endof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "2")])
 
 (define_insn "pic32_section_end_16el"
   [(set (match_operand 0 "register_operand" "=d")
@@ -7302,7 +7310,9 @@
     snprintf(buffer, buffer_size, \"li\t%%0, %%%%hi(.endof.%s)\;sll\t%%0, %%0, 16\;addiu\t%%0, %%%%lo(.endof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "3")])
 
 (define_insn "pic32_section_size"
   [(set (match_operand:SI 0 "register_operand" "=d")
@@ -7330,7 +7340,9 @@
     snprintf(buffer, buffer_size, \"lui\t%%0, %%%%hi(.sizeof.%s)\;addiu\t%%0, %%0, %%%%lo(.sizeof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "2")])
 
 (define_insn "pic32_section_size_16el"
   [(set (match_operand 0 "register_operand" "=d")
@@ -7356,7 +7368,9 @@
     snprintf(buffer, buffer_size, \"li\t%%0, %%%%hi(.sizeof.%s)\;sll\t%%0, %%0, 16\;addiu\t%%0, %%%%lo(.sizeof.%s)\",
             section_name, section_name);
     return buffer;
-  }")
+  }"
+  [(set_attr "type" "multi")
+   (set_attr "insn_count" "3")])
 
 (define_insn "get_isr_state_mips16"
   [
@@ -7613,6 +7627,55 @@
    (set_attr "mode"     "none")
    (set_attr "length"   "4")])
 
+; sets a coverage bit - MIPS32/microMIPS (uses $at as a temp register)
+(define_insn "pic32_setcovbit"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand"  "r") ; address reg
+                     (match_operand:SI 1 "immediate_operand" "i") ; offset (bytes)
+                     (match_operand:SI 2 "immediate_operand" "i") ; bitmask (1<<bitno)
+                    ] UNSPECV_SETCOVBIT)
+   (clobber (reg:SI 1)) ; $at
+  ]
+  "!TARGET_MIPS16"
+  "%(%[lbu\t$1,%1(%0)\t# pic32_setcovbit %1,%2\;ori\t$1,$1,%2\;sb\t$1,%1(%0)%]%)"
+  [
+   (set_attr "type"       "multi")
+   (set_attr "mode"       "none")
+   (set_attr "insn_count" "3")
+   (set_attr "length"     "12")
+  ]
+)
+
+; sets a coverage bit - MIPS16 (uses $at as a temp register)
+(define_insn "pic32_setcovbit_m16"
+  [(unspec_volatile [(match_operand:SI 0 "register_operand"  "u,u") ; address reg
+                     (match_operand:SI 1 "immediate_operand" "i,i") ; offset (bytes)
+                     (match_operand:SI 2 "immediate_operand" "i,i") ; bitmask (1<<bitno)
+                     (match_operand:SI 3 "register_operand" "=u,r") ; 1st tmp reg (2nd is $at)
+                    ] UNSPECV_SETCOVBIT_M16)
+   (clobber (reg:SI 1)) ; $at
+  ]
+  "TARGET_MIPS16"
+  {
+    return pic32_setcovbit_m16 (operands);
+  }
+  [
+   (set_attr "type"       "multi")
+   (set_attr "mode"       "none")
+   (set_attr "insn_count" "6,8")
+   (set_attr "length"     "12,16")
+  ]
+)
+
+; used to keep the code coverage BB end labels from being modified
+; (aligned) by the assembler
+(define_insn "pic32_nil_op"
+  [(unspec_volatile [(match_operand:SI 0 "immediate_operand" "i")] UNSPECV_NIL_OP)]
+  ""
+  {
+    return pic32_output_nil_op (operands);
+  }
+  [(set_attr "type" "ghost")
+   (set_attr "mode" "none")])
 
 
 ;; Synchronization instructions.

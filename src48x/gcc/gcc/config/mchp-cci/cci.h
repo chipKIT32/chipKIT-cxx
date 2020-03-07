@@ -1,3 +1,23 @@
+/* Subroutines used for Microchip PIC32 MCU support
+   Copyright (C) 2017
+   Microchip Technology, Inc.
+
+This file is part of Microchip XC compiler tool-chain.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GCC; see the file COPYING3.  If not see
+<http://www.gnu.org/licenses/>.  */
+
 /*
  *  CCI support for Microchip Compilers
  */
@@ -143,147 +163,173 @@ extern struct mchp_config_specification *mchp_configuration_values;
 #define CCI_C32  ((TARGET_C32) && (TARGET_CCI || IMPORT_C32("cci")))
 #define CCI_MCHP (TARGET_CCI || IMPORT_MCHP("cci"))
 
+#ifndef CCI_ATTRIBUTE
+#define CCI_ATTRIBUTE(...)
+#endif
+#ifndef CCI_ATTRIBUTE_V
+#define CCI_ATTRIBUTE_V(...)
+#endif
+#ifndef CCI_ATTRIBUTE_N
+#define CCI_ATTRIBUTE_N(...)
+#endif
+#ifndef CCI_ATTRIBUTE_NV
+#define CCI_ATTRIBUTE_NV(...)
+#endif
+#ifndef CCI_DEFINE
+#define CCI_DEFINE(...)
+#endif
+#ifndef CCI_PRAGMA
+#define CCI_PRAGMA(...)
+#endif
+
 /*  CCI,        CCI_KIND          CCI Keyword,    CCI for C3x,     n      */
 /*  -------------------------------------------------------------------------*/
-CCI(CCI_C30,    CCI_attribute_v,  "__interrupt",  "interrupt",     0)
-CCI(CCI_C32,    CCI_attribute_nv, "__interrupt", \
+CCI_ATTRIBUTE_V(CCI_C30,   "__interrupt",  "interrupt",     0)
+CCI_ATTRIBUTE_NV(CCI_C32,  "__interrupt", \
     "vector(P1), interrupt(__VA_ARGS__), nomips16",                1)
 
-CCI(CCI_MCHP,   CCI_attribute,    "__persistent", "persistent",    0)
+CCI_ATTRIBUTE(CCI_MCHP,     "__persistent", "persistent",    0)
 
-CCI(CCI_C30,    CCI_attribute,    "__near",       "near",          0)
-CCI(CCI_C32,    CCI_define,       "__near",       EMPTY,           0)
+CCI_ATTRIBUTE(CCI_C30,     "__near",       "near",          0)
+CCI_DEFINE(CCI_C32,        "__near",       EMPTY,           0)
 
-CCI(CCI_MCHP,   CCI_attribute,    "__far",        "far",           0)
+CCI_ATTRIBUTE(CCI_MCHP,     "__far",        "far",           0)
 
-CCI(CCI_MCHP,   CCI_attribute_n,  "__at",         "address",       1)
+CCI_ATTRIBUTE_N(CCI_MCHP,   "__at",         "address",       1)
 
-CCI(CCI_C30,    CCI_attribute,    "__eeprom",     "space(eedata)", 0)
-CCI(CCI_C32,    CCI_attribute,    "__eeprom",
+CCI_ATTRIBUTE(CCI_C30,     "__eeprom",     "space(eedata)", 0)
+CCI_ATTRIBUTE(CCI_C32,     "__eeprom",
     "unsupported(\"__eeprom is unsupported on this platform\")",   0)
 
-CCI(CCI_C30,    CCI_attribute,    "__xdata",      "space(xmemory)",0)
-CCI(CCI_C30,    CCI_attribute,    "__ydata",      "space(ymemory)",0)
-CCI(CCI_C32,    CCI_define,       "__xdata",      EMPTY,           0)
-CCI(CCI_C32,    CCI_define,       "__ydata",      EMPTY,           0)
-CCI(CCI_MCHP,   CCI_define,       "__bank(X)",    EMPTY,           0)
+CCI_ATTRIBUTE(CCI_C30,     "__xdata",      "space(xmemory)",0)
+CCI_ATTRIBUTE(CCI_C30,     "__ydata",      "space(ymemory)",0)
+CCI_DEFINE(CCI_C32,        "__xdata",      EMPTY,           0)
+CCI_DEFINE(CCI_C32,        "__ydata",      EMPTY,           0)
+CCI_DEFINE(CCI_MCHP,        "__bank(X)",    EMPTY,           0)
 
-CCI(CCI_C30,    CCI_define,       "__abi(...)",   EMPTY,           0)
-CCI(CCI_C32,    CCI_attribute_n,  "__abi",        "P1",            1)
+CCI_DEFINE(CCI_C30,        "__abi(...)",   EMPTY,           0)
+CCI_ATTRIBUTE_N(CCI_C32,   "__abi",        "P1",            1)
 
-CCI(CCI_MCHP,   CCI_attribute,    "__deprecate",  "deprecated",    0)
+CCI_ATTRIBUTE(CCI_MCHP,     "__deprecate",  "deprecated",    0)
 
-CCI(CCI_MCHP,   CCI_attribute,    "__pack",       "packed",        0)
+CCI_ATTRIBUTE(CCI_MCHP,     "__pack",       "packed",        0)
 
-CCI(CCI_MCHP,   CCI_attribute_n,  "__align",      "aligned",       1)
+CCI_ATTRIBUTE_N(CCI_MCHP,   "__align",      "aligned",       1)
 
 /* __pack_upper_byte is already defined for C30 */
-CCI(CCI_C32,    CCI_define,       "__pack_upper_byte",  EMPTY,     0)
+CCI_DEFINE(CCI_C32,        "__pack_upper_byte",  EMPTY,     0)
 
-CCI(CCI_MCHP,   CCI_attribute_n,  "__section",    "section",       1)
+CCI_ATTRIBUTE_N(CCI_MCHP,   "__section",    "section",       1)
 
-CCI(CCI_MCHP,   CCI_define,       "__CCI__",      "1",             0)
+CCI_DEFINE(CCI_MCHP,        "__CCI__",      "1",             0)
 
 /* CCI for IAR */
 /*  CCI,                CCI_KIND       CCI Keyword,   CCI for C3x,    n */
 /*  -------------------------------------------------------------------------*/
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__section_begin", "__builtin_section_begin", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__section_end",   "__builtin_section_end", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__section_size",  "__builtin_section_size", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__segment_begin", "__builtin_section_begin", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__segment_end",   "__builtin_section_end", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__segment_size",  "__builtin_section_size", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__sfb",       "__builtin_section_begin", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__sfe",       "__builtin_section_end", 0)
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__sfs",       "__builtin_section_size", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__section_begin", "__builtin_section_begin", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__section_end",   "__builtin_section_end", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__section_size",  "__builtin_section_size", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__segment_begin", "__builtin_section_begin", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__segment_end",   "__builtin_section_end", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__segment_size",  "__builtin_section_size", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__sfb",       "__builtin_section_begin", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__sfe",       "__builtin_section_end", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__sfs",       "__builtin_section_size", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__root",        "keep",      0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__root",        "keep",      0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__arm", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__arm", \
       "unsupported(\"__arm is unsupported on this platform\")",      0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__intrinsic", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__intrinsic", \
       "unsupported(\"__intrinsic is unsupported on this platform\")",0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__interwork", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__interwork", \
       "unsupported(\"__interwork is unsupported on this platform\")",0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__little_endian", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__little_endian", \
       "unsupported(\"__little_endian is unsupported on this platform\")", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__nested", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__nested", \
       "unsupported(\"__nested is unsupported on this platform\")",   0)
 
-CCI(IMPORT_C30("iar"), CCI_attribute, "__ramfunc", \
+CCI_ATTRIBUTE(IMPORT_C30("iar"),  "__ramfunc", \
       "unsupported(\"__ramfunc is unsupported on this platform\")",  0)
 
-CCI(IMPORT_C32("iar"),  CCI_attribute, "__ramfunc", "ramfunc,unique_section",  0)
+CCI_ATTRIBUTE(IMPORT_C32("iar"),  "__ramfunc", "ramfunc,unique_section",  0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__swi", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__swi", \
       "unsupported(\"__swi is unsupported on this platform\")",      0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__thumb", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__thumb", \
       "unsupported(\"__thumb is unsupported on this platform\")",    0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__farfunc", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__farfunc", \
       "unsupported(\"__farfunc is unsupported on this platform\")",  0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__huge", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__huge", \
       "unsupported(\"__huge is unsupported on this platform\")",     0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__nearfunc", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__nearfunc", \
       "unsupported(\"__nearfunc is unsupported on this platform\")", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__big_endian", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__big_endian", \
       "target_error(\"__big_endian is unsupported on this platform\")", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__fiq", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__fiq", \
       "target_error(\"__fiq is unsupported on this platform\")", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__irq", \
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__irq", \
       "target_error(\"__irq is unsupported on this platform\")", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__no_init", "persistent", 0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__no_init", "persistent", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__noreturn", "noreturn", 0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__noreturn", "noreturn", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__task", "naked", 0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__task", "naked", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__weak", "weak", 0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__weak", "weak", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_attribute, "__packed", "packed", 0)
+CCI_ATTRIBUTE(IMPORT_MCHP("iar"),  "__packed", "packed", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__istate_t", "unsigned int", 0)
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__istate_t", "unsigned int", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__disable_interrupt", \
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__disable_interrupt", \
                                        "__builtin_disable_interrupts", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__enable_interrupt", \
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__enable_interrupt", \
                                        "__builtin_enable_interrupts", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__get_interrupt_state", \
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__get_interrupt_state", \
                                        "__builtin_get_isr_state", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_define,    "__set_interrupt_state", \
+CCI_DEFINE(IMPORT_MCHP("iar"),     "__set_interrupt_state", \
                                        "__builtin_set_isr_state", 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "inline",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "inline",  \
                                        mchp_handle_inline_pragma, 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "segment",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "segment",  \
                                        mchp_handle_section_pragma, 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "data_alignment",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "data_alignment",  \
                                        mchp_handle_align_pragma, 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "__printf_args",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "__printf_args",  \
                                        mchp_handle_printf_args_pragma, 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "__scanf_args",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "__scanf_args",  \
                                        mchp_handle_scanf_args_pragma, 0)
 
-CCI(IMPORT_MCHP("iar"), CCI_pragma,    "required",  \
+CCI_PRAGMA(IMPORT_MCHP("iar"),     "required",  \
                                        mchp_handle_required_pragma, 0)
 
+#undef CCI_ATTRIBUTE
+#undef CCI_ATTRIBUTE_V
+#undef CCI_ATTRIBUTE_N
+#undef CCI_ATTRIBUTE_NV
+#undef CCI_DEFINE
+#undef CCI_PRAGMA
+#undef CCI_SET_VALUE
 #undef CCI
 #endif

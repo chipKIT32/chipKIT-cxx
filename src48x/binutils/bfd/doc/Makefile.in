@@ -319,7 +319,7 @@ SRCIPROT = $(srcdir)/../cache.c $(srcdir)/../libbfd.c \
 
 TEXIDIR = $(srcdir)/../../texinfo/fsf
 info_TEXINFOS = bfd.texinfo
-bfd_TEXINFOS = $(DOCFILES) bfdsumm.texi
+bfd_TEXINFOS = #$(DOCFILES) bfdsumm.texi
 MKDOC = chew$(EXEEXT_FOR_BUILD)
 AM_CPPFLAGS = -I.. -I$(srcdir)/.. -I$(srcdir)/../../include \
 	-I$(srcdir)/../../intl -I../../intl
@@ -374,7 +374,7 @@ MOSTLYCLEANFILES = $(MKDOC) *.o
 CLEANFILES = *.p *.ip
 DISTCLEANFILES = bfd.?? bfd.??? bfd.h libbfd.h libcoff.h texput.log \
 	$(am__append_1)
-MAINTAINERCLEANFILES = $(DOCFILES) bfd.info
+MAINTAINERCLEANFILES = #$(DOCFILES) bfd.info
 all: all-am
 
 .SUFFIXES:

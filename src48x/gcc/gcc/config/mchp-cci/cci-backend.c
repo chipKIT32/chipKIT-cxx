@@ -196,36 +196,39 @@ static void set_value(unsigned int *loc, unsigned int value) {
 void mchp_init_cci(void *pfile_v) {
   struct cpp_reader *pfile = (struct cpp_reader *)pfile_v;
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_define) \
+#define CCI
+#define CCI_DEFINE(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     cci_define(pfile_v, CCI_KEYWORD, (const char *)TGT_KEYWORD);
 #include CCI_H
-#ifdef CCI
-#error CCI is still defined...
-#endif
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_attribute) \
+#define CCI
+#define CCI_ATTRIBUTE(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     cci_attribute(pfile_v, CCI_KEYWORD, (const char *)TGT_KEYWORD, 0, 0);
 #include CCI_H
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_attribute_n) \
+#define CCI
+#define CCI_ATTRIBUTE_N(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     cci_attribute(pfile_v, CCI_KEYWORD, (const char *)TGT_KEYWORD, 0, N);
 #include CCI_H
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_attribute_v) \
+#define CCI
+#define CCI_ATTRIBUTE_V(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     cci_attribute(pfile_v, CCI_KEYWORD, (const char *)TGT_KEYWORD, 1, 0);
 #include CCI_H
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_attribute_nv) \
+#define CCI
+#define CCI_ATTRIBUTE_NV(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     cci_attribute(pfile_v, CCI_KEYWORD, (const char *)TGT_KEYWORD, 1, N);
 #include CCI_H
 
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_KEYWORD, N) \
-  if (TARGET && CCI_KIND == CCI_set_value) \
+#define CCI
+#define CCI_SET_VALUE(TARGET, CCI_KEYWORD, TGT_KEYWORD, N) \
+  if (TARGET) \
     set_value((unsigned int*)TGT_KEYWORD,N);
 #include CCI_H
 
@@ -234,8 +237,9 @@ void mchp_init_cci(void *pfile_v) {
 void mchp_init_cci_builtins(void) {
 
 #ifndef _BUILD_C32_
-#define CCI(TARGET, CCI_KIND, CCI_KEYWORD, TGT_FN, N) \
-  if (TARGET && CCI_KIND == CCI_pragma) \
+#define CCI
+#define CCI_PRAGMA(TARGET, CCI_KEYWORD, TGT_FN, N) \
+  if (TARGET) \
     c_register_pragma(0, CCI_KEYWORD, TGT_FN);
 #include CCI_H
 #endif

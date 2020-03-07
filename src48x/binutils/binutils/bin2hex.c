@@ -22,6 +22,7 @@ struct section_list
 /* prototypes */
 int main (int argc, char ** argv);
 static void write_extended_address_record (file_ptr base_address, PTR fp);
+static void write_start_linear_address_record (bfd_vma address, PTR fp);
 static void write_section (bfd *abfd, asection *sect, PTR fp);
 static int write_hex_file (char *name, bfd *abfd);
 static void usage (FILE *stream, int status);
@@ -47,6 +48,7 @@ static struct section_list *outputs;
 static int physical_addresses = 1;
 static int a0_address_mapping = 0;
 static int show_usage = 0;
+static int write_sla = 0;
 
 static long long int pfm_offset_address_by = 0;
 static long long int bfm_offset_address_by = 0;
@@ -57,6 +59,7 @@ static long long int bfm_offset_address_by = 0;
 static struct option long_options[] =
 {
   {"sort", no_argument, NULL, 'a'},
+  {"write-sla", no_argument, NULL, 'w'},
   {"virtual", no_argument, NULL, 'i'},
   {"physical", no_argument, NULL, 'p'},
   {"a0-mapping", no_argument, NULL, '0'},
@@ -81,12 +84,15 @@ main (int argc, char **argv)
   bfd_init ();
   set_default_bfd_target ();
 
-  while ((c = getopt_long (argc, argv, "aip0svb?P:B:",
+  while ((c = getopt_long (argc, argv, "awip0svb?P:B:",
                            long_options, (int *) 0)) != EOF)
     switch (c)
       {
       case 'a' :
         sort_by_address = 1;
+        break;
+      case 'w' :
+        write_sla = 1;
         break;
       case 'v' :
         verbose = 1;
@@ -198,6 +204,7 @@ usage (FILE *stream, int status)
   fprintf (stream,
            "USAGE: %s [options] [file]\n"
            "  -a, --sort         sort sections by address\n"
+           "  -w, --write-sla    write the entry point into an SLA field (RECTYPE 5)\n"
            "  -i, --virtual      use virtual addresses\n"
            "  -p, --physical     use physical addresses (default)\n"
 #ifdef PIC32_SHOW_A0MAPPINGOPTION
@@ -232,6 +239,9 @@ write_hex_file (char *name, bfd *abfd)
     }
 
   actual_prog_used = 0;
+
+  if (write_sla)
+    write_start_linear_address_record (abfd->start_address, fp);
 
   /* write each section */
   if (sort_by_address)
@@ -478,4 +488,19 @@ write_extended_address_record (file_ptr base_address, PTR fp)
   fprintf (hexfile, ":02000004%4.4x%2.2x\n", upper_addr, (unsigned char) sum);
 }
 
+static void
+write_start_linear_address_record (bfd_vma address, PTR fp)
+{
+  FILE *hexfile = (FILE *) fp;
+  unsigned int sum = 0;
+  unsigned int addr = (unsigned int) address;
+  int i;
 
+  sum -= (4 + 5);
+  for (i = 0; i < 4; ++i)
+    {
+      sum -= (unsigned char) ((addr >> (i * 8)) & 0xFF);
+    }
+
+  fprintf (hexfile, ":04000005%8.8x%2.2x\n", addr, (unsigned char) sum);
+}

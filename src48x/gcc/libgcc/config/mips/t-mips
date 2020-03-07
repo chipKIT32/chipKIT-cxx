@@ -2,10 +2,10 @@ LIB2_SIDITI_CONV_FUNCS = yes
 
 LIB2FUNCS_EXCLUDE = _fixunssfsi _fixunsdfsi
 
-softfp_float_modes := sf df
+softfp_float_modes :=
 softfp_int_modes := si di
-softfp_extensions := sfdf
-softfp_truncations := dfsf
+softfp_extensions :=
+softfp_truncations :=
 softfp_exclude_libgcc2 := n
 
 LIB2ADD_ST += $(srcdir)/config/mips/lib2funcs.c

@@ -121,7 +121,7 @@ case "${host_cpu}" in
   mips*)
     try_cpu=mips
     ;;
-  pic32*)
+  pic32m*)
     try_cpu=mips
     EXTRA_CXX_FLAGS=-mno-smart-io
     ;;

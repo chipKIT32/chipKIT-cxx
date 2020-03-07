@@ -23,6 +23,7 @@
 #include "sysdep.h"
 #include "elf-bfd.h"
 #include "pic32-utils.h"
+#include "elf/pic32.h"
 
 /* External function prototypes */
 extern struct bfd_hash_entry *mchp_undefsym_newfunc
@@ -113,4 +114,18 @@ mchp_undefsym_init (struct bfd_link_info *info)
   return table;
 }
 
+void pic32_fake_sections (bfd *abfd, Elf_Internal_Shdr *hdr, asection *sec)
+{
+  const char *name;
 
+  name = bfd_get_section_name (abfd, sec);
+
+  if (CONST_STRNEQ (name, CODECOV_INFO_HDR))
+    {
+      hdr->sh_type = SHT_XC_CODECOV_INFO_HDR;
+    }
+  else if (CONST_STRNEQ (name, CODECOV_INFO))
+    {
+      hdr->sh_type = SHT_XC_CODECOV_INFO;
+    }
+}

@@ -339,7 +339,7 @@ m68*-*-*)
 	  done
 	fi
 	;;
-mips*-*-* | pic32*-*-*)
+mips*-*-* | pic32m*-*-*)
 	if [ x$enable_single_float = xno ]
 	then
 	  old_multidirs="${multidirs}"

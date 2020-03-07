@@ -95,20 +95,36 @@ remove_section_from_bfd(bfd *abfd, asection *sec)
   s = abfd->sections;
   if ((s == NULL) || (s->next == NULL)) return;
 
-  prev = s;
-  s = s->next; /* never remove the first section */
-  for (; s != NULL; s = s->next) {
-      if (s == sec) {
-        prev->next = s->next;
-        abfd->section_count -= 1;
-        if (pic32_debug)
-          printf("    removing section %s\n", s->name);
-      }
-      else
-        prev = s;
-    }
+  /* as a sanity check, search for the section in the bfd */
+  /* this can be removed or made optional if speed is an issue */
+#if 1
+  /* lookup 'sec' starting with 2nd bfd section (never remove the 1st one) */
+  s = s->next;
+  while (s != sec && s != NULL)
+    s = s->next;
+  /* didn't find it */
+  if (s == NULL)
+#else
+  /* simple test for not removing the 1st section */
+  if (sec == NULL || sec->prev == NULL)
+#endif
+   return;
+
+  prev = sec->prev;  
+  prev->next = sec->next;
+  
+  if (sec->next)
+    sec->next->prev = prev;
+  else
+    abfd->section_last = prev; /*update the bfd->section_last field
+                                 if the removed section is the
+                                 last section.*/
+  abfd->section_count -= 1;
+  if (pic32_debug)
+     printf("    removing section %s\n", s->name);
   return;
 } /* static void remove_section_from_bfd (...)*/
+
 
 static void
 report_allocation_error(struct pic32_section *s) {
@@ -372,7 +388,17 @@ allocate_memory() {
       }
 
       if (merge_sec) {
-        os->header.next = next->header.next;  /* unlink the merged statement */
+        if (!(os->header.next = next->header.next)) /* unlink the merged statement */
+          /* update statement_list.tail if we just removed/merged the last stmt */
+          statement_list.tail = &os->header.next;
+
+        /* there's another (doubly) linked list containing only the output section */
+        /* statements so also update its links and the tail address when the last */
+        /* output statement is removed / merged */
+        if (!(os->output_section_statement.next = next->output_section_statement.next))
+          lang_output_section_statement.tail = &os->output_section_statement.next;
+        else
+          os->output_section_statement.next->prev = os;
         next = os;                            /* try to merge another one */
       }
     }
@@ -2078,6 +2104,40 @@ allocate_user_memory() {
 
 // Coherent sections processing functions
 
+void swap_sections_within_group(struct pic32_section *a, struct pic32_section *b) {
+// swap element a with element b in the singly-linked list of pic32_sections.
+// it is complex and error prone to mess with the pointers in the list so we 
+// just swap the contents except for the next pointers ... here are some struct assignments
+    struct pic32_section temp = *a;
+    temp.next = b->next;
+    b->next = a->next;
+    *a = *b;
+    *b = temp;
+} 
+
+void sort_coherent_group_section(unsigned int mask) {
+
+// the sections that form a group need to be sorted by alignment level, large to small.
+// We expect the actual number of such sections to be small so we are unambitious.  Insertion sort is good enough.
+    struct pic32_section *s1, *nexts1,*s2, *nexts2;
+
+    for (s1 = alloc_section_list; s1 != NULL; s1 = nexts1) {
+        nexts1 = s1->next;
+        if (s1->sec && ((s1->attributes & mask) == mask) &&  (PIC32_IS_COHERENT_ATTR(s1->sec)) ) {
+	    // make sure that all elements in the list that come after s1 have smaller alignment
+            for (s2 = nexts1; s2 != NULL; s2 = nexts2) {
+		nexts2 = s2->next;
+                if (s2->sec && ((s2->attributes & mask) == mask) &&  (PIC32_IS_COHERENT_ATTR(s2->sec)) 
+		    && (s2->sec->alignment_power > s1->sec->alignment_power ))  {
+			swap_sections_within_group(s1,s2);
+		} 
+	    }
+	}
+    }
+}
+
+
+
 static void
 update_coherent_group_section_info(bfd_vma alloc_addr,
                                    struct pic32_section *g,
@@ -2145,13 +2205,21 @@ group_coherent_section_size(struct pic32_section *g, unsigned int mask)
 {
     struct pic32_section *s,*next;
     bfd_vma result = 0;
+    unsigned int alignment_bytes_needed;
     
     for (s = g; s != NULL; s = next) {
         next = s->next;
         if (s->sec == 0)
             continue;
-        if (s->sec && (PIC32_IS_COHERENT_ATTR(s->sec)) && ((s->attributes & mask) == mask))
+        if (s->sec && (PIC32_IS_COHERENT_ATTR(s->sec)) && ((s->attributes & mask) == mask)){
+           // first correct for alignment
+            if(s->sec->alignment_power > 0) {
+		alignment_bytes_needed = 1 << (s->sec->alignment_power);
+
+		if (result % alignment_bytes_needed) result += alignment_bytes_needed  - (result % alignment_bytes_needed);
+	    }
             result += s->sec->size;
+	}
     }
     return result;
 }
@@ -2166,14 +2234,16 @@ locate_coherent_group_section(struct pic32_section *s,
     int result = 0;
     unsigned int pad_req;
     
+    sort_coherent_group_section(mask);
     len = group_coherent_section_size(s, mask);
     
+
     // Set len to 16 byte padding.
     pad_req = len%16 ;
     if (pad_req)
         len = len + (16-pad_req);
     
-    
+
     /* look for tricky user error */
     if (PIC32_IS_ABSOLUTE_ATTR(s->sec) && ACROSS_REGION(addr, len, region))
         einfo(_(" Link Warning: absolute section \'%s\' crosses"
@@ -2225,12 +2295,14 @@ locate_coherent_sections (unsigned int mask,
             bfd_vma len = s->sec->rawsize? s->sec->rawsize: s->sec->size;
             
             if (PIC32_IS_COHERENT_ATTR(s->sec)) {
+
                 if (coherent_section_count == 0) {
-                    // Set the alignment to cache line boundary (16 byte)
-                    s->sec->alignment_power = 4;
+                    // Set the alignment to at least cache line boundary (16 byte)
+                    if(s->sec->alignment_power < 4) s->sec->alignment_power = 4;
                     coherent_section_count++;
                     result |= locate_coherent_group_section(s, region, mask);
-                    if (s->sec->vma == 0)
+                    ///\ fix XC32-707 report error only for non-empty sections
+                    if ((s->sec->vma == 0) && (s->sec->size != 0))
                     {
                         report_allocation_error(s);
                     }

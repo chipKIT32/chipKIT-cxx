@@ -512,9 +512,11 @@ setup_save_areas (void)
       for (chain = reload_insn_chain; chain != 0; chain = next)
 	{
 	  rtx cheap;
+
 	  call_saved_regs_num = 0;
 	  insn = chain->insn;
 	  next = chain->next;
+
 	  if (!CALL_P (insn)
 	      || find_reg_note (insn, REG_NORETURN, NULL))
 	    continue;
@@ -523,31 +525,8 @@ setup_save_areas (void)
 	  if (cheap)
 	    cheap = XEXP (cheap, 0);
 
-	  REG_SET_TO_HARD_REG_SET (hard_regs_to_save,
-				   &chain->live_throughout);
-	  get_call_reg_set_usage (insn, &used_regs, call_used_reg_set);
+	  REG_SET_TO_HARD_REG_SET (hard_regs_to_save, &chain->live_throughout);
 
-	  /* Record all registers set in this call insn.  These don't
-	     need to be saved.  N.B. the call insn might set a subreg
-	     of a multi-hard-reg pseudo; then the pseudo is considered
-	     live during the call, but the subreg that is set
-	     isn't.  */
-	  CLEAR_HARD_REG_SET (this_insn_sets);
-	  note_stores (PATTERN (insn), mark_set_regs, &this_insn_sets);
-	  /* Sibcalls are considered to set the return value,
-	     compare df-scan.c:df_get_call_refs.  */
-	  if (SIBLING_CALL_P (insn) && crtl->return_rtx)
-	    mark_set_regs (crtl->return_rtx, NULL_RTX, &this_insn_sets);
-
-	  AND_COMPL_HARD_REG_SET (used_regs, call_fixed_reg_set);
-	  AND_COMPL_HARD_REG_SET (used_regs, this_insn_sets);
-	  AND_HARD_REG_SET (hard_regs_to_save, used_regs);
-	  for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
-	    if (TEST_HARD_REG_BIT (hard_regs_to_save, regno))
-	      {
-		gcc_assert (hard_reg_map[regno] != NULL);
-		call_saved_regs[call_saved_regs_num++] = hard_reg_map[regno];
-	      }
 	  /* Look through all live pseudos, mark their hard registers.  */
 	  EXECUTE_IF_SET_IN_REG_SET
 	    (&chain->live_throughout, FIRST_PSEUDO_REGISTER, regno, rsi)
@@ -556,13 +535,54 @@ setup_save_areas (void)
 	      int bound;
 
 	      if (r < 0 || regno_reg_rtx[regno] == cheap)
-		continue;
+                continue;
 
 	      bound = r + hard_regno_nregs[r][PSEUDO_REGNO_MODE (regno)];
 	      for (; r < bound; r++)
-		if (TEST_HARD_REG_BIT (used_regs, r))
-		  call_saved_regs[call_saved_regs_num++] = hard_reg_map[r];
+                SET_HARD_REG_BIT (hard_regs_to_save, r);
 	    }
+
+	  /* Record all registers set in this call insn.  These don't
+	     need to be saved.  N.B. the call insn might set a subreg
+	     of a multi-hard-reg pseudo; then the pseudo is considered
+	     live during the call, but the subreg that is set
+	     isn't.  */
+	  CLEAR_HARD_REG_SET (this_insn_sets);
+	  note_stores (PATTERN (insn), mark_set_regs, &this_insn_sets);
+
+	  /* Sibcalls are considered to set the return value,
+	     compare df-scan.c:df_get_call_refs.  */
+	  if (SIBLING_CALL_P (insn) && crtl->return_rtx)
+	    mark_set_regs (crtl->return_rtx, NULL_RTX, &this_insn_sets);
+
+          /* hard_regs_to_save contains all live pseudos in hard_regs_used,
+             representing registers that are saved and may be saved across this
+             instruction.
+             Previously, this set was ANDed with used_regs, which would miss conflicts
+             with saved registers which are not used in the current instruction
+             (and hence live from a previous save). Then hard_regs_to_save, 
+             as well as all live_throughout regs in used_regs, were added to the
+             call_saved_regs for conflict computation, which was redundant.
+             Now, we AND with hard_regs_used, instead of used_regs, so that
+             conflict checking is based on liveness alone.
+             */
+	  AND_COMPL_HARD_REG_SET (hard_regs_to_save, call_fixed_reg_set);
+	  AND_COMPL_HARD_REG_SET (hard_regs_to_save, this_insn_sets);
+          AND_HARD_REG_SET (hard_regs_to_save, hard_regs_used);
+
+          /* Add to call_saved_regs all hard_regs_used registers which are 
+             live across this call or saved across this call. */
+	  for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
+            {
+              if (TEST_HARD_REG_BIT (hard_regs_to_save, regno))
+                {
+                  gcc_assert (hard_reg_map[regno] != NULL);
+                  call_saved_regs[call_saved_regs_num++] = hard_reg_map[regno];
+                }
+            }
+
+          /* Check for conflicts between regs saved in this call and 
+             all registers currently saved. */
 	  for (i = 0; i < call_saved_regs_num; i++)
 	    {
 	      saved_reg = call_saved_regs[i];
@@ -578,6 +598,7 @@ setup_save_areas (void)
 		  }
 	    }
 	}
+
       /* Sort saved hard regs.  */
       qsort (all_saved_regs, saved_regs_num, sizeof (struct saved_hard_reg *),
 	     saved_hard_reg_compare_func);
@@ -834,6 +855,7 @@ save_call_clobbered_regs (void)
 
 		  if (r < 0 || regno_reg_rtx[regno] == cheap)
 		    continue;
+
 		  nregs = hard_regno_nregs[r][PSEUDO_REGNO_MODE (regno)];
 		  mode = HARD_REGNO_CALLER_SAVE_MODE
 		    (r, nregs, PSEUDO_REGNO_MODE (regno));

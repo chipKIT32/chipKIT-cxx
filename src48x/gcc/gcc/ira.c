@@ -3881,6 +3881,13 @@ rtx_moveable_p (rtx *loc, enum op_type type)
     case CLOBBER:
       return rtx_moveable_p (&SET_DEST (x), OP_OUT);
 
+    case ASM_OPERANDS:
+      /* Back-ported from GCC 6. See issue XC32-799. */
+      /* The same is true for volatile asm: it has unknown side effects, it
+         cannot be moved at will.  */
+      if (MEM_VOLATILE_P (x))
+        return false;
+
     default:
       break;
     }

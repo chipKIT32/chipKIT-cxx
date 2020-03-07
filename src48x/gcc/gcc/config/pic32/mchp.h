@@ -41,6 +41,8 @@ along with GCC; see the file COPYING3.  If not see
 #define MCHP_DEBUG
 #endif
 
+
+
 extern const char *pic32_text_scn;
 extern int         mchp_profile_option;
 
@@ -54,11 +56,6 @@ enum pic32_isa_mode
 
 #undef DEFAULT_SIGNED_CHAR
 #define DEFAULT_SIGNED_CHAR 1
-
-/* Default to short double rather than long double */
-/* chipKIT */
-#undef TARGET_SHORT_DOUBLE
-#define TARGET_SHORT_DOUBLE 0 
 
 #define MCHP_CONFIGURATION_DATA_FILENAME "configuration.data"
 #define MCHP_CONFIGURATION_HEADER_MARKER \
@@ -87,10 +84,10 @@ do {                     \
  * peripheral library if -mno-peripheral-libs option is not specified, but
  * the -mprocessor option is specified.
  */
-
- /* chipKIT */
 #undef  LIB_SPEC
+/* chipKIT */
 #define LIB_SPEC "--start-group -lc -lsupc++ -lpic32 -lgcc -lm --end-group"
+
 
 #undef LIBSTDCXX
 #define LIBSTDCXX "supc++"
@@ -106,9 +103,9 @@ do {                     \
   %{!mprocessor=* : crt0%O%s} \
   %{!A:%{!nostdlib:%{!mno-default-isr-vectors:%{mdebugger|mreserve=* : -l:software-debug-break.o} }}}\
   %{!A:%{!nostdlib:%{!mno-default-isr-vectors:%{!mdebugger : %{!mreserve=*: \
-    %{mmicromips : -l:debug-exception-return-mm.o; \
-    !mmicromips: -l:debug-exception-return.o}}} }}} \
+  !mmicromips: -l:debug-exception-return.o}}} }}} \
  "
+
 
 # undef STARTFILECXX_SPEC
 # define STARTFILECXX_SPEC "%{mmicromips: %s%{mprocessor=*:./proc/%*} %J%{mprocessor=*:/cpprt0_micromips%O} ;\
@@ -124,7 +121,7 @@ do {                     \
 
 #undef LINK_COMMAND_SPEC
 /* Add the PIC32 default linker script with the -T option */
-/* When compiling with -mprocessor=32MX* or without the -mprocessor option, 
+/* When compiling with -mprocessor=32MX* or without the -mprocessor option,
    use the ./ldscripts/elf32pic32mx.x file. When compiling for a newer device,
    Use ./proc/<procname>/p<procname>.ld. */
 #define LINK_COMMAND_SPEC "\
@@ -151,8 +148,8 @@ do {                     \
     %{static:} %{L*} %(mfwrap) %(link_libgcc) %o\
     %{fopenmp|ftree-parallelize-loops=*:%:include(libgomp.spec)%(link_gomp)} %(mflib)\
     %{fprofile-arcs|fprofile-generate*|coverage:-lgcov}\
-    %{!pie:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors: -l:default_isr_vectors.o} }}}}}\
-    %{pie:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors: -l:default_isr_vectors_pic.o} }}}}}\
+    %{!pie:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors:%{!mdfp=*: -l:default_isr_vectors.o} }}}}}}\
+    %{pie:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors:%{!mdfp=*: -l:default_isr_vectors_pic.o} }}}}}}\
     %{!pie:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors: %{mprocessor=32*: \
       %{mmicromips : -l:pic32_software_reset-mm.o; \
       !mmicromips  : -l:pic32_software_reset.o}}}}}}}}\
@@ -160,12 +157,15 @@ do {                     \
       %{mmicromips : -l:pic32_software_reset_pic-mm.o; \
       !mmicromips  : -l:pic32_software_reset_pic.o}}}}}}}}\
     %{mreserve=*:--mreserve=%* } \
+    %{mdfp=*: %{mprocessor=*: -D__XC32_WITH_DFP=1}} \
     %{!pie:%{T:%{T*};!T:-T %s%{mprocessor=32MX*:./ldscripts/elf32pic32mx.x; \
      :%{mprocessor=32mx*:./ldscripts/elf32pic32mx.x; \
      :%{!mprocessor=*:./ldscripts/elf32pic32mx.x; \
-     :%{mprocessor=*:./proc/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:.ld} }}}}} \
+     :%{mdfp=* :%*%J%{mprocessor=*:/xc32/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:.ld}; \
+       :%{mprocessor=*:./proc/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:.ld} }}}}}} \
     %{pie:%{T:%{T*};!T:-T %s%{!mprocessor=*:elf32pic32mx_pic.x; \
-     :%{mprocessor=*:./proc/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:_pic.ld} }}} \
+     :%{mdfp=* :%*%J%{mprocessor=*:/xc32/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:_pic.ld}; \
+       :%{mprocessor=*:./proc/%*} %J%{mprocessor=*:/p%*} %J%{mprocessor=*:_pic.ld} }}}} \
     %{!nostdlib:%{!nodefaultlibs:%(link_ssp) %(link_gcc_c_sequence)}}\
     %{!A:%{!nostdlib:%{!nostartfiles:%E} }} \
     %{mlegacy-libc:%{mxc32cpp-lib:%e-legacy-libc not compatible with C++ projects}} \
@@ -222,11 +222,17 @@ do {                     \
 
 #if 0 /* chipKIT */
 #ifndef TARGET_EXTRA_PRE_INCLUDES
-extern void pic32_system_include_paths(const char *root, const char *system,
+extern void pic32_system_pre_include_paths(const char *root, const char *system,
                                        int nostdinc);
-#define TARGET_EXTRA_PRE_INCLUDES pic32_system_include_paths
+#define TARGET_EXTRA_PRE_INCLUDES pic32_system_pre_include_paths
 #endif
+
+#ifndef TARGET_FINAL_INCLUDES
+struct cpp_dir;
+extern void pic32_final_include_paths(struct cpp_dir*,struct cpp_dir*);
+#define TARGET_FINAL_INCLUDES pic32_final_include_paths
 #endif
+#endif /* chipKIT */
 
 #ifdef DIR_SEPARATOR
 #if DIR_SEPARATOR == '\\'
@@ -243,6 +249,11 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #ifndef MPLABC32_LEGACY_COMMON_INCLUDE_PATH
 #define MPLABC32_LEGACY_COMMON_INCLUDE_PATH DIR_SEPARATOR_STR \
                                      "lega-c"
+#endif
+
+#ifndef MPLABC32_NEWLIB_COMMON_INCLUDE_PATH
+#define MPLABC32_NEWLIB_COMMON_INCLUDE_PATH DIR_SEPARATOR_STR \
+                                     "newlib"
 #endif
 
 /* These are MIPS-specific specs that we do not utilize.  Undefine them
@@ -316,27 +327,38 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #undef BASE_DRIVER_SELF_SPECS
 #define BASE_DRIVER_SELF_SPECS \
   "%{!mno-dsp: \
-     %{march=24ke*|march=34kc*|march=34kf*|march=34kx*|march=1004k*: -mdsp} \
-     %{march=74k*|march=m14ke*: %{!mno-dspr2: -mdspr2 -mdsp}}} \
+     %{march=24ke*|march=34kc*|march=34kf*|march=34kx*|march=1004k*: -mdsp } \
+     %{march=74k*|march=m14ke*: %{!mno-dspr2: -mdspr2 -mdsp }}} \
    %{mprocessor=32MX* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs } \
-   %{mprocessor=32mx* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs} \
-   %{mprocessor=32MZ* : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs} \
-   %{mprocessor=32mz* : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs} \
+   %{mprocessor=32mx* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs } \
+   %{mprocessor=32MZ* : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs } \
+   %{mprocessor=32mz* : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs } \
    %{mprocessor=MGC* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs } \
-   %{mprocessor=mgc* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs} \
-   %{mprocessor=IPSWICH : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs} \
-   %{mprocessor=MEC* : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs} \
-   %{mprocessor=32MM*: -mmicromips -mpic32mmlibs} \
-   %{mprocessor=32mm*: -mmicromips -mpic32mmlibs} \
-   %{mpic32mxlibs : %{msmall-isa: -mips16}} \
-   %{mpic32mzlibs : %{msmall-isa: -mmicromips}} \
-   %{mpic32mmlibs : -mmicromips} \
-   %{D__DEBUG : -mdebugger} \
-   %{mprocessor=32*|mprocessor=MG* : ;:-mno-default-isr-vectors} \
-   %{mhard-float : %{!mfp32 : -mfp64} } \
+   %{mprocessor=mgc* : %{msmall-isa:-mips16} %{!msmall-isa: %{mips16: -msmall-isa}} -mpic32mxlibs } \
+   %{mprocessor=IPSWICH : %{msmall-isa:-mmicromips} %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs } \
+   %{mprocessor=MEC* : %{msmall-isa:-mmicromips } %{!msmall-isa: %{mmicromips: -msmall-isa}} -mpic32mzlibs } \
+   %{mprocessor=32MM*: -mmicromips -mpic32mmlibs } \
+   %{mprocessor=32mm*: -mmicromips -mpic32mmlibs } \
+   %{mpic32mxlibs : %{msmall-isa: -mips16 }} \
+   %{mpic32mzlibs : %{msmall-isa: -mmicromips }} \
+   %{mpic32mmlibs : -mmicromips } \
+   %{D__DEBUG : -mdebugger } \
+   %{mprocessor=32*|mprocessor=MG* : ;:-mno-default-isr-vectors } \
+   %{mhard-float : %{!mfp32 : -mfp64 } } \
    %{mfp64 : -mhard-float } \
-   %{!mfp64 : %{!mno-float : -msoft-float}} \
-     "
+   %{!mfp64 : %{!mno-float : -msoft-float }} \
+   %{legacy-libc:%{!mno-legacy-libc:-mlegacy-libc }} \
+   %{no-legacy-libc:%{!mlegacy-libc:-mno-legacy-libc }} \
+   %{newlib-libc:%{!mno-newlib-libc:-mnewlib-libc }} \
+   %{no-newlib-libc:%{!mnewlib-libc:-mno-newlib-libc }} \
+   %{mgen-pie-static : -fPIC -G0 -pie -static -relaxed-math -mno-smart-io } \
+   %{mnewlib-libc|newlib-libc : %{mlegacy-libc|legacy-libc:%emay not use both -mlegacy-libc and -mnewlib-libc }} \
+   %{mnewlib-libc : -mno-smart-io -mno-legacy-libc %{!fshort-double:-fno-short-double }} \
+   %{newlib-libc : -mno-smart-io -mno-legacy-libc -fno-short-double } \
+   %{mprocessor=*: %{!c:%{!S:%{!E:%{!nostartfiles:%{mdfp=*: %* %J%{!pie:/xc32/startup/crt0.S } %J%{pie:/xc32/startup/crt0_pic.S } ; : %J%{!pie: %s./crt0.S } %J%{pie: %s./crt0_pic.S }}}}}}}\
+   %{mprocessor=*: %{!c:%{!S:%{!E:%{mdfp=*: %* %J%{mprocessor=*:/xc32/%*%J/p%*%J.S } ;: %J%{mprocessor=*: %s./proc/%*%J/p%*%J.S } }}}}}\
+   %{mprocessor=*: %{!c:%{!S:%{!E:%{!A:%{!nostdlib:%{!nodefaultlibs:%{!nostartfiles:%{!mno-default-isr-vectors:%{mdfp=*: %* %J%{mprocessor=*:/xc32/%*%J/p%*%J_div.S } ;: %J%{mprocessor=*: %s./proc/%*%J/p%*%J_div.S } }}}}}}}}} }\
+  "
 
 /* CC1_SPEC is the set of arguments to pass to the compiler proper.  This
  * was copied from the one in mips.h, but that one had some problems and
@@ -379,19 +401,22 @@ extern void pic32_system_include_paths(const char *root, const char *system,
  %{-nofallback : -mno-fallback } \
  %{!fasynchronous-unwind-tables : -fno-asynchronous-unwind-tables } \
  %{!fdwarf2-cfi-asm : -fno-dwarf2-cfi-asm } \
- %{!mconfig-data-dir=* : -mconfig-data-dir= %J%s%{ mprocessor=* :./proc/%*; :./proc/32MXGENERIC}} \
- %{!ftoplevel-reorder : -fno-toplevel-reorder } \
+ %{!mconfig-data-dir=* : %{!mprocessor=*: -mconfig-data-dir= %J%s./proc/32MXGENERIC; : \
+  %{!mdfp=* : -mconfig-data-dir= %J%s%{mprocessor=* :./proc/%*}}}}\
+ %{!mconfig-data-dir=* : %{mprocessor=*: %{mdfp=* : -mconfig-data-dir=%* %J%{mprocessor=*:/xc32/%*}}}}\
+ %{mdfp=*:-isystem %* %J/include}\
  %{flto: %{!fno-fat-lto-objects: -ffat-lto-objects}} \
- %{O2|Os|O3:%{!mno-hi-addr-opt:-mhi-addr-opt}} \
+ %{legacy-libc:%{!mno-legacy-libc:-mlegacy-libc}} \
+ %{no-legacy-libc:%{!mlegacy-libc:-mno-legacy-libc}} \
+ %{mdfp=*: -mresource=%* %J/xc32} \
  %(mchp_cci_cc1_spec) \
  %(subtarget_cc1_spec) \
 "
 
 #define CC1PLUS_SPEC " \
  %{!fenforce-eh-specs:-fno-enforce-eh-specs} \
- %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=gnu++11} -msmart-io=0 }} \
+ %{mxc32cpp-lib:%{!mno-xc32cpp-lib:%{!std=*:-std=c++11} -msmart-io=0 }} \
  %(subtarget_cc1plus_spec) \
- %{O2|Os|O3:%{!mno-hi-addr-opt:-mhi-addr-opt}} \
 "
 
 /* Preprocessor specs.  */
@@ -399,7 +424,9 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 /* SUBTARGET_CPP_SPEC is passed to the preprocessor.  It may be
    overridden by subtargets.  */
 #ifndef SUBTARGET_CPP_SPEC
-#define SUBTARGET_CPP_SPEC ""
+#define SUBTARGET_CPP_SPEC "\
+    %{mdfp=*:-isystem %* %J/include}\
+"
 #endif
 
 #undef CPP_SPEC
@@ -637,6 +664,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
       }                                                     \
                                                             \
     builtin_define_std ("PIC32");                           \
+    builtin_define_std ("PIC32M");                          \
     builtin_define     ("__C32__");                         \
     builtin_define     ("__XC32");                          \
     builtin_define     ("__XC32__");                        \
@@ -982,6 +1010,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
   c_register_pragma(0, "coherent", mchp_handle_coherent_pragma); \
   c_register_pragma(0, "optimize", mchp_handle_optimize_pragma); \
   c_register_pragma(0, "region", mchp_handle_region_pragma); \
+  c_register_pragma(0, "nocodecov", mchp_handle_nocodecov_pragma); \
   mchp_init_cci_pragmas(); \
   }
 
@@ -1106,6 +1135,9 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #define DTORS_SECTION_ASM_OP "\t.section .dtors, code"
 #endif
 
+#undef SUBTARGET_ASM_CODE_END
+#define SUBTARGET_ASM_CODE_END mchp_asm_code_end()
+
 #undef TARGET_ASM_FILE_END
 #define TARGET_ASM_FILE_END mchp_file_end
 
@@ -1179,6 +1211,8 @@ extern void pic32_system_include_paths(const char *root, const char *system,
     { "region",           1, 1,  false, false, false, mchp_region_attribute, false },         \
     { "function_replacement_prologue",  0, 0,  true, false,  false,  mchp_frp_attribute, false },        \
     { "shared",           0, 0,  false, false, false, mchp_shared_attribute, false },         \
+    { "noload",           0, 0,  false, false, false, mchp_noload_attribute, false },         \
+    { "nocodecov",        0, 0,  false, true,  true, NULL, false },                           \
     /* prevent FPU usage in ISRs */                                                           \
     { "no_fpu",           0, 0,  false, true,  true,  NULL, false },
 
@@ -1258,11 +1292,14 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #undef TARGET_APPLY_PRAGMA
 #define TARGET_APPLY_PRAGMA mchp_apply_pragmas
 
+#undef TARGET_SET_DEFAULT_TYPE_ATTRIBUTES
+#define TARGET_SET_DEFAULT_TYPE_ATTRIBUTES mchp_set_default_type_attributes
+
 /* Initialize the GCC target structure.  */
 #if 0 /* chipKIT */
 #undef TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE
 #define TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE mchp_override_options_after_change
-#endif
+#endif /* chipKIT */
 
 /* True if we can optimize sibling calls.  For simplicity, we only
    handle cases in which call_insn_operand will reject invalid
@@ -1282,7 +1319,7 @@ extern void pic32_system_include_paths(const char *root, const char *system,
 #define PIC32_SUPPORT_CRYPTO_ATTRIBUTE 1
 
 #undef COLLECT2_RELATIVE_LD_FILE_NAME
-#define COLLECT2_RELATIVE_LD_FILE_NAME "../../../../pic32-ld"
+#define COLLECT2_RELATIVE_LD_FILE_NAME "../../../../xc32-ld"
 
 #if defined(__MINGW32__)
 #define MCHP_CONVERT_BACKSLASH(string)  \
@@ -1384,5 +1421,24 @@ do {                                    \
         generate_option (OPT_mdsp, NULL, 1, CL_DRIVER, &(decoded_options)[decoded_options_count-1]);  \
       }                                                                            \
     }
+
+
+/* Code Coverage-related ---> */
+
+#define TARGET_XCCOV_LIBEXEC_PATH   pic32_libexec_path
+#define TARGET_XCCOV_BEGIN_INSTMT   pic32_begin_cc_instrument
+#define TARGET_XCCOV_ADJ_INS_POS    pic32_adjust_insert_pos
+#define TARGET_XCCOV_CC_BITS_OFS    TARGET_MIPS16
+#define TARGET_XCCOV_LD_CC_BITS     pic32_ld_cc_bits
+#define TARGET_XCCOV_SET_CC_BIT     pic32_set_cc_bit
+#define TARGET_XCCOV_ADD_EOB_INSN   pic32_add_eob_insn
+#define TARGET_XCCOV_LICENSED       pic32_licensed_xccov_p
+#define TARGET_XCCOV_EMIT_SECTION   pic32_emit_cc_section
+
+#undef SUBTARGET_CONDITIONAL_REGISTER_USAGE
+#define SUBTARGET_CONDITIONAL_REGISTER_USAGE pic32_cond_reg_usage
+
+/* <--- end of Code Coverage-related */
+
 
 #endif /* MCHP_H */

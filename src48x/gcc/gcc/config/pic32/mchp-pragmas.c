@@ -647,7 +647,22 @@ void mchp_handle_region_pragma (struct cpp_reader *pfile) {
     CLEAR_REST_OF_INPUT_LINE();
     return;
   }
-  
+
   pic32_update_external_memory_info(region_name, region_origin, region_size);
   return;
+}
+
+/* handler function for the 'nocodecov' pragma (sets mchp_pragma_nocodecov) */
+void
+mchp_handle_nocodecov_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED)
+{
+  tree tok_value;
+
+  if (pragma_lex (&tok_value) != CPP_EOF)
+    {
+      warning (OPT_Wpragmas, "junk at end of %<#pragma nocodecov%>, ignored");
+      CLEAR_REST_OF_INPUT_LINE();
+    }
+
+  mchp_pragma_nocodecov = 1;
 }

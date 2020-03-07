@@ -1611,8 +1611,18 @@ main (int argc, char **argv)
        expect the relevant tables to be dragged together with their associated
        functions from precise cross reference insertions by the compiler.  */
 
+#if defined(_BUILD_C32_)
+    if (early_exit || ld1_filter != SCAN_NOTHING)
+    {
+      if (lto_mode != LTO_MODE_NONE)
+        do_tlink_continue (ld1_argv, object_lst);
+      else
+        do_tlink (ld1_argv, object_lst);
+    }
+#else
     if (early_exit || ld1_filter != SCAN_NOTHING)
       do_tlink (ld1_argv, object_lst);
+#endif
 
     if (early_exit)
       {

@@ -7,7 +7,7 @@ consists of making references though the BFD and to data in the BFD.
 Here is the structure that defines the type @code{bfd}.  It
 contains the major data about the file and pointers
 to the rest of the data.
-
+  
 
 @example
 

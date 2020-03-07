@@ -9195,8 +9195,11 @@ mips_code_end (void)
   mips_finish_stub (&mips16_rdhwr_stub);
   mips_finish_stub (&mips16_get_fcsr_stub);
   mips_finish_stub (&mips16_set_fcsr_stub);
+#ifdef SUBTARGET_ASM_CODE_END
+  SUBTARGET_ASM_CODE_END;
+#endif
 }
-
+
 /* Make the last instruction frame-related and note that it performs
    the operation described by FRAME_PATTERN.  */
 
@@ -9234,7 +9237,7 @@ mips_add_cfa_restore (rtx reg)
   mips_epilogue.cfa_restores = alloc_reg_note (REG_CFA_RESTORE, reg,
 					       mips_epilogue.cfa_restores);
 }
-
+
 /* If a MIPS16e SAVE or RESTORE instruction saves or restores register
    mips16e_s2_s8_regs[X], it must also save the registers in indexes
    X + 1 onwards.  Likewise mips16e_a0_a3_regs.  */
@@ -15015,6 +15018,11 @@ mips_init_builtins (void)
     mchp_print_builtin_function (decl);
   }
     
+  /* When we are being called by MPLAB X's editor, stop compilation after 
+     printing the builtin functions. */
+  if (TARGET_SKIP_LICENSE_CHECK) {
+    exit (1);
+  }
 #endif
 }
 
@@ -19457,7 +19465,6 @@ mips_swap_registers (unsigned int i)
 static void
 mips_conditional_register_usage (void)
 {
-
   if (ISA_HAS_DSP)
     {
       /* These DSP control register fields are global.  */
@@ -19532,6 +19539,9 @@ mips_conditional_register_usage (void)
       for (regno = DSP_ACC_REG_FIRST; regno <= DSP_ACC_REG_LAST; regno += 2)
 	mips_swap_registers (regno);
     }
+#ifdef SUBTARGET_CONDITIONAL_REGISTER_USAGE
+  SUBTARGET_CONDITIONAL_REGISTER_USAGE ();
+#endif
 }
 
 /* Implement EH_USES.  */

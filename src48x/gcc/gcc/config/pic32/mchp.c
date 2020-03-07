@@ -88,10 +88,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "config/mips/mips-machine-function.h"
 #include "version.h"
 
+#include "xc-coverage.h"
+
 /* splitting for lto/non-lto causes beacoup problems */
 #include "../../../../c30_resource/src/xc32/resource_info.h"
 #include "config/mchp-cci/cci.h"
-
 
 #ifdef __MINGW32__
 void *alloca(size_t);
@@ -177,6 +178,7 @@ static pic32_function_replacement_prologue *pic32_function_replacement_prologue_
 #define SECTION_NAME_INIT_ARRAY   ".init_array"
 #define SECTION_NAME_FINI_ARRAY   ".fini_array"
 #define SECTION_NAME_SERIALMEM    ".serial_mem"
+#define SECTION_NAME_PERSIST      ".persist"
 
 #define JOIN2(X,Y) (X ## Y)
 #define JOIN(X,Y) JOIN2(X,Y)
@@ -325,7 +327,7 @@ struct reserved_section_names_
   { ".sbss",   SECTION_BSS | SECTION_NEAR },
   { ".sdata",  SECTION_WRITE | SECTION_NEAR },
   { ".sdconst",SECTION_WRITE | SECTION_NEAR },
-  { ".pbss",   SECTION_PERSIST },
+  { ".pbss",   SECTION_PERSIST | SECTION_COHERENT },
   { ".text",   SECTION_CODE },
   { ".ramfunc", SECTION_RAMFUNC },
   { ".gnu.linkonce.d", SECTION_WRITE },
@@ -481,6 +483,7 @@ static HOST_WIDE_INT mchp_offset_fcsr = 0;
 
 static HOST_WIDE_INT mchp_invalid_ipl_warning = 0;
 
+
 static void push_cheap_rtx(cheap_rtx_list **l, rtx x, tree t, int flag);
 static rtx pop_cheap_rtx(cheap_rtx_list **l, tree *t, int *flag);
 
@@ -523,6 +526,7 @@ static void mchp_pop_section_name(void);
 #endif
 static tree get_mchp_space_attribute (tree decl);
 static tree get_mchp_region_attribute (tree decl);
+static tree get_mchp_noload_attribute (tree decl);
 
 extern unsigned int mips_get_compress_mode (tree decl);
 extern void mips_set_compression_mode (unsigned int compression_mode);
@@ -547,6 +551,9 @@ struct vector_dispatch_spec *vector_dispatch_list_head;
 
 struct mchp_config_specification *mchp_configuration_values;
 
+/* mchp_pragma_nocodecov is != 0 when #pragma nocodecov is in effect */
+int mchp_pragma_nocodecov = 0;
+
 #if !defined(MCHP_SKIP_RESOURCE_FILE)
 /* This will be called by the spec parser in gcc.c when it sees
    a %:local_cpu_detect(args) construct.
@@ -560,6 +567,15 @@ static const char* mchp_get_resource_file_path(void)
 #if 0
   char* path = make_relative_prefix(save_argv[0], "/bin/bin", "/bin");
 #endif
+
+/* It goes like this:
+save_decoded_options (PROGNAME) will be something like:
+<install dir>/bin/bin/gcc/pic32mx/4.8.3/cc1
+BIN_PREFIX is /pic32mx/bin/gcc/pic32mx/4.8.3
+          /a/b/c/d/e
+PREFIX is /bin
+=> path = <install dir>/bin/bin/gcc/pic32mx/4.8.3/../../../../../bin
+*/
   char* path = make_relative_prefix(save_decoded_options[0].arg,
                                   "/pic32mx/bin/gcc/pic32mx/"
                                   str(BUILDING_GCC_MAJOR) "."
@@ -579,6 +595,7 @@ static const char* mchp_get_resource_file_path(void)
       }
   }
 #endif
+
   return path;
 }
 
@@ -627,6 +644,7 @@ static unsigned int mchp_load_resource_info(char *id, char **matched_id, const c
     mchp_resource_file_generic = (char *)xcalloc (buffer_size,1);
     snprintf (mchp_resource_file_generic, buffer_size, "%s", mchp_resource_file_in);
   }
+
   rib = read_device_rib (mchp_resource_file_generic, id);
   if (rib == 0) {
     error("Could not open resource file for: %qs at %qs", id, mchp_resource_file_generic);
@@ -750,6 +768,8 @@ mchp_subtarget_override_options(void)
     error ("unsupported combination: %s", "-mips16 -mdspr2");
   }
 
+
+
   mask = validate_device_mask ((char*)mchp_processor_string, &mchp_target_cpu_id,
                               mchp_resource_file);
 #endif
@@ -760,55 +780,33 @@ mchp_subtarget_override_options(void)
 void
 mchp_subtarget_override_options1 (void)
 {
-    mips_code_readable = CODE_READABLE_PCREL;
+  mips_code_readable = CODE_READABLE_PCREL;
 
-    /* If smart-io is explicitly disabled, make the size value 0 */
-    if (!TARGET_MCHP_SMARTIO)
+  /* If smart-io is explicitly disabled, make the size value 0 */
+  if (!TARGET_MCHP_SMARTIO)
     {
-        mchp_io_size_val = 0;
+      mchp_io_size_val = 0;
     }
-    if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
+  if ((mchp_io_size_val < 0) || (mchp_io_size_val > 2))
     {
-        warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
-        mchp_io_size_val = 1;
+      warning (0, "Invalid smart-io level %d, assuming 1", mchp_io_size_val);
+      mchp_io_size_val = 1;
     }
 
-    if (TARGET_LONG_CALLS)
+  if (TARGET_LONG_CALLS)
     {
-        TARGET_MCHP_SMARTIO = 0;
-        mchp_io_size_val = 0;
+      TARGET_MCHP_SMARTIO = 0;
+      mchp_io_size_val = 0;
     }
-    
-    /* Switch on ABICALLS mode if -fpic or -fpie were
-     used, and the user hasn't explicitly disabled
-     these modes.  */
-    
-    if ((flag_pic || flag_pie) && !TARGET_ABICALLS
-        && !(target_flags_explicit & MASK_ABICALLS)
-        && mips_abi != ABI_EABI)
-        target_flags |= MASK_ABICALLS;
-}
 
-void
-mchp_subtarget_override_options2 (void)
-{
-  extern char **save_argv;
-  bool mips_base_mips16 = (mips_base_compression_flags & MASK_MIPS16) != 0;
-  bool mips_base_micromips = (mips_base_compression_flags & MASK_MICROMIPS) != 0;
+   /* Switch on ABICALLS mode if -fpic or -fpie were
+      used, and the user hasn't explicitly disabled
+      these modes.  */
 
-  if (mips_base_mips16 || mips_base_micromips)
-  {
-    flag_inline_small_functions = 0;
-    flag_inline_functions = 0;
-    flag_no_inline = 1;
-  }
-
-  if (mchp_profile_option) {
-    flag_inline_small_functions = 0;
-    flag_inline_functions = 0;
-    flag_no_inline = 1;
-    flag_optimize_sibling_calls = 0;
-  }
+   if ((flag_pic || flag_pie) && !TARGET_ABICALLS
+      && !(target_flags_explicit & MASK_ABICALLS)
+      && mips_abi != ABI_EABI)
+    target_flags |= MASK_ABICALLS;
 }
 
 static void
@@ -853,6 +851,56 @@ mchp_output_ext_region_memory_info (void)
       fprintf(asm_out_file, "\n\n");
     }
 }
+
+/* --- Code Coverage-related hooks */
+
+/* Implement TARGET_ASM_CODE_END.  */
+void
+mchp_asm_code_end (void)
+{
+  xccov_code_end ();
+}
+
+/* if 'mchp_pragma_nocodecov' is set, adds 'nocodecov' attribute to function types */
+void
+mchp_set_default_type_attributes (tree type)
+{
+  if (mchp_pragma_nocodecov
+      && (TREE_CODE (type) == FUNCTION_TYPE || TREE_CODE (type) == METHOD_TYPE))
+    {
+      tree type_attr_list = TYPE_ATTRIBUTES (type);
+      tree attr_name = get_identifier ("nocodecov");
+
+      type_attr_list = tree_cons (attr_name, NULL_TREE, type_attr_list);
+      TYPE_ATTRIBUTES (type) = type_attr_list;
+    }
+}
+
+void
+pic32_emit_cc_section (const char *name)
+{
+  gcc_assert (name);
+
+  SECTION_FLAGS_INT flags = 0;
+
+  if (!strcmp (name, CODECOV_SECTION))
+    {
+      flags = SECTION_BSS;
+    }
+  else if (!strcmp (name, CODECOV_INFO_HDR) || !strcmp (name, CODECOV_INFO))
+    {
+      flags = SECTION_INFO | SECTION_KEEP;
+    }
+  else
+    {
+      gcc_unreachable ();
+    }
+
+  switch_to_section (get_section (name, flags, NULL));
+}
+
+/* --- end of Code Coverage-related hooks */
+
 void mchp_file_end (void)
 {
   if (!(flag_pic || flag_pie)) 
@@ -2118,6 +2166,56 @@ tree mchp_crypto_attribute(tree *node, tree identifier ATTRIBUTE_UNUSED,
 
 }
 
+tree
+mchp_noload_attribute (tree *decl, tree identifier ATTRIBUTE_UNUSED,
+			 tree args, int flags ATTRIBUTE_UNUSED,
+			 bool *no_add_attrs)
+{
+  const char *attached_to = 0;
+
+  if (DECL_P (*decl))
+    attached_to = IDENTIFIER_POINTER (DECL_NAME (*decl));
+
+  if (ignore_attribute ("noload", attached_to, *decl))
+    {
+      *no_add_attrs = 1;
+      return NULL_TREE;
+    }
+
+  /* If the persistent attribute is specified, noload is implied, and
+     we can simply handle this as any other persistent data (i.e. 
+     placed into noload section .pbss. */
+  if (mchp_persistent_p (*decl))
+    {
+      return NULL_TREE;
+    }
+
+  if (TREE_CODE (*decl) != FUNCTION_DECL && DECL_INITIAL (*decl))
+    {
+      location_t loc = DECL_SOURCE_LOCATION (*decl);
+
+      /* This odd warning is for consistency with xc16. It's been moved
+         to attribute checking to avoid repeatedly issuing it in build_prefix. */
+      if (attached_to)
+	warning_at (loc, 0, "%D Noload variable '%s' will not be initialized",
+		    *decl, attached_to);
+      else
+	warning_at (loc, 0, "%D Noload variable will not be initialized",
+		    *decl);
+    }
+
+
+  /* Like 'keep' we require unique sections for noload at present. The
+     alternative (which seems preferable) would be to create noload variants
+     of all sections and map accordingly.
+     Like 'keep', we do not imply the unqiue_section attribute or any checks
+     directly. */
+  DECL_COMMON (*decl) = 0;
+  DECL_UNIQUE_SECTION (*decl) = 1;
+
+  return NULL_TREE;
+}
+
 /* Don't emit a function prologue. */
 bool
 mchp_suppress_prologue (void)
@@ -2210,6 +2308,33 @@ mchp_expand_prologue_end (const struct mips_frame_info *frame)
     }
 }
 
+/* NOTE: I would've used
+ *          mips_deallocate_stack (stack_pointer_rtx, GEN_INT (step2), 0);
+ *       instead of the various
+ *          emit_insn (gen_add3_insn (stack_pointer_rtx,
+ *                                    stack_pointer_rtx,
+ *                                    GEN_INT (step2)));
+ *       calls in mchp_expand_epilogue_restoreregs() below, but
+ *       mips_deallocate_stack() is also calling mips_frame_barrier() and
+ *       mips_epilogue_set_cfa(), which were intentionally removed from the MIPS16
+ *       code path in mchp_expand_epilogue_restoreregs() (see mips_expand_epilogue()
+ *       for the original form); as I don't know the rationale for that, I've opted for
+ *       only adding the 'frame-related' bit to the SP-modifying instruction
+ *       with this function.
+ */
+static inline void
+mchp_deallocate_stack (HOST_WIDE_INT step2)
+{
+  rtx insn;
+
+  if (step2 > 0)
+    {
+      insn = emit_insn (gen_add3_insn (stack_pointer_rtx,
+                                       stack_pointer_rtx, GEN_INT (step2)));
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+}
+
 void
 mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                                   HOST_WIDE_INT step2)
@@ -2254,6 +2379,8 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
 
       /* Restore the remaining registers and deallocate the final bit
       of the frame.  */
+      /* NOTE: why were the mips_frame_barrier() and mips_epilogue_set_cfa() calls removed here?
+       * At least 'restore' has the 'frame-related' bit set from mips16e_build_save_restore()...*/
       emit_insn (restore);
     }
   else
@@ -2329,12 +2456,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                   offset -= UNITS_PER_WORD;
                 }
               /* If we don't use shadow register set, we need to update SP.  */
-              if (step2 > 0)
-                {
-                  emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                            stack_pointer_rtx,
-                                            GEN_INT (step2)));
-                }
+              mchp_deallocate_stack (step2);
 
               if (mchp_save_srsctl)
                 {
@@ -2446,12 +2568,8 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                     }
                 }
               /* Update SP.  */
-              if (step2 > 0)
-                {
-                  emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                            stack_pointer_rtx,
-                                            GEN_INT (step2)));
-                }
+              mchp_deallocate_stack (step2);
+
               emit_insn (gen_mips_wrpgpr (stack_pointer_rtx, stack_pointer_rtx));
               /* Restore previously loaded Status.  */
               emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_STATUS_REG_NUM),
@@ -2546,12 +2664,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                   offset -= UNITS_PER_WORD;
                 }
               /* we need to update SP.  */
-              if (step2 > 0)
-                {
-                  emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                            stack_pointer_rtx,
-                                            GEN_INT (step2)));
-                }
+              mchp_deallocate_stack (step2);
 
               if (mchp_save_srsctl)
                 {
@@ -2665,12 +2778,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                   offset -= UNITS_PER_WORD;
                 }
               /* If we don't use shadow register set, we need to update SP.  */
-              if (step2 > 0)
-                {
-                  emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                            stack_pointer_rtx,
-                                            GEN_INT (step2)));
-                }
+              mchp_deallocate_stack (step2);
 
               if (mchp_save_srsctl)
                 {
@@ -2720,21 +2828,21 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                   mips_emit_move (gen_rtx_REG (word_mode, K0_REG_NUM), mem);
                   offset -= UNITS_PER_WORD;
               }
-              
+
               /* Load the original Status.  */
               gcc_assert (mchp_offset_status >= 0);
               mem = gen_frame_mem (word_mode,
                                    plus_constant (word_mode,stack_pointer_rtx, mchp_offset_status));
               mips_emit_move (gen_rtx_REG (word_mode, K1_REG_NUM), mem);
               offset -= UNITS_PER_WORD;
-              
+
               if (cfun->machine->interrupt_priority < 7)
               {
                   /* Restore the original EPC.  */
                   emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_EPC_REG_NUM),
                                             gen_rtx_REG (SImode, K0_REG_NUM)));
               }
-              
+
               if (mchp_save_srsctl)
               {
                   /* Load the original SRSCTL.  */
@@ -2745,13 +2853,8 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
                   offset -= UNITS_PER_WORD;
               }
               /* If we don't use shadow register set, we need to update SP.  */
-              if (step2 > 0)
-              {
-                  emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                            stack_pointer_rtx,
-                                            GEN_INT (step2)));
-              }
-              
+              mchp_deallocate_stack (step2);
+
               if (mchp_save_srsctl)
               {
                   /* Restore previously loaded SRSCTL.  */
@@ -2762,7 +2865,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
               /* Restore previously loaded Status.  */
               emit_insn (gen_cop0_move (gen_rtx_REG (SImode, COP0_STATUS_REG_NUM),
                                         gen_rtx_REG (SImode, K1_REG_NUM)));
-              
+
           } /* SAVEALL_CONTEXT_SAVE */
           else /* unknown context-saving mechanism */
             {
@@ -2777,10 +2880,7 @@ mchp_expand_epilogue_restoreregs (HOST_WIDE_INT step1 ATTRIBUTE_UNUSED,
           mips_for_each_saved_gpr_and_fpr (frame->total_size - step2,
                                            mips_restore_reg, NULL_RTX);
           /* Deallocate the final bit of the frame.  */
-          if (step2 > 0)
-            emit_insn (gen_add3_insn (stack_pointer_rtx,
-                                      stack_pointer_rtx,
-                                      GEN_INT (step2)));
+          mchp_deallocate_stack (step2);
         }
     }
 
@@ -2872,6 +2972,9 @@ mchp_compute_frame_info (void)
   if (prevfun != cfun)
     {
        mchp_invalid_ipl_warning = 0;
+       /* Also reset the static arrays elements that may've been changed during
+        * the previous execution of this function to their default values */
+       fixed_regs[V1_REGNUM] = fixed_regs[V0_REGNUM] = 0;
     }
   prevfun = cfun;
 
@@ -3170,23 +3273,27 @@ mchp_subtarget_save_reg_p (unsigned int regno)
     return true;
 
   if (cfun->machine->current_function_type == SAVEALL_CONTEXT_SAVE)
-  {
-        if (regno >= GP_REG_FIRST && regno <= GP_REG_LAST)
+    {
+      if (regno >= GP_REG_FIRST && regno <= GP_REG_LAST)
+        return true;
+
+      if (TARGET_HARD_FLOAT)
+        {
+          if (regno >= FP_REG_FIRST && regno <= FP_REG_LAST)
             return true;
-        
-        if (TARGET_HARD_FLOAT)
-        {
-            if (regno >= FP_REG_FIRST && regno <= FP_REG_LAST)
-                return true;
         }
-        
-        if (TARGET_DSPR2)
+
+      if (TARGET_DSPR2)
         {
-            if (regno >= DSP_ACC_REG_FIRST && regno <= DSP_ACC_REG_LAST)
-                return true;
+          if (regno >= DSP_ACC_REG_FIRST && regno <= DSP_ACC_REG_LAST)
+            return true;
         }
-  }
-    
+    }
+
+  /* Code coverage could also use this register */
+  if (pic32_ccov_save_reg_p (regno))
+    return true;
+
   return false;
 }
 
@@ -3230,7 +3337,19 @@ static int
 mchp_persistent_p (tree decl)
 {
   tree a;
+  const char *sname = NULL;
+  
   a = lookup_attribute ("persistent", DECL_ATTRIBUTES (decl));
+  if (a == NULL_TREE)
+  {
+    if (DECL_SECTION_NAME(decl))
+      sname = TREE_STRING_POINTER(DECL_SECTION_NAME(decl));
+    /* test user-specified ".pbss" or ".persist" attributes */
+    if (sname &&
+  (!strcmp (sname, SECTION_NAME_PERSIST) || !strcmp (sname, SECTION_NAME_PBSS)))
+      return 1;
+  }
+
   return a != NULL_TREE;
 }
 
@@ -3293,6 +3412,25 @@ static tree
 get_mchp_space_attribute (tree decl)
 {
   return lookup_attribute ("space", DECL_ATTRIBUTES (decl));
+}
+
+static bool
+mchp_noload_p (tree decl)
+{
+  /* Persistent overrides noload - these will be placed
+     into pbss. */
+  if (mchp_persistent_p (decl))
+    return false;
+  return (lookup_attribute ("noload", DECL_ATTRIBUTES (decl)) != NULL_TREE);
+}
+
+static bool
+mchp_space_prog_p (tree decl)
+{
+  tree space_attr = NULL;
+  if (!(space_attr = get_mchp_space_attribute (decl)))
+    return false;
+  return (get_identifier("prog") == (TREE_VALUE(TREE_VALUE(space_attr))));
 }
 
 bool
@@ -3521,6 +3659,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                 {
                   gcc_assert (interrupt_priority >= 0);
                   gcc_assert (interrupt_priority <= 7);
+
                   if (cfun->machine->keep_interrupts_masked_p)
                     {
                       /* Disable interrupts by clearing the KSU, ERL, EXL,
@@ -3555,6 +3694,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
               mips_for_each_saved_gpr_and_fpr (size, mips_save_reg, NULL_RTX);
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
+
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -3907,6 +4047,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
                     }
                   offset -= UNITS_PER_WORD;
                 }
+
             } /* AUTO_CONTEXT_SAVE */
           else if (DEFAULT_CONTEXT_SAVE == cfun->machine->current_function_type)
             {
@@ -4062,6 +4203,7 @@ mchp_expand_prologue_saveregs (HOST_WIDE_INT size, HOST_WIDE_INT step1)
 
               /* Save HI/LO as late as possible to minimize stalls */
               mips_for_each_saved_acc (size, mips_save_reg);
+
               if (TARGET_DSPR2 && cfun->machine->frame.acc_mask)
                 {
                   /* Save the DSPControl register */
@@ -5107,6 +5249,7 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
   tree address_attr = 0;
   tree space_attr = 0;
   tree region_attr = 0;
+  bool noload_attr = FALSE;
   bool is_ramfunc = FALSE;
   int const_rodata = 0;
 
@@ -5124,6 +5267,7 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
   space_attr = get_mchp_space_attribute (decl);
   region_attr = get_mchp_region_attribute (decl);
   is_ramfunc = mchp_ramfunc_type_p (decl);
+  noload_attr = mchp_noload_p (decl);
 
   if (space_attr)
     {
@@ -5169,6 +5313,28 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
         {
           flags |= SECTION_READ_ONLY;
         }
+      
+      if ((flags & SECTION_PERSIST)  || (mchp_persistent_p(decl)))
+        {
+          f += sprintf(f, MCHP_PRST_FLAG);
+          section_type_set = 1;
+          DECL_COMMON (decl) = 0;
+          if (DECL_INITIAL(decl))
+            {
+                if (DECL_NAME(decl) != NULL_TREE)
+                  {
+                    ident = IDENTIFIER_POINTER(DECL_NAME(decl));
+                    warning(0, "Persistent variable '%s' will not be initialized",
+                            ident);
+                  }
+                else
+                  {
+                    warning(0, "Persistent variable will not be initialized");
+                  }
+                /* Persistent variables will not be initialized. So, make them as bss sections. */
+                DECL_INITIAL(decl) = NULL_TREE ;
+            }
+        }
     }
   if (address_attr)
     {
@@ -5187,28 +5353,12 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
         }
       else f += sprintf(f, MCHP_ADDR_FLAG);
     }
-  if ((TREE_CODE(decl) == VAR_DECL) &&
-      ((flags & SECTION_PERSIST)  || (mchp_persistent_p(decl))))
+      
+  if (noload_attr)
     {
-      f += sprintf(f, MCHP_PRST_FLAG);
-      section_type_set = 1;
-      DECL_COMMON (decl) = 0;
-      if (DECL_INITIAL(decl))
-        {
-            if (DECL_NAME(decl) != NULL_TREE)
-              {
-                ident = IDENTIFIER_POINTER(DECL_NAME(decl));
-                warning(0, "Persistent variable '%s' will not be initialized",
-                        ident);
-              }
-            else
-              {
-                warning(0, "Persistent variable will not be initialized");
-              }
-            /* Persistent variables will not be initialized. So, make them as bss sections. */
-            DECL_INITIAL(decl) = NULL_TREE ;
-        }
+      f += sprintf (f, MCHP_NOLOAD_FLAG);
     }
+
   if ((flags & SECTION_KEEP) || mchp_keep_p(decl)) {
       DECL_COMMON (decl) = 0;
       f += sprintf(f, MCHP_KEEP_FLAG);
@@ -5317,7 +5467,10 @@ static int mchp_build_prefix(tree decl, int fnear, char *prefix)
   if (mchp_keep_p(decl)) {
     f += sprintf(f, MCHP_KEEP_FLAG);
   }
-  if (mchp_coherent_p(decl)) {
+  if (mchp_coherent_p(decl) 
+    || (flags & SECTION_PERSIST)  || mchp_persistent_p(decl)) 
+               /* add implicit coherent flag when persistent is specified */
+  {
     f += sprintf(f, MCHP_COHERENT_FLAG);
   }
     if (mchp_shared_p(decl)) {
@@ -5573,14 +5726,20 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
       else if (TREE_CODE(decl) == VAR_DECL)
         {
           tree space_attr = get_mchp_space_attribute(decl);
-          if ((!mchp_coherent_p(decl)) && mchp_persistent_p(decl)) /* persist*/
-            {
-              pszSectionName = SECTION_NAME_PBSS;
-            }
-          else if (space_attr && (get_identifier("serial_mem") == (TREE_VALUE(TREE_VALUE(space_attr)))))
+          
+          if (space_attr && (get_identifier("serial_mem") == (TREE_VALUE(TREE_VALUE(space_attr)))))
             {
               pszSectionName = SECTION_NAME_SERIALMEM;
             }
+          else if (mchp_space_prog_p(decl) && mchp_keep_p(decl))
+            {
+              pszSectionName = SECTION_NAME_CONST;
+            }
+          else if (mchp_persistent_p(decl))
+            {
+              if (!pszSectionName || strcmp(pszSectionName, SECTION_NAME_PERSIST) != 0)
+		pszSectionName = SECTION_NAME_PBSS;
+	    }
           else if (mips_in_small_data_p(decl))
             {
               if (pszSectionName == NULL)
@@ -5602,8 +5761,9 @@ static const char *default_section_name(tree decl, SECTION_FLAGS_INT flags)
             }
           if (pszSectionName)
             {
-              if (flag_data_sections || DECL_UNIQUE_SECTION (decl))
-                {
+	      if (flag_data_sections
+		  || (DECL_UNIQUE_SECTION (decl) && !mchp_persistent_p (decl)))
+		{
                   f += sprintf (result, "%s.%s", pszSectionName,
                                 IDENTIFIER_POINTER(DECL_NAME(decl)));
                 }
@@ -5828,7 +5988,7 @@ char * mchp_get_named_section_flags (const char *pszSectionName,
     {
       f += sprintf(f, "," SECTION_ATTR_NOLOAD);
     }
-  if (flags & SECTION_DEBUG)
+  if ((flags & SECTION_DEBUG) || (flags & SECTION_INFO))
     {
       f += sprintf(f, "," SECTION_ATTR_INFO);
     }
@@ -6658,8 +6818,10 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
   const struct default_include *p;
   size_t len;
 
-  if (!TARGET_LEGACY_LIBC && !TARGET_XC32_LIBCPP)
+  if (!TARGET_LEGACY_LIBC && !TARGET_XC32_LIBCPP && !TARGET_NEWLIB_LIBC)
+  {
     return;
+  }
 
   if (iprefix && (len = cpp_GCC_INCLUDE_DIR_len) != 0)
     {
@@ -6679,8 +6841,15 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
                 {
                   char *str;
                   char *newfname;
-
-                  if (TARGET_XC32_LIBCPP)
+                  /* -mnewlib-libc takes precedence */
+                  if (TARGET_NEWLIB_LIBC)
+                    {
+                      newfname = concat (p->fname, "/newlib", NULL);
+                      str = concat (iprefix, newfname + len, NULL);
+                      free(newfname);
+                      add_path (str, SYSTEM, p->cxx_aware, false);
+                    }
+                  else if (TARGET_XC32_LIBCPP)
                     {
                       newfname = concat (p->fname, "/Cpp/c", NULL);
                       str = concat (iprefix, newfname + len, NULL);
@@ -6719,6 +6888,13 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
           /* Should this directory start with the sysroot?  */
           if (sysroot && p->add_sysroot)
             {
+              if (TARGET_NEWLIB_LIBC)
+                {
+                  newfname = concat (p->fname, "/newlib", NULL);
+                  str = concat (sysroot, newfname, NULL);
+                  add_path (str, SYSTEM, p->cxx_aware, false);
+                  free(newfname);
+                }
               if (TARGET_XC32_LIBCPP)
                 {
                   newfname2 = concat (p->fname, "/Cpp/c", NULL);
@@ -6744,7 +6920,14 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
             }
           else
             {
-              if (TARGET_XC32_LIBCPP)
+              if (TARGET_NEWLIB_LIBC)
+                {
+                  newfname = concat (p->fname, "/newlib", NULL);
+                  str = update_path (newfname, p->component);
+                  add_path (str, SYSTEM, p->cxx_aware, false);
+                  free(newfname);
+                }
+              else if (TARGET_XC32_LIBCPP)
                 {
                   newfname2 = concat (p->fname, "/Cpp/c", NULL);
                   str2 = update_path (newfname2, p->component);
@@ -6771,8 +6954,7 @@ void pic32_system_pre_include_paths (const char *sysroot, const char *iprefix,
         }
     }
 }
-#endif
-
+#endif /* chipKIT */
 
 rtx pic32_expand_software_reset_libcall(void)
 {

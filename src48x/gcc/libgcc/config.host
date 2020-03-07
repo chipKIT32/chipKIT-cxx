@@ -155,10 +155,9 @@ mips*-*-*)
  	tmake_file="${tmake_file} t-softfp"
 	tm_file=mips/nan.h
 	;;
-pic32*-*-*)
+pic32m*-*-*)
         cpu_type=mips
 		tmake_file="mips/t-mips"
-		tmake_file="${tmake_file} t-softfp"
         tm_file=mips/nan.h
         ;;
 nios2*-*-*)
@@ -787,7 +786,7 @@ mipsisa64sb1-*-elf* | mipsisa64sb1el-*-elf*)
 	tmake_file="$tmake_file mips/t-elf mips/t-crtstuff mips/t-mips16"
 	extra_parts="$extra_parts crti.o crtn.o"
 	;;
-mips-*-elf* | mipsel-*-elf* | pic32*-*-elf*)
+mips-*-elf* | mipsel-*-elf* | pic32m*-*-elf*)
 	tmake_file="$tmake_file mips/t-elf mips/t-crtstuff mips/t-mips16"
 	extra_parts="$extra_parts crti.o crtn.o"
 	;;

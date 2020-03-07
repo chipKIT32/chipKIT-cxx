@@ -42,7 +42,10 @@ extern void mchp_init_cci(void *);
 extern void mchp_handle_vector_pragma(struct cpp_reader *);
 extern void mchp_handle_interrupt_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED);
 extern void mchp_handle_region_pragma (struct cpp_reader *pfile ATTRIBUTE_UNUSED);
+extern void mchp_handle_nocodecov_pragma(struct cpp_reader *);
+extern void mchp_asm_code_end (void);
 extern void mchp_file_end (void);
+extern void mchp_set_default_type_attributes (tree type);
 extern tree mchp_interrupt_attribute (tree *decl, tree identifier, tree args,
                                         int flags, bool *no_add_attrs);
 extern tree mchp_vector_attribute (tree *decl, tree identifier, tree args,
@@ -70,8 +73,11 @@ extern tree mchp_space_attribute(tree *decl, tree identifier,
 extern tree mchp_region_attribute(tree *decl, tree identifier,
                             tree args, int flags ATTRIBUTE_UNUSED,
                             bool *no_add_attrs);
-extern void pic32_update_external_memory_info(const char* region_name, 
-                            unsigned int region_origin, int region_size);                            
+extern tree mchp_noload_attribute(tree *decl, tree identifier,
+                            tree args, int flags ATTRIBUTE_UNUSED,
+                            bool *no_add_attrs);
+extern void pic32_update_external_memory_info(const char* region_name,
+                            unsigned int region_origin, int region_size);
 extern tree mchp_unsupported_attribute(tree *decl, tree identifier,
                             tree args, int flags ATTRIBUTE_UNUSED,
                             bool *no_add_attrs);
@@ -179,5 +185,18 @@ extern const char * mchp_text_section_asm_op(void);
 extern const char * mchp_rdata_section_asm_op(void);
 extern void mchp_cache_conversion_state(rtx, tree);
 extern rtx  pic32_expand_software_reset_libcall(void);
+
+/* Code Coverage related */
+extern void pic32_begin_cc_instrument (void);
+extern rtx pic32_adjust_insert_pos (basic_block bb, int prologue_bb, rtx where);
+extern void pic32_ld_cc_bits (unsigned offset);
+extern void pic32_set_cc_bit (unsigned bitno);
+extern const char *pic32_libexec_path;
+extern bool pic32_ccov_save_reg_p (unsigned regno);
+extern const char *pic32_setcovbit_m16 (rtx operands[]);
+extern bool pic32_add_eob_insn (basic_block bb);
+extern const char *pic32_output_nil_op (rtx operands[]);
+extern int  pic32_licensed_xccov_p (void);
+extern void pic32_emit_cc_section (const char *name);
 
 #endif

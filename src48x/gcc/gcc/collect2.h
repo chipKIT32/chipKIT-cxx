@@ -22,6 +22,10 @@ along with GCC; see the file COPYING3.  If not see
 
 extern void do_tlink (char **, char **);
 
+#if defined(_BUILD_C32_)
+extern void do_tlink_continue (char **, char **);
+#endif
+
 extern struct pex_obj *collect_execute (const char *, char **, const char *,
 					const char *, int flags);
 

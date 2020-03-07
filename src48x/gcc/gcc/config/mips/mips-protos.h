@@ -387,6 +387,7 @@ extern rtx mips16e_build_save_restore (bool restore_p, unsigned int *mask_ptr,
 extern unsigned int mips_base_compression_flags;
 extern bool mips_base_micromips;
 extern unsigned int mips16e_collect_argument_saves (void);
+void pic32_cond_reg_usage (void);
 #endif
 extern const char* pic32_output_switch_ISA32 (void);
 extern const char* pic32_output_switch_ISA16 (void);

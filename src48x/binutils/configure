@@ -3645,7 +3645,7 @@ case "${target}" in
   mips*-*-*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
-  pic32*-mchp-elf* | pic32mx-mchp-elf)
+  pic32m*-mchp-elf* | pic32mx-mchp-elf)
     noconfigdirs="$noconfigdirs gprof"
     libgloss_dir=mips
     ;;

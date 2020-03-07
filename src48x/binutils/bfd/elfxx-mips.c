@@ -7378,6 +7378,10 @@ _bfd_mips_elf_fake_sections (bfd *abfd, Elf_Internal_Shdr *hdr, asection *sec)
       hdr->sh_entsize = 8;
     }
 
+#if defined(TARGET_IS_PIC32MX)
+  pic32_fake_sections (abfd, hdr, sec);
+#endif
+
   /* The generic elf_fake_sections will set up REL_HDR using the default
    kind of relocations.  We used to set up a second header for the
    non-default kind of relocations here, but only NewABI would use

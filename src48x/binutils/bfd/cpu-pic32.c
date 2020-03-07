@@ -140,6 +140,22 @@ static void get_resource_path(const char *resource) {
   char *tool_name = (char *) resource;
   char *c;
 
+  if ((c = getenv ("COLLECT_GCC_OPTIONS")) != NULL) {
+    const char *opt;
+    const char *const mdf_opt = "-mdfp=";
+    if ((opt = strstr(c, mdf_opt)) != NULL) {
+      const char *const di_opt = DIR_SEPARATOR_STR"xc32"DIR_SEPARATOR_STR"xc32_device.info";
+      const char *start = opt + strlen(mdf_opt);
+      const char *end = strstr(start, "'");
+      const size_t sz = end - start;
+      pic32_resource_file = xmalloc(sz + strlen(di_opt) + 1);
+      pic32_resource_file[0] = '\0';
+      strncat(pic32_resource_file, start, sz);
+      strcat(pic32_resource_file, di_opt);
+      return;
+    }
+  }
+
   /*
   ** In some command shells, no path information
   ** is provided as part of argv[0].
@@ -444,15 +460,29 @@ bfd_boolean pic32_is_known_proc(char *opt_arg)
   static struct stat fileinfo;
   char * place;
   char *device_file;
+  const char *opt;
+  const char *const mdf_opt = "-mdfp=";
 
-  device_file = xmalloc(strlen(optarg) + strlen(program_name)
-                        + strlen("/../../bin/device_files/")+ strlen(".info") + 1);
-  sprintf(device_file, "%s", program_name);
-  for (c = device_file + strlen(device_file);
-     !IS_DIR_SEPARATOR(*c); c--);
-  *c = 0;
-  strcat(device_file,"/../../bin/device_files/");
-
+  if (((c = getenv ("COLLECT_GCC_OPTIONS")) != NULL) &&
+      ((opt = strstr(c, mdf_opt)) != NULL)) {
+    const char *const df_opt = DIR_SEPARATOR_STR"xc32"DIR_SEPARATOR_STR"device_files"DIR_SEPARATOR_STR;
+    const char *start = opt + strlen(mdf_opt);
+    const char *end = strstr(start, "'");
+    const size_t sz = end - start;
+    device_file = xmalloc(sz + strlen(df_opt) 
+                          + strlen(opt_arg)+ strlen(".info") + 1);
+    device_file[0]='\0';
+    strncat(device_file, start, sz);
+    strcat(device_file, df_opt);
+  } else {
+    device_file = xmalloc(strlen(opt_arg) + strlen(program_name)
+                          + strlen("/../../bin/device_files/") + strlen(".info") + 1);
+    sprintf(device_file, "%s", program_name);
+    for (c = device_file + strlen(device_file);
+      !IS_DIR_SEPARATOR(*c); c--);
+    *c = 0;
+    strcat(device_file,"/../../bin/device_files/");
+  }
   for (place = opt_arg; *place; place++)
      *place = TOUPPER(*place);
 

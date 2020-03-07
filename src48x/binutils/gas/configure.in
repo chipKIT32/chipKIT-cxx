@@ -271,7 +271,7 @@ changequote([,])dnl
 	  mips64*-openbsd*)
 	    mips_default_abi=N64_ABI
 	    ;;
-	  pic32*-*-*)
+	  pic32m*-*-*)
 	    mips_default_abi=O32_ABI
 	    ;;
 	  *)
@@ -281,7 +281,7 @@ changequote([,])dnl
 
 	# Output special "disable" defines for pic32mx (Microchip PIC32 MCUs).
 	case ${target} in
-	  pic32*-*-*)
+	  pic32m*-*-*)
 	    AC_DEFINE(DISABLE_ABI_SELECTION, [], [Disable ABI options?])
 	    AC_DEFINE(DISABLE_ISA_SELECTION, [], [Disable ISA options?])
 	    AC_DEFINE(DISABLE_CPU_SELECTION, [], [Disable CPU options?])

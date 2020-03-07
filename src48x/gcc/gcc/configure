@@ -7220,7 +7220,7 @@ else
       enable_fixed_point=yes
       ;;
 
-    mips*-*-* | pic32*-*-*)
+    mips*-*-* | pic32m*-*-*)
       enable_fixed_point=yes
       ;;
     *)
@@ -7433,7 +7433,7 @@ if test "${with_bugurl+set}" = set; then :
 	   ;;
      esac
 else
-  BUGURL="http://www.microchip.com/support"
+  BUGURL="https://chipkit.net/support/"
 
 fi
 
@@ -23309,7 +23309,7 @@ x:
 	tls_first_minor=20
 	tls_as_opt='--fatal-warnings'
 	;;
-  mips*-*-* | pic32*-*-*)
+  mips*-*-* | pic32m*-*-*)
     conftest_s='
 	.section .tdata,"awT",@progbits
 x:
@@ -25785,7 +25785,7 @@ fi
     esac
     ;;
 
-  mips*-*-* | pic32*-*-*)
+  mips*-*-* | pic32m*-*-*)
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for explicit relocation support" >&5
 $as_echo_n "checking assembler for explicit relocation support... " >&6; }
 if test "${gcc_cv_as_mips_explicit_relocs+set}" = set; then :
@@ -26130,7 +26130,7 @@ esac
 # Linux on IA64 might be able to use the Intel assembler.
 
 case "$target" in
-  mips*-*-* | pic32*-*-* | *-*-hpux* )
+  mips*-*-* | pic32m*-*-* | *-*-hpux* )
     if test x$gas_flag = xyes \
        || test x"$host" != x"$build" \
        || test ! -x "$gcc_cv_as" \

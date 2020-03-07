@@ -1605,7 +1605,7 @@ case $basic_machine in
 	mips*-*)
 		os=-elf
 		;;
-	pic32*-*)
+	pic32m*-*)
 		os=-elf
 		;;
 	or32-*)

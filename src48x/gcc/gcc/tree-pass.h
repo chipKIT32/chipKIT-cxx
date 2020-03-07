@@ -398,6 +398,10 @@ extern struct gimple_opt_pass pass_fixup_cfg;
 extern struct rtl_opt_pass pass_rtl_mchp_hi_addr_analysis;
 #endif
 
+#if defined(_BUILD_MCHP_)
+extern struct rtl_opt_pass pass_xc_coverage;
+#endif
+
 extern struct rtl_opt_pass pass_expand;
 extern struct rtl_opt_pass pass_instantiate_virtual_regs;
 extern struct rtl_opt_pass pass_rtl_fwprop;

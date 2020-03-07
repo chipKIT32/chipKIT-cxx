@@ -91,6 +91,8 @@ const char * shortopts = "-Dp:"; /* note: leading "-" is important */
    different from the range used in lexsup.c  */
 enum elfpic32mx_options {
   REPORT_MEM_OPTION = 1000,
+  REPORT_MAFRLCSJ_OPTION,
+  REPORT_MAFRLCSJ2_OPTION,
   SMART_IO_OPTION,
   NO_SMART_IO_OPTION,
   DATA_INIT_OPTION,
@@ -121,6 +123,7 @@ static struct option longopts[] =
   { "smart-io", no_argument, NULL, SMART_IO_OPTION },
   { "no-smart-io", no_argument, NULL, NO_SMART_IO_OPTION },
   { "report-mem", no_argument, NULL, REPORT_MEM_OPTION },
+
   { "memorysummary", required_argument, NULL, MEMORY_SUMMARY },
   { "data-init", no_argument, NULL, DATA_INIT_OPTION },
   { "no-data-init", no_argument, NULL, NO_DATA_INIT_OPTION },

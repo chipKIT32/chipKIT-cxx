@@ -9310,6 +9310,12 @@ build_common_tree_nodes (bool signed_char, bool short_double)
   error_mark_node = make_node (ERROR_MARK);
   TREE_TYPE (error_mark_node) = error_mark_node;
 
+#ifdef _BUILD_MCHP_
+  if (short_double)
+    warning (OPT_Wdeprecated, "%<short-double%> is deprecated and "
+	     "will be removed in a future release");
+#endif
+
   initialize_sizetypes ();
 
   /* Define both `signed char' and `unsigned char'.  */

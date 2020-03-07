@@ -1663,6 +1663,9 @@ init_optimization_passes (void)
 	  NEXT_PASS (pass_duplicate_computed_gotos);
 	  NEXT_PASS (pass_variable_tracking);
 	  NEXT_PASS (pass_free_cfg);
+#ifdef _BUILD_MCHP_
+          NEXT_PASS (pass_xc_coverage);
+#endif
 	  NEXT_PASS (pass_machine_reorg);
 	  NEXT_PASS (pass_cleanup_barriers);
 	  NEXT_PASS (pass_delay_slots);

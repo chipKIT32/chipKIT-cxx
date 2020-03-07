@@ -9,7 +9,7 @@ case "${host}" in
     # This is a freestanding configuration; there is nothing to do here.
     ;;
 
-  mips*-sde-elf* | pic32*-*-*)
+  mips*-sde-elf* | pic32m*-*-*)
     # These definitions are for the SDE C library rather than newlib.
     SECTION_FLAGS='-ffunction-sections -fdata-sections'
     AC_SUBST(SECTION_FLAGS)

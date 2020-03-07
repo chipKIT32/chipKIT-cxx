@@ -1083,7 +1083,7 @@ case "${target}" in
   microblaze*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
-  mips*-sde-elf* | mips*-mti-elf* | pic32*-*-*)
+  mips*-sde-elf* | mips*-mti-elf* | pic32m*-*-*)
     if test x$with_newlib = xyes; then
       noconfigdirs="$noconfigdirs gprof"
     fi
@@ -1099,7 +1099,7 @@ case "${target}" in
     ;;
   mips*-*-linux*)
     ;;
-  mips*-*-* | pic32*-*-*)
+  mips*-*-* | pic32m*-*-*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
   sh-*-* | sh64-*-*)

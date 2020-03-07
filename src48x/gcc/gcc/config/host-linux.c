@@ -23,12 +23,6 @@
 #include "hosthooks.h"
 #include "hosthooks-def.h"
 
-#ifndef SIZE_MAX
-# define SIZE_MAX ((size_t) -1)
-#endif
-#ifndef SSIZE_MAX
-# define SSIZE_MAX ((ssize_t) (SIZE_MAX / 2))
-#endif
 
 /* Linux has a feature called exec-shield-randomize that perturbs the
    address of non-fixed mapped segments by a (relatively) small amount.

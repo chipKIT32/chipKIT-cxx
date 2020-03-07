@@ -1126,7 +1126,7 @@ case "${targ}" in
     targ_underscore=yes
     ;;
 
-  pic32*-mchp-elf)
+  pic32m*-mchp-elf)
     targ_defvec=bfd_elf32_tradlittlemips_vec
     targ_cflags="-DMIPSSDE -DTARGET_IS_PIC32MX -DPIC32 -DTARGET_IS_PIC32"
     ;;

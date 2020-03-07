@@ -218,7 +218,7 @@ IEEE-695.
 
 @include bfdt.texi
 @include bfdio.texi
-
+ 
 @node Memory Usage, Initialization, Miscellaneous, BFD front end
 @section Memory Usage
 BFD keeps all of its internal structures in obstacks. There is one obstack

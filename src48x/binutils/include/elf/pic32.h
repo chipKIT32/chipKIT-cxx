@@ -35,6 +35,17 @@ struct pic32_section
   unsigned int use_vma;
 };
 
+/* Section types for code coverage */
+#define SHT_XC_CODECOV_INFO     (SHT_LOUSER + 0xCC0)
+#define SHT_XC_CODECOV_INFO_HDR (SHT_LOUSER + 0xCC1)
+
+/* Section names for code coverage (taken from gcc/gcc/xc-coverage.h) */
+#define CODECOV_SECTION        ".codecov"
+#define CODECOV_INFO           ".codecov_info"
+#define CODECOV_INFO_HDR       ".codecov_info.hdr"
+
+extern void pic32_fake_sections (bfd *, struct elf_internal_shdr *, asection *);
+
 /************************************************************************/
 /*   pic32-specific section flags                                       */
 /************************************************************************/

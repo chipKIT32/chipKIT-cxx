@@ -383,9 +383,11 @@ msmart-io=
 Target Var RejectNegative Joined UInteger Var(mchp_io_size_val) Init(0)
 -msmart-io=LEVEL	Enable smart-IO library call forwarding level LEVEL [0,2]
 
+mdfp=
+Target Report RejectNagative Joined Var(mchp_dfp_dir) Undocumented
 
 mrelaxed-math
-Target Var Var(TARGET_RELAXED_MATH) 
+Target Var Var(TARGET_RELAXED_MATH)
 -relaxed-math	Use alternative floating-point support routines
 
 mxc32cpp-lib
@@ -463,6 +465,9 @@ Target Report Var(TARGET_ALLOW_VOLATILE_LOADS_IN_DELAY_SLOTS) Undocumented Init(
 mmemorysummary=
 Target Joined Var(TARGET_MEMORY_SUMMARY) Undocumented
 
+-memorysummary
+Target Separate Alias(mmemorysummary=)
+
 mfill=
 Target Joined Var(TARGET_MEMORY_FILL) Undocumented
 
@@ -481,6 +486,20 @@ Target RejectNegative Alias(mprint-mchp-search-dirs)
 mgen-pie-static
 Target RejectNegative Undocumented
 
-mhi-addr-opt
-Target Var Var(TARGET_MCHP_HI_ADDR_OPT)
--mhi-addr-opt	Use HI address part optimization
+mskip-license-check
+Target Var(TARGET_SKIP_LICENSE_CHECK) Init(0) Undocumented
+For use by MPLAB X IDE only - Forces a free license
+
+mno-hi-addr-opt
+Target RejectNegative Var(TARGET_MCHP_DISABLE_HI_ADDR_OPT)
+-mno-hi-addr-opt	Disable HI address part optimization
+
+mcodecov=
+Target Report JoinedOrMissing RejectNegative ToLower Var(mchp_codecov) Init() Undocumented
+-mcodecov=[sb]     Enable code coverage instrumentation
+
+mcodecov
+Target RejectNegative Alias(mcodecov=,) Undocumented
+
+mcodecov-sb
+Target RejectNegative Alias(mcodecov=,sb) Undocumented

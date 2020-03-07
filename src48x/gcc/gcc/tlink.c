@@ -863,3 +863,60 @@ do_tlink (char **ld_argv, char **object_lst ATTRIBUTE_UNUSED)
       may_unlink_output_file = true;
     }
 }
+
+
+#if defined(_BUILD_C32_)
+/* Just like do_tlink() but don't exit if the link fails */
+void
+do_tlink_continue (char **ld_argv, char **object_lst ATTRIBUTE_UNUSED)
+{
+  int ret = tlink_execute ("ld", ld_argv, ldout, lderrout);
+
+  tlink_init ();
+
+  if (ret)
+    {
+      int i = 0;
+
+      /* Until collect does a better job of figuring out which are object
+	 files, assume that everything on the command line could be.  */
+      if (read_repo_files (ld_argv))
+	while (ret && i++ < MAX_ITERATIONS)
+	  {
+	    if (tlink_verbose >= 3)
+	      {
+		dump_ld_file (ldout, stdout);
+		dump_ld_file (lderrout, stderr);
+	      }
+	    demangle_new_symbols ();
+	    if (! scan_linker_output (ldout)
+		&& ! scan_linker_output (lderrout))
+	      break;
+	    if (! recompile_files ())
+	      break;
+	    if (tlink_verbose)
+	      fprintf (stderr, _("collect: relinking\n"));
+	    ret = tlink_execute ("ld", ld_argv, ldout, lderrout);
+	  }
+    }
+
+  dump_ld_file (ldout, stdout);
+  unlink (ldout);
+  dump_ld_file (lderrout, stderr);
+  unlink (lderrout);
+  if (ret)
+    {
+      fprintf (stdout, _("Initial link failed, continuing\n\n"));
+#if 0
+      error ("ld returned %d exit status", ret);
+      exit (ret);
+#endif
+    }
+  else
+    {
+      /* We have just successfully produced an output file, so assume that we
+	 may unlink it if need be for now on.  */ 
+      may_unlink_output_file = true;
+    }
+}
+#endif
